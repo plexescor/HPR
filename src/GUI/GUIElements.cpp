@@ -1,0 +1,66 @@
+#include <iostream>
+#include <string>
+
+#include "imgui.h"
+
+#include "activeWindowAndDataManager.hpp"
+#include "timeUtils.hpp"
+
+void displayTimePerApplication()
+{
+    ImGui::Text("TIME PER APPLICATION:");
+    if (ImGui::BeginTable("TimeTable", 2))
+    {
+        ImGui::TableSetupColumn("Application");
+        ImGui::TableSetupColumn("Time (s)");
+        ImGui::TableHeadersRow();
+
+        //LOOP THROUGH EVERY APP IN THE MAP
+        for (auto const& [name, seconds] : activeWindowAndDataManagement::getTimeLog())
+        {
+            ImGui::TableNextRow();
+            ImGui::TableNextColumn();
+            ImGui::Text("%s", name.c_str());
+            ImGui::TableNextColumn();
+
+            //Format time in hours, minutes, seconds
+            timeUtils::timeFormat time = timeUtils::formatSeconds(seconds);
+
+            ImGui::Text("%dh", time.hours);
+            ImGui::SameLine();
+            ImGui::Text("%dm", time.minutes);
+            ImGui::SameLine();
+            ImGui::Text("%ds", time.seconds);
+        }
+        ImGui::EndTable();
+    }
+}
+
+void displayCurrentWindowAndSwitches(std::string currentWindow, int switches)
+{
+    ImGui::Text("CURRENT WINDOW: ");
+    ImGui::SameLine();
+    ImGui::Text(currentWindow.c_str());
+
+    ImGui::Separator();
+
+    ImGui::Text("No. of Swicthes: ");
+    ImGui::SameLine();
+    ImGui::Text("%d", switches);
+}
+
+void renderMainUiElements()
+{
+    std::string currentWindow = activeWindowAndDataManagement::getCurrentWindowName();
+    int switches = activeWindowAndDataManagement::getCurrentSwitchCount();
+
+    //Current window and switch count displaying
+    displayCurrentWindowAndSwitches(currentWindow, switches);
+
+    ImGui::Separator();
+
+    //Past windows and time displaying
+    displayTimePerApplication();
+    
+    ImGui::Separator();
+}
