@@ -95,7 +95,7 @@ No manual timers. No cloud sync. No surveillance. Just honest data about yoursel
 8- cmake --build . 
     OR for release build,
 9- cmake --build . --config Release
-# Build instructions here
+
 ```
 
 ## How It Works
