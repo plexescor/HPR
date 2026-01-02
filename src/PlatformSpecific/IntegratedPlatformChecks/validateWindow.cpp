@@ -26,8 +26,10 @@ std::string updateWindowName(std::string windowName)
 {
     #ifdef _WIN32
     //I know its inefficient but idc
-    if (windowName == "chrome") return "Chrome";
-    else if (windowName == "msedge") return "Edge";
+    //Btw its c++23 method, i am talking about contains();
+    if (windowName.contains("chrome")) return "Chrome";
+    else if (windowName.contains("msedge")) return "Edge";
+    else if (windowName.contains("devenv")) return "Visual Studio";
 
     //If no modificatino occur, return OG windowName;
     return windowName;
