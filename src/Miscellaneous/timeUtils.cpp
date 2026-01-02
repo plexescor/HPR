@@ -3,7 +3,7 @@
 namespace timeUtils
 {
 
-    //timeFormat is a struct, see the header file for its definition
+    //timeFormat is a struct, see the header file for its declaration + definition
     timeFormat formatSeconds(double totalSeconds)
     {
         int total = static_cast<int>(totalSeconds);

@@ -1,4 +1,5 @@
 #include "windowDetection.hpp"
+#include "validateWindow.hpp"
 
 #ifdef _WIN32 //Include windows headers
 
@@ -85,6 +86,9 @@ std::string getActiveProcessName()
     if (!ContainsAlphabet(result))
         return "";
 
+    //Before returning result, we must do some *important*checks and potentially some modifications
+
+    result = updateWindowName(result);
     return result;
 }
 

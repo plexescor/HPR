@@ -3,7 +3,7 @@
 #include <map>
 
 #include "windowDetection.hpp"
-#include "validWindowChecks.hpp"
+#include "validateWindow.hpp"
 
 namespace activeWindowAndDataManagement
 {

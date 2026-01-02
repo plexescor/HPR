@@ -14,7 +14,7 @@ struct GuiState{
     SDL_Renderer* renderer;
     float uiScale = 1.3f;
     bool pendingFontRebuild = false; // Flag to rebuild fonts outside the frame block
-} vars;
+} state;
 
 
 void initializeImGuiNewFrameAndViewPort()
@@ -48,17 +48,17 @@ void renderUiScalingButtons()
 {
     if (ImGui::Button("Increase UI Size"))
     {
-        vars.uiScale += 0.1f;
-        vars.pendingFontRebuild = true;
+        state.uiScale += 0.1f;
+        state.pendingFontRebuild = true;
     }
 
     ImGui::SameLine();
 
     if (ImGui::Button("Decrease UI SIZE"))
     {
-        vars.uiScale -= 0.1f;
-        if (vars.uiScale < 0.4f) vars.uiScale = 0.4f; // clamp
-        vars.pendingFontRebuild = true; //IDK, GPT
+        state.uiScale -= 0.1f;
+        if (state.uiScale < 0.4f) state.uiScale = 0.4f; // clamp
+        state.pendingFontRebuild = true; //IDK, GPT
     }
 }
 
@@ -68,15 +68,15 @@ void renderFinalFrame()
     ImGui::Render();
 
     // Dark-ish background
-    SDL_SetRenderDrawColor(vars.renderer, 50, 50, 50, 255);
-    SDL_RenderClear(vars.renderer);
+    SDL_SetRenderDrawColor(state.renderer, 50, 50, 50, 255);
+    SDL_RenderClear(state.renderer);
 
     ImGui_ImplSDLRenderer3_RenderDrawData(
         ImGui::GetDrawData(),
-        vars.renderer
+        state.renderer
     );
 
-    SDL_RenderPresent(vars.renderer);
+    SDL_RenderPresent(state.renderer);
 }
 
 void initGUI()
@@ -85,17 +85,17 @@ void initGUI()
     SDL_Init(SDL_INIT_VIDEO);
 
     // Init SDL Window (RESIZABLE)
-    vars.window = SDL_CreateWindow(
+    state.window = SDL_CreateWindow(
         "HPR",
         1280, 720,
         SDL_WINDOW_RESIZABLE
     );
 
     // Init SDL Renderer
-    vars.renderer = SDL_CreateRenderer(vars.window, nullptr);
+    state.renderer = SDL_CreateRenderer(state.window, nullptr);
 
     // Vsync
-    SDL_SetRenderVSync(vars.renderer, 1);
+    SDL_SetRenderVSync(state.renderer, 1);
 
     // Init ImGui
     IMGUI_CHECKVERSION();
@@ -103,12 +103,12 @@ void initGUI()
     
     //APPLY CUSTOM STYLE and load custom font
     setUpImGuiStyle();
-    ImGui::GetStyle().ScaleAllSizes(vars.uiScale);
+    ImGui::GetStyle().ScaleAllSizes(state.uiScale);
     loadFonts(1.0f);
 
     // Init ImGui backends
-    ImGui_ImplSDL3_InitForSDLRenderer(vars.window, vars.renderer);
-    ImGui_ImplSDLRenderer3_Init(vars.renderer);
+    ImGui_ImplSDL3_InitForSDLRenderer(state.window, state.renderer);
+    ImGui_ImplSDLRenderer3_Init(state.renderer);
 }
 
 bool pollEvent(bool running)
@@ -129,7 +129,7 @@ bool pollEvent(bool running)
 
 void rebuildFontAndStyle()
 {
-    loadFonts(vars.uiScale);
+    loadFonts(state.uiScale);
             
     // The backend will update the texture 
     // automatically on the next NewFrame().
@@ -138,9 +138,9 @@ void rebuildFontAndStyle()
     // Re-apply style scaling
     ImGui::GetStyle() = ImGuiStyle(); 
     setUpImGuiStyle();
-    ImGui::GetStyle().ScaleAllSizes(vars.uiScale);
+    ImGui::GetStyle().ScaleAllSizes(state.uiScale);
             
-    vars.pendingFontRebuild = false; //Accessing global var
+    state.pendingFontRebuild = false; //Accessing global var
 }
 
 void runGUI()
@@ -153,7 +153,7 @@ void runGUI()
 
         // --- Safe Font/Style Rebuilding ---
         // We do this before NewFrame so the atlas isn't in use by the GPU
-        if (vars.pendingFontRebuild) rebuildFontAndStyle();
+        if (state.pendingFontRebuild) rebuildFontAndStyle();
 
         initializeImGuiNewFrameAndViewPort(); //Initialise new Imgui fram and view port
 
@@ -187,8 +187,8 @@ void quitGUI()
     ImGui_ImplSDL3_Shutdown();
     ImGui::DestroyContext();
 
-    SDL_DestroyRenderer(vars.renderer);
-    SDL_DestroyWindow(vars.window);
+    SDL_DestroyRenderer(state.renderer);
+    SDL_DestroyWindow(state.window);
     SDL_Quit();
     std::cout << "Done!\n";
 }

@@ -1,11 +1,10 @@
 //I suppose this file is so easy to understand that you dont need comments
-#include <iostream>
 #include <string>
 #include <chrono>
 #include <map>
 
 #include "windowDetection.hpp"
-#include "validWindowChecks.hpp"
+#include "validateWindow.hpp"
 
 namespace activeWindowAndDataManagement
 {
@@ -33,7 +32,7 @@ namespace activeWindowAndDataManagement
         
         cooldown = 0;
 
-        // 1. Calculate elapsed time since the LAST time we were here, CLAUDE
+        // 1. Calculate elapsed time since the LAST time we were here, ~CLAUDE
         auto now = std::chrono::steady_clock::now();
         std::chrono::duration<double> elapsed = now - lastTimestamp;
         lastTimestamp = now; // Reset for next time

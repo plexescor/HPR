@@ -7,8 +7,10 @@
                 "${workspaceFolder}/src/Miscellaneous",
                 "${workspaceFolder}/src/PlatformSpecific/IntegratedPlatformChecks",
                 "${workspaceFolder}/src/GUI",
+                "${workspaceFolder}/src/Data",
                 "${workspaceFolder}/src/FontHeader",
                 "${workspaceFolder}/external/SDL3/include",
+                "${workspaceFolder}/external/sqLite",
                 "${workspaceFolder}/external/imgui"
             ],
             "defines": [
@@ -18,8 +20,8 @@
             ],
             "windowsSdkVersion": "10.0.26100.0",
             "compilerPath": "cl.exe",
-            "cStandard": "c17",
-            "cppStandard": "c++17",
+            "cStandard": "c23",
+            "cppStandard": "c++20",
             "intelliSenseMode": "windows-msvc-x64"
         }
     ],

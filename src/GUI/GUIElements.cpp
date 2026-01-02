@@ -36,8 +36,11 @@ void displayTimePerApplication()
     }
 }
 
-void displayCurrentWindowAndSwitches(std::string currentWindow, int switches)
+void displayCurrentWindowAndSwitches()
 {
+    std::string currentWindow = activeWindowAndDataManagement::getCurrentWindowName();
+    int switches = activeWindowAndDataManagement::getCurrentSwitchCount();
+
     ImGui::Text("CURRENT WINDOW: ");
     ImGui::SameLine();
     ImGui::Text(currentWindow.c_str());
@@ -51,11 +54,8 @@ void displayCurrentWindowAndSwitches(std::string currentWindow, int switches)
 
 void renderMainUiElements()
 {
-    std::string currentWindow = activeWindowAndDataManagement::getCurrentWindowName();
-    int switches = activeWindowAndDataManagement::getCurrentSwitchCount();
-
     //Current window and switch count displaying
-    displayCurrentWindowAndSwitches(currentWindow, switches);
+    displayCurrentWindowAndSwitches();
 
     ImGui::Separator();
 
