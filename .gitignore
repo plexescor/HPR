@@ -6,3 +6,4 @@ external/SDL3
 external/imgui/.github
 external/imgui/docs
 external/imgui/examples
+src/FontHeader

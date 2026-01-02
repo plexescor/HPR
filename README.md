@@ -89,6 +89,8 @@ No manual timers. No cloud sync. No surveillance. Just honest data about yoursel
     |
     |-imgui (included)
 
+4.5: I have NOT included the src/FontHeader/InterFont.h because it mismarks my repo as 99% "C", you will need to convert a .ttf font to .h with some command and add "#pragma once" at the top of header and rename it and place it in the appropriate directory. Sorry!
+
 5- Create a build folder (mkdir build)
 6- cd build
 7- cmake ..
