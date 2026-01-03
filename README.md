@@ -17,8 +17,8 @@ No manual timers. No cloud sync. No surveillance. Just honest data about yoursel
 ## Why HPR?
 
 **Performance First**
-- ~3.1 MB total size
-- <20MB RAM usage
+- ~4.2 MB total size
+- <30MB RAM usage
 - 1% CPU usage
 - Instant startup, no lag
 
@@ -34,13 +34,14 @@ No manual timers. No cloud sync. No surveillance. Just honest data about yoursel
 - Clean, minimal interface
 - Does one thing well
 
-## Current Features (v0.2)
+## Current Features (v0.3)
 
 - [x] Real-time application tracking
 - [x] Time breakdown per application
 - [x] Context switch counting
 - [x] Minimal resource usage
 - [x] Dark mode UI
+- [x] Data Persistance in for of SQL table
 
 ## Planned Features
 
@@ -87,9 +88,9 @@ No manual timers. No cloud sync. No surveillance. Just honest data about yoursel
             |
             |- (same as above for x86 and arm64)
     |
+    |-sqLite (included)
+    |
     |-imgui (included)
-
-4.5: I have NOT included the src/FontHeader/InterFont.h because it mismarks my repo as 99% "C", you will need to convert a .ttf font to .h with some command and add "#pragma once" at the top of header and rename it and place it in the appropriate directory. Sorry!
 
 5- Create a build folder (mkdir build)
 6- cd build
@@ -103,8 +104,6 @@ No manual timers. No cloud sync. No surveillance. Just honest data about yoursel
 ## How It Works
 
 HPR uses native OS hooks to detect the active window and tracks time automatically.
-
-(No local data storage, yet, to be implemented)
 
 No screenshots. No keystroke logging. Just application names and durations.
 
@@ -137,7 +136,7 @@ This is a tool for understanding yourself, not for surveillance or micromanageme
 A: No. Never. HPR only tracks application names and time durations.
 
 **Q: Does my data leave my computer?**  
-A: (Though nothing is stored currently but) No. Everything is stored locally. There's no network code at all.
+A: No. Everything is stored locally. There's no network code at all.
 
 **Q: What's tracked?**  
 A: Application window titles (e.g., "Chrome", "VSCode") and time spent. That's it.
@@ -174,7 +173,7 @@ Advanced analytics, integrations, and whatever the community needs most.
 
 ## License
 
-MIT License - Use it however you want. See LICENSE file for details.
+MIT License - Use it however you want. See NOT EXISTING LICENSE file for details.
 
 ## Author
 
@@ -187,6 +186,7 @@ If HPR helps you understand yourself better, that's enough.
 **Status:** Early development (v0.2) - Functional but rough around the edges.  
 **Platform:** Windows 10/11  
 **Dependencies:** SDL3 (NOT included)
+                  SQLite (included)
                   ImGui (included)
 
 *Star this repo if you value lightweight, privacy-respecting tools.*
