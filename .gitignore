@@ -2,7 +2,7 @@ build
 build_release
 build_r
 Fonts
-src/FontHeader/
+outs
 external/SDL3
 external/imgui/.github
 external/imgui/docs
