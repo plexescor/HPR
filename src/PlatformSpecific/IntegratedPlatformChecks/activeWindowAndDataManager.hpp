@@ -10,5 +10,5 @@ namespace activeWindowAndDataManagement
     int updateCurrentWindowInfoAndData();
     int getCurrentSwitchCount();
     std::string getCurrentWindowName();
-    std::map<std::string, double> getTimeLog();
+    std::map<std::string, double>* getTimeLog();
 }

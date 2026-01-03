@@ -1,13 +1,17 @@
-//I suppose this file is so easy to understand that you dont need comments
+//I suppose this file WAS so easy to understand that you DIDNT need comments
 #include <string>
 #include <chrono>
 #include <map>
+#include <iostream>
 
 #include "windowDetection.hpp"
 #include "validateWindow.hpp"
+#include "manageDiskWrite.hpp"
 
 namespace activeWindowAndDataManagement
 {
+    bool coldStart = true;
+    
     struct windowInfoAndData{
         std::string currentWindow;
         std::string previousWindow;
@@ -25,6 +29,15 @@ namespace activeWindowAndDataManagement
     //Just updates the current values while adhering to checks
     int updateCurrentWindowInfoAndData()
     {   
+        //IF APP IS STARTED FOR FIRST TIME, READ EXISTING VALUE FROM DISK
+        if (coldStart)
+        {
+            if(!readWindowNameAndDurationFromDisk(&wInfoAndD.timeLog, &wInfoAndD.switches)) 
+            {
+                std::cout << "Couldnt read the db, possibly because you are launching the app for the very very first time";
+            }
+            coldStart = false;
+        }
         cooldown++; //Implementing a cooldown
         // std::cout << cooldown <<'\n';
 
@@ -47,12 +60,21 @@ namespace activeWindowAndDataManagement
             //WE NEED THIS TO BE UPDATED EVERYTIME SO THE TIME ELAPSED REMAINS ACCURATE
             wInfoAndD.timeLog[wInfoAndD.currentWindow] += elapsed.count();
 
+            //WRITE INFO TO DISK
+            writeWindowNameAndDurationToDisk(
+                wInfoAndD.currentWindow.c_str(), 
+                wInfoAndD.timeLog[wInfoAndD.currentWindow], 
+                wInfoAndD.switches
+            );
+
+
             if (wInfoAndD.currentWindow != wInfoAndD.previousWindow)
             {
                 wInfoAndD.previousWindow = wInfoAndD.currentWindow;
                 wInfoAndD.switches++;
                 return 0; //Successfully reassigned shit, stops the execution to prevent accidental reassignment in the next line
             }
+
 
             return 0;
         }
@@ -73,10 +95,10 @@ namespace activeWindowAndDataManagement
         return wInfoAndD.currentWindow;
     }
 
-    std::map<std::string, double> getTimeLog()
+    std::map<std::string, double>* getTimeLog()
     {
         updateCurrentWindowInfoAndData();
-        return wInfoAndD.timeLog;
+        return &(wInfoAndD.timeLog);
     }
 }
 
