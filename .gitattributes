@@ -1,0 +1,7 @@
+# Ignore vendored / third-party code for language stats
+sqlite3.c linguist-vendored
+sqlite3.h linguist-vendored
+
+external/** linguist-vendored
+external/imgui/** linguist-vendored
+src/FontHeader/** linguist-vendored
