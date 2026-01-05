@@ -54,7 +54,7 @@ void displayCurrentWindowAndSwitches()
 
     ImGui::Text("CURRENT WINDOW: ");
     ImGui::SameLine();
-    ImGui::Text(currentWindow.c_str());
+    ImGui::Text("%s", currentWindow.c_str());
 
     ImGui::Separator();
 
