@@ -84,12 +84,18 @@ if (WIN32)
 elseif (UNIX)
     # Linux or other Unix-based systems: find system-wide SDL3
     find_package(SDL3 REQUIRED)
-    set(SDL3_LIBRARY SDL3::SDL3)  # CMake target for SDL3
+    set(SDL3_LIBRARY SDL3::SDL3)
+
+    # >>>>>>>>>>>>>>>>> FIX START <<<<<<<<<<<<<<<<<
+    find_package(X11 REQUIRED)
+    set(X11_LIBRARY X11::X11)
+    # >>>>>>>>>>>>>>>>> FIX END <<<<<<<<<<<<<<<<<
 endif()
 
-# Link SDL3 library
+# Link libraries
 target_link_libraries(HPR
     ${SDL3_LIBRARY}
+    ${X11_LIBRARY}
 )
 
 # -----------------------------
