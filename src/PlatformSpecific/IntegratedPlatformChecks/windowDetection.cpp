@@ -20,6 +20,17 @@
 
 #pragma comment(lib, "Psapi.lib")
 
+
+static bool ContainsAlphabet(const std::string& str)
+{
+    for (unsigned char c : str)
+    {
+        if (std::isalpha(c))
+            return true;
+    }
+    return false;
+}
+
 //FUNCTION DEFINITION FOR WINDOWS
 
 #ifdef _WIN32
@@ -36,15 +47,7 @@ static void StripExeExtension(std::string& name)
     }
 }
 
-static bool ContainsAlphabet(const std::string& str)
-{
-    for (unsigned char c : str)
-    {
-        if (std::isalpha(c))
-            return true;
-    }
-    return false;
-}
+
 
 std::string getActiveProcessName()
 {
@@ -100,6 +103,7 @@ std::string getActiveProcessName()
 
 #endif
 
+//Function definition for Linux
 #ifdef __linux__
 
 std::string getActiveProcessName()
