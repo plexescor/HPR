@@ -76,18 +76,30 @@ add_executable(HPR
 )
 
 # -----------------------------
-# Link SDL3
+# Detect the platform and link SDL3
 # -----------------------------
+if (WIN32)
+    # Windows-specific code: link SDL3.lib
+    set(SDL3_LIBRARY "${SDL3_LIB_DIR}/SDL3.lib")
+elseif (UNIX)
+    # Linux or other Unix-based systems: find system-wide SDL3
+    find_package(SDL3 REQUIRED)
+    set(SDL3_LIBRARY SDL3::SDL3)  # CMake target for SDL3
+endif()
+
+# Link SDL3 library
 target_link_libraries(HPR
-    "${SDL3_LIB_DIR}/SDL3.lib"
+    ${SDL3_LIBRARY}
 )
 
 # -----------------------------
-# AUTO COPY SDL3.dll
+# AUTO COPY SDL3.dll (only for Windows)
 # -----------------------------
-add_custom_command(
-    TARGET HPR POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${SDL3_LIB_DIR}/SDL3.dll"
-        $<TARGET_FILE_DIR:HPR>
-)
+if (WIN32)
+    add_custom_command(
+        TARGET HPR POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${SDL3_LIB_DIR}/SDL3.dll"
+            $<TARGET_FILE_DIR:HPR>
+    )
+endif()

@@ -1,11 +1,13 @@
 #include <iostream>
 #include <string>
+#include <map>
 
 #include "imgui.h"
 
 #include "activeWindowAndDataManager.hpp"
 #include "timeUtils.hpp"
 
+bool showSwitch = false;
 void displayTimePerApplication()
 {
     ImGui::Text("TIME PER APPLICATION:");
@@ -46,6 +48,7 @@ void displayTimePerApplication()
 
 void displayCurrentWindowAndSwitches()
 {
+    
     std::string currentWindow = activeWindowAndDataManagement::getCurrentWindowName();
     int switches = activeWindowAndDataManagement::getCurrentSwitchCount();
 
@@ -60,6 +63,33 @@ void displayCurrentWindowAndSwitches()
     ImGui::Text("%d", switches);
 }
 
+void displayWindowSwitches()
+{
+        if (ImGui::BeginTable("SwitchTable", 2)) // 2 columns
+        {
+            ImGui::TableSetupColumn("From");
+            ImGui::TableSetupColumn("To");
+            ImGui::TableHeadersRow();
+
+            std::vector<std::pair<std::string, std::string>>* switchPtr = activeWindowAndDataManagement::getAllSwitchedWindowName();
+            if (switchPtr && !switchPtr->empty())
+            {
+                for (auto const& [fromApp, toApp] : *switchPtr) 
+                {
+                    ImGui::TableNextRow();
+                    ImGui::TableNextColumn();
+                    ImGui::Text("%s", fromApp.c_str());
+                    ImGui::TableNextColumn();
+                    ImGui::Text("%s", toApp.c_str());
+                }
+            }
+            
+
+            ImGui::EndTable();
+        }
+}
+
+
 void renderMainUiElements()
 {
     //Current window and switch count displaying
@@ -69,6 +99,12 @@ void renderMainUiElements()
 
     //Past windows and time displaying
     displayTimePerApplication();
+
+    ImGui::Separator();
+
+    //Display Window Switches name
+    if (ImGui::Button("Show Window Switches")) showSwitch = !showSwitch;
+    if (showSwitch) displayWindowSwitches();    
     
     ImGui::Separator();
 }

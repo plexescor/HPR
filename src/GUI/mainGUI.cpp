@@ -2,7 +2,7 @@
 #include <SDL3/SDL.h>
 
 #include "GUIElements.hpp"
-#include "imguiStyling.hpp" //Some custom functions for styling and font etc
+#include "imGuiStyling.hpp" //Some custom functions for styling and font etc
 #include "InterFont.h"
 
 #include "imgui.h"
@@ -150,7 +150,7 @@ void runGUI()
     while (running)
     {
         running = pollEvent(running); //Poll and return the result whether to continue
-
+        //i know its hacky
         // --- Safe Font/Style Rebuilding ---
         // We do this before NewFrame so the atlas isn't in use by the GPU
         if (state.pendingFontRebuild) rebuildFontAndStyle();

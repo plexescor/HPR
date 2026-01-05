@@ -59,8 +59,7 @@ bool readWindowNameAndDurationFromDisk(std::map<std::string, double>* timeLog, i
         }
        
         int finalSwitchValue = *std::ranges::max_element(allSwitchValues); //Find the max value of vec for correct switch count
-        *switches = finalSwitchValue - 1; //Assign it to dereferenced switches, DO -1 BECAUSE OPENING HPR COUNTS AS SWITCHES, I DONT WANT THAT
-
+        *switches = finalSwitchValue; //Assign it to dereferenced switches
         freeAppUsageData(apps); //IMPORTANT TO PREVENT LEAKS
         closeHandler();
         return true;
@@ -68,4 +67,44 @@ bool readWindowNameAndDurationFromDisk(std::map<std::string, double>* timeLog, i
     closeHandler();
     return false;
     
+}
+
+int writeWindowSwitchToDisk(const char* fromWindow, const char* toWindow)
+{
+    if(!initHandler("test.db")) return 1;
+    writeSwitch(fromWindow, toWindow);
+    closeHandler();
+    return 0;
+}
+
+bool readWindowSwitchFromDisk(std::vector<std::pair<std::string, std::string>>* switchData)
+{
+    if(!switchData) return false;
+    
+    if(!initHandler("test.db"))
+    {
+        closeHandler();
+        return false;
+    }
+
+    int switchCount = 0;
+    SwitchData* switches = readAllSwitches(&switchCount);
+    
+    if (switches) 
+    {
+        for (int i = 0; i < switchCount; i++) 
+        {
+            switchData->emplace_back
+            (
+            switches[i].fromApp,
+            switches[i].toApp
+            );
+        }
+        freeSwitchData(switches);
+        closeHandler();
+        return true;
+    }
+
+    closeHandler();
+    return false;
 }

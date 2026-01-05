@@ -8,6 +8,12 @@
 
 #endif
 
+#ifdef __linux__
+#include <X11/Xlib.h>
+#endif
+
+#include <fstream>
+#include <sstream>
 #include <string>
 #include <algorithm>
 #include <cctype>
@@ -90,6 +96,84 @@ std::string getActiveProcessName()
 
     result = updateWindowName(result);
     return result;
+}
+
+#endif
+
+#ifdef __linux__
+
+std::string getActiveProcessName()
+{
+    // 1. Connect to X11 display
+    Display* display = XOpenDisplay(nullptr);
+    if (!display)
+        return "";
+
+    // 2. Get foreground window
+    Window root = DefaultRootWindow(display);
+    Atom activeWindowAtom = XInternAtom(display, "_NET_ACTIVE_WINDOW", False);
+    
+    Atom actualType;
+    int actualFormat;
+    unsigned long nitems, bytesAfter;
+    unsigned char* prop = nullptr;
+    
+    if (XGetWindowProperty(display, root, activeWindowAtom, 0, 1, False,
+                          XA_WINDOW, &actualType, &actualFormat, &nitems,
+                          &bytesAfter, &prop) != Success || !prop || nitems == 0)
+    {
+        if (prop) XFree(prop);
+        XCloseDisplay(display);
+        return "";
+    }
+
+    Window window = *(Window*)prop;
+    XFree(prop);
+
+    // 3. Get process ID from window
+    Atom wmPidAtom = XInternAtom(display, "_NET_WM_PID", False);
+    prop = nullptr;
+    
+    if (XGetWindowProperty(display, window, wmPidAtom, 0, 1, False,
+                          XA_CARDINAL, &actualType, &actualFormat, &nitems,
+                          &bytesAfter, &prop) != Success || !prop || nitems == 0)
+    {
+        if (prop) XFree(prop);
+        XCloseDisplay(display);
+        return "";
+    }
+
+    pid_t pid = *(pid_t*)prop;
+    XFree(prop);
+    XCloseDisplay(display);
+
+    if (pid <= 0)
+        return "";
+
+    // 4. Get process name from /proc/[pid]/comm
+    std::string commPath = "/proc/" + std::to_string(pid) + "/comm";
+    std::ifstream commFile(commPath);
+    
+    if (!commFile.is_open())
+        return "";
+
+    std::string processName;
+    if (!std::getline(commFile, processName) || processName.empty())
+        return "";
+
+    commFile.close();
+
+    // 5. Remove trailing newline if present
+    if (!processName.empty() && processName.back() == '\n')
+        processName.pop_back();
+
+    // 6. Reject junk names (must contain at least one alphabet)
+    if (!ContainsAlphabet(processName))
+        return "";
+
+    // Before returning result, do some important checks and modifications
+    processName = updateWindowName(processName);
+    return processName;
 }
 
 #endif

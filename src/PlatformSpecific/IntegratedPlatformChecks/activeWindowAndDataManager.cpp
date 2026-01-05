@@ -1,5 +1,4 @@
 //I suppose this file WAS so easy to understand that you DIDNT need comments
-#include <string>
 #include <chrono>
 #include <map>
 #include <iostream>
@@ -10,18 +9,22 @@
 
 namespace activeWindowAndDataManagement
 {
-    bool coldStart = true;
+    
     
     struct windowInfoAndData{
         std::string currentWindow;
         std::string previousWindow;
         
-        int switches = -1; //PLS START AT -1, else, it increments to 1 when app is launched
+        int switches = 0; //PLS START AT -1, else, it increments to 1 when app is launched
+
+        bool coldStart = true;
 
         // Map to store: ["Chrome.exe", 120 seconds] //This is for visualisation
         std::map<std::string, double> timeLog;
 
     } wInfoAndD;
+
+    std::vector<std::pair<std::string, std::string>> windowSwitchNameData;
 
     int cooldown = 0;
     auto lastTimestamp = std::chrono::steady_clock::now(); //Get the tick's time
@@ -30,18 +33,25 @@ namespace activeWindowAndDataManagement
     int updateCurrentWindowInfoAndData()
     {   
         //IF APP IS STARTED FOR FIRST TIME, READ EXISTING VALUE FROM DISK
-        if (coldStart)
+        if (wInfoAndD.coldStart)
         {
-            if(!readWindowNameAndDurationFromDisk(&wInfoAndD.timeLog, &wInfoAndD.switches)) 
+            //Important checks
+            if(isValidWindow(wInfoAndD.previousWindow = getActiveProcessName()))
             {
-                std::cout << "Couldnt read the db, possibly because you are launching the app for the very very first time";
+                wInfoAndD.previousWindow = updateWindowName(wInfoAndD.previousWindow);
+                if(!readWindowNameAndDurationFromDisk(&wInfoAndD.timeLog, &wInfoAndD.switches)) 
+                {
+                    std::cout << "Couldnt read the db, possibly because you are launching the app for the very very first time";
+                }
+                wInfoAndD.coldStart = false;
+                return 0;
             }
-            coldStart = false;
+            return 1;
         }
         cooldown++; //Implementing a cooldown
         // std::cout << cooldown <<'\n';
 
-        if (cooldown < 100) return 2; //Waiting
+        if (cooldown < 144) return 2; //Waiting
         
         cooldown = 0;
 
@@ -68,8 +78,11 @@ namespace activeWindowAndDataManagement
             );
 
 
-            if (wInfoAndD.currentWindow != wInfoAndD.previousWindow)
+            if (!wInfoAndD.previousWindow.empty() && wInfoAndD.currentWindow != wInfoAndD.previousWindow)
             {
+                //Write the switch to disk
+                writeWindowSwitchToDisk(wInfoAndD.previousWindow.c_str(), wInfoAndD.currentWindow.c_str());
+                //Do some shit
                 wInfoAndD.previousWindow = wInfoAndD.currentWindow;
                 wInfoAndD.switches++;
                 return 0; //Successfully reassigned shit, stops the execution to prevent accidental reassignment in the next line
@@ -99,6 +112,14 @@ namespace activeWindowAndDataManagement
     {
         updateCurrentWindowInfoAndData();
         return &(wInfoAndD.timeLog);
+    }
+
+    std::vector<std::pair<std::string, std::string>>* getAllSwitchedWindowName()
+    {
+        updateCurrentWindowInfoAndData();
+        windowSwitchNameData.clear();   // IMPORTANT
+        readWindowSwitchFromDisk(&windowSwitchNameData);
+        return &windowSwitchNameData;
     }
 }
 

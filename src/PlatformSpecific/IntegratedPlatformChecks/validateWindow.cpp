@@ -19,6 +19,13 @@ bool isValidWindow(std::string windowName)
     }
     #endif
 
+    #ifdef __linux__
+
+    if (windowName != "") return true;
+    return false;
+
+    #endif
+
     return false;
 }
 
@@ -30,8 +37,16 @@ std::string updateWindowName(std::string windowName)
     if (windowName.contains("chrome")) return "Chrome";
     else if (windowName.contains("msedge")) return "Edge";
     else if (windowName.contains("devenv")) return "Visual Studio";
+    else if (windowName.contains("obs64")) return "OBS Studio";
 
     //If no modificatino occur, return OG windowName;
+    return windowName;
+
+    #endif
+
+    #ifdef __linux__
+
+    //return for now
     return windowName;
 
     #endif

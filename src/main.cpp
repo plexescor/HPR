@@ -1,6 +1,23 @@
 #include "mainGUI.hpp"
 #include <iostream>
 
+#ifdef _WIN32
+#include <windows.h>
+#endif
+
+#ifdef _WIN32
+int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
+{
+    (void)hInstance; (void)hPrevInstance; (void)lpCmdLine; (void)nShowCmd;
+    initGUI();
+    runGUI();
+    quitGUI();
+
+    // testDb();
+
+    return 0;
+}
+#else
 int main()
 {
     initGUI();
@@ -11,6 +28,7 @@ int main()
     
     return 0;
 }
+#endif
 //-------------------------------------------------------------------------------------------------------
 //
 //                                              TEST AREA

@@ -47,14 +47,16 @@ bool deleteApp(const char* appName) {
     return removeAppUsage(appName);
 }
 
+//Misleading name below !!!!!
+SwitchData* readAllSwitches(int* count) {
+    return getAllSwitches(count);
+}
 //---------------------------------NOT TO BE IMPLEMENTED NOW------------------------------------------------
 // int readTotalSwitches() {
 //     return getTotalSwitches();
 // }
 
-// SwitchData* readAllSwitches(int* count) {
-//     return getAllSwitches(count);
-// }
+
 
 // SwitchData* readSwitchesFrom(const char* appName, int* count) {
 //     return getSwitchesFromApp(appName, count);
