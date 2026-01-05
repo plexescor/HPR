@@ -2,7 +2,7 @@
 #include <string>
 #include <chrono>
 #include <map>
-#include <ranges> //For max value in a vector
+#include <algorithm> //For max_element, //Maybe not
 
 #include "diskWriteHandlerMain.hpp"
 
@@ -58,7 +58,7 @@ bool readWindowNameAndDurationFromDisk(std::map<std::string, double>* timeLog, i
             return false; //Cannot extract switch count
         }
        
-        int finalSwitchValue = *std::ranges::max_element(allSwitchValues); //Find the max value of vec for correct switch count
+        int finalSwitchValue = *std::max_element(allSwitchValues.begin(), allSwitchValues.end()); //Find the max value of vec for correct switch count
         *switches = finalSwitchValue; //Assign it to dereferenced switches
         freeAppUsageData(apps); //IMPORTANT TO PREVENT LEAKS
         closeHandler();
