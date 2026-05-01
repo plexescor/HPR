@@ -1,0 +1,12 @@
+import { AboutSlint, VerticalBox } from "std-widgets.slint";
+
+export component MainWindow inherits Window {
+    in property <string> name;
+
+    title: "HPR";
+    Text 
+    {
+        text: name;
+    }
+    
+}
