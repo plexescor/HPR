@@ -7,29 +7,33 @@
 
 std::string runSystemCommand(std::string &command)
 {
-    FILE* pipe = popen(command.c_str(), "r"); //Get only read access
+    #ifdef __linux__
 
-    if (!pipe)
-    {
-        std::cerr << "Opening the pipe failed!\n";
-        return "";
-    }
+        FILE* pipe = popen(command.c_str(), "r"); //Get only read access
 
-    std::string output = "";
-    char buffer[256]; //255 normal + 1 nullterm
+        if (!pipe)
+        {
+            std::cerr << "Opening the pipe failed!\n";
+            return "";
+        }
 
-    while (fgets(buffer, sizeof(buffer), pipe) != nullptr)
-    {
-        output += buffer;
-    }
+        std::string output = "";
+        char buffer[256]; //255 normal + 1 nullterm
 
-    int exitCode = pclose(pipe);
+        while (fgets(buffer, sizeof(buffer), pipe) != nullptr)
+        {
+            output += buffer;
+        }
 
-    if (exitCode != 0) 
-    {
-        std::cerr << "Running the command failed! Exit Code: " << exitCode;
-    }
+        int exitCode = pclose(pipe);
 
-    // std::cout << "Output; " << output << std::endl;
-    return output;
+        if (exitCode != 0) 
+        {
+            std::cerr << "Running the command failed! Exit Code: " << exitCode;
+        }
+
+        // std::cout << "Output; " << output << std::endl;
+        return output;
+
+    #endif
 }
