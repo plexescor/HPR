@@ -10,7 +10,11 @@
 int main()
 {
     //Force software rendeing
-    setenv("SLINT_BACKEND", "winit-software", 1);
+    #ifdef _WIN32
+        _putenv_s("SLINT_BACKEND", "winit-software");
+    #else
+        setenv("SLINT_BACKEND", "winit-software", 1);
+    #endif
 
     #ifdef __linux__
     slint::set_xdg_app_id("HPR");
