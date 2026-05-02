@@ -7,26 +7,44 @@
 #include "app-window.h"
 #include <slint.h>
 
-int main()
-{
-    //Force software rendeing
-    #ifdef _WIN32
-        _putenv_s("SLINT_BACKEND", "winit-software");
-    #else
-        setenv("SLINT_BACKEND", "winit-software", 1);
-    #endif
+#ifdef _WIN32
+    #include <windows.h>
+#endif
 
-    #ifdef __linux__
-    slint::set_xdg_app_id("HPR");
-    #endif
-    
-    auto ui = MainWindow::create();
-    slint::Timer timer(std::chrono::milliseconds(16), [&ui]() 
+#ifdef _WIN32
+    int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
     {
-        std::string current = getCurrentWindow();
-        ui->set_name(slint::SharedString(current));
-    });
+        (void)hInstance; (void)hPrevInstance; (void)lpCmdLine; (void)nShowCmd;
 
-    ui->run();
-    return 0;
-}
+        //Force software rendeing
+        _putenv_s("SLINT_BACKEND", "winit-software");
+
+        auto ui = MainWindow::create();
+        slint::Timer timer(std::chrono::milliseconds(16), [&ui]() 
+        {
+            std::string current = getCurrentWindow();
+            ui->set_name(slint::SharedString(current));
+        });
+
+        ui->run();
+        return 0;
+    }
+#else
+    int main()
+    {
+        //Force software rendeing
+        setenv("SLINT_BACKEND", "winit-software", 1);
+
+        slint::set_xdg_app_id("HPR");
+        
+        auto ui = MainWindow::create();
+        slint::Timer timer(std::chrono::milliseconds(16), [&ui]() 
+        {
+            std::string current = getCurrentWindow();
+            ui->set_name(slint::SharedString(current));
+        });
+
+        ui->run();
+        return 0;
+    }
+#endif

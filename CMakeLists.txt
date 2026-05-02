@@ -21,15 +21,30 @@ if (NOT Slint_FOUND)
   FetchContent_MakeAvailable(Slint)
 endif (NOT Slint_FOUND)
 
-add_executable(HPR
-    src/main.cpp
-    src/window/getCurrentWindow.cpp
-    src/window/validateAndUpdateWindow.cpp
-    src/window/windowUtilities.cpp
+#No console in windows
+if(WIN32)
+  add_executable(HPR WIN32
+      src/main.cpp
+      src/window/getCurrentWindow.cpp
+      src/window/validateAndUpdateWindow.cpp
+      src/window/windowUtilities.cpp
 
-    #sqLite stuff
-    external/sqLite/sqlite3.c
-)
+      #sqLite stuff
+      external/sqLite/sqlite3.c
+  )
+
+elseif(LINUX)
+  add_executable(HPR WIN32
+        src/main.cpp
+        src/window/getCurrentWindow.cpp
+        src/window/validateAndUpdateWindow.cpp
+        src/window/windowUtilities.cpp
+
+        #sqLite stuff
+        external/sqLite/sqlite3.c
+    )
+
+endif()
 
 target_link_libraries(HPR PRIVATE Slint::Slint)
 
