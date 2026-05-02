@@ -35,7 +35,7 @@ if(WIN32)
   )
 
 elseif(LINUX)
-  add_executable(HPR WIN32
+  add_executable(HPR
         src/main.cpp
         src/ui-cpp/HPR.cpp
         src/window/getCurrentWindow.cpp
