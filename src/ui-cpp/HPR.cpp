@@ -8,6 +8,9 @@
 
 #include <thread>
 #include <atomic>
+#include <mutex>
+
+AppState state;
 
 HPR::HPR()
 {
@@ -15,6 +18,8 @@ HPR::HPR()
         slint::set_xdg_app_id("HPR"); //So it has a class in hyprland
     #endif
     ui.emplace(MainWindow::create());
+
+    getCurrentWindow_Init();
 }
 
 HPR::~HPR()
@@ -24,12 +29,17 @@ HPR::~HPR()
 }
 
 void HPR::trackingLoop() {
+    std::string window;
     while (running) {
-        const std::string &window = getCurrentWindow();//No need to copy
-
+        {
+            std::lock_guard<std::mutex> lock(stateMutex);
+            window = state.currentWindow;
+        }
+        
         // get weak so shit doent sink (crahs)
         slint::ComponentWeakHandle<MainWindow> weak(*ui);
         slint::invoke_from_event_loop([weak, window]() {
+            // std::cout << "UI thread got: " << window << std::endl;
             if (auto handle = weak.lock()) {
                 (*handle)->set_windowName(slint::SharedString(window));
             }

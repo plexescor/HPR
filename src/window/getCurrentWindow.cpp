@@ -4,19 +4,27 @@
 #include "getCurrentWindow.hpp"
 #include "validateAndUpdateWindow.hpp"
 #include "windowUtilities.hpp"
+#include "appState.hpp"
 
 #ifdef _WIN32 //Include windows headers
 #include <windows.h>
 #include <psapi.h>
 #endif
 
+
+#include <mutex>
+#include <thread>
+#include <chrono>
+
+std::mutex stateMutex;
+
 std::string currentPlatform = "";
 bool coldBoot = true;
 int frame = 0;
 std::string window = "";
 
-//A singular function to return currently active window. Does platform specific calling and validating automatically
-std::string getCurrentWindow()
+//Responsible for current platform and calling the getCurrentWindow_Loop() on another thread;
+void getCurrentWindow_Init()
 {
     if (coldBoot)
     {
@@ -32,9 +40,31 @@ std::string getCurrentWindow()
             currentPlatform = "Windows";
         #endif
     }
+    std::cout << "Init!\n";
+    std::thread(getCurrentWindow_Loop).detach();
+}
 
-    //Run the *expensive* command every 30fps //500ms on 60hz
-    // if (frame != 30)
+//Responsible for calling getCurrentWindow() and setting the result to AppState (state) struct so shit can access that
+void getCurrentWindow_Loop()
+{
+    while (true)
+    {
+        window = getCurrentWindow();
+
+        {
+            std::lock_guard<std::mutex> lock(stateMutex);
+            state.currentWindow = window;
+        }
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    }
+}
+
+//A singular function to return currently active window. Does platform specific calling and validating automatically
+std::string getCurrentWindow()
+{
+    //Run the *expensive* command every 10fps //100ms on 60hz
+    // if (frame != 10)
     // {
     //     frame++;
     //     return window;
@@ -80,4 +110,5 @@ std::string getCurrentWindow_Windows()
     return std::string(title, length);
     
     #endif
+    return ""; //to shut up compiler on linux
 }

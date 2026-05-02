@@ -7,6 +7,7 @@
 //A cross platform beefy function to modify the currently active window name for readibility and fucking trash out
 std::string validateAndUpdateWindow_Cross(std::string &windowName)
 {
+    stripTrailing(windowName);
     std::string unModifiedWindowName = windowName;
 
     //Convert windowName to lowercase
@@ -41,4 +42,10 @@ std::string validateAndUpdateWindow_Cross(std::string &windowName)
     else if (windowName.contains("obs")) return "OBS Studio";
 
     return unModifiedWindowName; //Return unmodified name with proper Case
+}
+
+void stripTrailing(std::string &str)
+{
+    while (!str.empty() && (str.back() == '\n' || str.back() == '\r'))
+        str.pop_back();
 }

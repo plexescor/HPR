@@ -21,7 +21,6 @@ private:
     void trackingLoop(); // runs on separate thread so that it polls shit continously (correct spelling?)
 
     std::optional<slint::ComponentHandle<MainWindow>> ui;
-    AppState state; //see appState.hpp
     std::atomic<bool> running{true};
     std::thread tracker;
 };

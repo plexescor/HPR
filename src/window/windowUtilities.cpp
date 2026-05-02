@@ -1,40 +1,35 @@
 #include <cstdio> //For piping
-#include <string>
 #include <iostream>
+#include <string>
 
 #include "windowUtilities.hpp"
 
+std::string runSystemCommand(std::string &command) {
+#ifdef __linux__
 
-std::string runSystemCommand(std::string &command)
-{
-    #ifdef __linux__
+    FILE *pipe = popen(command.c_str(), "r"); // Get only read access
 
-        FILE* pipe = popen(command.c_str(), "r"); //Get only read access
+    if (!pipe) {
+      std::cerr << "Opening the pipe failed!\n";
+      return "";
+    }
 
-        if (!pipe)
-        {
-            std::cerr << "Opening the pipe failed!\n";
-            return "";
-        }
+    std::string output = "";
+    char buffer[256]; // 255 normal + 1 nullterm
 
-        std::string output = "";
-        char buffer[256]; //255 normal + 1 nullterm
+    while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
+      output += buffer;
+    }
 
-        while (fgets(buffer, sizeof(buffer), pipe) != nullptr)
-        {
-            output += buffer;
-        }
+    int exitCode = pclose(pipe);
 
-        int exitCode = pclose(pipe);
+    if (exitCode != 0) {
+      std::cerr << "Running the command failed! Exit Code: " << exitCode;
+    }
 
-        if (exitCode != 0) 
-        {
-            std::cerr << "Running the command failed! Exit Code: " << exitCode;
-        }
+    // std::cout << "Output; " << output << std::endl;
+    return output;
 
-        // std::cout << "Output; " << output << std::endl;
-        return output;
-
-    #endif
+#endif
     return "";
 }
