@@ -1,18 +1,31 @@
 #include <string>
+#include <algorithm>
+#include <cctype>
 
 #include "validateAndUpdateWindow.hpp"
 
 //A cross platform beefy function to modify the currently active window name for readibility and fucking trash out
 std::string validateAndUpdateWindow_Cross(std::string &windowName)
 {
+    std::string unModifiedWindowName = windowName;
+
+    //Convert windowName to lowercase
+    std::transform(windowName.begin(), 
+        windowName.end(), 
+        windowName.begin(),
+        [](unsigned char c)
+        { 
+            return std::tolower(c); 
+        });
+
     //Windows OS checks for windows's specific garbage stuff, dont need guards
     if (windowName == ""
-        || windowName.contains("Explorer") 
-        || windowName.contains("SearchHost")
-        || windowName.contains("OpenWith")
-        || windowName.contains("StartMenuExperienceHost")
-        || windowName.contains("ApplicationFrameHost")
-        || windowName.contains("ShellExperienceHost"))
+        || windowName.contains("explorer") 
+        || windowName.contains("searchhost")
+        || windowName.contains("openwith")
+        || windowName.contains("startmenuexperiencehost")
+        || windowName.contains("applicationframeHost")
+        || windowName.contains("shellexperiencehost"))
     {
         return "Unknown";
     }
@@ -27,5 +40,5 @@ std::string validateAndUpdateWindow_Cross(std::string &windowName)
     else if (windowName.contains("btop")) return "BTOP++";
     else if (windowName.contains("obs")) return "OBS Studio";
 
-    return windowName; //when not sure 
+    return unModifiedWindowName; //Return unmodified name with proper Case
 }
