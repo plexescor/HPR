@@ -36,4 +36,5 @@ std::string runSystemCommand(std::string &command)
         return output;
 
     #endif
+    return "";
 }
