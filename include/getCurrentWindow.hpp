@@ -5,3 +5,4 @@
 std::string getCurrentWindow();
 
 std::string getCurrentWindow_Hyprland();
+std::string getCurrentWindow_Windows();
