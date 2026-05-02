@@ -34,13 +34,13 @@ std::string getCurrentWindow()
     }
 
     //Run the *expensive* command every 30fps //500ms on 60hz
-    if (frame != 30)
-    {
-        frame++;
-        return window;
-    }
+    // if (frame != 30)
+    // {
+    //     frame++;
+    //     return window;
+    // }
     
-    frame = 0;
+    // frame = 0;
 
     if (currentPlatform.contains("Hyprland"))
     {

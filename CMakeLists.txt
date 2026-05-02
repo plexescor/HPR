@@ -25,6 +25,7 @@ endif (NOT Slint_FOUND)
 if(WIN32)
   add_executable(HPR WIN32
       src/main.cpp
+      src/ui-cpp/HPR.cpp
       src/window/getCurrentWindow.cpp
       src/window/validateAndUpdateWindow.cpp
       src/window/windowUtilities.cpp
@@ -36,6 +37,7 @@ if(WIN32)
 elseif(LINUX)
   add_executable(HPR WIN32
         src/main.cpp
+        src/ui-cpp/HPR.cpp
         src/window/getCurrentWindow.cpp
         src/window/validateAndUpdateWindow.cpp
         src/window/windowUtilities.cpp
