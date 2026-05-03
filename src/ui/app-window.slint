@@ -1,12 +1,23 @@
-import { AboutSlint, VerticalBox } from "std-widgets.slint";
+import { AboutSlint, VerticalBox, ListView } from "std-widgets.slint";
+
+export struct TimeLog {
+    key: string,
+    value: int, 
+}
 
 export component MainWindow inherits Window {
     in property <string> windowName;
+    in property <[TimeLog]> timePerApp;
 
     title: "HPR";
     Text 
     {
         text: windowName;
+    }
+    ListView {
+        for entry in timePerApp : Text {
+            text: entry.key + ": " + entry.value;
+        }
     }
     
 }

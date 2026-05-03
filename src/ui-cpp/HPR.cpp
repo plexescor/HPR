@@ -9,8 +9,7 @@
 #include <thread>
 #include <atomic>
 #include <mutex>
-
-AppState state;
+#include <vector>
 
 HPR::HPR()
 {
@@ -19,7 +18,6 @@ HPR::HPR()
     #endif
     ui.emplace(MainWindow::create());
 
-    getCurrentWindow_Init();
 }
 
 HPR::~HPR()
@@ -29,19 +27,36 @@ HPR::~HPR()
 }
 
 void HPR::trackingLoop() {
+    //Stuff native to c++
     std::string window;
+    std::map<std::string, long>* timeLog = &(AppState::state.timeLog_PerApp);
+
+    //Stuff converted for slint
+    std::vector<TimeLog> vec;
+
     while (running) {
+
         {
-            std::lock_guard<std::mutex> lock(stateMutex);
-            window = state.currentWindow;
+            std::lock_guard<std::mutex> lock(AppState::stateMutex);
+            window = AppState::state.currentWindow;
+            vec.clear(); //Clear to avoid duplicates
+            vec.reserve((*timeLog).size());
+            for (const auto &[k, v] : *timeLog)
+            {
+                //So new maps are added at the end
+                vec.insert(vec.begin(),TimeLog{slint::SharedString(k), (int)v});
+            }
         }
         
         // get weak so shit doent sink (crahs)
         slint::ComponentWeakHandle<MainWindow> weak(*ui);
-        slint::invoke_from_event_loop([weak, window]() {
-            // std::cout << "UI thread got: " << window << std::endl;
+        slint::invoke_from_event_loop([weak, window, vec]() {
+            
             if (auto handle = weak.lock()) {
                 (*handle)->set_windowName(slint::SharedString(window));
+                
+                // 👇️ slint requires this make_shared bs
+                (*handle)->set_timePerApp(std::make_shared<slint::VectorModel<TimeLog>>(vec));
             }
         });
 

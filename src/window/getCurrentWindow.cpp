@@ -16,44 +16,50 @@
 #include <thread>
 #include <chrono>
 
-std::mutex stateMutex;
-
-std::string currentPlatform = "";
-bool coldBoot = true;
-int frame = 0;
-std::string window = "";
-
-//Responsible for current platform and calling the getCurrentWindow_Loop() on another thread;
-void getCurrentWindow_Init()
+CurrentWindowManager::CurrentWindowManager()
 {
-    if (coldBoot)
-    {
-        coldBoot = false;
+    #ifdef __linux__ 
+        //Get current desktop environment, linux only
+        std::string currentPlatformCommand = "echo $XDG_CURRENT_DESKTOP";
+        currentPlatform = runSystemCommand(currentPlatformCommand);
+    #endif
 
-        #ifdef __linux__ 
-            //Get current desktop environment, linux only
-            std::string currentPlatformCommand = "echo $XDG_CURRENT_DESKTOP";
-            currentPlatform = runSystemCommand(currentPlatformCommand);
-        #endif
+    #ifdef _WIN32
+        currentPlatform = "Windows";
+    #endif
+}
 
-        #ifdef _WIN32
-            currentPlatform = "Windows";
-        #endif
-    }
-    std::cout << "Init!\n";
-    std::thread(getCurrentWindow_Loop).detach();
+CurrentWindowManager::~CurrentWindowManager()
+{
+    running = false;
+
+    if(windowPollingThread.joinable()) windowPollingThread.join();
+}
+
+void CurrentWindowManager::run()
+{
+    std::cout << "Running Loop!\n";
+
+    windowPollingThread = std::thread(&CurrentWindowManager::getCurrentWindow_Loop, this);
 }
 
 //Responsible for calling getCurrentWindow() and setting the result to AppState (state) struct so shit can access that
-void getCurrentWindow_Loop()
+void CurrentWindowManager::getCurrentWindow_Loop()
 {
-    while (true)
+    auto lastTimestamp = std::chrono::steady_clock::now(); //Get the tick's time
+    while (running)
     {
         window = getCurrentWindow();
 
         {
-            std::lock_guard<std::mutex> lock(stateMutex);
-            state.currentWindow = window;
+            //Update current window in the AppState
+            std::lock_guard<std::mutex> lock(AppState::stateMutex);
+            AppState::state.currentWindow = window;
+
+            auto now = std::chrono::steady_clock::now(); //get time now
+            auto elapsed = now - lastTimestamp;
+            lastTimestamp = now;
+            AppState::state.timeLog_PerApp[window] += std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
         }
 
         std::this_thread::sleep_for(std::chrono::milliseconds(50));
@@ -61,7 +67,7 @@ void getCurrentWindow_Loop()
 }
 
 //A singular function to return currently active window. Does platform specific calling and validating automatically
-std::string getCurrentWindow()
+std::string CurrentWindowManager::getCurrentWindow()
 {
     //Run the *expensive* command every 10fps //100ms on 60hz
     // if (frame != 10)
@@ -87,7 +93,7 @@ std::string getCurrentWindow()
     return window;
 }
 
-std::string getCurrentWindow_Hyprland()
+std::string CurrentWindowManager::getCurrentWindow_Hyprland()
 {
     std::string command = "hyprctl activewindow -j | jq -r '.class'";
     
@@ -96,7 +102,7 @@ std::string getCurrentWindow_Hyprland()
     
 }
 
-std::string getCurrentWindow_Windows()
+std::string CurrentWindowManager::getCurrentWindow_Windows()
 {
     #ifdef _WIN32
     //Get active (foreground) window

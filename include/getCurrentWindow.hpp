@@ -1,9 +1,27 @@
 #pragma once
 #include <string>
+#include <thread>
+#include <atomic>
 
-void getCurrentWindow_Init();
-void getCurrentWindow_Loop();
-//A singular function to return currently active window. Does platform specific calling and validating automatically
-std::string getCurrentWindow();
-std::string getCurrentWindow_Hyprland();
-std::string getCurrentWindow_Windows();
+class CurrentWindowManager
+{
+    public:
+        CurrentWindowManager();
+        ~CurrentWindowManager();
+        void run();
+    
+    private:
+        void getCurrentWindow_Loop();
+
+        //A singular function to return currently active window. Does platform specific calling and validating automatically
+        std::string getCurrentWindow();
+        std::string getCurrentWindow_Hyprland();
+        std::string getCurrentWindow_Windows();
+
+    private:
+        std::string currentPlatform = "";
+        std::string window = "";
+
+        std::thread windowPollingThread;
+        std::atomic<bool> running{true};
+};
