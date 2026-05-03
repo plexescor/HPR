@@ -57,7 +57,7 @@ On GNOME with Wayland, HPR requires a shell extension called `window-calls-exten
 
 On Windows, HPR uses the standard Win32 API to query the active window. The binary is built without a console window so it runs cleanly in the background.
 
-X11 Linux sessions are not currently supported. KDE Plasma is not yet supported.
+KDE Plasma is not yet supported.
 
 ## Comparison With Other Trackers
 
