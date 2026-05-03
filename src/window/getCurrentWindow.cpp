@@ -18,15 +18,65 @@
 
 CurrentWindowManager::CurrentWindowManager()
 {
-#ifdef __linux__
-	// Get current desktop environment, linux only
-	std::string currentPlatformCommand = "echo $XDG_CURRENT_DESKTOP";
-	currentPlatform = runSystemCommand(currentPlatformCommand);
-#endif
+	#ifdef __linux__
+		// Get current desktop environment, linux only
+		std::string currentPlatformCommand = "echo $XDG_CURRENT_DESKTOP";
+		currentPlatform = runSystemCommand(currentPlatformCommand);
 
-#ifdef _WIN32
-	currentPlatform = "Windows";
-#endif
+		// Trim newline from platform string
+		if (!currentPlatform.empty() && currentPlatform.back() == '\n')
+			currentPlatform.pop_back();
+
+		std::cout << "[HPR] Detected platform: " << currentPlatform << std::endl;
+
+		if (currentPlatform.contains("GNOME"))
+		{
+			// Check if window-calls-extended is working
+			std::string checkCmd = "gdbus call --session --dest org.gnome.Shell --object-path /org/gnome/Shell/Extensions/WindowsExt --method org.gnome.Shell.Extensions.WindowsExt.FocusClass 2>&1";
+			std::string checkResult = runSystemCommand(checkCmd);
+
+			std::cout << "[HPR] Extension check result: " << checkResult << std::endl;
+
+			if (!checkResult.contains("('"))
+			{
+				std::cout << "[HPR] Extension not working, attempting install..." << std::endl;
+
+				// Extension not working — install it
+				std::string homeCommand = "echo $HOME";
+				std::string homeDir = runSystemCommand(homeCommand);
+				if (!homeDir.empty() && homeDir.back() == '\n')
+					homeDir.pop_back();
+
+				std::string extDir = homeDir + "/.local/share/gnome-shell/extensions/window-calls-extended@hseliger.eu";
+
+				std::cout << "[HPR] Extension dir: " << extDir << std::endl;
+
+				// Clone only if folder doesn't exist
+				std::string cloneCmd = "[ -d \"" + extDir + "\" ] || git clone https://github.com/hseliger/window-calls-extended \"" + extDir + "\" 2>&1";
+				std::string cloneResult = runSystemCommand(cloneCmd);
+				std::cout << "[HPR] Clone result: " << cloneResult << std::endl;
+
+				// Enable the extension
+				std::string enableCmd = "gnome-extensions enable window-calls-extended@hseliger.eu 2>&1";
+				std::string enableResult = runSystemCommand(enableCmd);
+				std::cout << "[HPR] Enable result: " << enableResult << std::endl;
+
+				// Can't restart gnome-shell on Wayland without logging out
+				// Prompt to logout
+				// Learn the hard way
+				currentPlatform = "GNOME_NEEDS_RESTART";
+				std::cout << "[HPR] Platform set to GNOME_NEEDS_RESTART" << std::endl;
+			}
+			else
+			{
+				std::cout << "[HPR] Extension working, proceeding normally" << std::endl;
+			}
+		}
+	#endif
+
+	#ifdef _WIN32
+		currentPlatform = "Windows";
+	#endif	
 }
 
 CurrentWindowManager::~CurrentWindowManager()
@@ -55,6 +105,14 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 	while (running)
 	{
 		window = getCurrentWindow();
+
+		if (window.contains("RESTART YOUR PC"))
+		{
+			std::lock_guard<std::mutex> lock(AppState::stateMutex);
+			AppState::state.currentWindow = window;
+			continue;
+		}
+
 		{
 			// Update current window in the AppState
 			std::lock_guard<std::mutex> lock(AppState::stateMutex);
@@ -105,6 +163,19 @@ std::string CurrentWindowManager::getCurrentWindow()
 		window = getCurrentWindow_Windows();
 	}
 
+	else if (currentPlatform.contains("GNOME_NEEDS_RESTART"))
+	{
+		//This means we need to prompt the user to restart
+		//Return immediately
+
+		return "RESTART YOUR PC";
+	}
+
+	else if (currentPlatform.contains("GNOME")) //Motherfucking GNOME
+	{
+		window = getCurrentWindow_Gnome();
+	}
+
 	// Need to explicitly set this because shit happens if cached value is
 	// returned
 	window = validateAndUpdateWindow_Cross(window);
@@ -136,4 +207,19 @@ std::string CurrentWindowManager::getCurrentWindow_Windows()
 
 #endif
 	return ""; // to shut up compiler on linux
+}
+
+std::string CurrentWindowManager::getCurrentWindow_Gnome()
+{
+	std::string command = "gdbus call --session --dest org.gnome.Shell --object-path /org/gnome/Shell/Extensions/WindowsExt --method org.gnome.Shell.Extensions.WindowsExt.FocusClass";
+	std::string result = runSystemCommand(command);
+
+	// Parse the fucking dirty output
+	size_t start = result.find('\'');
+	size_t end = result.rfind('\'');
+	if (start != std::string::npos && end != std::string::npos && start != end)
+		return result.substr(start + 1, end - start - 1);
+
+	return "";
+
 }

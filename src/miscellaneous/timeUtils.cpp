@@ -15,12 +15,28 @@ std::string convertToDate_DDMMYY(uint64_t ms)
     // convert to local time
     std::tm tm = *std::localtime(&tt);
 
-    // format DD/MM/YY
+    // format DD-MM-YY
     std::ostringstream oss;
-    oss << std::put_time(&tm, "%d/%m/%y");
+    oss << std::put_time(&tm, "%d-%m-%y");
 
     return oss.str();
 }
+
+std::string convertToDate_MMYY(uint64_t ms)
+{
+     // convert ms to sec
+    std::time_t tt = static_cast<std::time_t>(ms / 1000);
+
+    // convert to local time
+    std::tm tm = *std::localtime(&tt);
+
+    // format MM/YY
+    std::ostringstream oss;
+    oss << std::put_time(&tm, "%m-%y");
+
+    return oss.str();
+}
+
 std::string convertToTime_HHMMSS_12(uint64_t ms)
 {
     // convert ms to seconds

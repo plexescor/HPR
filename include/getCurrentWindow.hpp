@@ -18,6 +18,7 @@ class CurrentWindowManager
         std::string getCurrentWindow();
         std::string getCurrentWindow_Hyprland();
         std::string getCurrentWindow_Windows();
+        std::string getCurrentWindow_Gnome();
 
     private:
         std::string currentPlatform = "";

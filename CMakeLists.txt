@@ -6,6 +6,8 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+set(CMAKE_BUILD_PARALLEL_LEVEL 8)
+
 find_package(Slint QUIET)
 if (NOT Slint_FOUND)
   message("Slint could not be located in the CMake module search path. Downloading it from Git and building it locally")
@@ -25,6 +27,7 @@ endif (NOT Slint_FOUND)
 if(WIN32)
   add_executable(HPR WIN32
 		src/main.cpp
+    src/database/databaseManager.cpp
 		src/appState/appState.cpp
 		src/miscellaneous/timeUtils.cpp
 		src/ui-cpp/HPR.cpp
@@ -39,6 +42,7 @@ if(WIN32)
 elseif(LINUX)
   add_executable(HPR
         src/main.cpp
+        src/database/databaseManager.cpp
         src/appState/appState.cpp
         src/miscellaneous/timeUtils.cpp
         src/ui-cpp/HPR.cpp
