@@ -1,63 +1,39 @@
-# HPR — Human Pattern Recorder
+# HPR - Human Pattern Recorder
 
-A lightweight, local-first activity tracker for Windows and Linux. HPR runs silently in the background, detects which application you are currently using, and builds a precise log of how your time is actually spent. No accounts. No cloud. No telemetry. Everything stays on your machine, organized into per-day SQLite databases that you fully own and control.
+A lightweight, offline activity tracker for Windows and Linux. HPR runs silently in the background and tells you exactly where your time goes, down to the millisecond, without ever talking to a server, requiring an account, or eating your RAM.
+
+> Currently in active development. Core tracking and persistence are fully functional. UI is bare-bones but the data layer is solid.
+
+---
+---
+
+# FOR USERS
 
 ---
 
-## What HPR Does
+## What Is HPR
 
-HPR monitors the active window on your system and tracks:
+HPR is an application tracker. It watches which window is active on your screen and builds a log of how much time you spend in each application, every day. When you switch from Chrome to VSCode, it records that. When you come back, it picks up where it left off. When you close and reopen HPR the next day, your history from today is already loaded.
 
-- Time spent in each application, accumulated with millisecond precision
-- Every application switch, recorded with an exact timestamp
-- Cumulative per-app usage for the current session and across past sessions
+Everything it records lives in a folder on your machine called `HPR_DB` inside your home directory. Nothing goes anywhere else. There is no server, no account, no API key, no analytics endpoint. The only internet activity that ever happens is a one-time Git clone on GNOME systems to set up a required shell extension, and that is a shell command the OS runs, not HPR itself.
 
-On launch, HPR restores your historical data from today's database file and continues accumulating from where it left off. When you close HPR, all data is safely flushed to disk. Nothing is lost between sessions.
+## What HPR Is Not
 
-The data is stored as standard SQLite files. You can open them with any SQLite browser, query them with any SQL tool, or delete specific days or months by simply removing the corresponding folder.
+HPR does not take screenshots. It does not log keystrokes. It does not record mouse movement. It does not read the contents of your windows. It reads exactly one thing: the name of the currently active application. That is the full scope of what it captures.
 
----
+HPR is also not a subscription service, not a SaaS dashboard, and not an Electron app. It is a compiled C++ binary. It starts in milliseconds and uses under 30MB of RAM while running.
 
-## Current State (v0.1)
+## What It Actually Shows You
 
-HPR is functional and actively developed. The following is working today:
+At the moment HPR shows you three things in real time:
 
-- Real-time active window detection on Hyprland (Wayland), GNOME (Wayland), and Windows
-- Millisecond-accurate time tracking per application using steady clock intervals
-- Application switch history with precise system-clock timestamps for each transition
-- Per-day SQLite persistence organized as `~/HPR_DB/MM-YY/DD-MM-YY.db`
-- Session restoration on launch — today's historical data is loaded back into memory before tracking begins
-- Human-readable duration formatting in the UI (displayed as `2h 14m 30s` rather than raw milliseconds)
-- Live UI updates showing current window, time per app, and switch history
-- Automatic GNOME Shell extension setup for window detection on GNOME Wayland
+The name of the application you are currently in. The total time you have spent in each application today, shown in a human readable format like `2h 14m 30s`. The history of every application switch you made, showing which app you switched from, which app you switched to, and at what time the switch happened.
 
-What is not yet complete:
+This is the foundation. Analytics, insights, focus mode, and more are planned and described in the roadmap section below.
 
-- Visual UI design — the current interface is functional but unstyled
-- Insights and analytics — planned for upcoming versions
-- Data export (CSV, JSON)
-- Historical session browsing
-- macOS support
+## Where Your Data Goes
 
----
-
-## How It Works
-
-HPR runs three background threads alongside the main UI thread.
-
-The window polling thread queries the active window every 50 milliseconds using platform-native methods. On Hyprland it calls `hyprctl activewindow` and parses the JSON output. On GNOME it communicates with the `window-calls-extended` shell extension over D-Bus. On Windows it uses the Win32 `GetForegroundWindow` API. The raw window name is normalized through a validation pass that strips shell output artifacts, filters system processes, and maps known application names to human-readable labels.
-
-The tracking and UI bridge thread reads from the shared application state every 100 milliseconds, converts the data to types compatible with the Slint UI framework, and dispatches updates to the main thread through a thread-safe event loop callback. This thread never touches the UI directly — it posts all updates via `slint::invoke_from_event_loop` using a weak handle to prevent crashes if the window is closing.
-
-The database writer thread copies the current state from shared memory every 10 seconds and flushes it to SQLite. App usage records use `INSERT OR REPLACE` semantics so each application always has exactly one up-to-date row. Switch history records use `INSERT OR IGNORE` with a unique timestamp constraint so each switch event is written exactly once regardless of how many flush cycles occur.
-
-All three threads share a single `AppState` struct protected by a single `std::mutex`. Every read and write goes through a `std::lock_guard` on that mutex. Thread lifecycle is managed via `std::atomic<bool>` stop flags and `std::thread::join` in each class destructor.
-
----
-
-## Data Organization
-
-HPR organizes data as follows:
+HPR stores your data in SQLite database files organized like this:
 
 ```
 ~/HPR_DB/
@@ -69,145 +45,195 @@ HPR organizes data as follows:
         30-04-26.db
 ```
 
-One database file per day. One folder per month. To delete all data from April, remove the `04-26` folder. To inspect any day's data, open the corresponding `.db` file with any SQLite tool. Each database contains two tables:
-
-`app_usage` — one row per application with columns `name` (unique) and `duration` (milliseconds).
-
-`switch_history` — one row per switch event with columns `fromWindow`, `toWindow`, and `timeStamp` (Unix milliseconds, unique).
-
-Typical database size is 30 to 100 kilobytes per day. A full year of data for a heavy user is well under 50 megabytes.
-
----
+One file per day. One folder per month. To delete everything from last month, delete the folder. To see exactly what was recorded on any specific day, open that day's `.db` file with any SQLite viewer. The files are completely standard SQLite, compatible with every SQLite tool ever made. A typical day of usage produces a file somewhere between 30 and 100 kilobytes. A full year of data is well under 50 megabytes.
 
 ## Platform Support
 
-**Hyprland (Linux, Wayland)**
+HPR works on Hyprland (Linux, Wayland), GNOME (Linux, Wayland), and Windows 10 and 11.
 
-Detection is done via `hyprctl activewindow -j | jq -r '.class'`. This is the cleanest integration — one command, reliable output, no extensions required. HPR was primarily developed and tested on Hyprland.
+On Hyprland, setup is zero effort. HPR queries the compositor directly using `hyprctl` and everything works on first launch.
 
-**GNOME (Linux, Wayland)**
+On GNOME with Wayland, HPR requires a shell extension called `window-calls-extended` to expose the focused window information. On first launch, HPR checks whether the extension is already working. If it is not, HPR clones and enables it automatically. GNOME on Wayland cannot reload shell extensions without a session restart, so you will need to log out and back in once after the first launch. This is a GNOME limitation. After that one-time setup, subsequent launches work without any intervention.
 
-GNOME on Wayland does not expose focused window information without a shell extension. HPR automatically handles this: on first launch it checks whether the `window-calls-extended` extension is responding. If it is not, HPR clones the extension from GitHub into the correct local extensions directory and enables it. Because GNOME on Wayland cannot reload shell extensions without a session restart, HPR will prompt you to log out and back in. This is a GNOME limitation, not an HPR limitation. After the one-time setup, subsequent launches work without any manual steps.
+On Windows, HPR uses the standard Win32 API to query the active window. The binary is built without a console window so it runs cleanly in the background.
 
-**Windows (10/11)**
+X11 Linux sessions are not currently supported. KDE Plasma is not yet supported.
 
-Detection uses `GetForegroundWindow` combined with `GetWindowTextA` from the Win32 API. The binary is built as a `WIN32` subsystem executable with no visible console window.
+## Comparison With Other Trackers
 
-**macOS**
+| Feature | HPR | ActivityWatch | RescueTime | Toggl |
+|---|---|---|---|---|
+| Binary size | ~4 MB | 200 MB+ | Cloud app | Cloud app |
+| RAM usage | Under 30 MB | 200 MB+ | N/A | N/A |
+| Requires account | No | No | Yes | Yes |
+| Data leaves your machine | Never | Never | Yes | Yes |
+| Auto-tracking | Yes | Yes | Yes | No |
+| Wayland support | Yes | Partial | N/A | N/A |
+| Requires running web server | No | Yes | No | No |
+| Open source | Yes | Yes | No | No |
+| Startup time | Instant | Several seconds | N/A | N/A |
+| Free | Yes (premium planned) | Yes | Limited | Limited |
 
-Not currently supported. May be added in a future version.
+The closest honest comparison is ActivityWatch. ActivityWatch is a mature project with a full web dashboard, browser extensions, plugin ecosystem, and multiple years of development. HPR is four days old and has none of those things yet. What HPR has that ActivityWatch does not is a significantly smaller footprint, native Wayland support from day one, no embedded web server, and no Python runtime. If you want a mature tool today, use ActivityWatch. If you want something that will eventually be faster and leaner, HPR is being built for that.
+
+## Roadmap
+
+The following is what is actually planned in roughly the order it will be built.
+
+Visual UI redesign is the immediate next step. The current interface shows raw data correctly but has no styling, no layout design, and no visual hierarchy. This is known and being addressed.
+
+Human-readable insights derived entirely from code, no LLM involved. Things like most-used application today, longest uninterrupted focus session, total tracked time, and which application you switch away from most frequently. These are simple calculations on data HPR already has.
+
+Historical session browser so you can look at past days without opening SQLite files manually.
+
+Data export to CSV and JSON.
+
+A premium tier is planned for the future. The free tier will always include full local tracking, full data ownership, and the code-derived basic insights. The premium tier is intended to include LLM-powered pattern analysis that can read your usage data and give you personalized observations about your working patterns, focus mode with application blocking, and advanced reporting. This is not imminent.
 
 ---
+---
+
+# FOR DEVELOPERS AND POWER USERS
+
+---
+
+## Architecture Overview
+
+HPR is a multi-threaded C++23 application. The threading model is the most important thing to understand about the codebase. There are four threads running at runtime.
+
+The main thread is the Slint event loop. It handles window events, input, and UI repaints. It does nothing else. It blocks on `(*ui)->run()` for the entire lifetime of the application.
+
+The window polling thread runs inside `CurrentWindowManager` and calls the platform-specific active window getter every 50 milliseconds using `std::this_thread::sleep_for`. It writes the current window name and elapsed time into the shared `AppState` struct behind a mutex on every tick.
+
+The UI bridge thread runs inside `HPR` and reads from `AppState` every 100 milliseconds, converts the data into Slint-compatible types, and posts updates to the main thread using `slint::invoke_from_event_loop`. It never touches the UI directly. It captures everything by value into the lambda so the snapshot it pushes is always consistent regardless of what the polling thread does between capture and dispatch.
+
+The database writer thread runs inside `DatabaseManager` and wakes every 10 seconds to flush a snapshot of `AppState` to SQLite. It uses a chunked sleep of 100 intervals of 100 milliseconds each so that it can respond to the stop flag quickly when the application is closing, rather than blocking shutdown for up to 10 seconds.
+
+## Shared State
+
+All shared mutable state lives in a single struct inside the `AppState` namespace:
+
+```cpp
+namespace AppState {
+    struct AppState {
+        std::string currentWindow;
+        std::string previousWindow;
+        std::map<std::string, long> timeLog_PerApp;
+        std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> switchHistory;
+    };
+    extern AppState state;
+    extern std::mutex stateMutex;
+}
+```
+
+`state` and `stateMutex` are declared `extern` in the header and defined once in `appState.cpp`. Every thread accesses the state through `std::lock_guard<std::mutex>`. There are no fine-grained per-field locks. The mutex covers the entire struct. For the current scale of this application this is the correct tradeoff.
+
+`switchHistory` maps a pair of application names to a vector of Unix millisecond timestamps. Each element in the vector represents one instance of that specific transition occurring. So if you switched from Chrome to VSCode three times today, the vector for `{Chrome, VSCode}` contains three timestamps.
+
+## Database Layer
+
+HPR uses `sqlite_modern_cpp`, a header-only C++ wrapper over the SQLite3 amalgamation. The SQLite3 amalgamation is compiled directly into the binary as a C source file. Neither dependency requires system installation.
+
+The `DatabaseManager` holds a single persistent `sqlite::database` connection opened in the constructor and closed when the object is destroyed. This is not the same as opening and closing the file on every write, which would be expensive and incorrect.
+
+The two tables have different write strategies because they have different semantics.
+
+`app_usage` has a `UNIQUE` constraint on the `name` column. It uses `INSERT OR REPLACE`. When a new flush happens for Chrome, the existing Chrome row is deleted and a fresh one with the updated duration is inserted. There is always exactly one row per application.
+
+`switch_history` has a `UNIQUE` constraint on the `timeStamp` column. It uses `INSERT OR IGNORE`. Because the write loop copies the entire `switchHistory` map every 10 seconds and tries to insert all timestamps again, the unique constraint ensures each switch event is persisted exactly once. Subsequent insert attempts for the same timestamp are silently skipped.
+
+On startup, `loadStateFromDB()` is called before any background threads are started. It reads both tables and populates `AppState::state`. Because the threads have not started yet, no mutex is needed during the initial load and there are no race conditions.
+
+## Timing Model
+
+HPR uses two different clocks deliberately.
+
+`std::chrono::steady_clock` is used to measure elapsed time between polling ticks. Steady clock is guaranteed to only move forward at a constant rate. It is never adjusted by NTP, never jumps for DST changes, and never moves backward. This makes it correct for accumulating duration measurements.
+
+`std::chrono::system_clock` is used to record the wall-clock time of switch events. System clock gives you the actual human-readable time, which is what you want when recording that a switch happened at 5:38pm. These timestamps are stored as Unix milliseconds in the database and converted to human-readable strings only at display time.
+
+Using system clock for elapsed duration measurements would be incorrect because NTP adjustments or DST changes could cause time to jump mid-session, making duration accumulation wrong.
 
 ## Window Name Normalization
 
-Raw window identifiers from platform APIs are often inconsistent — they may contain trailing newlines, shell-specific formatting characters, or vary in casing between versions. HPR normalizes every window name before logging it:
+Every raw window name returned by the platform getter passes through `validateAndUpdateWindow_Cross` before being written to state. This function:
 
-1. Trailing newline and carriage return characters are stripped
-2. The name is lowercased for comparison purposes
-3. System processes that should not be tracked (Windows shell host processes, empty strings) are mapped to `Unknown`
-4. Common applications are mapped to consistent display names regardless of how the platform reports them (`chrome` becomes `Chrome`, `code` becomes `Visual Studio Code`, and so on)
-5. The original casing is preserved for applications that do not match any known pattern
+Strips trailing newline and carriage return characters from shell command output. Produces a lowercase copy of the name for comparison purposes while retaining the original-case version for display. Maps known garbage processes to the `Unknown` string so they are not tracked. Maps known application identifiers to consistent human-readable names using C++23 `std::string::contains`. Returns the original-case unmodified name for applications that do not match any known pattern.
 
----
+The filter and mapping lists are hardcoded and intentionally short right now. They will grow over time. Adding a new application mapping is one `else if` line in `validateAndUpdateWindow.cpp`.
+
+## Class Lifecycle Pattern
+
+Every class with a background thread follows the same pattern. Constructor does setup. `run()` spawns the thread. The destructor sets the atomic stop flag to false and calls `join()`. The thread loop checks the stop flag on every iteration. This is consistent across `CurrentWindowManager`, `HPR`, and `DatabaseManager`.
+
+```cpp
+~SomeClass() {
+    running = false;
+    if (thread.joinable()) thread.join();
+}
+```
+
+This means every object in `main.cpp` that goes out of scope at program exit will cleanly stop its thread before the destructor returns. Shutdown is orderly and deterministic.
 
 ## Building From Source
 
 Requirements:
 
 - CMake 3.21 or later
-- A C++23-capable compiler (GCC 13+, Clang 16+, or MSVC 2022+)
-- Slint (installed system-wide, or CMake will fetch it automatically from the Slint GitHub repository)
-- On Linux: `jq` for Hyprland support, `gdbus` for GNOME support
+- GCC 13+, Clang 16+, or MSVC 2022+ with C++23 support
+- Slint 1.x (CMake will download and build it automatically if not found)
+- On Linux: `jq` installed for Hyprland, `gdbus` for GNOME (both are standard on most distros)
 
 ```bash
 git clone https://github.com/plexescor/HPR
 cd HPR
-mkdir build
-cd build
+mkdir build && cd build
 cmake ..
 cmake --build . --parallel
 ```
 
-On first build, if Slint is not found on the system, CMake will download and compile it automatically. This takes hours on my i5-1235u. Subsequent builds are fast.
+On first build, if Slint is not found on the system, CMake will download and compile it automatically. This takes hours on an i5-1235u. Subsequent builds are fast. If you are building repeatedly, install Slint system-wide or set `Slint_DIR` to avoid recompiling it every time you wipe the build directory.
 
-The SQLite library is included in the repository as the official amalgamation source file and compiled directly into the binary. No system SQLite installation is required.
+SQLite is bundled as the official single-file amalgamation and compiled as part of the build. No system SQLite is required.
 
----
+## Adding A New Platform
 
-## Comparison
+All platform-specific window detection is inside `CurrentWindowManager`. The constructor detects the platform by reading `$XDG_CURRENT_DESKTOP` on Linux. The `getCurrentWindow()` method dispatches to the correct platform getter based on the detected platform string.
 
-| Feature | HPR | ActivityWatch | RescueTime | Toggl |
-|---|---|---|---|---|
-| Binary size | ~4 MB | 200 MB+ | Cloud-based | Cloud-based |
-| RAM usage | under 30 MB | 200 MB+ | N/A | N/A |
-| Data storage | Local SQLite files | Local (web server) | Cloud | Cloud |
-| Requires account | No | No | Yes | Yes |
-| Auto-tracking | Yes | Yes | Yes | No |
-| Wayland support | Yes | Partial | N/A | N/A |
-| Open source | Yes | Yes | No | No |
-| Free | Yes (premium planned) | Yes | Limited | Limited |
-| Requires running server | No | Yes | No | No |
-| Startup time | Instant | Several seconds | N/A | N/A |
+To add a new platform:
 
----
+Add a new private method `getCurrentWindow_YourPlatform()` to the class. Implement it in `getCurrentWindow.cpp`. Add an `else if (currentPlatform.contains("YourPlatform"))` branch to the `getCurrentWindow()` dispatcher. Add any setup logic needed to the constructor behind the appropriate preprocessor guard.
 
-## Planned Features
+The normalization step runs after every platform getter returns, so new platform implementations do not need to handle stripping or name mapping.
 
-**Near term**
+## Adding New Tracked Data
 
-- Visual UI design with proper layout, typography, and dark theme
-- Basic analytics: most-used application, longest focus session, total tracked time, switch frequency
-- Data export to CSV and JSON
-- Historical session viewer
+To add a new tracked metric:
 
-**Premium tier (planned)**
+Add the field to `AppState::AppState` in `appState.hpp`. Add a write to the field in `getCurrentWindow_Loop()` inside the existing mutex lock. Add a read in `HPR::trackingLoop()` to convert it for display. Add a new Slint struct and property in `app-window.slint` if it needs to appear in the UI. Add a table and read/write logic in `DatabaseManager` if it needs to be persisted.
 
-- LLM-powered pattern analysis and personalized insights
-- Focus mode with application blocking
-- Advanced productivity reports
-- Cross-device data aggregation (optional, local network only)
+The architecture is additive. Nothing else needs to change.
 
----
+## Known Issues and Honest Limitations
 
-## Technical Details For Contributors
+The `catch(std::string e)` in `loadStateFromDB()` does not actually catch SQLite exceptions. sqlite_modern_cpp throws `sqlite::errors::error` which inherits from `std::exception`. The catch block should be `catch(const std::exception& e)`. This means SQLite errors during the initial load are silently swallowed. This has not caused visible problems because an empty database on first launch produces zero rows and no errors, but it is technically wrong and will be fixed.
 
-The codebase is written in C++23 and makes use of structured bindings, `std::string::contains`, `std::filesystem`, `std::optional`, and `std::atomic` throughout. The threading model uses three worker threads plus the main Slint event loop thread. Shared state is managed through a single globally-accessible `AppState` struct behind a `std::mutex`, using `std::lock_guard` consistently for all access.
+The `db("")` initialization in `DatabaseManager`'s member initializer list is a workaround for the fact that `sqlite::database` has no default constructor. An empty string passed to SQLite opens an in-memory database, which is immediately overwritten with the real path. This is harmless in practice but semantically wrong. The correct fix is `std::optional<sqlite::database>`.
 
-The UI is built with Slint 1.x. Slint's declarative `.slint` language defines the component structure and data bindings. Data is passed from C++ to the UI via `slint::VectorModel` wrapped in `std::shared_ptr`, pushed through `slint::invoke_from_event_loop` using a `slint::ComponentWeakHandle` to ensure crash safety during window teardown.
+Raw pointers to `AppState` fields in `HPR::trackingLoop` (`timeLog` and `switchHistory` are raw pointers set before the loop starts) are used only inside the mutex lock where they are safe. They are not used outside the lock. This is safe but unnecessary and slightly misleading. Direct access to `AppState::state` inside the lock would be cleaner.
 
-The database layer uses the `sqlite_modern_cpp` header-only wrapper over the SQLite3 amalgamation. The connection is held open for the lifetime of the `DatabaseManager` object rather than opened and closed per write.
+The GNOME extension setup performs a `git clone` from GitHub on first launch without showing any UI indication that this is happening. The user sees a console log message but the UI shows nothing. This will be replaced with a visible setup dialog in a future version.
 
-All header files use `#pragma once`. Platform-specific code is isolated behind `#ifdef _WIN32` and `#ifdef __linux__` guards. The CMake build handles both platforms with separate `add_executable` targets.
+## Contributing
 
----
+The codebase is small enough to read entirely in one sitting. Start with `main.cpp` to understand initialization order, then `appState.hpp` to understand the data model, then work through each class. The most important thing to understand before making changes is the threading model: which thread reads what, which thread writes what, and where the mutex must be held.
 
-## FAQ
-
-**Does HPR take screenshots?**
-No. HPR only reads the name of the focused application window. No screen content, keystrokes, or mouse activity is ever captured.
-
-**Does any data leave my machine?**
-No. HPR contains no networking code. The only outbound operation is the one-time `git clone` of the GNOME extension on GNOME systems, which is a shell command executed by the OS, not HPR itself. After setup, there is zero external communication.
-
-**Can I delete my data?**
-Yes. Your data is in `~/HPR_DB`. Delete any file or folder and it is gone permanently. HPR does not maintain any other data store.
-
-**What happens if HPR crashes?**
-Data from the current 10-second flush interval may be lost. All previously flushed data is safe in the SQLite file. The database connection uses standard SQLite durability guarantees.
-
-**Why not use a single database file for all history?**
-Per-day files make data management intuitive. Deleting a month is removing a folder. Inspecting a specific day means opening one small file. The files stay small and fast to query throughout the application's lifetime.
-
----
-
-## License
-
-MIT License. See LICENSE for details.
+There is no contribution process defined yet because the project is four days old. Open an issue or a pull request and we will figure it out.
 
 ---
 
 **Status:** Active development, v0.1
-**Platforms:** Hyprland (Linux/Wayland), GNOME (Linux/Wayland), Windows 10/11
+**Platforms:** Hyprland (Wayland), GNOME (Wayland), Windows 10/11
 **Language:** C++23
-**Dependencies:** Slint (UI), SQLite3 (bundled), sqlite_modern_cpp (bundled)
+**UI:** Slint 1.x
+**Database:** SQLite3 (bundled amalgamation) via sqlite_modern_cpp
