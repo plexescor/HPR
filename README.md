@@ -129,7 +129,7 @@ cmake ..
 cmake --build . --parallel
 ```
 
-On first build, if Slint is not found on the system, CMake will download and compile it automatically. This takes several minutes. Subsequent builds are fast.
+On first build, if Slint is not found on the system, CMake will download and compile it automatically. This takes hours on my i5-1235u. Subsequent builds are fast.
 
 The SQLite library is included in the repository as the official amalgamation source file and compiled directly into the binary. No system SQLite installation is required.
 
