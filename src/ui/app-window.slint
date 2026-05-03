@@ -1,22 +1,37 @@
 import { AboutSlint, VerticalBox, ListView } from "std-widgets.slint";
 
 export struct TimeLog {
-    key: string,
-    value: int, 
+    name: string,
+    duration: int, 
+}
+
+export struct SwitchHistory{
+    fromWindow: string,
+    toWindow: string,
+    maxTimeStamp: string
 }
 
 export component MainWindow inherits Window {
-    in property <string> windowName;
-    in property <[TimeLog]> timePerApp;
+    in property <string> windowName_S;
+    in property <[TimeLog]> timePerApp_S;
+    in property <[SwitchHistory]> switchHistory_S;
 
     title: "HPR";
     Text 
     {
-        text: windowName;
+        text: windowName_S;
     }
+
     ListView {
-        for entry in timePerApp : Text {
-            text: entry.key + ": " + entry.value;
+        for entry in timePerApp_S : Text {
+            text: entry.name + ": " + entry.duration;
+        }
+    }
+
+    ListView {
+        x: 200px;
+        for entry in switchHistory_S : Text {
+            text: "From: " + entry.fromWindow + " To: " + entry.toWindow + "  At: " + entry.maxTimeStamp;
         }
     }
     

@@ -3,6 +3,7 @@
 #include <thread>
 #include <atomic>
 
+
 class CurrentWindowManager
 {
     public:
@@ -21,6 +22,7 @@ class CurrentWindowManager
     private:
         std::string currentPlatform = "";
         std::string window = "";
+        std::string previousWindow = "";
 
         std::thread windowPollingThread;
         std::atomic<bool> running{true};

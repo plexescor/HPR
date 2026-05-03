@@ -15,6 +15,8 @@
 #include <mutex>
 #include <thread>
 #include <chrono>
+#include <vector>
+
 
 CurrentWindowManager::CurrentWindowManager()
 {
@@ -47,16 +49,35 @@ void CurrentWindowManager::run()
 void CurrentWindowManager::getCurrentWindow_Loop()
 {
     auto lastTimestamp = std::chrono::steady_clock::now(); //Get the tick's time
+    window = getCurrentWindow();
+    previousWindow = window;
     while (running)
     {
         window = getCurrentWindow();
-
         {
             //Update current window in the AppState
             std::lock_guard<std::mutex> lock(AppState::stateMutex);
             AppState::state.currentWindow = window;
 
             auto now = std::chrono::steady_clock::now(); //get time now
+
+            if (previousWindow != window)
+            {
+                //This means window was changed 
+                //FromWindow = previousWindow, ToWindow = window
+
+                auto nowSystem = std::chrono::system_clock::now();
+                uint64_t t = std::chrono::duration_cast<std::chrono::milliseconds>(
+                    nowSystem.time_since_epoch()
+                ).count();
+
+                AppState::state.switchHistory[{previousWindow, window}].push_back(t);
+
+                previousWindow = window;
+            }
+
+            AppState::state.previousWindow = previousWindow;
+
             auto elapsed = now - lastTimestamp;
             lastTimestamp = now;
             AppState::state.timeLog_PerApp[window] += std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();

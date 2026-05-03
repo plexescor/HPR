@@ -38,6 +38,7 @@ elseif(LINUX)
   add_executable(HPR
         src/main.cpp
         src/appState/appState.cpp
+        src/miscellaneous/timeUtils.cpp
         src/ui-cpp/HPR.cpp
         src/window/getCurrentWindow.cpp
         src/window/validateAndUpdateWindow.cpp
