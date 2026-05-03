@@ -74,9 +74,9 @@ bool DatabaseManager::loadStateFromDB()
             AppState::state.switchHistory[{from, to}].push_back((uint64_t)ts);
         };
 
-    } catch(std::string e)
+    } catch(const std::exception& e)
     {
-        std::cerr << "[ERROR IN DB LOAD FROM DISK] " << e << std::endl;
+        std::cerr << "[ERROR IN DB LOAD FROM DISK] " << e.what() << std::endl;
         return false;
     }
 
