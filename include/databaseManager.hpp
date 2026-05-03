@@ -4,6 +4,7 @@
 #include <thread>
 #include <map>
 #include <cstdint>
+#include <optional>
 #include <vector>
 #include <sqlite_modern_cpp.h>
 
@@ -21,7 +22,7 @@ class DatabaseManager
         void updateFileName();
 
     private:
-        sqlite::database db;
+        std::optional<sqlite::database> db;
 
         std::string filePath;
         std::string fileName;

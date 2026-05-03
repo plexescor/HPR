@@ -13,7 +13,6 @@
 #include <filesystem>
 
 DatabaseManager::DatabaseManager()
-: db("")  // temporary init, hacky but wirks
 {
     updateFilePath();
     updateFileName();
@@ -26,14 +25,15 @@ DatabaseManager::DatabaseManager()
         switchHistory_D = AppState::state.switchHistory;
     }
 
-    db = sqlite::database(filePath + fileName);
-    db <<
+    db.emplace(filePath + fileName);
+
+    *db <<
          "create table if not exists app_usage ("
          "   name text unique,"
          "   duration int"
          ");";
 
-    db <<
+    *db <<
          "create table if not exists switch_history ("
          "   fromWindow text,"
          "   toWindow text,"
@@ -63,13 +63,13 @@ bool DatabaseManager::loadStateFromDB()
     {
 
         // Load app_usage into AppState
-        db << "select name, duration from app_usage;"
+        *db << "select name, duration from app_usage;"
         >> [](std::string name, long duration) {
             AppState::state.timeLog_PerApp[name] += duration;
         };
 
         // Load switch_history into AppState  
-        db << "select fromWindow, toWindow, timeStamp from switch_history;"
+        *db << "select fromWindow, toWindow, timeStamp from switch_history;"
         >> [](std::string from, std::string to, long long ts) {
             AppState::state.switchHistory[{from, to}].push_back((uint64_t)ts);
         };
@@ -97,7 +97,7 @@ void DatabaseManager::writeLoop()
 
         for (const auto &[k, v] : timeLog_PerApp_D)
         {
-            db << "insert or replace into app_usage (name,duration) values (?,?);"
+            *db << "insert or replace into app_usage (name,duration) values (?,?);"
                << k
                << v;
         }
@@ -109,7 +109,7 @@ void DatabaseManager::writeLoop()
 
             for (const auto& timestamp : v)
             {
-                db << "insert or ignore into switch_history (fromWindow,toWindow,timeStamp) values (?,?,?);"
+                *db << "insert or ignore into switch_history (fromWindow,toWindow,timeStamp) values (?,?,?);"
                 << from
                 << to
                 << static_cast<long long>(timestamp);
