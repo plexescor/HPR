@@ -61,7 +61,6 @@ bool DatabaseManager::loadStateFromDB()
 {
     try
     {
-        std::lock_guard<std::mutex> lock(AppState::stateMutex);
 
         // Load app_usage into AppState
         db << "select name, duration from app_usage;"
