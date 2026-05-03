@@ -24,11 +24,13 @@ endif (NOT Slint_FOUND)
 #No console in windows
 if(WIN32)
   add_executable(HPR WIN32
-      src/main.cpp
-      src/ui-cpp/HPR.cpp
-      src/window/getCurrentWindow.cpp
-      src/window/validateAndUpdateWindow.cpp
-      src/window/windowUtilities.cpp
+		src/main.cpp
+		src/appState/appState.cpp
+		src/miscellaneous/timeUtils.cpp
+		src/ui-cpp/HPR.cpp
+		src/window/getCurrentWindow.cpp
+		src/window/validateAndUpdateWindow.cpp
+    	src/window/windowUtilities.cpp
 
       #sqLite stuff
       external/sqLite/sqlite3.c

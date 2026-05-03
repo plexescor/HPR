@@ -25,7 +25,7 @@ std::string validateAndUpdateWindow_Cross(std::string &windowName)
         || windowName.contains("searchhost")
         || windowName.contains("openwith")
         || windowName.contains("startmenuexperiencehost")
-        || windowName.contains("applicationframeHost")
+        || windowName.contains("applicationframehost")
         || windowName.contains("shellexperiencehost"))
     {
         return "Unknown";
