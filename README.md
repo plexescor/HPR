@@ -134,7 +134,7 @@ namespace AppState {
 
 HPR uses `sqlite_modern_cpp`, a header-only C++ wrapper over the SQLite3 amalgamation. The SQLite3 amalgamation is compiled directly into the binary as a C source file. Neither dependency requires system installation.
 
-The `DatabaseManager` holds a single persistent `sqlite::database` connection opened in the constructor and closed when the object is destroyed. This is not the same as opening and closing the file on every write, which would be expensive and incorrect.
+The `DatabaseManager` holds the database connection as `std::optional<sqlite::database>`. The optional is emplaced in the constructor using `db.emplace(filePath + fileName)` after the file path is resolved. The connection stays alive for the entire lifetime of the object and is destroyed when the destructor runs. This is not the same as opening and closing the file on every write, which would be expensive and incorrect.
 
 The two tables have different write strategies because they have different semantics.
 
@@ -215,10 +215,6 @@ Add the field to `AppState::AppState` in `appState.hpp`. Add a write to the fiel
 The architecture is additive. Nothing else needs to change.
 
 ## Known Issues and Honest Limitations
-
-The `catch(std::string e)` in `loadStateFromDB()` does not actually catch SQLite exceptions. sqlite_modern_cpp throws `sqlite::errors::error` which inherits from `std::exception`. The catch block should be `catch(const std::exception& e)`. This means SQLite errors during the initial load are silently swallowed. This has not caused visible problems because an empty database on first launch produces zero rows and no errors, but it is technically wrong and will be fixed.
-
-The `db("")` initialization in `DatabaseManager`'s member initializer list is a workaround for the fact that `sqlite::database` has no default constructor. An empty string passed to SQLite opens an in-memory database, which is immediately overwritten with the real path. This is harmless in practice but semantically wrong. The correct fix is `std::optional<sqlite::database>`.
 
 Raw pointers to `AppState` fields in `HPR::trackingLoop` (`timeLog` and `switchHistory` are raw pointers set before the loop starts) are used only inside the mutex lock where they are safe. They are not used outside the lock. This is safe but unnecessary and slightly misleading. Direct access to `AppState::state` inside the lock would be cleaner.
 
