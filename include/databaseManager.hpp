@@ -2,6 +2,10 @@
 #include <string>
 #include <atomic>
 #include <thread>
+#include <map>
+#include <cstdint>
+#include <vector>
+#include <sqlite_modern_cpp.h>
 
 class DatabaseManager
 {
@@ -9,6 +13,7 @@ class DatabaseManager
         DatabaseManager();
         ~DatabaseManager();
         void run();
+        bool loadStateFromDB();
 
     private:
         void writeLoop();
@@ -16,9 +21,14 @@ class DatabaseManager
         void updateFileName();
 
     private:
+        sqlite::database db;
+
         std::string filePath;
         std::string fileName;
 
         std::atomic<bool> running{true};
         std::thread writer;
+
+        std::map<std::string, long> timeLog_PerApp_D; 
+        std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> switchHistory_D;
 };

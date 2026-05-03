@@ -34,11 +34,10 @@
 		// Force software rendeing
 		setenv("SLINT_BACKEND", "winit-software", 1);
 
-		CurrentWindowManager cwm;
-		cwm.run();
-
 		DatabaseManager dbm;
+		CurrentWindowManager cwm;
 		dbm.run();
+		cwm.run();
 
 		HPR app;
 		app.run();

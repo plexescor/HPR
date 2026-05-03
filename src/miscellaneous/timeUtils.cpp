@@ -58,3 +58,24 @@ std::string convertToTime_HHMMSS_12(uint64_t ms)
     return result; //This dealing with time in strings and uint64_ts is driving me insane
                    //Cz slint only support 32bit ints
 }
+
+std::string formatTime_HHMMSS(int ms)
+{
+    int totalSeconds = ms / 1000;
+
+    int hours = totalSeconds / 3600;
+    int minutes = (totalSeconds % 3600) / 60;
+    int seconds = totalSeconds % 60;
+
+    std::ostringstream oss;
+
+    if (hours > 0)
+        oss << hours << "h ";
+
+    if (minutes > 0 || hours > 0)
+        oss << minutes << "m ";
+
+    oss << seconds << "s";
+
+    return oss.str();
+}

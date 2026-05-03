@@ -5,3 +5,4 @@
 std::string convertToDate_DDMMYY(uint64_t ms);
 std::string convertToDate_MMYY(uint64_t ms);
 std::string convertToTime_HHMMSS_12(uint64_t ms);
+std::string formatTime_HHMMSS(int ms);

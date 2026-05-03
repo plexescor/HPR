@@ -50,7 +50,10 @@ void HPR::trackingLoop() {
             for (const auto &[k, v] : *timeLog)
             {
                 //So new maps are added at the end
-                timeLog_Vec.push_back(TimeLog{slint::SharedString(k), (int)v});
+                timeLog_Vec.push_back(TimeLog{
+                    slint::SharedString(k), 
+                    slint::SharedString(formatTime_HHMMSS(v))
+                });
             }
 
             //--------------SwitchHistory--------------------------------------------
