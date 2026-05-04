@@ -37,24 +37,30 @@ void HPR::trackingLoop() {
     //Stuff converted for slint
     std::vector<TimeLog> timeLog_Vec;
     std::vector<SwitchHistory> switchHistory_Vec;
-
+    long totalTrackedTime;
     while (running) {
-
         {
+            totalTrackedTime = 0;
             std::lock_guard<std::mutex> lock(AppState::stateMutex);
             window = AppState::state.currentWindow;
 
+            
             //--------------Timelog-------------------------------------------------
             timeLog_Vec.clear(); //Clear to avoid duplicates
             timeLog_Vec.reserve((*timeLog).size());
             for (const auto &[k, v] : *timeLog)
             {
+                totalTrackedTime += v;
                 //So new maps are added at the end
                 timeLog_Vec.push_back(TimeLog{
                     slint::SharedString(k), 
-                    slint::SharedString(formatTime_HHMMSS(v))
+                    slint::SharedString(formatTime_HHMMSS(v)),
+                    static_cast<int>(v)
                 });
             }
+            std::sort(timeLog_Vec.begin(), timeLog_Vec.end(), [&timeLog](const TimeLog& a, const TimeLog& b) {
+                return (*timeLog).at(std::string(a.name)) > (*timeLog).at(std::string(b.name));
+            });
 
             //--------------SwitchHistory--------------------------------------------
             switchHistory_Vec.clear();
@@ -75,15 +81,23 @@ void HPR::trackingLoop() {
                     }
                 );
             }
+            std::sort(switchHistory_Vec.begin(), switchHistory_Vec.end(), [&switchHistory](const SwitchHistory& a, const SwitchHistory& b) {
+                auto keyA = std::make_pair(std::string(a.fromWindow), std::string(a.toWindow));
+                auto keyB = std::make_pair(std::string(b.fromWindow), std::string(b.toWindow));
+                return *std::max_element((*switchHistory).at(keyA).begin(), (*switchHistory).at(keyA).end())
+                    > *std::max_element((*switchHistory).at(keyB).begin(), (*switchHistory).at(keyB).end());
+            });
 
         }
         
         // get weak so shit doent sink (crahs)
         slint::ComponentWeakHandle<MainWindow> weak(*ui);
-        slint::invoke_from_event_loop([weak, window, timeLog_Vec, switchHistory_Vec]() {
+        slint::invoke_from_event_loop([weak, window, totalTrackedTime ,timeLog_Vec, switchHistory_Vec]() {
             
             if (auto handle = weak.lock()) {
                 (*handle)->set_windowName_S(slint::SharedString(window));
+
+                (*handle)->set_trackedTime_S(totalTrackedTime);
                 
                 // 👇️ slint requires this make_shared bs
                 (*handle)->set_timePerApp_S(std::make_shared<slint::VectorModel<TimeLog>>(timeLog_Vec));

@@ -76,6 +76,9 @@ On Windows, HPR uses the standard Win32 API to query the active window. The bina
 
 The closest honest comparison is ActivityWatch. ActivityWatch is a mature project with a full web dashboard, browser extensions, plugin ecosystem, and multiple years of development. HPR is early-stage and has none of those things yet. What HPR has that ActivityWatch does not is a significantly smaller footprint, native Wayland support from day one, no embedded web server, and no Python runtime. If you want a mature tool today, use ActivityWatch. If you want something that will eventually be faster and leaner, HPR is being built for that.
 
+## Notes
+>Note for Btrfs+LUKS users: write amplification from the filesystem stack may cause higher than expected disk writes upto ~140MiB every 15 minutes. This is a known characteristic of SQLite on Btrfs with encryption and is not specific to HPR.
+
 ## Roadmap
 
 The following is what is actually planned in roughly the order it will be built.

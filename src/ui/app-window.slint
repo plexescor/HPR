@@ -1,40 +1,362 @@
-import { AboutSlint, VerticalBox, ListView } from "std-widgets.slint";
+import { ListView } from "std-widgets.slint";
 
 export struct TimeLog {
     name: string,
-    duration: string, 
+    duration: string,
+    duration_i: int,
 }
 
-export struct SwitchHistory{
+export struct SwitchHistory {
     fromWindow: string,
     toWindow: string,
-    maxTimeStamp: string
+    maxTimeStamp: string,
 }
 
+// ── Animated live dot ────────────────────────────────────────────────────────
+component LiveDot inherits Rectangle {
+    width: 7px;
+    height: 7px;
+    border-radius: 3.5px;
+    background: #22c55e.mix(#052e16, 0.5 + 0.5 * Math.sin(animation-tick() / 1.4s * 1turn));
+}
+
+// ── Section header ───────────────────────────────────────────────────────────
+component SectionHeader inherits Rectangle {
+    in property <string> label;
+    height: 30px;
+    background: transparent;
+
+    HorizontalLayout {
+        spacing: 10px;
+        padding-left: 2px;
+        alignment: start;
+
+        Text {
+            text: root.label;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 2.5px;
+            color: #ffffff40;
+            vertical-alignment: center;
+        }
+
+        Rectangle {
+            height: 1px;
+            background: #ffffff08;
+            vertical-stretch: 0;
+            y: parent.height / 2;
+        }
+    }
+}
+
+// ── App row with horizontal bar ───────────────────────────────────────────────
+component AppRow inherits Rectangle {
+    in property <string> app-name;
+    in property <string> duration;
+    in property <float>  ratio;
+    in property <bool>   is-even;
+    in property <int>    row-index;
+    in property <color>  bar-color: #a3e635;
+
+    height: 48px;
+    border-radius: 5px;
+    clip: true;
+
+    background: ta.has-hover ? #ffffff0e : (is-even ? #ffffff03 : transparent);
+    animate background { duration: 100ms; easing: ease-out; }
+
+    VerticalLayout {
+        padding-left: 16px;
+        padding-right: 14px;
+        padding-top: 8px;
+        padding-bottom: 8px;
+        spacing: 5px;
+
+        HorizontalLayout {
+            alignment: space-between;
+
+            Text {
+                text: app-name;
+                color: ta.has-hover ? #e2e8f0 : #94a3b8;
+                font-size: 12px;
+                vertical-alignment: center;
+                animate color { duration: 100ms; }
+                overflow: elide;
+                max-width: 200px;
+            }
+
+            Text {
+                text: duration;
+                color: ta.has-hover ? bar-color : bar-color.mix(#00000000, 0.45);
+                font-size: 10px;
+                font-weight: 600;
+                vertical-alignment: center;
+                animate color { duration: 100ms; }
+            }
+        }
+
+        // Bar track
+        Rectangle {
+            height: 4px;
+            border-radius: 2px;
+            background: #ffffff08;
+
+            Rectangle {
+                x: 0;
+                height: 4px;
+                border-radius: 2px;
+                width: parent.width * ratio;
+                background: ta.has-hover
+                    ? @linear-gradient(90deg, bar-color 0%, bar-color.mix(#ffffff, 0.3) 100%)
+                    : @linear-gradient(90deg, bar-color.mix(#00000000, 0.45) 0%, bar-color.mix(#ffffff, 0.15).mix(#00000000, 0.45) 100%);
+                animate background { duration: 100ms; }
+                animate width { duration: 400ms; easing: ease-out; }
+            }
+        }
+    }
+
+    ta := TouchArea {}
+}
+
+// ── Switch row ───────────────────────────────────────────────────────────────
+component SwitchRow inherits Rectangle {
+    in property <string> from-window;
+    in property <string> to-window;
+    in property <string> timestamp;
+    in property <bool>   is-even;
+
+    height: 48px;
+    border-radius: 5px;
+    clip: true;
+
+    background: ta.has-hover ? #ffffff0e : (is-even ? #ffffff03 : transparent);
+    animate background { duration: 100ms; easing: ease-out; }
+
+    Rectangle {
+        x: 0;
+        width: 2px;
+        height: parent.height;
+        background: ta.has-hover ? #818cf8cc : #00000000;
+        animate background { duration: 120ms; easing: ease-out; }
+    }
+
+    VerticalLayout {
+        padding-left: 16px;
+        padding-right: 12px;
+        padding-top: 8px;
+        padding-bottom: 8px;
+        spacing: 3px;
+
+        HorizontalLayout {
+            spacing: 5px;
+            alignment: start;
+
+            Text {
+                text: from-window;
+                color: #fb7185;
+                font-size: 11px;
+                font-weight: 600;
+                vertical-alignment: center;
+                overflow: elide;
+                max-width: 120px;
+            }
+
+            Text {
+                text: "→";
+                color: #ffffff18;
+                font-size: 11px;
+                vertical-alignment: center;
+            }
+
+            Text {
+                text: to-window;
+                color: #34d399;
+                font-size: 11px;
+                font-weight: 600;
+                vertical-alignment: center;
+                overflow: elide;
+                max-width: 120px;
+            }
+        }
+
+        Text {
+            text: timestamp;
+            color: #ffffff38;
+            font-size: 10px;
+            letter-spacing: 0.3px;
+            vertical-alignment: center;
+        }
+    }
+
+    ta := TouchArea {}
+}
+
+// ── Card ─────────────────────────────────────────────────────────────────────
+component Card inherits Rectangle {
+    border-radius: 8px;
+    background: @linear-gradient(150deg, #12181f 0%, #0c1014 100%);
+    border-width: 1px;
+    border-color: #ffffff0c;
+}
+
+// ── Main Window ──────────────────────────────────────────────────────────────
 export component MainWindow inherits Window {
-    in property <string> windowName_S;
-    in property <[TimeLog]> timePerApp_S;
+    in property <int>             trackedTime_S;
+    in property <string>          windowName_S;
+    in property <[TimeLog]>       timePerApp_S;
     in property <[SwitchHistory]> switchHistory_S;
 
-    default-font-size: 17px;
-
     title: "HPR";
-    Text 
-    {
-        text: windowName_S;
-    }
+    default-font-size: 13px;
+    background: #07090f;
+    preferred-width: 780px;
+    preferred-height: 600px;
 
-    ListView {
-        for entry in timePerApp_S : Text {
-            text: entry.name + ": " + entry.duration;
+    // Color palette — 8 distinct colors that look good on dark bg
+    property <[color]> bar-palette: [
+        #a3e635,  // lime
+        #38bdf8,  // sky blue
+        #f472b6,  // pink
+        #fb923c,  // orange
+        #c084fc,  // purple
+        #34d399,  // emerald
+        #facc15,  // yellow
+        #f87171,  // red
+    ];
+
+    VerticalLayout {
+        padding: 0px;
+        spacing: 0px;
+        width: 100%;
+        height: 100%;
+
+        // ── Topbar ───────────────────────────────────────────────────────
+        Rectangle {
+            height: 46px;
+            background: #07090f;
+
+            Rectangle {
+                y: parent.height - 1px;
+                height: 1px;
+                background: @linear-gradient(90deg, #ffffff00 0%, #ffffff12 40%, #ffffff12 60%, #ffffff00 100%);
+            }
+
+            HorizontalLayout {
+                padding-left: 18px;
+                padding-right: 18px;
+                alignment: space-between;
+
+                HorizontalLayout {
+                    spacing: 10px;
+                    alignment: start;
+
+                    Text {
+                        text: "HPR";
+                        color: #f1f5f9;
+                        font-size: 12px;
+                        font-weight: 700;
+                        letter-spacing: 4px;
+                        vertical-alignment: center;
+                    }
+
+                    Rectangle {
+                        width: 1px;
+                        height: 12px;
+                        background: #ffffff12;
+                        y: (parent.height - self.height) / 2;
+                    }
+
+                    Text {
+                        text: "window tracker";
+                        color: #ffffff40;
+                        font-size: 11px;
+                        letter-spacing: 0.3px;
+                        vertical-alignment: center;
+                    }
+                }
+
+                Rectangle {
+                    height: 26px;
+                    width: active-lbl.preferred-width + 30px;
+                    border-radius: 13px;
+                    background: #ffffff07;
+                    border-width: 1px;
+                    border-color: #ffffff10;
+                    y: (parent.height - self.height) / 2;
+
+                    HorizontalLayout {
+                        padding-left: 9px;
+                        spacing: 6px;
+                        alignment: start;
+
+                        LiveDot {
+                            y: (parent.height - self.height) / 2;
+                        }
+
+                        active-lbl := Text {
+                            text: windowName_S;
+                            color: #94a3b8;
+                            font-size: 11px;
+                            font-weight: 500;
+                            vertical-alignment: center;
+                            overflow: elide;
+                            max-width: 240px;
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── Body ─────────────────────────────────────────────────────────
+        VerticalLayout {
+            padding: 12px;
+            spacing: 10px;
+
+            SectionHeader { label: "TIME PER APP"; }
+
+            Card {
+                Flickable {
+                    width: 100%;
+                    height: 100%;
+                    interactive: false;
+                    viewport-height: appContent.preferred-height;
+
+                    appContent := VerticalLayout {
+                        width: 100%;
+                        for entry[i] in timePerApp_S: AppRow {
+                            app-name: entry.name;
+                            duration: entry.duration;
+                            ratio: trackedTime_S > 0 ? (entry.duration_i * 1.0) / (trackedTime_S * 1.0) : 0.0;
+                            is-even: mod(i, 2) == 0;
+                            row-index: i;
+                            bar-color: bar-palette[mod(i, 8)];
+                        }
+                    }
+                }
+            }
+
+            SectionHeader { label: "SWITCH HISTORY"; }
+
+            Card {
+                vertical-stretch: 1;
+
+                Flickable {
+                    width: 100%;
+                    height: 100%;
+                    interactive: false;
+                    viewport-height: swContent.preferred-height;
+
+                    swContent := VerticalLayout {
+                        width: 100%;
+                        for entry[i] in switchHistory_S: SwitchRow {
+                            from-window: entry.fromWindow;
+                            to-window:   entry.toWindow;
+                            timestamp:   entry.maxTimeStamp;
+                            is-even: mod(i, 2) == 0;
+                        }
+                    }
+                }
+            }
         }
     }
-
-    ListView {
-        x: 300px;
-        for entry in switchHistory_S : Text {
-            text: "From: " + entry.fromWindow + " To: " + entry.toWindow + "  At: " + entry.maxTimeStamp;
-        }
-    }
-    
 }
