@@ -1,0 +1,3 @@
+# Exclude shell and batch scripts from GitHub language detection
+*.sh    linguist-detectable=false
+*.bat   linguist-detectable=false
