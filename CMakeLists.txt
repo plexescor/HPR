@@ -62,3 +62,11 @@ target_include_directories(HPR
 if (WIN32)
     add_custom_command(TARGET HPR POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_RUNTIME_DLLS:HPR> $<TARGET_FILE_DIR:HPR> COMMAND_EXPAND_LISTS)
 endif()
+
+if(UNIX)
+    configure_file(
+        ${CMAKE_SOURCE_DIR}/shippedWithBinary/installWindowCallsExtension.sh
+        ${CMAKE_BINARY_DIR}/installWindowCallsExtension.sh
+        COPYONLY
+    )
+endif()
