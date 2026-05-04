@@ -53,7 +53,7 @@ HPR works on Hyprland (Linux, Wayland), GNOME (Linux, Wayland), KDE Plasma (Linu
 
 On Hyprland, setup is zero effort. HPR queries the compositor directly using `hyprctl` and everything works on first launch.
 
-On GNOME with Wayland, HPR requires a shell extension called `window-calls-extended` to expose the focused window information. On first launch, HPR checks whether the extension is already working. If it is not, HPR clones and enables it automatically. GNOME on Wayland cannot reload shell extensions without a session restart, so you will need to log out and back in once after the first launch. This is a GNOME limitation. After that one-time setup, subsequent launches work without any intervention.
+On GNOME with Wayland, HPR requires a shell extension called `window-calls-extended` to expose the focused window information. On first launch, HPR checks whether the extension is already working. If it is not, HPR will prompt you to run the `installWindowCallsExtension.sh` script that ships next to the binary. That script clones and enables the extension for you. Because GNOME on Wayland cannot reload shell extensions without a session restart, you will need to log out and back in once after running it. After that one-time setup, subsequent launches work without any intervention.
 
 On KDE Plasma, HPR uses KWin's scripting API via `qdbus6` to query the active window. No additional setup is required.
 
