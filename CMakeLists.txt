@@ -69,4 +69,27 @@ if(UNIX)
         ${CMAKE_BINARY_DIR}/installWindowCallsExtension.sh
         COPYONLY
     )
+
+    # Locate the actual Slint shared library from wherever find_package found it
+    find_library(SLINT_SO
+        NAMES slint_cpp
+        HINTS "${Slint_DIR}/../.."
+              "${Slint_DIR}/../../.."
+    )
+
+    if(SLINT_SO)
+        add_custom_command(TARGET HPR POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${SLINT_SO}"
+                $<TARGET_FILE_DIR:HPR>
+        )
+    else()
+        message(WARNING "[HPR] Could not find libslint_cpp.so — you may need to copy it manually next to the binary")
+    endif()
+
+    # Tell the binary to look in its own directory for .so files ($ORIGIN = dir of the exe)
+    set_target_properties(HPR PROPERTIES
+        BUILD_RPATH "$ORIGIN"
+        INSTALL_RPATH "$ORIGIN"
+    )
 endif()
