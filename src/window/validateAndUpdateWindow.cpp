@@ -26,7 +26,9 @@ std::string validateAndUpdateWindow_Cross(std::string &windowName)
         || windowName.contains("openwith")
         || windowName.contains("startmenuexperiencehost")
         || windowName.contains("applicationframehost")
-        || windowName.contains("shellexperiencehost"))
+        || windowName.contains("shellexperiencehost")
+        || windowName.contains("plasmashell")
+        || windowName.contains("js::"))
     {
         return "Unknown";
     }
@@ -37,6 +39,7 @@ std::string validateAndUpdateWindow_Cross(std::string &windowName)
     //As thif func runs on background thread, it wont cause any performance issues, and if it does, then
     //well i dont care
     if (windowName.contains("chrome")) return "Chrome";
+    else if (windowName.contains("dolphin")) return "Dolphin";
     else if (windowName.contains("code")) return "Visual Studio Code"; 
     else if (windowName.contains("msedge")) return "Edge";
     else if (windowName.contains("devenv")) return "Visual Studio";

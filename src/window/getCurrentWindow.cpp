@@ -151,6 +151,11 @@ std::string CurrentWindowManager::getCurrentWindow()
 		window = getCurrentWindow_Gnome();
 	}
 
+	else if (currentPlatform.contains("KDE"))
+	{
+		window = getCurrentWindow_KDE();
+	}
+
 	// Need to explicitly set this because shit happens if cached value is
 	// returned
 	window = validateAndUpdateWindow_Cross(window);
@@ -197,4 +202,31 @@ std::string CurrentWindowManager::getCurrentWindow_Gnome()
 
 	return "";
 
+}
+
+std::string CurrentWindowManager::getCurrentWindow_KDE()
+{
+	std::string cmd = R"(
+		echo 'print(workspace.activeWindow.resourceClass);' > /tmp/kwin_active.js &&
+		S=$(qdbus6 org.kde.KWin /Scripting org.kde.kwin.Scripting.loadScript /tmp/kwin_active.js kwin_tmp_$$) &&
+		T=$(date '+%Y-%m-%d %H:%M:%S') &&
+		qdbus6 org.kde.KWin /Scripting/Script$S org.kde.kwin.Script.run > /dev/null 2>&1 &&
+		sleep 0.1 &&
+		journalctl --since "$T" -o cat | grep '^js:' | tail -n 1 | sed 's/^js: //' ;
+		qdbus6 org.kde.KWin /Scripting/Script$S org.kde.kwin.Script.stop > /dev/null 2>&1 ;
+		qdbus6 org.kde.KWin /Scripting unloadScript kwin_tmp_$$ > /dev/null 2>&1
+	)";
+
+	std::string result = runSystemCommand(cmd);
+
+	// Trim trailing newline/whitespace
+	while (!result.empty() && (result.back() == '\n' || result.back() == '\r' || result.back() == ' '))
+		result.pop_back();
+
+	// Strip "js: " prefix that KWin journals print() output with
+	const std::string prefix = "js: ";
+	if (result.starts_with(prefix))
+		result = result.substr(prefix.size());
+
+	return result;
 }
