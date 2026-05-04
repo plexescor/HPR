@@ -1,6 +1,8 @@
-#include "HPR.hpp"
-#include "getCurrentWindow.hpp"
 #include "databaseManager.hpp"
+#include "getCurrentWindow.hpp"
+#include "HPR.hpp"
+
+
 
 #ifdef _WIN32
 	#include <windows.h>
