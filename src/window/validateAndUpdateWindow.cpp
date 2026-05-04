@@ -39,6 +39,7 @@ std::string validateAndUpdateWindow_Cross(std::string &windowName)
     //As thif func runs on background thread, it wont cause any performance issues, and if it does, then
     //well i dont care
     if (windowName.contains("chrome")) return "Chrome";
+    else if (windowName.contains("explorer")) return "Explorer";
     else if (windowName.contains("dolphin")) return "Dolphin";
     else if (windowName.contains("code")) return "Visual Studio Code"; 
     else if (windowName.contains("msedge")) return "Edge";
