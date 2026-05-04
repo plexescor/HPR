@@ -39,34 +39,9 @@ CurrentWindowManager::CurrentWindowManager()
 
 			if (!checkResult.contains("('"))
 			{
-				std::cout << "[HPR] Extension not working, attempting install..." << std::endl;
-
-				// Extension not working — install it
-				std::string homeCommand = "echo $HOME";
-				std::string homeDir = runSystemCommand(homeCommand);
-				if (!homeDir.empty() && homeDir.back() == '\n')
-					homeDir.pop_back();
-
-				std::string extDir = homeDir + "/.local/share/gnome-shell/extensions/window-calls-extended@hseliger.eu";
-
-				std::cout << "[HPR] Extension dir: " << extDir << std::endl;
-
-				// Clone only if folder doesn't exist
-				std::string cloneCmd = "[ -d \"" + extDir + "\" ] || git clone https://github.com/hseliger/window-calls-extended \"" + extDir + "\" 2>&1";
-				std::string cloneResult = runSystemCommand(cloneCmd);
-				std::cout << "[HPR] Clone result: " << cloneResult << std::endl;
-
-				// Enable the extension
-				std::string enableCmd = "gnome-extensions enable window-calls-extended@hseliger.eu 2>&1";
-				std::string enableResult = runSystemCommand(enableCmd);
-				std::cout << "[HPR] Enable result: " << enableResult << std::endl;
-
-				// Can't restart gnome-shell on Wayland without logging out
-				// Prompt to logout
-				// Learn the hard way
-				currentPlatform = "GNOME_NEEDS_RESTART";
-				std::cout << "[HPR] Platform set to GNOME_NEEDS_RESTART" << std::endl;
+				currentPlatform = "GNOME_NO_EXTENSION";
 			}
+
 			else
 			{
 				std::cout << "[HPR] Extension working, proceeding normally" << std::endl;
@@ -106,7 +81,7 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 	{
 		window = getCurrentWindow();
 
-		if (window.contains("RESTART YOUR PC"))
+		if (window.contains("SCRIPT"))
 		{
 			std::lock_guard<std::mutex> lock(AppState::stateMutex);
 			AppState::state.currentWindow = window;
@@ -163,12 +138,12 @@ std::string CurrentWindowManager::getCurrentWindow()
 		window = getCurrentWindow_Windows();
 	}
 
-	else if (currentPlatform.contains("GNOME_NEEDS_RESTART"))
+	else if (currentPlatform.contains("GNOME_NO_EXTENSION"))
 	{
 		//This means we need to prompt the user to restart
 		//Return immediately
 
-		return "RESTART YOUR PC";
+		return "RUN THE \"install.sh\" SCRIPT NEXT TO THE HPR BINARY AND THE RESTART PC";
 	}
 
 	else if (currentPlatform.contains("GNOME")) //Motherfucking GNOME
