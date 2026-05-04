@@ -63,8 +63,8 @@ On Windows, HPR uses the standard Win32 API to query the active window. The bina
 
 | Feature | HPR | ActivityWatch | RescueTime | Toggl |
 |---|---|---|---|---|
-| Binary size | ~4 MB | 200 MB+ | Cloud app | Cloud app |
-| RAM usage | Under 30 MB | 200 MB+ | N/A | N/A |
+| Binary size | ~2 MB (excluding dynamic library) | 200 MB+ | Cloud app | Cloud app |
+| RAM usage | ~4 MB (~30 MB on Hyprland) | 200 MB+ | N/A | N/A |
 | Requires account | No | No | Yes | Yes |
 | Data leaves your machine | Never | Never | Yes | Yes |
 | Auto-tracking | Yes | Yes | Yes | No |
