@@ -31,8 +31,8 @@ HPR::~HPR()
 void HPR::trackingLoop() {
     //Stuff native to c++
     std::string window;
-    std::map<std::string, long>* timeLog = &(AppState::state.timeLog_PerApp);
-    std::map<std::pair<std::string, std::string>, std::vector<uint64_t>>* switchHistory = &(AppState::state.switchHistory);
+    std::map<std::string, long> timeLog;
+    std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> switchHistory;
     
     //Stuff converted for slint
     std::vector<TimeLog> timeLog_Vec;
@@ -41,14 +41,17 @@ void HPR::trackingLoop() {
     while (running) {
         {
             totalTrackedTime = 0;
-            std::lock_guard<std::mutex> lock(AppState::stateMutex);
-            window = AppState::state.currentWindow;
-
+            {
+                std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                window = AppState::state.currentWindow;
+                timeLog = AppState::state.timeLog_PerApp;
+                switchHistory = AppState::state.switchHistory;
+            }
             
             //--------------Timelog-------------------------------------------------
             timeLog_Vec.clear(); //Clear to avoid duplicates
-            timeLog_Vec.reserve((*timeLog).size());
-            for (const auto &[k, v] : *timeLog)
+            timeLog_Vec.reserve((timeLog).size());
+            for (const auto &[k, v] : timeLog)
             {
                 totalTrackedTime += v;
                 //So new maps are added at the end
@@ -59,14 +62,14 @@ void HPR::trackingLoop() {
                 });
             }
             std::sort(timeLog_Vec.begin(), timeLog_Vec.end(), [&timeLog](const TimeLog& a, const TimeLog& b) {
-                return (*timeLog).at(std::string(a.name)) > (*timeLog).at(std::string(b.name));
+                return (timeLog).at(std::string(a.name)) > (timeLog).at(std::string(b.name));
             });
 
             //--------------SwitchHistory--------------------------------------------
             switchHistory_Vec.clear();
-            switchHistory_Vec.reserve((*switchHistory).size());
+            switchHistory_Vec.reserve((switchHistory).size());
 
-            for (const auto &[k, v] : *switchHistory)
+            for (const auto &[k, v] : switchHistory)
             {
                 //k = pair<>, v = vector<>
                 const auto& [from, to] = k;
@@ -84,8 +87,8 @@ void HPR::trackingLoop() {
             std::sort(switchHistory_Vec.begin(), switchHistory_Vec.end(), [&switchHistory](const SwitchHistory& a, const SwitchHistory& b) {
                 auto keyA = std::make_pair(std::string(a.fromWindow), std::string(a.toWindow));
                 auto keyB = std::make_pair(std::string(b.fromWindow), std::string(b.toWindow));
-                return *std::max_element((*switchHistory).at(keyA).begin(), (*switchHistory).at(keyA).end())
-                    > *std::max_element((*switchHistory).at(keyB).begin(), (*switchHistory).at(keyB).end());
+                return *std::max_element((switchHistory).at(keyA).begin(), (switchHistory).at(keyA).end())
+                    > *std::max_element((switchHistory).at(keyB).begin(), (switchHistory).at(keyB).end());
             });
 
         }
