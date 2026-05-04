@@ -16,6 +16,8 @@ export component MainWindow inherits Window {
     in property <[TimeLog]> timePerApp_S;
     in property <[SwitchHistory]> switchHistory_S;
 
+    default-font-size: 17px;
+
     title: "HPR";
     Text 
     {
@@ -29,7 +31,7 @@ export component MainWindow inherits Window {
     }
 
     ListView {
-        x: 200px;
+        x: 300px;
         for entry in switchHistory_S : Text {
             text: "From: " + entry.fromWindow + " To: " + entry.toWindow + "  At: " + entry.maxTimeStamp;
         }

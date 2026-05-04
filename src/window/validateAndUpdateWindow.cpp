@@ -56,7 +56,7 @@ std::string validateAndUpdateWindow_Cross(std::string &windowName)
     else if (windowName.contains("vlc")) return "VLC Media Player";
     else if (windowName.contains("obsidian")) return "Obsidian";
     else if (windowName.contains("postman")) return "Postman";
-    else if (windowName.contains("Ptyxis")) return "Gnome-Terminal";//linux apps also and windows apps also
+    else if (windowName.contains("ptyxis")) return "Gnome-Terminal";//linux apps also and windows apps also
     else if (windowName.contains("gnome-terminal")) return "Gnome-Terminal";
     else if (windowName.contains("x-terminal-emulator")) return "X Terminal Emulator";
     else if (windowName.contains("xfce4-terminal")) return "XFCE4 Terminal";

@@ -13,6 +13,7 @@ class DatabaseManager
     public:
         DatabaseManager();
         ~DatabaseManager();
+        void initDatabase(bool copyData = true);
         void run();
         bool loadStateFromDB();
 

@@ -14,16 +14,37 @@
 
 DatabaseManager::DatabaseManager()
 {
+
+    initDatabase();
+
+    if (!loadStateFromDB())
+    {
+        std::cerr << "Failed to load data from db!\n";
+    }
+}
+
+DatabaseManager::~DatabaseManager()
+{
+    running = false;
+    if (writer.joinable()) writer.join();
+}
+
+void DatabaseManager::initDatabase(bool copyData)
+{
+
     updateFilePath();
     updateFileName();
 
-
-    //We need copies of the data for extra safety
+    if (copyData)
     {
-        std::lock_guard<std::mutex> lock(AppState::stateMutex);
-        timeLog_PerApp_D = AppState::state.timeLog_PerApp;
-        switchHistory_D = AppState::state.switchHistory;
+        //We need copies of the data for extra safety
+        {
+            std::lock_guard<std::mutex> lock(AppState::stateMutex);
+            timeLog_PerApp_D = AppState::state.timeLog_PerApp;
+            switchHistory_D = AppState::state.switchHistory;
+        }
     }
+    
 
     db.emplace(filePath + fileName);
 
@@ -39,17 +60,6 @@ DatabaseManager::DatabaseManager()
          "   toWindow text,"
          "   timeStamp int unique"
          ");";
-
-    if (!loadStateFromDB())
-    {
-        std::cerr << "Failed to load data from db!\n";
-    }
-}
-
-DatabaseManager::~DatabaseManager()
-{
-    running = false;
-    if (writer.joinable()) writer.join();
 }
 
 void DatabaseManager::run()
@@ -117,6 +127,32 @@ void DatabaseManager::writeLoop()
         }
 
         std::cout << "Done DB ops!" << std::endl;
+
+        //So that old db is closed and new file is created if date changes
+
+        std::string newName = "";
+        //Get ms sinc epoch
+        auto nowSystem = std::chrono::system_clock::now();
+        uint64_t t = std::chrono::duration_cast<std::chrono::milliseconds>(
+            nowSystem.time_since_epoch()).count();
+
+        newName += convertToDate_DDMMYY(t) + ".db";
+        
+        //Means if date has changed
+        if (newName != fileName)
+        {
+            // Clear appstate in case of new day
+            {
+                std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                AppState::state.timeLog_PerApp.clear();
+                AppState::state.switchHistory.clear();
+            }
+
+            // so it doesnt copy the data of previous day or whatever
+            initDatabase(false);
+
+        }
+
         //Sleep in 100 chunks of 100ms each so program can exit almost instantly
         for (int i = 0; i < 100 && running; i++)
         {
@@ -131,7 +167,9 @@ void DatabaseManager::updateFilePath()
     #ifdef _WIN32
         tempPath = std::getenv("USERPROFILE");
     #else
-        tempPath = std::getenv("HOME");
+        const char* home = std::getenv("HOME");
+        if (!home) throw std::runtime_error("HOME env var not set");
+        tempPath = home;
     #endif
 
     //Now construct the path acc to the date
