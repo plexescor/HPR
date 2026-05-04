@@ -28,7 +28,8 @@ std::string validateAndUpdateWindow_Cross(std::string &windowName)
         || windowName.contains("applicationframehost")
         || windowName.contains("shellexperiencehost")
         || windowName.contains("plasmashell")
-        || windowName.contains("js::"))
+        || windowName.contains("js::")
+        || windowName.contains("null"))
     {
         return "Unknown";
     }
@@ -72,6 +73,7 @@ std::string validateAndUpdateWindow_Cross(std::string &windowName)
     else if (windowName.contains("guake")) return "Guake Terminal";
     else if (windowName.contains("tilda")) return "Tilda Terminal";
     else if (windowName.contains("notion")) return "Notion";
+    else if (windowName.contains("nautilus")) return "Nautilus";
 
     return unModifiedWindowName; //Return unmodified name with proper Case
 }
