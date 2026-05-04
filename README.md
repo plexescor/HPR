@@ -99,19 +99,16 @@ A premium tier is planned for the future. The free tier will always include full
 
 ## Architecture Overview
 
-HPR is a multi-threaded C++23 application. The threading model is the most important thing to understand about the codebase. There are four threads running at runtime.
+HPR is a multi-threaded C++23 application built around a centralized shared state model. The threading architecture utilizes four distinct threads running concurrently. This design ensures the UI remains fully responsive while blocking I/O and polling operations occur asynchronously.
 
-The main thread is the Slint event loop. It handles window events, input, and UI repaints. It does nothing else. It blocks on `(*ui)->run()` for the entire lifetime of the application.
+1.  **Main Thread (UI Loop):** The main thread serves as the entry point in `main.cpp`. It instantiates the manager classes, calls their respective `run()` methods to spawn background threads, and then enters the Slint event loop via `(*ui)->run()`. The thread blocks here indefinitely until the window is closed. It is strictly responsible for rendering and user input.
+2.  **Window Polling Thread:** Encapsulated within the `CurrentWindowManager` class. The `getCurrentWindow_Loop` method runs continuously, invoking the platform-specific active window getter every 50 milliseconds using `std::this_thread::sleep_for`. Upon retrieving a window name, it acquires `AppState::stateMutex` to update the current window name and accumulate elapsed time.
+3.  **UI Bridge Thread:** Encapsulated within the `HPR` class in the `trackingLoop` method. It wakes every 100 milliseconds, acquires `AppState::stateMutex`, and reads the raw C++ `std::map` structures. It converts these into Slint-compatible structures (`slint::VectorModel` and `slint::SharedString`), and dispatches the data to the main thread utilizing `slint::invoke_from_event_loop`.
+4.  **Database Writer Thread:** Encapsulated within the `DatabaseManager` class in the `writeLoop` method. It wakes every 10 seconds to create an in-memory copy of the `AppState` data and flushes it to the SQLite database. To prevent blocking the application during termination, it uses a chunked sleep pattern, iterating 100 times with a 100-millisecond sleep, checking the atomic `running` flag on each iteration.
 
-The window polling thread runs inside `CurrentWindowManager` and calls the platform-specific active window getter every 50 milliseconds using `std::this_thread::sleep_for`. It writes the current window name and elapsed time into the shared `AppState` struct behind a mutex on every tick.
+## Shared State and Synchronization
 
-The UI bridge thread runs inside `HPR` and reads from `AppState` every 100 milliseconds, converts the data into Slint-compatible types, and posts updates to the main thread using `slint::invoke_from_event_loop`. It never touches the UI directly. It captures everything by value into the lambda so the snapshot it pushes is always consistent regardless of what the polling thread does between capture and dispatch.
-
-The database writer thread runs inside `DatabaseManager` and wakes every 10 seconds to flush a snapshot of `AppState` to SQLite. It uses a chunked sleep of 100 intervals of 100 milliseconds each so that it can respond to the stop flag quickly when the application is closing, rather than blocking shutdown for up to 10 seconds.
-
-## Shared State
-
-All shared mutable state lives in a single struct inside the `AppState` namespace:
+All shared mutable data resides in a globally accessible namespace defined in `appState.hpp`:
 
 ```cpp
 namespace AppState {
@@ -126,65 +123,80 @@ namespace AppState {
 }
 ```
 
-`state` and `stateMutex` are declared `extern` in the header and defined once in `appState.cpp`. Every thread accesses the state through `std::lock_guard<std::mutex>`. There are no fine-grained per-field locks. The mutex covers the entire struct. For the current scale of this application this is the correct tradeoff.
+The state is instantiated exactly once in `appState.cpp`. Every thread accessing this state must acquire `stateMutex` using `std::lock_guard<std::mutex>`. The application employs a coarse-grained locking strategy where the entire struct is locked simultaneously. Locks are typically acquired within scoped blocks `{}` to ensure the mutex is held for the absolute minimum duration required.
 
-`switchHistory` maps a pair of application names to a vector of Unix millisecond timestamps. Each element in the vector represents one instance of that specific transition occurring. So if you switched from Chrome to VSCode three times today, the vector for `{Chrome, VSCode}` contains three timestamps.
+The `timeLog_PerApp` map accumulates raw duration in milliseconds. The `switchHistory` map utilizes a `std::pair<std::string, std::string>` representing the source and destination windows as the key. The value is a `std::vector<uint64_t>` storing Unix millisecond timestamps representing every recorded instance of that transition.
 
-## Database Layer
+## UI Bridging and Slint Interoperability
 
-HPR uses `sqlite_modern_cpp`, a header-only C++ wrapper over the SQLite3 amalgamation. The SQLite3 amalgamation is compiled directly into the binary as a C source file. Neither dependency requires system installation.
+The Slint declarative framework requires data to be packaged in specific models before it can be processed by the rendering engine. The `HPR::trackingLoop` manages this data translation.
 
-The `DatabaseManager` holds the database connection as `std::optional<sqlite::database>`. The optional is emplaced in the constructor using `db.emplace(filePath + fileName)` after the file path is resolved. The connection stays alive for the entire lifetime of the object and is destroyed when the destructor runs. This is not the same as opening and closing the file on every write, which would be expensive and incorrect.
+The loop clears and populates local `std::vector` instances of `TimeLog` and `SwitchHistory` structs. For the `switchHistory` vectors, it utilizes `std::max_element` to isolate the most recent transition timestamp for display purposes.
 
-The two tables have different write strategies because they have different semantics.
+Because Slint objects are not thread-safe and cannot be directly manipulated from background threads, the bridge thread creates a `slint::ComponentWeakHandle<MainWindow>`. It captures the translated data by value within a lambda function and pushes the lambda into the Slint event loop queue via `slint::invoke_from_event_loop`. 
 
-`app_usage` has a `UNIQUE` constraint on the `name` column. It uses `INSERT OR REPLACE`. When a new flush happens for Chrome, the existing Chrome row is deleted and a fresh one with the updated duration is inserted. There is always exactly one row per application.
+```cpp
+slint::invoke_from_event_loop([weak, window, timeLog_Vec, switchHistory_Vec]() {
+    if (auto handle = weak.lock()) {
+        (*handle)->set_windowName_S(slint::SharedString(window));
+        (*handle)->set_timePerApp_S(std::make_shared<slint::VectorModel<TimeLog>>(timeLog_Vec));
+        (*handle)->set_switchHistory_S(std::make_shared<slint::VectorModel<SwitchHistory>>(switchHistory_Vec));
+    }
+});
+```
 
-`switch_history` has a `UNIQUE` constraint on the `timeStamp` column. It uses `INSERT OR IGNORE`. Because the write loop copies the entire `switchHistory` map every 10 seconds and tries to insert all timestamps again, the unique constraint ensures each switch event is persisted exactly once. Subsequent insert attempts for the same timestamp are silently skipped.
+Inside the lambda, the weak handle is promoted to a strong handle. The generated setter methods are invoked, passing the vectors wrapped in `std::make_shared<slint::VectorModel<...>>`.
 
-On startup, `loadStateFromDB()` is called before any background threads are started. It reads both tables and populates `AppState::state`. Because the threads have not started yet, no mutex is needed during the initial load and there are no race conditions.
+## Database Layer Implementation
+
+The database layer is managed by `DatabaseManager` and depends on `sqlite_modern_cpp`, a header-only C++ wrapper over the standard SQLite3 C library. The SQLite3 source code is compiled directly into the HPR binary to ensure zero external system dependencies.
+
+The database connection is managed as a `std::optional<sqlite::database>` to tightly control its initialization and lifecycle. The connection is established via `db.emplace(filePath + fileName)` in `initDatabase()` and remains open until the `DatabaseManager` object is destroyed.
+
+The database schema implements two distinct persistence strategies:
+
+*   `app_usage`: Enforces a `UNIQUE` constraint on the `name` column and relies on `INSERT OR REPLACE` statements. This ensures exactly one row exists per tracked application. Every database flush overwrites the previous duration with the newly accumulated total.
+*   `switch_history`: Enforces a `UNIQUE` constraint on the `timeStamp` column and relies on `INSERT OR IGNORE` statements. The write loop indiscriminately attempts to insert the entire history vector on every flush. The SQLite engine silently drops duplicate timestamps, ensuring each switch event is recorded exactly once without requiring complex diffing logic in the application code.
+
+Database files are stored hierarchically by month and day. `DatabaseManager::updateFilePath()` queries the operating system for the user profile directory (`$HOME` on Linux, `USERPROFILE` on Windows) and constructs paths in the format `HPR_DB/MM-YY/DD-MM-YY.db`. At midnight, the write loop detects the date rollover, clears the in-memory `AppState`, and initializes a fresh database file for the new day.
 
 ## Timing Model
 
-HPR uses two different clocks deliberately.
+The application enforces a strict separation between duration measurement and wall-clock timestamps:
 
-`std::chrono::steady_clock` is used to measure elapsed time between polling ticks. Steady clock is guaranteed to only move forward at a constant rate. It is never adjusted by NTP, never jumps for DST changes, and never moves backward. This makes it correct for accumulating duration measurements.
-
-`std::chrono::system_clock` is used to record the wall-clock time of switch events. System clock gives you the actual human-readable time, which is what you want when recording that a switch happened at 5:38pm. These timestamps are stored as Unix milliseconds in the database and converted to human-readable strings only at display time.
-
-Using system clock for elapsed duration measurements would be incorrect because NTP adjustments or DST changes could cause time to jump mid-session, making duration accumulation wrong.
+*   `std::chrono::steady_clock`: Used exclusively in `CurrentWindowManager::getCurrentWindow_Loop` to measure elapsed time between polling intervals. The steady clock is monotonic; it is guaranteed to only move forward and is unaffected by system time adjustments, NTP synchronizations, or Daylight Saving Time shifts. This guarantees precision in duration accumulation.
+*   `std::chrono::system_clock`: Used to record the exact moment a window switch occurs. These timestamps are generated via `time_since_epoch()` and stored as raw `uint64_t` milliseconds in the `AppState` and the database. The `timeUtils.cpp` module provides helper functions relying on `std::localtime` and `std::put_time` to convert these epoch values into human-readable strings precisely at the moment of UI dispatch.
 
 ## Window Name Normalization
 
-Every raw window name returned by the platform getter passes through `validateAndUpdateWindow_Cross` before being written to state. This function:
+Raw window titles retrieved from operating system APIs are often inconsistent or cluttered. The `validateAndUpdateWindow_Cross` function in `validateAndUpdateWindow.cpp` acts as a required normalization pipeline.
 
-Strips trailing newline and carriage return characters from shell command output. Produces a lowercase copy of the name for comparison purposes while retaining the original-case version for display. Maps known garbage processes to the `Unknown` string so they are not tracked. Maps known application identifiers to consistent human-readable names using C++23 `std::string::contains`. Returns the original-case unmodified name for applications that do not match any known pattern.
+The pipeline strips trailing newline and carriage return characters left over from shell command outputs utilizing `pop_back()`. It then generates a lowercased copy using `std::transform` for case-insensitive matching. Known system background processes, temporary window wrappers, and KWin internal JavaScript execution environments are explicitly discarded and replaced with the literal string "Unknown".
 
-The filter and mapping lists are hardcoded and currently cover around 25 common applications across Windows and Linux (Chrome, Firefox, Edge, VSCode, Visual Studio, Discord, Spotify, Steam, OBS, Obsidian, Postman, Slack, Teams, Zoom, VLC, Notion, and a range of terminal emulators). Adding a new application mapping is one `else if` line in `validateAndUpdateWindow.cpp`.
+For valid tracked applications, it maps raw titles to canonical strings. For example, any title containing "chrome" is standardized to "Chrome", and any title containing "code" is standardized to "Visual Studio Code". This ensures distinct windows belonging to the same underlying application are aggregated under a single database entry. The mapping logic utilizes C++23 `std::string::contains` and covers approximately 25 common applications across Windows and Linux.
 
-## Class Lifecycle Pattern
+## System Command Execution
 
-Every class with a background thread follows the same pattern. Constructor does setup. `run()` spawns the thread. The destructor sets the atomic stop flag to false and calls `join()`. The thread loop checks the stop flag on every iteration. This is consistent across `CurrentWindowManager`, `HPR`, and `DatabaseManager`.
+On Linux platforms, HPR relies on executing shell commands to query window managers. The `windowUtilities.cpp` file provides a robust `runSystemCommand` wrapper function. It utilizes `popen` to spawn a shell process with read access, reads the standard output stream into a fixed-size buffer using `fgets`, appends the buffer to a `std::string`, and cleans up the process utilizing `pclose`, capturing the exit code for error handling.
 
-```cpp
-~SomeClass() {
-    running = false;
-    if (thread.joinable()) thread.join();
-}
-```
+## Class Lifecycle and Thread Management Pattern
 
-This means every object in `main.cpp` that goes out of scope at program exit will cleanly stop its thread before the destructor returns. Shutdown is orderly and deterministic.
+Classes that manage background threads (`CurrentWindowManager`, `HPR`, `DatabaseManager`) follow a strict lifecycle pattern to guarantee deterministic application shutdown.
+
+The class constructor allocates resources and performs initial validation but does not start the thread. A dedicated `run()` method spawns the `std::thread` and binds it to the internal looping function. The class maintains a `std::atomic<bool> running` flag initialized to true. The background loop strictly checks this flag on every iteration.
+
+When the application exits, object destructors are invoked. The destructor sets `running = false` and calls `join()` on the thread object if `thread.joinable()` evaluates to true. This blocks the main thread from exiting until all background tasks complete their current iteration, preventing memory corruption or segmentation faults during teardown.
 
 ## Building From Source
 
 Requirements:
 
-- CMake 3.21 or later
-- GCC 13+, Clang 16+, or MSVC 2022+ with C++23 support
-- Slint 1.16.1 (install with the provided script, see below)
-- On Linux: `jq` for Hyprland, `gdbus` for GNOME, `qdbus6` for KDE (all standard on their respective distros)
+*   CMake 3.21 or later
+*   GCC 13+, Clang 16+, or MSVC 2022+ with C++23 support
+*   Slint 1.16.1 (installed via the provided script, see below)
+*   On Linux: `jq` for Hyprland, `gdbus` for GNOME, `qdbus6` for KDE
 
-Install Slint and its tooling system-wide first using the provided script:
+Install Slint and its associated tooling system-wide using the provided shell script. This script automatically downloads Slint 1.16.1, `slint-lsp`, and `slint-viewer` binaries from GitHub releases, extracts the archives into the `external/` directory, and installs the libraries and binaries to `/usr/local/`.
 
 ```bash
 git clone https://github.com/plexescor/HPR
@@ -192,7 +204,9 @@ cd HPR
 sudo ./installDependencies.sh
 ```
 
-This downloads Slint 1.16.1, slint-lsp, and slint-viewer from GitHub releases, extracts them into `external/`, and installs them to `/usr/local/`. Then build:
+On Windows operating systems, execute `installDependencies.bat` instead of the shell script.
+
+Once dependencies are installed, configure and build the CMake project:
 
 ```bash
 mkdir build && cd build
@@ -200,39 +214,50 @@ cmake ..
 cmake --build . --parallel
 ```
 
-SQLite is bundled as the official single-file amalgamation and compiled as part of the build. No system SQLite is required. On Windows use `installDependencies.bat` instead of the shell script.
+SQLite is bundled as the official single-file amalgamation within `external/sqLite/` and is compiled directly into the binary as part of the CMake build process. No system-level SQLite development packages are required.
 
 ## Adding A New Platform
 
-All platform-specific window detection is inside `CurrentWindowManager`. The constructor detects the platform by reading `$XDG_CURRENT_DESKTOP` on Linux. The `getCurrentWindow()` method dispatches to the correct platform getter based on the detected platform string.
+Platform-specific window detection is isolated entirely within `CurrentWindowManager`. On Linux, the constructor parses the `$XDG_CURRENT_DESKTOP` environment variable to identify the active desktop environment. The `getCurrentWindow()` method then dispatches to the appropriate platform-specific getter function.
 
-To add a new platform:
+To implement a new platform backend:
 
-Add a new private method `getCurrentWindow_YourPlatform()` to the class. Implement it in `getCurrentWindow.cpp`. Add an `else if (currentPlatform.contains("YourPlatform"))` branch to the `getCurrentWindow()` dispatcher. Add any setup logic needed to the constructor behind the appropriate preprocessor guard.
+1.  Declare a new private method, such as `getCurrentWindow_YourPlatform()`, within `getCurrentWindow.hpp`.
+2.  Implement the method in `getCurrentWindow.cpp`. The function must return the raw active window title as a `std::string`.
+3.  Add an `else if (currentPlatform.contains("YourPlatform"))` branch to the routing logic in `getCurrentWindow()`.
+4.  If the platform requires initialization checks, execute the logic in the `CurrentWindowManager` constructor inside an appropriate preprocessor guard.
 
-The normalization step runs after every platform getter returns, so new platform implementations do not need to handle stripping or name mapping.
+The normalization function `validateAndUpdateWindow_Cross` executes immediately after the platform getter returns, ensuring new platform implementations do not need to implement independent string cleanup or application mapping logic.
 
 ## Adding New Tracked Data
 
-To add a new tracked metric:
+The application architecture is designed to be easily extensible. To track a new user metric:
 
-Add the field to `AppState::AppState` in `appState.hpp`. Add a write to the field in `getCurrentWindow_Loop()` inside the existing mutex lock. Add a read in `HPR::trackingLoop()` to convert it for display. Add a new Slint struct and property in `app-window.slint` if it needs to appear in the UI. Add a table and read/write logic in `DatabaseManager` if it needs to be persisted.
+1.  Define the new field within the `AppState::AppState` struct in `appState.hpp`.
+2.  Update `getCurrentWindow_Loop()` to populate the new field. Ensure this operation occurs strictly within the `std::lock_guard<std::mutex>` block.
+3.  Update `HPR::trackingLoop()` to read the field, convert it to a valid Slint-compatible data type, and pass it into the UI lambda function.
+4.  Update `app-window.slint` with a new property declaration and an appropriate UI element to render the data.
+5.  Update `DatabaseManager::initDatabase` to create the required table and modify `writeLoop` to persist the new field.
 
-The architecture is additive. Nothing else needs to change.
+## Known Issues and Limitations
 
-## Known Issues and Honest Limitations
-
-Raw pointers to `AppState` fields in `HPR::trackingLoop` (`timeLog` and `switchHistory` are raw pointers set before the loop starts) are used only inside the mutex lock where they are safe. They are not used outside the lock. This is safe but unnecessary and slightly misleading. Direct access to `AppState::state` inside the lock would be cleaner.
-
-On GNOME, if the `window-calls-extended` extension is not detected on startup, HPR sets the platform to `GNOME_NO_EXTENSION` and returns a string instructing the user to run `installWindowCallsExtension.sh` (shipped next to the binary and copied to the build directory by CMake). HPR does not automatically run the script itself. The script clones the extension repo and enables it via `gnome-extensions enable`, then prints a prompt to log out and back in.
-
-The KDE backend uses a slow polling approach: it writes a temporary JS file to `/tmp`, loads it as a KWin script via `qdbus6`, waits 100ms, reads the result from the journal, then unloads the script. This runs on every poll tick and is noticeably heavier than the other backends. It works but a cleaner KDE path is a known future improvement.
+*   **Pointer Safety:** In `HPR::trackingLoop`, raw pointers to `AppState` fields (`timeLog` and `switchHistory`) are established before the `while` loop begins. They are dereferenced exclusively inside the mutex lock, ensuring they are technically thread-safe. However, this implementation pattern is fragile compared to directly accessing `AppState::state` inside the lock, which would statically eliminate the risk of pointer dereferencing outside the critical section.
+*   **GNOME Extension Handling:** If the `window-calls-extended` extension is absent on GNOME, HPR detects the failure via a `gdbus` call and sets the platform string to `GNOME_NO_EXTENSION`. This triggers the polling loop to return a hardcoded string instructing the user to execute `installWindowCallsExtension.sh`. HPR does not attempt to invoke the installation script autonomously. The script handles cloning the repository and enabling the extension via `gnome-extensions enable`.
+*   **KDE Backend Performance:** The KDE backend relies on injecting a temporary JavaScript payload into KWin via `qdbus6` and scraping the system journal for the subsequent print output. This process triggers multiple shell invocations and disk I/O operations on every 50-millisecond polling tick. While entirely functional, it is significantly heavier in terms of CPU overhead compared to the native Win32 API calls used on Windows or the direct `hyprctl` JSON query utilized on Hyprland.
+*   **Linux Platform Identification:** The application relies on `$XDG_CURRENT_DESKTOP` to identify the Linux compositor. This string is parsed loosely using `std::string::contains`. Edge cases where users run nested compositors or non-standard session variables may result in fallback behavior.
 
 ## Contributing
 
-The codebase is small enough to read entirely in one sitting. Start with `main.cpp` to understand initialization order, then `appState.hpp` to understand the data model, then work through each class. The most important thing to understand before making changes is the threading model: which thread reads what, which thread writes what, and where the mutex must be held.
+The codebase is organized specifically to be comprehensible in a single reading session. The recommended reading order is:
 
-There is no formal contribution process defined yet. Open an issue or a pull request and we will figure it out.
+1.  `main.cpp`: To trace initialization and thread spawning sequences.
+2.  `appState.hpp`: To understand the core centralized data model.
+3.  `getCurrentWindow.cpp`: To observe how telemetry data is polled and collected.
+4.  `databaseManager.cpp`: To understand how telemetry data is persistently stored.
+
+When contributing, ensure rigorous adherence to the established threading model. Validate which thread holds responsibility for reading or writing specific variables, and verify that `AppState::stateMutex` is acquired prior to any interaction with shared state.
+
+There is no formal contribution process defined at this time. Submit an issue or a pull request for proposed modifications.
 
 ---
 
