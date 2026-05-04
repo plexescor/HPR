@@ -48,6 +48,10 @@ void DatabaseManager::initDatabase(bool copyData)
 
     db.emplace(filePath + fileName);
 
+    // WAL mode + synchronous normal — critical for Btrfs+LUKS
+    *db << "PRAGMA journal_mode=WAL;";
+    *db << "PRAGMA synchronous=NORMAL;";
+
     *db <<
          "create table if not exists app_usage ("
          "   name text unique,"
@@ -97,6 +101,7 @@ void DatabaseManager::writeLoop()
 {
     while (running)
     {
+        *db << "BEGIN;";
 
         {
             //Copy fresh data
@@ -126,7 +131,7 @@ void DatabaseManager::writeLoop()
             }
         }
 
-        std::cout << "Done DB ops!" << std::endl;
+        *db << "COMMIT;";
 
         //So that old db is closed and new file is created if date changes
 
