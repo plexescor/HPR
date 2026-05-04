@@ -49,15 +49,15 @@ One file per day. One folder per month. To delete everything from last month, de
 
 ## Platform Support
 
-HPR works on Hyprland (Linux, Wayland), GNOME (Linux, Wayland), and Windows 10 and 11.
+HPR works on Hyprland (Linux, Wayland), GNOME (Linux, Wayland), KDE Plasma (Linux, Wayland/X11), and Windows 10 and 11.
 
 On Hyprland, setup is zero effort. HPR queries the compositor directly using `hyprctl` and everything works on first launch.
 
 On GNOME with Wayland, HPR requires a shell extension called `window-calls-extended` to expose the focused window information. On first launch, HPR checks whether the extension is already working. If it is not, HPR clones and enables it automatically. GNOME on Wayland cannot reload shell extensions without a session restart, so you will need to log out and back in once after the first launch. This is a GNOME limitation. After that one-time setup, subsequent launches work without any intervention.
 
-On Windows, HPR uses the standard Win32 API to query the active window. The binary is built without a console window so it runs cleanly in the background.
+On KDE Plasma, HPR uses KWin's scripting API via `qdbus6` to query the active window. No additional setup is required.
 
-KDE Plasma is not yet supported.
+On Windows, HPR uses the standard Win32 API to query the active window. The binary is built without a console window so it runs cleanly in the background.
 
 ## Comparison With Other Trackers
 
@@ -74,7 +74,7 @@ KDE Plasma is not yet supported.
 | Startup time | Instant | Several seconds | N/A | N/A |
 | Free | Yes (premium planned) | Yes | Limited | Limited |
 
-The closest honest comparison is ActivityWatch. ActivityWatch is a mature project with a full web dashboard, browser extensions, plugin ecosystem, and multiple years of development. HPR is four days old and has none of those things yet. What HPR has that ActivityWatch does not is a significantly smaller footprint, native Wayland support from day one, no embedded web server, and no Python runtime. If you want a mature tool today, use ActivityWatch. If you want something that will eventually be faster and leaner, HPR is being built for that.
+The closest honest comparison is ActivityWatch. ActivityWatch is a mature project with a full web dashboard, browser extensions, plugin ecosystem, and multiple years of development. HPR is early-stage and has none of those things yet. What HPR has that ActivityWatch does not is a significantly smaller footprint, native Wayland support from day one, no embedded web server, and no Python runtime. If you want a mature tool today, use ActivityWatch. If you want something that will eventually be faster and leaner, HPR is being built for that.
 
 ## Roadmap
 
@@ -160,7 +160,7 @@ Every raw window name returned by the platform getter passes through `validateAn
 
 Strips trailing newline and carriage return characters from shell command output. Produces a lowercase copy of the name for comparison purposes while retaining the original-case version for display. Maps known garbage processes to the `Unknown` string so they are not tracked. Maps known application identifiers to consistent human-readable names using C++23 `std::string::contains`. Returns the original-case unmodified name for applications that do not match any known pattern.
 
-The filter and mapping lists are hardcoded and intentionally short right now. They will grow over time. Adding a new application mapping is one `else if` line in `validateAndUpdateWindow.cpp`.
+The filter and mapping lists are hardcoded and currently cover around 25 common applications across Windows and Linux (Chrome, Firefox, Edge, VSCode, Visual Studio, Discord, Spotify, Steam, OBS, Obsidian, Postman, Slack, Teams, Zoom, VLC, Notion, and a range of terminal emulators). Adding a new application mapping is one `else if` line in `validateAndUpdateWindow.cpp`.
 
 ## Class Lifecycle Pattern
 
@@ -181,20 +181,26 @@ Requirements:
 
 - CMake 3.21 or later
 - GCC 13+, Clang 16+, or MSVC 2022+ with C++23 support
-- Slint 1.x (CMake will download and build it automatically if not found)
-- On Linux: `jq` installed for Hyprland, `gdbus` for GNOME (both are standard on most distros)
+- Slint 1.16.1 (install with the provided script, see below)
+- On Linux: `jq` for Hyprland, `gdbus` for GNOME, `qdbus6` for KDE (all standard on their respective distros)
+
+Install Slint and its tooling system-wide first using the provided script:
 
 ```bash
 git clone https://github.com/plexescor/HPR
 cd HPR
+sudo ./installDependencies.sh
+```
+
+This downloads Slint 1.16.1, slint-lsp, and slint-viewer from GitHub releases, extracts them into `external/`, and installs them to `/usr/local/`. Then build:
+
+```bash
 mkdir build && cd build
 cmake ..
 cmake --build . --parallel
 ```
 
-On first build, if Slint is not found on the system, CMake will download and compile it automatically. This takes hours on an i5-1235u. Subsequent builds are fast. If you are building repeatedly, install Slint system-wide or set `Slint_DIR` to avoid recompiling it every time you wipe the build directory.
-
-SQLite is bundled as the official single-file amalgamation and compiled as part of the build. No system SQLite is required.
+SQLite is bundled as the official single-file amalgamation and compiled as part of the build. No system SQLite is required. On Windows use `installDependencies.bat` instead of the shell script.
 
 ## Adding A New Platform
 
@@ -218,18 +224,20 @@ The architecture is additive. Nothing else needs to change.
 
 Raw pointers to `AppState` fields in `HPR::trackingLoop` (`timeLog` and `switchHistory` are raw pointers set before the loop starts) are used only inside the mutex lock where they are safe. They are not used outside the lock. This is safe but unnecessary and slightly misleading. Direct access to `AppState::state` inside the lock would be cleaner.
 
-The GNOME extension setup performs a `git clone` from GitHub on first launch without showing any UI indication that this is happening. The user sees a console log message but the UI shows nothing. This will be replaced with a visible setup dialog in a future version.
+On GNOME, if the `window-calls-extended` extension is not detected on startup, HPR sets the platform to `GNOME_NO_EXTENSION` and returns a string instructing the user to run `installWindowCallsExtension.sh` (shipped next to the binary and copied to the build directory by CMake). HPR does not automatically run the script itself. The script clones the extension repo and enables it via `gnome-extensions enable`, then prints a prompt to log out and back in.
+
+The KDE backend uses a slow polling approach: it writes a temporary JS file to `/tmp`, loads it as a KWin script via `qdbus6`, waits 100ms, reads the result from the journal, then unloads the script. This runs on every poll tick and is noticeably heavier than the other backends. It works but a cleaner KDE path is a known future improvement.
 
 ## Contributing
 
 The codebase is small enough to read entirely in one sitting. Start with `main.cpp` to understand initialization order, then `appState.hpp` to understand the data model, then work through each class. The most important thing to understand before making changes is the threading model: which thread reads what, which thread writes what, and where the mutex must be held.
 
-There is no contribution process defined yet because the project is four days old. Open an issue or a pull request and we will figure it out.
+There is no formal contribution process defined yet. Open an issue or a pull request and we will figure it out.
 
 ---
 
 **Status:** Active development, v0.1
-**Platforms:** Hyprland (Wayland), GNOME (Wayland), Windows 10/11
+**Platforms:** Hyprland (Wayland), GNOME (Wayland), KDE Plasma, Windows 10/11
 **Language:** C++23
-**UI:** Slint 1.x
+**UI:** Slint 1.16.1
 **Database:** SQLite3 (bundled amalgamation) via sqlite_modern_cpp
