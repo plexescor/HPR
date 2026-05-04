@@ -7,8 +7,8 @@
 #include "windowUtilities.hpp"
 
 #ifdef _WIN32 // Include windows headers
-#include <psapi.h>
 #include <windows.h>
+#include <psapi.h>
 #endif
 
 #include <chrono>

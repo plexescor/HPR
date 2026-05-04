@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <atomic>
+#include <mutex>
 #include <map>
 #include <cstdint>
 #include <vector>
