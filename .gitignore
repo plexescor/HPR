@@ -1,2 +1,19 @@
 build
 .vscode
+
+# Slint extracted folders
+external/Slint-cpp-*/
+external/slint-lsp/
+external/slint-viewer/
+
+# Slint downloaded archives (all formats)
+external/slint*.tar.gz
+external/slint*.tar.bz2
+external/slint*.tar.xz
+external/slint*.zip
+external/slint*.exe
+external/Slint*.tar.gz
+external/Slint*.tar.bz2
+external/Slint*.tar.xz
+external/Slint*.zip
+external/Slint*.exe
