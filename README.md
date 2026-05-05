@@ -57,7 +57,7 @@ On GNOME with Wayland, HPR requires a shell extension called `window-calls-exten
 
 On KDE Plasma, HPR uses KWin's scripting API via `qdbus6` to query the active window. No additional setup is required.
 
-On Windows, HPR uses the standard Win32 API to query the active window. The binary is built without a console window so it runs cleanly in the background.
+On Windows, HPR uses the Win32 API to query the active process name. No additional setup is required. The binary is built without a console window so it runs cleanly in the background.
 
 ## Comparison With Other Trackers
 
