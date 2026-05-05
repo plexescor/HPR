@@ -2,6 +2,7 @@
 
 #include <unordered_map>
 #include <string>
+#include <filesystem>
 #include <vector>
 
 class AliasManager
@@ -15,6 +16,8 @@ class AliasManager
     
     private:
         std::string fileName = "aliases.csv";
+        std::filesystem::file_time_type lastModified;
+        std::filesystem::path csvPath;
         std::vector<std::pair<std::string, std::string>> aliasList;
         std::unordered_map<std::string, std::string> cacheDictionary;
 };

@@ -27,11 +27,10 @@ void AliasManager::loadAliases()
         exePath = std::filesystem::current_path() / "fallback";
     #endif
 
-    std::filesystem::path csvPath = exePath.parent_path() / fileName;
+    csvPath = exePath.parent_path() / fileName; // store it
+    aliasList.clear(); // clear before reload
 
     std::ifstream file(csvPath);
-
-    // Check if file even exists
     if (!file.is_open())
     {
         std::cerr << "Warning: aliases.csv not found at " << csvPath
@@ -39,39 +38,41 @@ void AliasManager::loadAliases()
         return;
     }
 
+    // store last modified time
+    lastModified = std::filesystem::last_write_time(csvPath);
+
     std::string line;
 
-    // Important for not crashing in 69gb files
-    //  get one line at a time
+    //One line at a time
     while (std::getline(file, line))
     {
-        // Fine comma, leftValue = rawName, right = newName
+        //if empty or starts with #, continue, write comments with #
+        if (line.empty() || line.starts_with("#")) continue;
+
+        //find comma pos
         size_t commaPos = line.find(',');
 
-        // If skip or starts with #, continue
-        // # is treated as comments
-        if (line.empty() || line.starts_with("#"))
-        {
-            continue;
-        }
-
-        // No Comma = skip, essentialy comments but not recommened to wrie comments
-        // this way
+        //If it has a comma then do this
         if (commaPos != std::string::npos)
         {
-            // Left side, raw name
-            std::string rawName = line.substr(0, commaPos);
-
-            // Right side new name
-            std::string prettyName = line.substr(commaPos + 1);
-
-            aliasList.push_back({rawName, prettyName});
+            aliasList.push_back({line.substr(0, commaPos), line.substr(commaPos + 1)});
         }
     }
 }
 
 std::string AliasManager::getAlias(const std::string &rawName)
 {
+    // hot reload check
+    if (std::filesystem::exists(csvPath))
+    {
+        auto currentModified = std::filesystem::last_write_time(csvPath);
+        if (currentModified != lastModified)
+        {
+            cacheDictionary.clear();
+            loadAliases();
+        }
+    }
+    
     // check cache first
     auto it = cacheDictionary.find(rawName);
 
