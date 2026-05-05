@@ -62,6 +62,18 @@ void AliasManager::loadAliases()
 
 std::string AliasManager::getAlias(const std::string &rawName)
 {
+    std::string lowerName = rawName;
+
+    //Convert to lower case
+    std::transform(lowerName.begin(), 
+        lowerName.end(), 
+        lowerName.begin(),
+        [](unsigned char c)
+        { 
+            return std::tolower(c); 
+        });
+
+
     // hot reload check
     if (std::filesystem::exists(csvPath))
     {
@@ -74,7 +86,7 @@ std::string AliasManager::getAlias(const std::string &rawName)
     }
     
     // check cache first
-    auto it = cacheDictionary.find(rawName);
+    auto it = cacheDictionary.find(lowerName);
 
     // return if found in O(1)
     if (it != cacheDictionary.end())
@@ -85,15 +97,15 @@ std::string AliasManager::getAlias(const std::string &rawName)
     // else loop through the entire vector
     for (const auto &[triggerWord, prettyName] : aliasList)
     {
-        if (rawName.contains(triggerWord))
+        if (lowerName.contains(triggerWord))
         {
             // found, save it to map and return
-            cacheDictionary[rawName] = prettyName;
+            cacheDictionary[lowerName] = prettyName;
             return prettyName;
         }
     }
 
     // if nowhere, then return it as it is and save it in hashmap
-    cacheDictionary[rawName] = rawName;
+    cacheDictionary[lowerName] = rawName;
     return rawName;
 }
