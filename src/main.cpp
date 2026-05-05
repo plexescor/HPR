@@ -1,7 +1,7 @@
 #include "databaseManager.hpp"
 #include "getCurrentWindow.hpp"
 #include "HPR.hpp"
-
+#include "trayManager.hpp"
 
 
 #ifdef _WIN32
@@ -17,6 +17,9 @@
 
 		// Force software rendeing
 		// _putenv_s("SLINT_BACKEND", "winit-software");
+
+		TrayManager tray;
+		tray.run();
 
 		DatabaseManager dbm;
 		CurrentWindowManager cwm;

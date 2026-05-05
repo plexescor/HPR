@@ -29,6 +29,14 @@ CurrentWindowManager::CurrentWindowManager()
 
 	std::cout << "[HPR] Detected platform: " << currentPlatform << std::endl;
 
+
+	{
+		std::lock_guard<std::mutex> lock(AppState::stateMutex);
+		AppState::state.currentPlatform = currentPlatform;
+	}
+	
+
+	
 	if (currentPlatform.contains("GNOME"))
 	{
 		// Check if window-calls-extended is working

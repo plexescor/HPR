@@ -9,6 +9,8 @@
 namespace AppState {
     
     struct AppState {
+        std::string currentPlatform;
+
         std::string currentWindow;
         std::string previousWindow;
         
