@@ -7,6 +7,8 @@
 #    automatically catch `code`, `vscode`, `code.exe`, `code-oss`, etc.
 # 3. Do NOT put spaces around the comma unless you specifically want them!
 # 4. Lines starting with # (like this one) or blank lines are safely ignored.
+# 5. Changes are applied INSTANTLY! HPR detects edits automatically.
+#    No restart needed - just save the file and watch the UI update.
 # ============================================================================
 
 # --- Web Browsers ---
@@ -15,8 +17,6 @@ google,Chrome
 chromium,Chrome
 msedge,Edge
 edge,Edge
-edge,Edge
-firefox,Firefox
 firefox,Firefox
 brave,Brave
 
