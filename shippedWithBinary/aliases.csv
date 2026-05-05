@@ -1,0 +1,66 @@
+# ============================================================================
+# HPR Aliases Configuration File
+# 
+# HOW TO ADD NEW APPS:
+# 1. The format is exactly: trigger_word,Pretty Name
+# 2. HPR uses "substring matching"! If you add `code,Visual Studio`, it will 
+#    automatically catch `code`, `vscode`, `code.exe`, `code-oss`, etc.
+# 3. Do NOT put spaces around the comma unless you specifically want them!
+# 4. Lines starting with # (like this one) or blank lines are safely ignored.
+# ============================================================================
+
+# --- Web Browsers ---
+chrome,Chrome
+google,Chrome
+chromium,Chrome
+msedge,Edge
+edge,Edge
+edge,Edge
+firefox,Firefox
+firefox,Firefox
+brave,Brave
+
+# --- Development & Productivity ---
+code,Visual Studio Code
+vscodium,Visual Studio Code
+devenv,Visual Studio
+obsidian,Obsidian
+postman,Postman
+notion,Notion
+notepad,Notepad
+
+# --- File Managers ---
+explorer,Explorer
+dolphin,Dolphin
+nautilus,Nautilus
+thunar,Thunar
+nemo,Nemo
+
+# --- Media & Communication ---
+obs,OBS Studio
+spotify,Spotify
+discord,Discord
+slack,Slack
+teams,Microsoft Teams
+zoom,Zoom
+vlc,VLC Media Player
+
+# --- Games & System Utilities ---
+steam,Steam
+btop,BTOP++
+
+# --- Terminal Emulators (Unified) ---
+terminal,Terminal
+cmd,Terminal
+powershell,Terminal
+pwsh,Terminal
+ptyxis,Terminal
+konsole,Terminal
+tilix,Terminal
+alacritty,Terminal
+kitty,Terminal
+hyper,Terminal
+terminator,Terminal
+guake,Terminal
+tilda,Terminal
+wezterm,Terminal

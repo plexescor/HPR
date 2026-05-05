@@ -2,6 +2,7 @@
 #pragma once
 
 #include "appState.hpp"
+#include "aliasManager.hpp"
 
 //Slint stuff
 #include "app-window.h"
@@ -12,15 +13,18 @@
 #include <optional>
 
 class HPR {
-public:
-    HPR();
-    ~HPR();
-    void run(); // blocking call i believe
+    public:
+        HPR();
+        ~HPR();
+        void run(); // blocking call i believe
 
-private:
-    void trackingLoop(); // runs on separate thread so that it polls shit continously (correct spelling?)
+    private:
+        void trackingLoop(); // runs on separate thread so that it polls shit continously (correct spelling?)
 
-    std::optional<slint::ComponentHandle<MainWindow>> ui;
-    std::atomic<bool> running{true};
-    std::thread tracker;
+    private:
+        std::optional<slint::ComponentHandle<MainWindow>> ui;
+        std::atomic<bool> running{true};
+        std::thread tracker;
+
+        AliasManager aliasManager;
 };

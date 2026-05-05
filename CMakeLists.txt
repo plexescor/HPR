@@ -33,6 +33,7 @@ elseif(LINUX)
         src/database/databaseManager.cpp
         src/appState/appState.cpp
         src/miscellaneous/timeUtils.cpp
+        src/miscellaneous/aliasManager.cpp
         src/ui-cpp/HPR.cpp
         src/window/getCurrentWindow.cpp
         src/window/validateAndUpdateWindow.cpp
@@ -60,7 +61,7 @@ target_include_directories(HPR
     external/sqlite_modern_cpp/sqlite_modern_cpp/utility
 )
 
-# NEW: copy assets folder next to binary on every build
+#copy assets folder next to binary on every build
 add_custom_command(TARGET HPR POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     ${CMAKE_SOURCE_DIR}/assets
@@ -71,6 +72,14 @@ add_custom_command(TARGET HPR POST_BUILD
 if (WIN32)
     add_custom_command(TARGET HPR POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_RUNTIME_DLLS:HPR> $<TARGET_FILE_DIR:HPR> COMMAND_EXPAND_LISTS)
 endif()
+
+# Copy some aliases.csv to binary path
+configure_file(
+        ${CMAKE_SOURCE_DIR}/shippedWithBinary/aliases.csv
+        ${CMAKE_BINARY_DIR}/aliases.csv
+        COPYONLY
+    )
+
 
 if(UNIX)
     configure_file(
