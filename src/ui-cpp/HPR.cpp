@@ -35,6 +35,24 @@ HPR::~HPR()
 
 void HPR::show()
 {
+    // This sets the title bar icon on windows
+    // 🖕 windows and microslop
+    #ifdef _WIN32
+        HWND hwnd = FindWindowW(nullptr, L"HPR");
+        if (hwnd) {
+            HICON hIconBig = (HICON)LoadImage(
+                GetModuleHandle(NULL), MAKEINTRESOURCE(1),
+                IMAGE_ICON, 32, 32, 0  // explicit 32x32 for title bar
+            );
+            HICON hIconSmall = (HICON)LoadImage(
+                GetModuleHandle(NULL), MAKEINTRESOURCE(1),
+                IMAGE_ICON, 16, 16, 0  // explicit 16x16
+            );
+            if (hIconBig)   SendMessage(hwnd, WM_SETICON, ICON_BIG,   (LPARAM)hIconBig);
+            if (hIconSmall) SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIconSmall);
+        }
+    #endif
+    
     auto weak = slint::ComponentWeakHandle<MainWindow>(ui);
 
     slint::invoke_from_event_loop([weak]()
