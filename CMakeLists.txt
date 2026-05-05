@@ -10,6 +10,15 @@ set(CMAKE_BUILD_PARALLEL_LEVEL 8)
 
 find_package(Slint QUIET)
 
+# if(WIN32)
+#     target_compile_definitions(HPR PRIVATE
+#         WIN32
+#         _WIN32
+#         UNICODE
+#         _UNICODE
+#     )
+# endif()
+
 #No console in windows
 if(WIN32)
   add_executable(HPR WIN32

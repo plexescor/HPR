@@ -51,9 +51,12 @@ void HPR::trackingLoop() {
             //--------------Timelog-------------------------------------------------
             timeLog_Vec.clear(); //Clear to avoid duplicates
             timeLog_Vec.reserve((timeLog).size());
+            
             for (const auto &[k, v] : timeLog)
             {
                 totalTrackedTime += v;
+
+
                 //So new maps are added at the end
                 timeLog_Vec.push_back(TimeLog{
                     slint::SharedString(k), 

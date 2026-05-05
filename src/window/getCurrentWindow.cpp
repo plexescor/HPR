@@ -177,22 +177,37 @@ std::string CurrentWindowManager::getCurrentWindow_Hyprland()
 std::string CurrentWindowManager::getCurrentWindow_Windows()
 {
 #ifdef _WIN32
-	// Get active (foreground) window
 	HWND hwnd = GetForegroundWindow();
 	if (!hwnd)
 		return "";
 
-	char title[512];
-	int length = GetWindowTextA(hwnd, title, sizeof(title));
-
-	if (length == 0)
+	DWORD pid = 0;
+	GetWindowThreadProcessId(hwnd, &pid);
+	if (!pid)
 		return "";
-	return std::string(title, length);
 
+	HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
+	if (!hProcess)
+		return "";
+
+	char procName[MAX_PATH] = {};
+	DWORD size = MAX_PATH;
+	QueryFullProcessImageNameA(hProcess, 0, procName, &size);
+	CloseHandle(hProcess);
+
+	// Extract just the filename from full path
+	std::string fullPath(procName);
+	size_t lastSlash = fullPath.find_last_of("\\/");
+	std::string filename = (lastSlash != std::string::npos) ? fullPath.substr(lastSlash + 1) : fullPath;
+
+	// Strip .exe
+	if (filename.size() > 4 && filename.substr(filename.size() - 4) == ".exe")
+		filename = filename.substr(0, filename.size() - 4);
+
+	return filename;
 #endif
-	return ""; // to shut up compiler on linux
+	return "";
 }
-
 std::string CurrentWindowManager::getCurrentWindow_Gnome()
 {
 	std::string command =
