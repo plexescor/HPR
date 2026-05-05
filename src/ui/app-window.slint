@@ -56,7 +56,9 @@ component AppRow inherits Rectangle {
     in property <float>  ratio;
     in property <bool>   is-even;
     in property <int>    row-index;
-    in property <color>  bar-color: #a3e635;
+
+    // in property <color>  bar-color: #a3e635;
+    in property <color> bar-color: Colors.hsv(mod(app-name.character-count * 47, 360), 0.75, 0.85);
 
     height: 48px;
     border-radius: 5px;
@@ -331,7 +333,7 @@ export component MainWindow inherits Window {
                             duration: entry.duration + " (" + Math.round(self.ratio * 100) + "%" + ")";
                             is-even: mod(i, 2) == 0;
                             row-index: i;
-                            bar-color: bar-palette[mod(i, 8)];
+                            bar-color: Colors.hsv(mod(entry.name.character-count * 47, 360), 0.75, 0.85);
                         }
                     }
                 }
