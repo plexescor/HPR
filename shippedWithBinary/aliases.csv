@@ -48,6 +48,8 @@ vlc,VLC Media Player
 # --- Games & System Utilities ---
 steam,Steam
 btop,BTOP++
+texteditor,Text Editor
+text-editor, Text Editor
 
 # --- Terminal Emulators (Unified) ---
 terminal,Terminal
