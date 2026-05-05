@@ -131,7 +131,7 @@ The `timeLog_PerApp` map accumulates raw duration in milliseconds. The `switchHi
 
 The Slint declarative framework requires data to be packaged in specific models before it can be processed by the rendering engine. The `HPR::trackingLoop` manages this data translation.
 
-The loop clears and populates local `std::vector` instances of `TimeLog` and `SwitchHistory` structs. For the `switchHistory` vectors, it utilizes `std::max_element` to isolate the most recent transition timestamp for display purposes.
+The loop utilizes intermediate maps (`translatedTimeLog` and `translatedSwitchHistory`) to translate raw database keys using the `AliasManager` and dynamically merge the durations and timestamps of matching aliases into unified UI rows. It then clears and populates local `std::vector` instances of `TimeLog` and `SwitchHistory` structs. For the `switchHistory` vectors, it utilizes `std::max_element` to isolate the most recent transition timestamp for display purposes. Finally, the vectors are safely sorted using the derived values inside the generated structs.
 
 Because Slint objects are not thread-safe and cannot be directly manipulated from background threads, the bridge thread creates a `slint::ComponentWeakHandle<MainWindow>`. It captures the translated data by value within a lambda function and pushes the lambda into the Slint event loop queue via `slint::invoke_from_event_loop`. 
 
@@ -167,13 +167,16 @@ The application enforces a strict separation between duration measurement and wa
 *   `std::chrono::steady_clock`: Used exclusively in `CurrentWindowManager::getCurrentWindow_Loop` to measure elapsed time between polling intervals. The steady clock is monotonic; it is guaranteed to only move forward and is unaffected by system time adjustments, NTP synchronizations, or Daylight Saving Time shifts. This guarantees precision in duration accumulation.
 *   `std::chrono::system_clock`: Used to record the exact moment a window switch occurs. These timestamps are generated via `time_since_epoch()` and stored as raw `uint64_t` milliseconds in the `AppState` and the database. The `timeUtils.cpp` module provides helper functions relying on `std::localtime` and `std::put_time` to convert these epoch values into human-readable strings precisely at the moment of UI dispatch.
 
-## Window Name Normalization
+## Window Name Normalization & Custom Aliasing
 
-Raw window titles retrieved from operating system APIs are often inconsistent or cluttered. The `validateAndUpdateWindow_Cross` function in `validateAndUpdateWindow.cpp` acts as a required normalization pipeline.
+Raw window titles retrieved from operating system APIs are often inconsistent or cluttered. The `validateAndUpdateWindow_Cross` function in `validateAndUpdateWindow.cpp` acts as the first layer of the normalization pipeline.
 
 The pipeline strips trailing newline and carriage return characters left over from shell command outputs utilizing `pop_back()`. It then generates a lowercased copy using `std::transform` for case-insensitive matching. Known system background processes, temporary window wrappers, and KWin internal JavaScript execution environments are explicitly discarded and replaced with the literal string "Unknown".
 
-For valid tracked applications, it maps raw titles to canonical strings. For example, any title containing "chrome" is standardized to "Chrome", and any title containing "code" is standardized to "Visual Studio Code". This ensures distinct windows belonging to the same underlying application are aggregated under a single database entry. The mapping logic utilizes C++23 `std::string::contains` and covers approximately 25 common applications across Windows and Linux.
+**Late-Binding Custom Aliases:**
+Unlike other trackers that hardcode translations or overwrite database history, HPR uses a Late-Binding architecture via the `AliasManager` class. The database stores the raw, mathematically pure OS strings. 
+
+During the UI update loop (`HPR::trackingLoop`), these raw strings are dynamically translated using a `aliases.csv` file (automatically copied to the binary path via CMake). This file allows users to define custom substring matches without touching C++ code. To ensure maximum performance, `AliasManager` employs a "Hybrid Memoization" architecture: it performs an initial O(N) substring search (`std::string::contains`) through the CSV rules, and instantly saves the result to an O(1) `std::unordered_map` RAM cache for all subsequent queries.
 
 ## System Command Execution
 
@@ -241,7 +244,6 @@ The application architecture is designed to be easily extensible. To track a new
 
 ## Known Issues and Limitations
 
-*   **Pointer Safety:** In `HPR::trackingLoop`, raw pointers to `AppState` fields (`timeLog` and `switchHistory`) are established before the `while` loop begins. They are dereferenced exclusively inside the mutex lock, ensuring they are technically thread-safe. However, this implementation pattern is fragile compared to directly accessing `AppState::state` inside the lock, which would statically eliminate the risk of pointer dereferencing outside the critical section.
 *   **GNOME Extension Handling:** If the `window-calls-extended` extension is absent on GNOME, HPR detects the failure via a `gdbus` call and sets the platform string to `GNOME_NO_EXTENSION`. This triggers the polling loop to return a hardcoded string instructing the user to execute `installWindowCallsExtension.sh`. HPR does not attempt to invoke the installation script autonomously. The script handles cloning the repository and enabling the extension via `gnome-extensions enable`.
 *   **KDE Backend Performance:** The KDE backend relies on injecting a temporary JavaScript payload into KWin via `qdbus6` and scraping the system journal for the subsequent print output. This process triggers multiple shell invocations and disk I/O operations on every 50-millisecond polling tick. While entirely functional, it is significantly heavier in terms of CPU overhead compared to the native Win32 API calls used on Windows or the direct `hyprctl` JSON query utilized on Hyprland.
 *   **Linux Platform Identification:** The application relies on `$XDG_CURRENT_DESKTOP` to identify the Linux compositor. This string is parsed loosely using `std::string::contains`. Edge cases where users run nested compositors or non-standard session variables may result in fallback behavior.
