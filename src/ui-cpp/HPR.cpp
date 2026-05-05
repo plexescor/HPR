@@ -59,6 +59,21 @@ void HPR::hide()
 
 void HPR::trackingLoop()
 {
+    // Persistent models
+    auto timeLogModel = std::make_shared<slint::VectorModel<TimeLog>>();
+    auto switchHistoryModel = std::make_shared<slint::VectorModel<SwitchHistory>>();
+
+    // Set models once
+    {
+        slint::ComponentWeakHandle<MainWindow> weak(ui);
+        slint::invoke_from_event_loop([weak, timeLogModel, switchHistoryModel]() {
+            if (auto handle = weak.lock()) {
+                (*handle)->set_timePerApp_S(timeLogModel);
+                (*handle)->set_switchHistory_S(switchHistoryModel);
+            }
+        });
+    }
+
     // Stuff native to c++, holds raw values
     long totalTrackedTime; // For the bars
     std::string window;
@@ -124,30 +139,41 @@ void HPR::trackingLoop()
             switchHistory_Vec.clear();
             switchHistory_Vec.reserve(translatedSwitchHistory.size());
 
+            struct TempSwitchHistory {
+                std::string from;
+                std::string to;
+                uint64_t maxVal;
+            };
+            std::vector<TempSwitchHistory> tempSwitchVec;
+            tempSwitchVec.reserve(translatedSwitchHistory.size());
+
             for (const auto &[k, v] : translatedSwitchHistory)
             {
+                if (v.empty()) continue; // Safety guard
                 const auto &[from, to] = k;
-                const auto &maxVal = *std::max_element(v.begin(), v.end());
-
-                switchHistory_Vec.push_back(
-                    SwitchHistory{
-                        slint::SharedString(from),
-                        slint::SharedString(to),
-                        slint::SharedString(convertToTime_HHMMSS_12(maxVal))});
+                const auto maxVal = *std::max_element(v.begin(), v.end());
+                tempSwitchVec.push_back({from, to, maxVal});
             }
 
             // sort so latest one comes at top
-            std::sort(switchHistory_Vec.begin(), switchHistory_Vec.end(), [&translatedSwitchHistory](const SwitchHistory &a, const SwitchHistory &b)
-                      {
-                auto keyA = std::make_pair(std::string(a.fromWindow), std::string(a.toWindow));
-                auto keyB = std::make_pair(std::string(b.fromWindow), std::string(b.toWindow));
-                return *std::max_element(translatedSwitchHistory.at(keyA).begin(), translatedSwitchHistory.at(keyA).end())
-                    > *std::max_element(translatedSwitchHistory.at(keyB).begin(), translatedSwitchHistory.at(keyB).end()); });
+            std::sort(tempSwitchVec.begin(), tempSwitchVec.end(), [](const TempSwitchHistory &a, const TempSwitchHistory &b)
+                      { return a.maxVal > b.maxVal; });
+
+            switchHistory_Vec.clear();
+            switchHistory_Vec.reserve(tempSwitchVec.size());
+            for (const auto &item : tempSwitchVec)
+            {
+                switchHistory_Vec.push_back(
+                    SwitchHistory{
+                        slint::SharedString(item.from),
+                        slint::SharedString(item.to),
+                        slint::SharedString(convertToTime_HHMMSS_12(item.maxVal))});
+            }
         }
 
         // get weak so shit doent sink (crahs)
         slint::ComponentWeakHandle<MainWindow> weak(ui);
-        slint::invoke_from_event_loop([weak, window, totalTrackedTime, timeLog_Vec, switchHistory_Vec]()
+        slint::invoke_from_event_loop([weak, window, totalTrackedTime, timeLog_Vec, switchHistory_Vec, timeLogModel, switchHistoryModel]()
                                       {
 
             // This sets the title bar icon on windows
@@ -172,14 +198,23 @@ void HPR::trackingLoop()
                 (*handle)->set_windowName_S(slint::SharedString(window));
 
                 (*handle)->set_trackedTime_S(totalTrackedTime);
+                // Mutate the models directly instead of using invalid setters
+                while (timeLogModel->row_count() > 0) {
+                    timeLogModel->erase(0);
+                }
+                for (const auto& log : timeLog_Vec) {
+                    timeLogModel->push_back(log);
+                }
                 
-                // 👇️ slint requires this make_shared bs
-                (*handle)->set_timePerApp_S(std::make_shared<slint::VectorModel<TimeLog>>(timeLog_Vec));
-            
-                (*handle)->set_switchHistory_S(std::make_shared<slint::VectorModel<SwitchHistory>>(switchHistory_Vec));
+                while (switchHistoryModel->row_count() > 0) {
+                    switchHistoryModel->erase(0);
+                }
+                for (const auto& history : switchHistory_Vec) {
+                    switchHistoryModel->push_back(history);
+                }
             } });
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
 }
 
