@@ -59,6 +59,25 @@ void HPR::hide()
 
 void HPR::trackingLoop()
 {
+
+    // This sets the title bar icon on windows
+    // 🖕 windows and microslop
+    #ifdef _WIN32
+        HWND hwnd = FindWindowW(nullptr, L"HPR");
+        if (hwnd) {
+            HICON hIconBig = (HICON)LoadImage(
+                GetModuleHandle(NULL), MAKEINTRESOURCE(1),
+                IMAGE_ICON, 32, 32, 0  // explicit 32x32 for title bar
+            );
+            HICON hIconSmall = (HICON)LoadImage(
+                GetModuleHandle(NULL), MAKEINTRESOURCE(1),
+                IMAGE_ICON, 16, 16, 0  // explicit 16x16
+            );
+            if (hIconBig)   SendMessage(hwnd, WM_SETICON, ICON_BIG,   (LPARAM)hIconBig);
+            if (hIconSmall) SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIconSmall);
+        }
+    #endif
+
     // Persistent models
     auto timeLogModel = std::make_shared<slint::VectorModel<TimeLog>>();
     auto switchHistoryModel = std::make_shared<slint::VectorModel<SwitchHistory>>();
@@ -176,42 +195,34 @@ void HPR::trackingLoop()
         slint::invoke_from_event_loop([weak, window, totalTrackedTime, timeLog_Vec, switchHistory_Vec, timeLogModel, switchHistoryModel]()
                                       {
 
-            // This sets the title bar icon on windows
-            // 🖕 windows and microslop
-            #ifdef _WIN32
-                HWND hwnd = FindWindowW(nullptr, L"HPR");
-                if (hwnd) {
-                    HICON hIconBig = (HICON)LoadImage(
-                        GetModuleHandle(NULL), MAKEINTRESOURCE(1),
-                        IMAGE_ICON, 32, 32, 0  // explicit 32x32 for title bar
-                    );
-                    HICON hIconSmall = (HICON)LoadImage(
-                        GetModuleHandle(NULL), MAKEINTRESOURCE(1),
-                        IMAGE_ICON, 16, 16, 0  // explicit 16x16
-                    );
-                    if (hIconBig)   SendMessage(hwnd, WM_SETICON, ICON_BIG,   (LPARAM)hIconBig);
-                    if (hIconSmall) SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIconSmall);
-                }
-            #endif
-
             if (auto handle = weak.lock()) {
                 (*handle)->set_windowName_S(slint::SharedString(window));
 
                 (*handle)->set_trackedTime_S(totalTrackedTime);
-                // Mutate the models directly instead of using invalid setters
-                while (timeLogModel->row_count() > 0) {
-                    timeLogModel->erase(0);
-                }
-                for (const auto& log : timeLog_Vec) {
-                    timeLogModel->push_back(log);
-                }
-                
-                while (switchHistoryModel->row_count() > 0) {
-                    switchHistoryModel->erase(0);
-                }
-                for (const auto& history : switchHistory_Vec) {
-                    switchHistoryModel->push_back(history);
-                }
+                // Surgical update to prevent layout panics during resize/maximize
+                auto syncModel = [](auto model, const auto& vec) {
+                    size_t existing_count = model->row_count();
+                    size_t new_count = vec.size();
+                    size_t min_count = (std::min)(existing_count, new_count);
+
+                    // Update existing rows
+                    for (size_t i = 0; i < min_count; ++i) {
+                        model->set_row_data(i, vec[i]);
+                    }
+
+                    // Remove excess rows from the end
+                    while (model->row_count() > new_count) {
+                        model->erase(model->row_count() - 1);
+                    }
+
+                    // Add new rows
+                    for (size_t i = existing_count; i < new_count; ++i) {
+                        model->push_back(vec[i]);
+                    }
+                };
+
+                syncModel(timeLogModel, timeLog_Vec);
+                syncModel(switchHistoryModel, switchHistory_Vec);
             } });
 
         std::this_thread::sleep_for(std::chrono::milliseconds(500));

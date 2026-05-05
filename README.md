@@ -236,11 +236,12 @@ The normalization function `validateAndUpdateWindow_Cross` executes immediately 
 
 The application architecture is designed to be easily extensible. To track a new user metric:
 
-1.  Define the new field within the `AppState::AppState` struct in `appState.hpp`.
-2.  Update `getCurrentWindow_Loop()` to populate the new field. Ensure this operation occurs strictly within the `std::lock_guard<std::mutex>` block.
-3.  Update `HPR::trackingLoop()` to read the field, convert it to a valid Slint-compatible data type, and pass it into the UI lambda function.
-4.  Update `app-window.slint` with a new property declaration and an appropriate UI element to render the data.
-5.  Update `DatabaseManager::initDatabase` to create the required table and modify `writeLoop` to persist the new field.
+1.  **Define in Slint**: Update `app-window.slint` with a new property or struct declaration and an appropriate UI element to render the data.
+2.  **Define in State**: Add the new field or collection within the `AppState::AppState` struct in `appState.hpp`.
+3.  **Collect Data**: Update `getCurrentWindow_Loop()` to populate the new field. Ensure this operation occurs strictly within the `std::lock_guard<std::mutex>` block.
+4.  **UI Bridge**: Update `HPR::trackingLoop()` to read the field and pass it into the UI lambda function via `slint::invoke_from_event_loop`.
+    *   *Crucial*: If the data is a collection (like a list), use the `syncModel` helper in `HPR.cpp` to perform a surgical update. This prevents UI crashes during layout changes (like window maximization).
+5.  **Persistence**: Update `DatabaseManager::initDatabase` to create the required table and modify `writeLoop` to persist the new field.
 
 ## Known Issues and Limitations
 
