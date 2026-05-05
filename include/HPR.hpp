@@ -16,13 +16,16 @@ class HPR {
     public:
         HPR();
         ~HPR();
+        void show();
+        void hide();
         void run(); // blocking call i believe
+        void quit();
 
     private:
         void trackingLoop(); // runs on separate thread so that it polls shit continously (correct spelling?)
 
     private:
-        std::optional<slint::ComponentHandle<MainWindow>> ui;
+        slint::ComponentHandle<MainWindow> ui;
         std::atomic<bool> running{true};
         std::thread tracker;
 

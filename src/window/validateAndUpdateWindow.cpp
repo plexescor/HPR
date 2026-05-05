@@ -28,7 +28,8 @@ std::string validateAndUpdateWindow_Cross(std::string &windowName)
         || windowName.contains("shellexperiencehost")
         || windowName.contains("plasmashell")
         || windowName.contains("js::")
-        || windowName.contains("null"))
+        || windowName.contains("null")
+        || windowName.contains("please wait"))
     {
         return "Unknown";
     }

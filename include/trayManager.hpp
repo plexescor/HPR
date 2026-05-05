@@ -2,6 +2,9 @@
 #include <iostream>
 #include <string>
 #include <thread>
+#include <atomic>
+#include <functional>
+
 
 #include "appState.hpp"
 
@@ -17,6 +20,10 @@ class TrayManager
         ~TrayManager();
         void run();
 
+    public:
+        std::function<void()> onQuit;
+        std::function<void()> onShow;
+
     private:
         void trayManager_LoopWindows();
 
@@ -29,12 +36,12 @@ class TrayManager
 
     private:
         std::string currentPlatform;
-
+        
         std::atomic<bool> running = true;
         std::thread trayThread;
 
         #ifdef _WIN32
             HWND trayHwnd = nullptr;
-            NOTIFYICONDATA nid = {};
+            NOTIFYICONDATAW nid = {};
         #endif
 };

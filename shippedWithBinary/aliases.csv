@@ -49,7 +49,8 @@ vlc,VLC Media Player
 steam,Steam
 btop,BTOP++
 texteditor,Text Editor
-text-editor, Text Editor
+text-editor,Text Editor
+taskmgr,Task Manager
 
 # --- Terminal Emulators (Unified) ---
 terminal,Terminal
@@ -66,3 +67,8 @@ terminator,Terminal
 guake,Terminal
 tilda,Terminal
 wezterm,Terminal
+
+# --- Uncategorizable stuff ---
+C:,Explorer
+perftune,Intel XTU
+debugconsole,Visual Studio Debug Console

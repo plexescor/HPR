@@ -21,6 +21,7 @@ void AliasManager::loadAliases()
         char buffer[MAX_PATH];
         GetModuleFileNameA(NULL, buffer, MAX_PATH);
         exePath = std::filesystem::path(buffer);
+
     #elif defined(__linux__)
         exePath = std::filesystem::read_symlink("/proc/self/exe");
     #else
@@ -78,7 +79,7 @@ std::string AliasManager::getAlias(const std::string &rawName)
     if (std::filesystem::exists(csvPath))
     {
         auto currentModified = std::filesystem::last_write_time(csvPath);
-        if (currentModified != lastModified)
+        if (currentModified > lastModified)
         {
             cacheDictionary.clear();
             loadAliases();

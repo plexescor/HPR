@@ -21,6 +21,7 @@
 		TrayManager tray;
 		tray.run();
 
+
 		DatabaseManager dbm;
 		CurrentWindowManager cwm;
 		
@@ -29,12 +30,22 @@
 
 		HPR app;
 		
+		tray.onQuit = [&]() {
+			app.quit();
+		};
+
+		tray.onShow = [&]() {
+			app.show();
+		};
+
 		app.run();
+
+		
 
 		return 0;
 	}
-#else
 
+#else
 	int main()
 	{
 		// Force software rendeing

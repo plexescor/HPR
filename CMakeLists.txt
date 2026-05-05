@@ -14,9 +14,11 @@ find_package(Slint QUIET)
 if(WIN32)
   add_executable(HPR WIN32
 		src/main.cpp
+        src/tray/trayManager.cpp
         src/database/databaseManager.cpp
 		src/appState/appState.cpp
 		src/miscellaneous/timeUtils.cpp
+        src/miscellaneous/aliasManager.cpp
 		src/ui-cpp/HPR.cpp
 		src/window/getCurrentWindow.cpp
 		src/window/validateAndUpdateWindow.cpp
@@ -30,6 +32,7 @@ if(WIN32)
 elseif(LINUX)
   add_executable(HPR
         src/main.cpp
+        src/tray/trayManager.cpp
         src/database/databaseManager.cpp
         src/appState/appState.cpp
         src/miscellaneous/timeUtils.cpp
@@ -43,6 +46,10 @@ elseif(LINUX)
         external/sqLite/sqlite3.c
     )
 
+endif()
+
+if (MSVC)
+    target_compile_options(HPR PRIVATE /MP)
 endif()
 
 target_link_libraries(HPR PRIVATE Slint::Slint)
@@ -74,11 +81,11 @@ if (WIN32)
 endif()
 
 # Copy some aliases.csv to binary path
-configure_file(
-        ${CMAKE_SOURCE_DIR}/shippedWithBinary/aliases.csv
-        ${CMAKE_BINARY_DIR}/aliases.csv
-        COPYONLY
-    )
+add_custom_command(TARGET HPR POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    ${CMAKE_SOURCE_DIR}/shippedWithBinary/aliases.csv
+    $<TARGET_FILE_DIR:HPR>/aliases.csv
+)
 
 
 if(UNIX)
