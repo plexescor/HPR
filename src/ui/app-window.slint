@@ -201,6 +201,8 @@ component Card inherits Rectangle {
 
 // ── Main Window ──────────────────────────────────────────────────────────────
 export component MainWindow inherits Window {
+    icon: @image-url("../../assets/icon_256.png");
+    
     in property <int>             trackedTime_S;
     in property <string>          windowName_S;
     in property <[TimeLog]>       timePerApp_S;

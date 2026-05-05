@@ -10,20 +10,11 @@ set(CMAKE_BUILD_PARALLEL_LEVEL 8)
 
 find_package(Slint QUIET)
 
-# if(WIN32)
-#     target_compile_definitions(HPR PRIVATE
-#         WIN32
-#         _WIN32
-#         UNICODE
-#         _UNICODE
-#     )
-# endif()
-
 #No console in windows
 if(WIN32)
   add_executable(HPR WIN32
 		src/main.cpp
-    src/database/databaseManager.cpp
+        src/database/databaseManager.cpp
 		src/appState/appState.cpp
 		src/miscellaneous/timeUtils.cpp
 		src/ui-cpp/HPR.cpp
@@ -31,8 +22,9 @@ if(WIN32)
 		src/window/validateAndUpdateWindow.cpp
     	src/window/windowUtilities.cpp
 
-      #sqLite stuff
-      external/sqLite/sqlite3.c
+        #sqLite stuff
+        external/sqLite/sqlite3.c
+        ${CMAKE_SOURCE_DIR}/assets/app.rc
   )
 
 elseif(LINUX)
@@ -67,6 +59,14 @@ target_include_directories(HPR
     external/sqlite_modern_cpp/sqlite_modern_cpp/lists
     external/sqlite_modern_cpp/sqlite_modern_cpp/utility
 )
+
+# NEW: copy assets folder next to binary on every build
+add_custom_command(TARGET HPR POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_SOURCE_DIR}/assets
+    $<TARGET_FILE_DIR:HPR>/assets
+)
+
 # On Windows, copy the Slint DLL next to the application binary so that it's found.
 if (WIN32)
     add_custom_command(TARGET HPR POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_RUNTIME_DLLS:HPR> $<TARGET_FILE_DIR:HPR> COMMAND_EXPAND_LISTS)
@@ -79,7 +79,6 @@ if(UNIX)
         COPYONLY
     )
 
-    # Locate the actual Slint shared library from wherever find_package found it
     find_library(SLINT_SO
         NAMES slint_cpp
         HINTS "${Slint_DIR}/../.."
@@ -96,7 +95,6 @@ if(UNIX)
         message(WARNING "[HPR] Could not find libslint_cpp.so — you may need to copy it manually next to the binary")
     endif()
 
-    # Tell the binary to look in its own directory for .so files ($ORIGIN = dir of the exe)
     set_target_properties(HPR PROPERTIES
         BUILD_RPATH "$ORIGIN"
         INSTALL_RPATH "$ORIGIN"

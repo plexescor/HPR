@@ -16,7 +16,7 @@
 		(void)nShowCmd;
 
 		// Force software rendeing
-		_putenv_s("SLINT_BACKEND", "winit-software");
+		// _putenv_s("SLINT_BACKEND", "winit-software");
 
 		DatabaseManager dbm;
 		CurrentWindowManager cwm;
@@ -25,6 +25,7 @@
 		cwm.run();
 
 		HPR app;
+		
 		app.run();
 
 		return 0;
