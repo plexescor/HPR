@@ -80,15 +80,13 @@ The closest honest comparison is ActivityWatch. ActivityWatch is a mature projec
 
 The following is what is actually planned in roughly the order it will be built.
 
-Visual UI redesign is the immediate next step. The current interface shows raw data correctly but has no styling, no layout design, and no visual hierarchy. This is known and being addressed.
-
 Human-readable insights derived entirely from code, no LLM involved. Things like most-used application today, longest uninterrupted focus session, total tracked time, and which application you switch away from most frequently. These are simple calculations on data HPR already has.
 
 Historical session browser so you can look at past days without opening SQLite files manually.
 
 Data export to CSV and JSON.
 
-A premium tier is planned for the future. The free tier will always include full local tracking, full data ownership, and the code-derived basic insights. The premium tier is intended to include LLM-powered pattern analysis that can read your usage data and give you personalized observations about your working patterns, focus mode with application blocking, and advanced reporting. This is not imminent.
+A premium tier is planned for the future. The free tier will always include full local tracking, full data ownership, and the code-derived basic insights. The premium tier is intended to include LLM-powered pattern analysis that can read your usage data and give you personalized observations about your working patterns, focus mode with application blocking, and advanced reporting, browser tabs usage. This is not imminent.
 
 ---
 ---
@@ -214,7 +212,7 @@ Once dependencies are installed, configure and build the CMake project:
 ```bash
 mkdir build && cd build
 cmake ..
-cmake --build . --parallel
+cmake --build . --parallel 8
 ```
 
 SQLite is bundled as the official single-file amalgamation within `external/sqLite/` and is compiled directly into the binary as part of the CMake build process. No system-level SQLite development packages are required.
@@ -247,7 +245,7 @@ The application architecture is designed to be easily extensible. To track a new
 
 *   **GNOME Extension Handling:** If the `window-calls-extended` extension is absent on GNOME, HPR detects the failure via a `gdbus` call and sets the platform string to `GNOME_NO_EXTENSION`. This triggers the polling loop to return a hardcoded string instructing the user to execute `installWindowCallsExtension.sh`. HPR does not attempt to invoke the installation script autonomously. The script handles cloning the repository and enabling the extension via `gnome-extensions enable`.
 *   **KDE Backend Performance:** The KDE backend relies on injecting a temporary JavaScript payload into KWin via `qdbus6` and scraping the system journal for the subsequent print output. This process triggers multiple shell invocations and disk I/O operations on every 50-millisecond polling tick. While entirely functional, it is significantly heavier in terms of CPU overhead compared to the native Win32 API calls used on Windows or the direct `hyprctl` JSON query utilized on Hyprland.
-*   **Linux Platform Identification:** The application relies on `$XDG_CURRENT_DESKTOP` to identify the Linux compositor. This string is parsed loosely using `std::string::contains`. Edge cases where users run nested compositors or non-standard session variables may result in fallback behavior.
+*   **Linux Platform Identification:** The application relies on `$XDG_CURRENT_DESKTOP` to identify the Linux compositor. This string is parsed loosely using `std::string::contains`. Edge cases where users run nested compositors or non-standard session variables may result in undefined/unintended behavior.
 
 ## Contributing
 
