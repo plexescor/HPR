@@ -60,7 +60,8 @@ On KDE Plasma, HPR uses KWin's scripting API via `qdbus6` to query the active wi
 On Windows, HPR uses the Win32 API to query the active process name. No additional setup is required. The binary is built without a console window so it runs cleanly in the background.
 
 ## Comparison With Other Trackers
->Come on, a table like this increases your `users`
+>Come on, a table like this increases your `users`.
+
 | Feature | HPR | ActivityWatch | RescueTime | Toggl |
 |---|---|---|---|---|
 | Binary size | ~2 MB (excluding dynamic library) | 200 MB+ | Cloud app | Cloud app |
