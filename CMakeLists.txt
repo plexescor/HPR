@@ -20,6 +20,7 @@ if(WIN32)
 		src/miscellaneous/timeUtils.cpp
         src/miscellaneous/aliasManager.cpp
 		src/ui-cpp/HPR.cpp
+        src/ui-cpp/uiEventBridge.cpp
 		src/window/getCurrentWindow.cpp
 		src/window/validateAndUpdateWindow.cpp
     	src/window/windowUtilities.cpp
@@ -68,13 +69,6 @@ target_include_directories(HPR
     external/sqlite_modern_cpp/sqlite_modern_cpp/utility
 )
 
-#copy assets folder next to binary on every build
-add_custom_command(TARGET HPR POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-    ${CMAKE_SOURCE_DIR}/assets
-    $<TARGET_FILE_DIR:HPR>/assets
-)
-
 # On Windows, copy the Slint DLL next to the application binary so that it's found.
 if (WIN32)
     add_custom_command(TARGET HPR POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_RUNTIME_DLLS:HPR> $<TARGET_FILE_DIR:HPR> COMMAND_EXPAND_LISTS)
@@ -87,12 +81,19 @@ add_custom_command(TARGET HPR POST_BUILD
     $<TARGET_FILE_DIR:HPR>/aliases.csv
 )
 
+#copy assets folder next to binary on every build
+add_custom_command(TARGET HPR POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_SOURCE_DIR}/assets
+    $<TARGET_FILE_DIR:HPR>/assets
+)
+
 
 if(UNIX)
-    configure_file(
+    add_custom_command(TARGET HPR POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
         ${CMAKE_SOURCE_DIR}/shippedWithBinary/installWindowCallsExtension.sh
-        ${CMAKE_BINARY_DIR}/installWindowCallsExtension.sh
-        COPYONLY
+        $<TARGET_FILE_DIR:HPR>/installWindowCallsExtension.sh
     )
 
     find_library(SLINT_SO

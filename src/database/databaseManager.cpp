@@ -2,6 +2,8 @@
 #include "timeUtils.hpp"
 #include "appState.hpp"
 
+#include "appEvents.hpp"
+
 #include <sqlite_modern_cpp.h>
 
 #include <chrono>
@@ -11,6 +13,7 @@
 #include <atomic>
 #include <thread>
 #include <filesystem>
+#include <future>
 
 DatabaseManager::DatabaseManager()
 {
@@ -21,6 +24,19 @@ DatabaseManager::DatabaseManager()
     {
         std::cerr << "Failed to load data from db!\n";
     }
+
+    //Connect to the event manager and get an id
+    //Listen for load singular db file signal
+    singular_DbLoadEventId = EventHub::connect(Event::LOAD_DATABASE_SINGULAR, [this](EventData data)
+    {
+        //If desired data exists
+        if (std::holds_alternative<DatabaseDate_Singular>(data)) 
+        {
+            std::string requestedDate = std::get<DatabaseDate_Singular>(data).date;
+            this->loadDb_Singular(requestedDate);
+        }
+    });
+    
 }
 
 DatabaseManager::~DatabaseManager()
@@ -166,6 +182,48 @@ void DatabaseManager::writeLoop()
     }
 }
 
+void DatabaseManager::loadDb_Singular(std::string requestedDate)
+{
+    //Create async task to load the singular db file
+    historyLoadTask_Singular = std::async(std::launch::async, [this, requestedDate]() {
+        try {
+
+            //Get the filepath for desired files
+            //DEVELOPER NOTES:
+            //As its the free version, i therefore only allow loading of the db files created this month
+            //of course you can modify the source code and give everyone the version that handles the month also
+            //and i will not do anything, :)
+
+            std::string path;
+            updateFilePath();
+            path = filePath + "/" + requestedDate + ".db";
+            
+            //Load a new db
+            sqlite::database histDb(path);
+
+            //Create an intermediate map
+            std::map<std::string, long> results;
+
+            //load from db to the map
+            histDb << "select name, duration from app_usage;"
+                   >> [&](std::string name, long duration) {
+                       results[name] = duration;
+                   };
+
+            //see appstate for what shit is this
+            {
+                std::lock_guard<std::mutex> lock(AppState::historyStateMutex);
+                AppState::historicalData_State.timeLog_PerApp = results;
+                AppState::historicalData_State.isLoaded = true;
+            }
+            EventHub::emit(Event::HISTORY_LOADED_SINGULAR);
+            
+        } catch (const std::exception& e) {
+            std::cerr << "Failed to load history: " << e.what() << std::endl;
+        }
+    });
+}
+
 void DatabaseManager::updateFilePath()
 {
     std::string tempPath;
@@ -188,7 +246,7 @@ void DatabaseManager::updateFilePath()
     
     filePath = tempPath;
     
-    std::cout << filePath << std::endl;
+    // std::cout << filePath << std::endl;
     std::filesystem::create_directories(filePath);
 }
 
@@ -203,5 +261,5 @@ void DatabaseManager::updateFileName()
     tempName += convertToDate_DDMMYY(t) + ".db";
 
     fileName = tempName;
-    std::cout << tempName << std::endl;
+    // std::cout << tempName << std::endl;
 }

@@ -7,6 +7,7 @@
 #include <optional>
 #include <vector>
 #include <sqlite_modern_cpp.h>
+#include <future>
 
 class DatabaseManager
 {
@@ -22,6 +23,8 @@ class DatabaseManager
         void updateFilePath();
         void updateFileName();
 
+        void loadDb_Singular(std::string date);
+
     private:
         std::optional<sqlite::database> db;
 
@@ -33,4 +36,10 @@ class DatabaseManager
 
         std::map<std::string, long> timeLog_PerApp_D; 
         std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> switchHistory_D;
+
+        //Ids for event listener
+        size_t singular_DbLoadEventId;
+
+        //Async tasks
+        std::future<void> historyLoadTask_Singular;
 };
