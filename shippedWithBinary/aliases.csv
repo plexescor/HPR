@@ -2,7 +2,8 @@
 # HPR Aliases Configuration File
 # 
 # HOW TO ADD NEW APPS:
-# 1. The format is exactly: trigger_word,Pretty Name
+# 1. The format is exactly: raw name,Pretty Name (raw name must be fully lowercase 
+#    and must be contained in whatever you see in the ui)
 # 2. HPR uses "substring matching"! If you add `code,Visual Studio`, it will 
 #    automatically catch `code`, `vscode`, `code.exe`, `code-oss`, etc.
 # 3. Do NOT put spaces around the comma unless you specifically want them!
@@ -28,6 +29,8 @@ obsidian,Obsidian
 postman,Postman
 notion,Notion
 notepad,Notepad
+antigravity,Antigravity
+
 
 # --- File Managers ---
 explorer,Explorer
@@ -44,6 +47,7 @@ slack,Slack
 teams,Microsoft Teams
 zoom,Zoom
 vlc,VLC Media Player
+mpv,Media Player
 
 # --- Games & System Utilities ---
 steam,Steam
@@ -51,6 +55,7 @@ btop,BTOP++
 texteditor,Text Editor
 text-editor,Text Editor
 taskmgr,Task Manager
+systemmonitor,System Monitor
 
 # --- Terminal Emulators (Unified) ---
 terminal,Terminal

@@ -3,6 +3,7 @@
 #include "getCurrentWindow.hpp"
 #include "timeUtils.hpp"
 #include "aliasManager.hpp"
+#include "uiEventBridge.hpp"
 
 // Slint stuff
 #include "app-window.h"
@@ -251,6 +252,7 @@ void HPR::run()
 {
     tracker = std::thread(&HPR::trackingLoop, this);
 
+    UiEventBridge uiEventBridge;
     #ifdef _WIN32
         ui->window().on_close_requested([this]() -> slint::CloseRequestResponse {
             ui->hide();

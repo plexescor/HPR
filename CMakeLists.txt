@@ -39,6 +39,7 @@ elseif(LINUX)
         src/miscellaneous/timeUtils.cpp
         src/miscellaneous/aliasManager.cpp
         src/ui-cpp/HPR.cpp
+        src/ui-cpp/uiEventBridge.cpp
         src/window/getCurrentWindow.cpp
         src/window/validateAndUpdateWindow.cpp
         src/window/windowUtilities.cpp
@@ -55,9 +56,7 @@ endif()
 
 target_link_libraries(HPR PRIVATE Slint::Slint)
 
-#Recurse the src/ui/*.slint
-file(GLOB_RECURSE SLINT_SOURCES src/ui/*.slint)
-slint_target_sources(HPR ${SLINT_SOURCES})
+slint_target_sources(HPR src/ui/app-window.slint)
 
 target_include_directories(HPR
     PRIVATE

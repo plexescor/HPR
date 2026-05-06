@@ -2,5 +2,7 @@
 
 class UiEventBridge
 {
-    
+    public:
+        UiEventBridge();
+        ~UiEventBridge();
 };

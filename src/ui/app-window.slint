@@ -1,4 +1,6 @@
 import { ListView } from "std-widgets.slint";
+import { LiveDot } from "./live-dot.slint";
+import { Card } from "./card.slint";
 
 export struct TimeLog {
     name: string,
@@ -10,14 +12,6 @@ export struct SwitchHistory {
     fromWindow: string,
     toWindow: string,
     maxTimeStamp: string,
-}
-
-// ── Animated live dot ────────────────────────────────────────────────────────
-component LiveDot inherits Rectangle {
-    width: 7px;
-    height: 7px;
-    border-radius: 3.5px;
-    background: #22c55e.mix(#052e16, 0.5 + 0.5 * Math.sin(animation-tick() / 1.4s * 1turn));
 }
 
 // ── Section header ───────────────────────────────────────────────────────────
@@ -193,14 +187,6 @@ component SwitchRow inherits Rectangle {
     ta := TouchArea {}
 }
 
-// ── Card ─────────────────────────────────────────────────────────────────────
-component Card inherits Rectangle {
-    border-radius: 8px;
-    background: @linear-gradient(150deg, #12181f 0%, #0c1014 100%);
-    border-width: 1px;
-    border-color: #ffffff0c;
-}
-
 // ── Main Window ──────────────────────────────────────────────────────────────
 export component MainWindow inherits Window {
     icon: @image-url("../../assets/logo_256png.png");
@@ -216,7 +202,7 @@ export component MainWindow inherits Window {
     preferred-width: 780px;
     preferred-height: 600px;
 
-    // Color palette — 8 distinct colors that look good on dark bg
+    // Color palette 8 distinct colors that
     property <[color]> bar-palette: [
         #a3e635,  // lime
         #38bdf8,  // sky blue
@@ -271,7 +257,7 @@ export component MainWindow inherits Window {
                     }
 
                     Text {
-                        text: "window tracker";
+                        text: "Free Version";
                         color: #ffffff40;
                         font-size: 11px;
                         letter-spacing: 0.3px;
@@ -295,6 +281,9 @@ export component MainWindow inherits Window {
 
                         LiveDot {
                             y: (parent.height - self.height) / 2;
+
+                            //If too long make it red
+                            is-alert: windowName_S.character-count > 84;
                         }
 
                         active-lbl := Text {
@@ -303,8 +292,9 @@ export component MainWindow inherits Window {
                             font-size: 11px;
                             font-weight: 500;
                             vertical-alignment: center;
+                            wrap: no-wrap; 
                             overflow: elide;
-                            max-width: 240px;
+                            max-width: 550px;
                         }
                     }
                 }
