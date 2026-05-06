@@ -64,7 +64,7 @@ On Windows, HPR uses the Win32 API to query the active process name. No addition
 | Feature | HPR | ActivityWatch | RescueTime | Toggl |
 |---|---|---|---|---|
 | Binary size | ~2 MB (excluding dynamic library) | 200 MB+ | Cloud app | Cloud app |
-| RAM usage | ~4 MB (~30 MB on Hyprland) | 200 MB+ | N/A | N/A |
+| RAM usage | ~8 MB (Windows) ~20MB (KDE and GNOME) ~30 MB (Hyprland) | 200 MB+ | N/A | N/A |
 | Requires account | No | No | Yes | Yes |
 | Data leaves your machine | Never | Never | Yes | Yes |
 | Auto-tracking | Yes | Yes | Yes | No |
@@ -134,6 +134,7 @@ The loop utilizes intermediate maps (`translatedTimeLog` and `translatedSwitchHi
 Because Slint objects are not thread-safe and cannot be directly manipulated from background threads, the bridge thread creates a `slint::ComponentWeakHandle<MainWindow>`. It captures the translated data by value within a lambda function and pushes the lambda into the Slint event loop queue via `slint::invoke_from_event_loop`. 
 
 ```cpp
+//PSEAUDOCODE even though it looks real
 slint::invoke_from_event_loop([weak, window, timeLog_Vec, switchHistory_Vec]() {
     if (auto handle = weak.lock()) {
         (*handle)->set_windowName_S(slint::SharedString(window));
@@ -174,7 +175,7 @@ The pipeline strips trailing newline and carriage return characters left over fr
 **Late-Binding Custom Aliases:**
 Unlike other trackers that hardcode translations or overwrite database history, HPR uses a Late-Binding architecture via the `AliasManager` class. The database stores the raw, mathematically pure OS strings. 
 
-During the UI update loop (`HPR::trackingLoop`), these raw strings are dynamically translated using a `aliases.csv` file (automatically copied to the binary path via CMake). This file allows users to define custom substring matches without touching C++ code. To ensure maximum performance, `AliasManager` employs a "Hybrid Memoization" architecture: it performs an initial O(N) substring search (`std::string::contains`) through the CSV rules, and instantly saves the result to an O(1) `std::unordered_map` RAM cache for all subsequent queries.
+During the UI update loop (`HPR::trackingLoop`), these raw strings are dynamically translated using a `aliases.csv` file (automatically copied to the binary path via CMake). This file allows users to define custom substring matches without touching C++ code. To ensure maximum performance, `AliasManager` employs a "Hybrid Memoization" architecture: it performs an initial O(N) substring search (`std::string::contains`) through the CSV rules, and instantly saves the result to an O(1) `std::unordered_map` RAM cache for all subsequent queries. Adding, it supports Hot Reload.
 
 ## System Command Execution
 
@@ -244,10 +245,9 @@ The application architecture is designed to be easily extensible. To track a new
 ## Known Issues and Limitations
 
 *   **GNOME Extension Handling:** If the `window-calls-extended` extension is absent on GNOME, HPR detects the failure via a `gdbus` call and sets the platform string to `GNOME_NO_EXTENSION`. This triggers the polling loop to return a hardcoded string instructing the user to execute `installWindowCallsExtension.sh`. HPR does not attempt to invoke the installation script autonomously. The script handles cloning the repository and enabling the extension via `gnome-extensions enable`.
-*   **KDE Backend Performance:** The KDE backend relies on injecting a temporary JavaScript payload into KWin via `qdbus6` and scraping the system journal for the subsequent print output. This process triggers multiple shell invocations and disk I/O operations on every 50-millisecond polling tick. While entirely functional, it is significantly heavier in terms of CPU overhead compared to the native Win32 API calls used on Windows or the direct `hyprctl` JSON query utilized on Hyprland. And of course I didn't `blindly` came to this conclusion, I tested other methods but they didn't work.
-```Good luck for your ssd``` 
->HDDs dont need it
-*   **Linux Platform Identification:** The application relies on `$XDG_CURRENT_DESKTOP` to identify the Linux compositor. This string is parsed loosely using `std::string::contains`. Edge cases where users run nested compositors or non-standard session variables may result in undefined/unintended behavior.
+*   **KDE Backend Performance:** The KDE backend relies on injecting a temporary JavaScript payload into KWin via `qdbus6` and scraping the system journal for the subsequent print output. This process triggers multiple shell invocations and disk I/O operations on every 50-millisecond polling tick. Though I didn't expect, is uses `~1%` CPU on KDE which is `*lower*` Win32 API calls used on Windows or the direct `hyprctl` JSON query utilized on Hyprland.Now defending myself, I didn't `blindly` came to this conclusion, I tested other methods but they didn't work.
+
+*   **Linux Platform Identification:** The application relies on `$XDG_CURRENT_DESKTOP` to identify the Linux compositor. This string is parsed loosely using `std::string::contains`. Edge cases where users run nested compositors or non-standard session variables may result in undefined/unintended behavior. Keeping your system sane will help HPR run.
 
 ## Contributing
 
@@ -265,7 +265,7 @@ There is no formal contribution process defined at this time. Submit an issue or
 ---
 
 **Status:** Active development, v0.1
-**Platforms:** Hyprland (Wayland), GNOME (Wayland), KDE Plasma, Windows 10/11
+**Platforms:** Hyprland (Wayland), GNOME (Wayland), KDE Plasma (Wayland), Windows 10/11
 **Language:** C++23
 **UI:** Slint 1.16.1
 **Database:** SQLite3 (bundled amalgamation) via sqlite_modern_cpp
