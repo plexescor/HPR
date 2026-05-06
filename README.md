@@ -244,7 +244,9 @@ The application architecture is designed to be easily extensible. To track a new
 ## Known Issues and Limitations
 
 *   **GNOME Extension Handling:** If the `window-calls-extended` extension is absent on GNOME, HPR detects the failure via a `gdbus` call and sets the platform string to `GNOME_NO_EXTENSION`. This triggers the polling loop to return a hardcoded string instructing the user to execute `installWindowCallsExtension.sh`. HPR does not attempt to invoke the installation script autonomously. The script handles cloning the repository and enabling the extension via `gnome-extensions enable`.
-*   **KDE Backend Performance:** The KDE backend relies on injecting a temporary JavaScript payload into KWin via `qdbus6` and scraping the system journal for the subsequent print output. This process triggers multiple shell invocations and disk I/O operations on every 50-millisecond polling tick. While entirely functional, it is significantly heavier in terms of CPU overhead compared to the native Win32 API calls used on Windows or the direct `hyprctl` JSON query utilized on Hyprland.
+*   **KDE Backend Performance:** The KDE backend relies on injecting a temporary JavaScript payload into KWin via `qdbus6` and scraping the system journal for the subsequent print output. This process triggers multiple shell invocations and disk I/O operations on every 50-millisecond polling tick. While entirely functional, it is significantly heavier in terms of CPU overhead compared to the native Win32 API calls used on Windows or the direct `hyprctl` JSON query utilized on Hyprland. And of course I didn't `blindly` came to this conclusion, I tested other methods but they didn't work.
+```Good luck for your ssd``` 
+>HDDs dont need it
 *   **Linux Platform Identification:** The application relies on `$XDG_CURRENT_DESKTOP` to identify the Linux compositor. This string is parsed loosely using `std::string::contains`. Edge cases where users run nested compositors or non-standard session variables may result in undefined/unintended behavior.
 
 ## Contributing
