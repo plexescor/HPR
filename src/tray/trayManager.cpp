@@ -18,8 +18,10 @@ TrayManager::TrayManager()
 
 TrayManager::~TrayManager()
 {
-    if (trayHwnd)
-        PostMessage(trayHwnd, WM_QUIT, 0, 0);
+    #ifdef _WIN32
+        if (trayHwnd)
+            PostMessage(trayHwnd, WM_QUIT, 0, 0);
+    #endif
 
     running = false;
     if (trayThread.joinable()) trayThread.join();

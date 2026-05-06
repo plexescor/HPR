@@ -251,21 +251,20 @@ void HPR::run()
 {
     tracker = std::thread(&HPR::trackingLoop, this);
 
-    ui->window().on_close_requested([this]()
-    {
-
-        #ifdef _WIN32
-                // Windows - hide to tray
-                ui->hide();
-                return slint::CloseRequestResponse::KeepWindowShown;
-        #else
-                // Linux Close the app
-                return slint::CloseRequestResponse::CloseWindow;
-        #endif
-
-    });
+    #ifdef _WIN32
+        ui->window().on_close_requested([this]() -> slint::CloseRequestResponse {
+            ui->hide();
+            return slint::CloseRequestResponse::KeepWindowShown;
+        });
+    #else
+        ui->window().on_close_requested([this]() -> slint::CloseRequestResponse {
+            running = false;
+            slint::quit_event_loop();
+            return slint::CloseRequestResponse::KeepWindowShown;
+        });
+    #endif
 
     ui->show();
     slint::run_event_loop(slint::EventLoopMode::RunUntilQuit);
-    running = false;
+    running = false; // safety net
 }
