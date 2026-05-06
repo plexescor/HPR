@@ -69,6 +69,6 @@ tilda,Terminal
 wezterm,Terminal
 
 # --- Uncategorizable stuff ---
-C:,Explorer
+c:,Explorer
 perftune,Intel XTU
 debugconsole,Visual Studio Debug Console
