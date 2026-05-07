@@ -12,8 +12,9 @@
 
 TrayManager::TrayManager()
 {
-    std::lock_guard<std::mutex> lock(AppState::stateMutex);
-    currentPlatform = AppState::state.currentPlatform;
+    #ifdef _WIN32
+        currentPlatform = "Windows";
+    #endif
 }
 
 TrayManager::~TrayManager()
