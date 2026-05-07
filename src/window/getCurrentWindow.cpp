@@ -115,6 +115,10 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 			AppState::state.currentWindow = window;
 			continue;
 		}
+		if (window.contains("Unknown"))
+		{
+			continue;
+		}
 
 		{
 			// Update current window in the AppState
