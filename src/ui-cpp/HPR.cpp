@@ -1,3 +1,5 @@
+#include "app-window.h"
+
 #include "HPR.hpp"
 #include "appState.hpp"
 #include "getCurrentWindow.hpp"
@@ -6,7 +8,6 @@
 #include "uiEventBridge.hpp"
 
 // Slint stuff
-#include "app-window.h"
 #include <slint.h>
 
 #ifdef _WIN32

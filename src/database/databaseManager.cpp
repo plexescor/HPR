@@ -308,7 +308,7 @@ void DatabaseManager::updateFilePath()
     std::string tempPath;
     #ifdef _WIN32
         tempPath = std::getenv("APPDATA");
-        tempPath += "/HPR/HPR_DB";
+        tempPath += "/HPR/HPR_DB/" + convertToDate_MMYY(t) + "/";
     #else
         const char* home = std::getenv("HOME");
         if (!home) throw std::runtime_error("HOME env var not set");

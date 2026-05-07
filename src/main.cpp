@@ -1,3 +1,4 @@
+#include "app-window.h"
 #include "databaseManager.hpp"
 #include "getCurrentWindow.hpp"
 #include "HPR.hpp"

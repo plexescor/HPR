@@ -1,7 +1,7 @@
 @echo off
 setlocal
 
-set "CONFIG_DIR=%APPDATA%\HPR"
+set "CONFIG_DIR=%APPDATA%\HPR\HPR_Config"
 set "SCRIPT_DIR=%~dp0"
 set "FORCE=false"
 
