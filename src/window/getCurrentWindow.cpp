@@ -15,6 +15,7 @@
 #include <mutex>
 #include <thread>
 #include <vector>
+#include <filesystem>
 
 CurrentWindowManager::CurrentWindowManager()
 {
@@ -39,6 +40,12 @@ CurrentWindowManager::CurrentWindowManager()
 	
 	if (currentPlatform.contains("GNOME"))
 	{
+		// Check if extension files already exist on disk
+		std::string extDir = std::string(getenv("HOME")) + 
+			"/.local/share/gnome-shell/extensions/window-calls-extended@hseliger.eu";
+		
+		bool filesExist = std::filesystem::exists(extDir);
+
 		// Check if window-calls-extended is working
 		std::string checkCmd =
 			"gdbus call --session --dest org.gnome.Shell --object-path "
@@ -50,7 +57,17 @@ CurrentWindowManager::CurrentWindowManager()
 
 		if (!checkResult.contains("('"))
 		{
-			currentPlatform = "GNOME_NO_EXTENSION";
+			if (filesExist)
+			{
+				std::cout << "[HPR] Extension files found, enabling..." << std::endl;
+				std::string cmd = "gnome-extensions enable window-calls-extended@hseliger.eu";
+				runSystemCommand(cmd);
+				currentPlatform = "GNOME";
+			}
+			else
+			{
+				currentPlatform = "GNOME_NO_EXTENSION";
+			}
 		}
 
 		else
