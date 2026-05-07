@@ -21,6 +21,7 @@ if(WIN32)
         src/miscellaneous/aliasManager.cpp
 		src/ui-cpp/HPR.cpp
         src/ui-cpp/uiEventBridge.cpp
+        src/ui-cpp/uiModelManager.cpp
 		src/window/getCurrentWindow.cpp
 		src/window/validateAndUpdateWindow.cpp
     	src/window/windowUtilities.cpp
@@ -40,6 +41,7 @@ elseif(LINUX)
         src/miscellaneous/aliasManager.cpp
         src/ui-cpp/HPR.cpp
         src/ui-cpp/uiEventBridge.cpp
+        src/ui-cpp/uiModelManager.cpp
         src/window/getCurrentWindow.cpp
         src/window/validateAndUpdateWindow.cpp
         src/window/windowUtilities.cpp

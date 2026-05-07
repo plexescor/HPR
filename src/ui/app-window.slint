@@ -1,4 +1,4 @@
-import { ListView } from "std-widgets.slint";
+import { ListView, Button } from "std-widgets.slint";
 import { LiveDot } from "./live-dot.slint";
 import { Card } from "./card.slint";
 
@@ -191,6 +191,8 @@ component SwitchRow inherits Rectangle {
 export component MainWindow inherits Window {
     icon: @image-url("../../assets/logo_256png.png");
     
+    callback loadHistoricalData_Singular(string);
+
     in property <int>             trackedTime_S;
     in property <string>          windowName_S;
     in property <[TimeLog]>       timePerApp_S;
@@ -262,6 +264,16 @@ export component MainWindow inherits Window {
                         font-size: 11px;
                         letter-spacing: 0.3px;
                         vertical-alignment: center;
+                    }
+
+                    Button {
+                        text: "Load May 6th";
+                        width: 120px;
+                        height: 30px;
+                        y: (parent.height - self.height) / 2;
+                        clicked => {       
+                            root.loadHistoricalData_Singular("06-05-26"); 
+                        }
                     }
                 }
 

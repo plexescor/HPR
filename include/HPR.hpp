@@ -3,6 +3,7 @@
 
 #include "appState.hpp"
 #include "aliasManager.hpp"
+#include "uiModelManager.hpp"
 
 //Slint stuff
 #include "app-window.h"
@@ -30,4 +31,5 @@ class HPR {
         std::thread tracker;
 
         AliasManager aliasManager;
+        UiModelManager modelManager;
 };

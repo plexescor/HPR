@@ -14,11 +14,22 @@
 #include <thread>
 #include <filesystem>
 #include <future>
+#include <fcntl.h>
 
 DatabaseManager::DatabaseManager()
 {
 
     initDatabase();
+
+    // Try to create a lock file
+    std::string lockPath = filePath + "hpr.lock";
+    int fd = open(lockPath.c_str(), O_CREAT | O_EXCL, 0644);
+    if (fd == -1) {
+        std::cerr << "[HPR] Already running. Exiting.\n";
+        exit(1);
+    }
+
+    lockFd = fd;
 
     if (!loadStateFromDB())
     {
@@ -43,6 +54,10 @@ DatabaseManager::~DatabaseManager()
 {
     running = false;
     if (writer.joinable()) writer.join();
+
+    //Delete lock
+    close(lockFd);
+    std::filesystem::remove(filePath + "hpr.lock");
 }
 
 void DatabaseManager::initDatabase(bool copyData)
@@ -60,7 +75,6 @@ void DatabaseManager::initDatabase(bool copyData)
             switchHistory_D = AppState::state.switchHistory;
         }
     }
-    
 
     db.emplace(filePath + fileName);
 
@@ -92,6 +106,8 @@ bool DatabaseManager::loadStateFromDB()
     try
     {
 
+        //No mutex needed because it runs before everything else
+        
         // Load app_usage into AppState
         *db << "select name, duration from app_usage;"
         >> [](std::string name, long duration) {
@@ -148,7 +164,7 @@ void DatabaseManager::writeLoop()
         }
 
         *db << "COMMIT;";
-
+        *db << "PRAGMA wal_checkpoint(PASSIVE);"; //learnt hardway because wal itself can get corrupted during crashes
         //So that old db is closed and new file is created if date changes
 
         std::string newName = "";
@@ -194,28 +210,57 @@ void DatabaseManager::loadDb_Singular(std::string requestedDate)
             //of course you can modify the source code and give everyone the version that handles the month also
             //and i will not do anything, :)
 
-            std::string path;
-            updateFilePath();
-            path = filePath + "/" + requestedDate + ".db";
             
+            std::string path;
+
+            //On windows, the "/" isnt returned but in linux, it is
+            #ifdef _WIN32
+                {
+                    std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                    path = filePath + "/" + requestedDate + ".db";
+                }              
+            #endif
+
+            #ifdef __linux__
+                {
+                    std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                    path = filePath + requestedDate + ".db";
+                }     
+            #endif
+
+            //Check if shit even exists
+            if (!std::filesystem::exists(path))
+            {
+                std::cerr << "Historical file not found: " << path << std::endl;
+                
+                //Future: emit no such file
+                return; 
+            }
+
             //Load a new db
             sqlite::database histDb(path);
+
+            //Force so incomplete .db files possibly due to a crash are fully 
+            //resolved by a WAL checkpoint
+            histDb << "PRAGMA wal_checkpoint(TRUNCATE);";
 
             //Create an intermediate map
             std::map<std::string, long> results;
 
             //load from db to the map
             histDb << "select name, duration from app_usage;"
-                   >> [&](std::string name, long duration) {
+                   >> [&results](std::string name, long duration) {
                        results[name] = duration;
                    };
+                
 
-            //see appstate for what shit is this
+            //YOU: see appstate for this
             {
                 std::lock_guard<std::mutex> lock(AppState::historyStateMutex);
                 AppState::historicalData_State.timeLog_PerApp = results;
                 AppState::historicalData_State.isLoaded = true;
             }
+
             EventHub::emit(Event::HISTORY_LOADED_SINGULAR);
             
         } catch (const std::exception& e) {

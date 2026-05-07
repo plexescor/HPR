@@ -31,6 +31,8 @@ class DatabaseManager
         std::string filePath;
         std::string fileName;
 
+        std::mutex stateMutex;
+
         std::atomic<bool> running{true};
         std::thread writer;
 
@@ -39,6 +41,9 @@ class DatabaseManager
 
         //Ids for event listener
         size_t singular_DbLoadEventId;
+
+        //Lock
+        int lockFd;
 
         //Async tasks
         std::future<void> historyLoadTask_Singular;
