@@ -251,7 +251,7 @@ void DatabaseManager::loadDb_Singular(std::string requestedDate)
             #ifdef __linux__
                 {
                     std::lock_guard<std::mutex> lock(AppState::stateMutex);
-                    path = filePath + "/" + requestedDate + ".db";
+                    path = filePath + requestedDate + ".db";
                 }     
             #endif
 
