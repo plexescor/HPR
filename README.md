@@ -25,7 +25,7 @@ A lightweight, offline activity tracker for Windows and Linux. HPR runs silently
 
 HPR is an application tracker. It watches which window is active on your screen and builds a log of how much time you spend in each application, every day. When you switch from Chrome to VSCode, it records that. When you come back, it picks up where it left off. When you close and reopen HPR the next day, your history from today is already loaded.
 
-Everything it records lives in a folder on your machine called `HPR_DB` inside your home directory. Nothing goes anywhere else. There is no server, no account, no API key, no analytics endpoint. The only internet activity that ever happens is a one-time Git clone on GNOME systems to set up a required shell extension, and that is a shell command the OS runs, not HPR itself.
+Everything it records lives in a folder on your machine called `HPR_DB` inside your local application data directory (`~/.local/share/HPR/HPR_DB/` on Linux, `%APPDATA%\HPR\HPR_DB\` on Windows). Nothing goes anywhere else. There is no server, no account, no API key, no analytics endpoint. The only internet activity that ever happens is a one-time Git clone on GNOME systems to set up a required shell extension, and that is a shell command the OS runs, not HPR itself.
 
 ## What HPR Is Not
 
@@ -46,13 +46,10 @@ This is the foundation. Analytics, insights, focus mode, and more are planned an
 HPR stores your data in SQLite database files organized like this:
 
 ```
-~/HPR_DB/
+~/.local/share/HPR/HPR_DB/ (Linux)
+%APPDATA%\HPR\HPR_DB\ (Windows)
     05-26/
         01-05-26.db
-        02-05-26.db
-        03-05-26.db
-    04-26/
-        30-04-26.db
 ```
 
 One file per day. One folder per month. To delete everything from last month, delete the folder. To see exactly what was recorded on any specific day, open that day's `.db` file with any SQLite viewer. The files are completely standard SQLite, compatible with every SQLite tool ever made. A typical day of usage produces a file somewhere between 30 and 100 kilobytes. A full year of data is well under 50 megabytes.
@@ -205,7 +202,7 @@ The database schema implements two distinct persistence strategies:
 *   `app_usage`: Enforces a `UNIQUE` constraint on the `name` column and relies on `INSERT OR REPLACE` statements. This ensures exactly one row exists per tracked application. Every database flush overwrites the previous duration with the newly accumulated total.
 *   `switch_history`: Enforces a `UNIQUE` constraint on the `timeStamp` column and relies on `INSERT OR IGNORE` statements. The write loop indiscriminately attempts to insert the entire history vector on every flush. The SQLite engine silently drops duplicate timestamps, ensuring each switch event is recorded exactly once without requiring complex diffing logic in the application code.
 
-Database files are stored hierarchically by month and day. `DatabaseManager::updateFilePath()` queries the operating system for the user profile directory and constructs paths in the format `HPR_DB/MM-YY/DD-MM-YY.db`. 
+Database files are stored hierarchically by month and day. `DatabaseManager::updateFilePath()` queries the operating system for the user profile directory and constructs paths in the format `.../HPR/HPR_DB/MM-YY/DD-MM-YY.db`. 
 
 **Asynchronous History Loading:**
 When a user requests to view data from a past date, the `DatabaseManager` performs an asynchronous load via `std::async`. It resolves the path for the requested date, performs a WAL checkpoint to ensure data integrity (even if the app crashed that day), and populates a separate `historicalData_State`. Once the load is complete, it emits a `HISTORY_LOADED_SINGULAR` event to notify the UI to refresh its display.
