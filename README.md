@@ -87,6 +87,36 @@ On Windows, HPR uses the Win32 API to query the active process name. No addition
 
 The closest honest comparison is ActivityWatch. ActivityWatch is a mature project with a full web dashboard, browser extensions, plugin ecosystem, and multiple years of development. HPR is early-stage and has none of those things yet. What HPR has that ActivityWatch does not is a significantly smaller footprint, native Wayland support from day one, no embedded web server, and no Python runtime. If you want a mature tool today, use ActivityWatch. If you want something that will eventually be faster and leaner, HPR is being built for that.
 
+## Customizing the UI (Advanced Users)
+
+HPR features a unique **Interpreted UI Mode** that allows you to modify the look and feel of the application without needing to touch a single line of C++ or recompile the binary. By default, HPR uses a pre-compiled UI for speed, but you can override this to use your own custom `.slint` files.
+
+### 1. Enable Interpreted Mode
+To tell HPR to use your custom UI files instead of the built-in one, you need to edit your `config.csv` file.
+
+- **Location**:
+  - **Linux**: `~/.config/HPR/config.csv`
+  - **Windows**: `%APPDATA%\HPR\HPR_Config\config.csv`
+
+Add (or change) the following line in the file:
+```csv
+use-interpreter,true
+```
+
+### 2. Add Your UI Files
+HPR looks for a file named `app-window.slint` in a specific directory. You can copy the default UI files from a `ui` folder shipped with HPR folder into the locations below and start tweaking them. (Or you can run the given script to do it for you.)
+
+> [!IMPORTANT]
+> When modifying the `.slint` files, you **must** keep the names of all structs, properties, and callbacks exactly as they are in the original file. HPR's C++ logic depends on these specific names to send data to the UI. As long as the names remain identical, you can change everything else—colors, layouts, sizes, and logic—to your heart's content.
+
+- **Storage Path**:
+  - **Linux**: `~/.config/HPR/ui/`
+  - **Windows**: `%APPDATA%\HPR\HPR_Config\ui\`
+
+Once enabled, HPR will load `app-window.slint` at startup. This means you can change colors, layouts, and animations using the [Slint design language](https://slint.dev/) and see the results just by restarting the app.
+
+---
+
 ## Roadmap
 
 The following is what is actually planned in roughly the order it will be built.
@@ -110,10 +140,10 @@ A premium tier is planned for the future. The free tier will always include full
 
 HPR is a multi-threaded C++23 application built around a centralized shared state model. The threading architecture utilizes four distinct threads running concurrently. This design ensures the UI remains fully responsive while blocking I/O and polling operations occur asynchronously.
 
-1.  **Main Thread (UI Loop):** The main thread serves as the entry point in `main.cpp`. It instantiates the manager classes, calls their respective `run()` methods to spawn background threads, and then enters the Slint event loop via `(*ui)->run()`. The thread blocks here indefinitely until the window is closed. It is strictly responsible for rendering and user input.
-2.  **Window Polling Thread:** Encapsulated within the `CurrentWindowManager` class. The `getCurrentWindow_Loop` method runs continuously, invoking the platform-specific active window getter every 50 milliseconds using `std::this_thread::sleep_for`. Upon retrieving a window name, it acquires `AppState::stateMutex` to update the current window name and accumulate elapsed time.
-3.  **UI Bridge Thread:** Encapsulated within the `HPR` class in the `trackingLoop` method. It wakes every 100 milliseconds, acquires `AppState::stateMutex`, and reads the raw C++ `std::map` structures. It converts these into Slint-compatible structures (`slint::VectorModel` and `slint::SharedString`), and dispatches the data to the main thread utilizing `slint::invoke_from_event_loop`.
-4.  **Database Writer Thread:** Encapsulated within the `DatabaseManager` class in the `writeLoop` method. It wakes every 10 seconds to create an in-memory copy of the `AppState` data and flushes it to the SQLite database. To prevent blocking the application during termination, it uses a chunked sleep pattern, iterating 100 times with a 100-millisecond sleep, checking the atomic `running` flag on each iteration.
+1.  **Main Thread (UI Loop):** The main thread serves as the entry point in `main.cpp`. It instantiates the `ConfigManager` to load settings (such as toggling the Slint interpreter), then initializes the `DatabaseManager` and `CurrentWindowManager`. Depending on the configuration, it instantiates either the compiled `HPR` class or the dynamic `HPRInterpreter` class and enters the Slint event loop.
+2.  **Window Polling Thread:** Encapsulated within the `CurrentWindowManager` class. The `getCurrentWindow_Loop` method runs continuously, invoking the platform-specific active window getter every 50 milliseconds. It acquires `AppState::stateMutex` to update the current window name and accumulate elapsed time.
+3.  **UI Bridge & Model Management:** Handled by the `HPR` or `HPRInterpreter` classes in conjunction with `UiModelManager`. The `trackingLoop` wakes every 500 milliseconds, reads the raw C++ state, and uses `UiModelManager` to update the Slint-specific models (either compiled or interpreted). Interactions from the UI are handled by `UiEventBridge`, which translates Slint callbacks into application events.
+4.  **Database Writer Thread:** Encapsulated within the `DatabaseManager` class in the `writeLoop` method. It wakes every 10 seconds to copy `AppState` data and flushes it to a per-day SQLite database. It also listens for `LOAD_DATABASE_SINGULAR` events to asynchronously load historical data from past files.
 
 ## Shared State and Synchronization
 
@@ -138,19 +168,26 @@ The `timeLog_PerApp` map accumulates raw duration in milliseconds. The `switchHi
 
 ## UI Bridging and Slint Interoperability
 
-The Slint declarative framework requires data to be packaged in specific models before it can be processed by the rendering engine. The `HPR::trackingLoop` manages this data translation.
+The Slint declarative framework requires data to be packaged in specific models. HPR supports two modes of UI execution, both managed by `UiModelManager`:
 
-The loop utilizes intermediate maps (`translatedTimeLog` and `translatedSwitchHistory`) to translate raw database keys using the `AliasManager` and dynamically merge the durations and timestamps of matching aliases into unified UI rows. It then clears and populates local `std::vector` instances of `TimeLog` and `SwitchHistory` structs. For the `switchHistory` vectors, it utilizes `std::max_element` to isolate the most recent transition timestamp for display purposes. Finally, the vectors are safely sorted using the derived values inside the generated structs.
+*   **Compiled Mode (`HPR` class):** Uses the Slint compiler to generate C++ code from `.slint` files at build time. This offers maximum performance and a smaller deployment footprint.
+*   **Interpreted Mode (`HPRInterpreter` class):** Uses the Slint interpreter to load `app-window.slint` dynamically from `~/.config/HPR/ui/` at runtime. This allows users to customize the UI layout, colors, and animations without recompiling the binary.
 
-Because Slint objects are not thread-safe and cannot be directly manipulated from background threads, the bridge thread creates a `slint::ComponentWeakHandle<MainWindow>`. It captures the translated data by value within a lambda function and pushes the lambda into the Slint event loop queue via `slint::invoke_from_event_loop`. 
+The `UiModelManager` abstracts these differences, providing `update()` and `update_Interpreted()` methods to populate Slint `VectorModel`s from raw C++ data. 
+
+**Event Bridging:**
+User interactions (like clicking a button to view a past date) are handled by `UiEventBridge` (or `UiEventBridge_Interpreted`). It registers callbacks with the Slint UI that emit internal application events via a centralized `EventHub`. For example, requesting historical data emits a `LOAD_DATABASE_SINGULAR` event, which the `DatabaseManager` picks up to perform an asynchronous file read.
+
+Because Slint objects are not thread-safe, all UI updates and model manipulations are dispatched to the main thread via `slint::invoke_from_event_loop`.
 
 ```cpp
-//PSEAUDOCODE even though it looks real
+// Update logic abstracted by UiModelManager
+modelManager.update(timeLog, switchHistory, window, totalTime, aliasManager);
+
+// Dispatched to UI thread
 slint::invoke_from_event_loop([weak, window, timeLog_Vec, switchHistory_Vec]() {
     if (auto handle = weak.lock()) {
-        (*handle)->set_windowName_S(slint::SharedString(window));
-        (*handle)->set_timePerApp_S(std::make_shared<slint::VectorModel<TimeLog>>(timeLog_Vec));
-        (*handle)->set_switchHistory_S(std::make_shared<slint::VectorModel<SwitchHistory>>(switchHistory_Vec));
+        // ... Slint model updates ...
     }
 });
 ```
@@ -168,7 +205,10 @@ The database schema implements two distinct persistence strategies:
 *   `app_usage`: Enforces a `UNIQUE` constraint on the `name` column and relies on `INSERT OR REPLACE` statements. This ensures exactly one row exists per tracked application. Every database flush overwrites the previous duration with the newly accumulated total.
 *   `switch_history`: Enforces a `UNIQUE` constraint on the `timeStamp` column and relies on `INSERT OR IGNORE` statements. The write loop indiscriminately attempts to insert the entire history vector on every flush. The SQLite engine silently drops duplicate timestamps, ensuring each switch event is recorded exactly once without requiring complex diffing logic in the application code.
 
-Database files are stored hierarchically by month and day. `DatabaseManager::updateFilePath()` queries the operating system for the user profile directory (`$HOME` on Linux, `USERPROFILE` on Windows) and constructs paths in the format `HPR_DB/MM-YY/DD-MM-YY.db`. At midnight, the write loop detects the date rollover, clears the in-memory `AppState`, and initializes a fresh database file for the new day.
+Database files are stored hierarchically by month and day. `DatabaseManager::updateFilePath()` queries the operating system for the user profile directory and constructs paths in the format `HPR_DB/MM-YY/DD-MM-YY.db`. 
+
+**Asynchronous History Loading:**
+When a user requests to view data from a past date, the `DatabaseManager` performs an asynchronous load via `std::async`. It resolves the path for the requested date, performs a WAL checkpoint to ensure data integrity (even if the app crashed that day), and populates a separate `historicalData_State`. Once the load is complete, it emits a `HISTORY_LOADED_SINGULAR` event to notify the UI to refresh its display.
 
 ## Timing Model
 
@@ -264,10 +304,11 @@ The application architecture is designed to be easily extensible. To track a new
 
 The codebase is organized specifically to be comprehensible in a single reading session. The recommended reading order is:
 
-1.  `main.cpp`: To trace initialization and thread spawning sequences.
+1.  `main.cpp`: To trace initialization, `ConfigManager` usage, and thread spawning sequences.
 2.  `appState.hpp`: To understand the core centralized data model.
 3.  `getCurrentWindow.cpp`: To observe how telemetry data is polled and collected.
-4.  `databaseManager.cpp`: To understand how telemetry data is persistently stored.
+4.  `databaseManager.cpp`: To understand how telemetry data is persistently stored and asynchronously loaded.
+5.  `uiModelManager.cpp`: To see how raw C++ data is mapped to Slint UI models in both compiled and interpreted modes.
 
 When contributing, ensure rigorous adherence to the established threading model. Validate which thread holds responsibility for reading or writing specific variables, and verify that `AppState::stateMutex` is acquired prior to any interaction with shared state.
 
