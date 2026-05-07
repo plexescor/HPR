@@ -85,6 +85,8 @@ DatabaseManager::~DatabaseManager()
         close(lockFd);
         std::filesystem::remove(filePath + "hpr.lock");
     #endif
+
+    EventHub::disconnect(Event::LOAD_DATABASE_SINGULAR, singular_DbLoadEventId);
 }
 
 void DatabaseManager::initDatabase(bool copyData)

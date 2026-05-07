@@ -43,11 +43,11 @@ void HPR::show()
         if (hwnd) {
             HICON hIconBig = (HICON)LoadImage(
                 GetModuleHandle(NULL), MAKEINTRESOURCE(1),
-                IMAGE_ICON, 32, 32, 0  // explicit 32x32 for title bar
+                IMAGE_ICON, 32, 32, LR_SHARED
             );
             HICON hIconSmall = (HICON)LoadImage(
                 GetModuleHandle(NULL), MAKEINTRESOURCE(1),
-                IMAGE_ICON, 16, 16, 0  // explicit 16x16
+                IMAGE_ICON, 16, 16, LR_SHARED
             );
             if (hIconBig)   SendMessage(hwnd, WM_SETICON, ICON_BIG,   (LPARAM)hIconBig);
             if (hIconSmall) SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIconSmall);
@@ -86,11 +86,11 @@ void HPR::trackingLoop()
         if (hwnd) {
             HICON hIconBig = (HICON)LoadImage(
                 GetModuleHandle(NULL), MAKEINTRESOURCE(1),
-                IMAGE_ICON, 32, 32, 0  // explicit 32x32 for title bar
+                IMAGE_ICON, 32, 32, LR_SHARED
             );
             HICON hIconSmall = (HICON)LoadImage(
                 GetModuleHandle(NULL), MAKEINTRESOURCE(1),
-                IMAGE_ICON, 16, 16, 0  // explicit 16x16
+                IMAGE_ICON, 16, 16, LR_SHARED
             );
             if (hIconBig)   SendMessage(hwnd, WM_SETICON, ICON_BIG,   (LPARAM)hIconBig);
             if (hIconSmall) SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIconSmall);

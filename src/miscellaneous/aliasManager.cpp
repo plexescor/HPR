@@ -15,6 +15,7 @@ AliasManager::AliasManager() { loadAliases(); }
 
 void AliasManager::loadAliases()
 {
+    aliasList.clear(); //clear the vector if we ever reload alises.csv
     std::string tempPath;
     #ifdef _WIN32
         tempPath = std::getenv("APPDATA");
