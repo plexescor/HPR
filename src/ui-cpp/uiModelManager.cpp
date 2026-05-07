@@ -92,7 +92,7 @@ void UiModelManager::update(const std::map<std::string, long> &rawTimeLog,
     std::sort(tempSwitchVec.begin(), tempSwitchVec.end(), [](const TempSwitchHistory &a, const TempSwitchHistory &b)
               { return a.maxVal > b.maxVal; });
 
-    // create a vector of slint's TimeLog struct
+    // create a vector of slint's switch History struct
     // Use pretty names
     std::vector<SwitchHistory> slintVec_SwitchHistory;
 
