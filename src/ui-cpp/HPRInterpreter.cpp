@@ -130,7 +130,7 @@ void HPRInterpreter::trackingLoop()
                 switchHistory = AppState::state.switchHistory;
             }
 
-            modelManager.value().update(
+            modelManager.value().update_Interpreted(
                 timeLog,
                 switchHistory,
                 window,

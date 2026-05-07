@@ -125,6 +125,9 @@ void UiModelManager::update(const std::map<std::string, long> &rawTimeLog,
     }
 
     //-----------------Actually pushing changes to slint for rendering-----------------------
+    if (!ui.has_value()) {
+        return; //skip update if ui handle aint ready
+    }
     slint::ComponentWeakHandle<MainWindow> weak(ui.value());
     slint::invoke_from_event_loop([weak, slintVec_TimeLog, slintVec_SwitchHistory, totalTrackedTime, currentWindowName, this]()
     {
