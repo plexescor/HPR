@@ -4,6 +4,8 @@
   <img src="./assets/logo_1254png.png" alt="HPR Logo" width="350"/>
 </p>
 
+>Recursion
+
 A lightweight, offline activity tracker for Windows and Linux. HPR runs silently in the background and tells you exactly where your time goes, down to the millisecond, without ever talking to a server, requiring an account, or eating your RAM.
 
 > Currently in active development. Core tracking and persistence are fully functional. UI is pretty, the data is real.
