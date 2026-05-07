@@ -286,7 +286,7 @@ void DatabaseManager::updateFilePath()
         const char* home = std::getenv("HOME");
         if (!home) throw std::runtime_error("HOME env var not set");
         tempPath = home;
-        tempPath += "/.local/share/HPR/" + convertToDate_MMYY(t) + "/";
+        tempPath += "/.local/share/HPR/HPR_DB" + convertToDate_MMYY(t) + "/";
     #endif
     
     filePath = tempPath;
