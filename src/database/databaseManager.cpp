@@ -20,6 +20,7 @@
     #include <fcntl.h>
     #include <unistd.h>
     #include <sys/stat.h>
+    #include <sys/file.h>
 #endif
 
 DatabaseManager::DatabaseManager()
@@ -32,27 +33,40 @@ DatabaseManager::DatabaseManager()
 
     #ifdef _WIN32
         lockHandle = CreateFileA(
-            lockPath.c_str(),
-            GENERIC_WRITE,
-            0,              // no sharing — exclusive
-            NULL,
-            CREATE_NEW,     // fails if already exists
-            FILE_ATTRIBUTE_NORMAL | FILE_FLAG_DELETE_ON_CLOSE,
-            NULL
-        );
-        if (lockHandle == INVALID_HANDLE_VALUE) {
-            std::cerr << "[HPR] Already running. Exiting.\n";
+                lockPath.c_str(),
+                GENERIC_WRITE,
+                0,              // 0 = exclusive access
+                NULL,
+                OPEN_ALWAYS,    // Create if missing, open if exist, crucial if HPR crashed
+                FILE_ATTRIBUTE_NORMAL | FILE_FLAG_DELETE_ON_CLOSE,
+                NULL
+            );
+            if (lockHandle == INVALID_HANDLE_VALUE) 
+            {
+                DWORD err = GetLastError();
+                if (err == ERROR_SHARING_VIOLATION) 
+                {
+                    std::cerr << "[HPR] Already running. Exiting.\n";
+                } 
+                else 
+                {
+                    std::cerr << "[HPR] Could not acquire lock (Error " << err << ").\n";
+                }
+                exit(1);
+            }
+    #else
+        int fd = open(lockPath.c_str(), O_RDWR | O_CREAT, 0644);
+        if (fd == -1) {
+            std::cerr << "[HPR] Failed to open lock file.\n";
             exit(1);
         }
-    #else
-        int fd = open(lockPath.c_str(), O_CREAT | O_EXCL, 0644);
-        if (fd == -1) {
+        if (flock(fd, LOCK_EX | LOCK_NB) == -1) {
             std::cerr << "[HPR] Already running. Exiting.\n";
+            close(fd);
             exit(1);
         }
         lockFd = fd;
     #endif
-
     if (!loadStateFromDB())
     {
         std::cerr << "Failed to load data from db!\n";
@@ -78,12 +92,15 @@ DatabaseManager::~DatabaseManager()
     if (writer.joinable()) writer.join();
 
     #ifdef _WIN32
-    if (lockHandle != INVALID_HANDLE_VALUE) {
-        CloseHandle(lockHandle);
-    }
+        if (lockHandle != INVALID_HANDLE_VALUE) 
+        {
+            CloseHandle(lockHandle); // windows autodelete lock file
+        }
     #else
-        close(lockFd);
-        std::filesystem::remove(filePath + "hpr.lock");
+        if (lockFd != -1) 
+        {
+            close(lockFd); // kernal will delete the lock file auto
+        }
     #endif
 
     EventHub::disconnect(Event::LOAD_DATABASE_SINGULAR, singular_DbLoadEventId);
