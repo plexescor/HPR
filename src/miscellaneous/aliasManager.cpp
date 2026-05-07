@@ -15,32 +15,31 @@ AliasManager::AliasManager() { loadAliases(); }
 
 void AliasManager::loadAliases()
 {
-    // Yo filesystdm is sick
-    std::filesystem::path exePath;
+    std::string tempPath;
     #ifdef _WIN32
-        char buffer[MAX_PATH];
-        GetModuleFileNameA(NULL, buffer, MAX_PATH);
-        exePath = std::filesystem::path(buffer);
-
-    #elif defined(__linux__)
-        exePath = std::filesystem::read_symlink("/proc/self/exe");
+        tempPath = std::getenv("APPDATA");
+        tempPath += "/HPR/HPR_Config/";
     #else
-        exePath = std::filesystem::current_path() / "fallback";
+        const char* home = std::getenv("HOME");
+        if (!home) throw std::runtime_error("HOME env var not set");
+        tempPath = home;
+        tempPath += "/.config/HPR/";
     #endif
 
-    csvPath = exePath.parent_path() / fileName; // store it
-    aliasList.clear(); // clear before reload
+    std::filesystem::create_directories(tempPath);
+    filePath = tempPath + fileName;
 
-    std::ifstream file(csvPath);
+    std::ifstream file(filePath);
+
     if (!file.is_open())
     {
-        std::cerr << "Warning: aliases.csv not found at " << csvPath
+        std::cerr << "Warning: aliases.csv not found at " << filePath
                   << ". Using raw names.\n";
         return;
     }
 
     // store last modified time
-    lastModified = std::filesystem::last_write_time(csvPath);
+    lastModified = std::filesystem::last_write_time(filePath);
 
     std::string line;
 
@@ -76,9 +75,9 @@ std::string AliasManager::getAlias(const std::string &rawName)
 
 
     // hot reload check
-    if (std::filesystem::exists(csvPath))
+    if (std::filesystem::exists(filePath))
     {
-        auto currentModified = std::filesystem::last_write_time(csvPath);
+        auto currentModified = std::filesystem::last_write_time(filePath);
         if (currentModified > lastModified)
         {
             cacheDictionary.clear();

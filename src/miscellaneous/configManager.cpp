@@ -15,24 +15,25 @@ ConfigManager::ConfigManager() { loadConfig(); }
 
 void ConfigManager::loadConfig()
 {
-    std::filesystem::path exePath;
+
+    std::string tempPath;
     #ifdef _WIN32
-        char buffer[MAX_PATH];
-        GetModuleFileNameA(NULL, buffer, MAX_PATH);
-        exePath = std::filesystem::path(buffer);
-
-    #elif defined(__linux__)
-        exePath = std::filesystem::read_symlink("/proc/self/exe");
+        tempPath = std::getenv("APPDATA");
+        tempPath += "/HPR/HPR_Config/";
     #else
-        exePath = std::filesystem::current_path() / "fallback";
+        const char* home = std::getenv("HOME");
+        if (!home) throw std::runtime_error("HOME env var not set");
+        tempPath = home;
+        tempPath += "/.config/HPR/";
     #endif
+    
+    std::filesystem::create_directories(tempPath);
+    filePath = tempPath + fileName;
 
-    csvPath = exePath.parent_path() / fileName; // store it
-
-    std::ifstream file(csvPath);
+    std::ifstream file(filePath);
     if (!file.is_open())
     {
-        std::cerr << "Warning: config.csv not found at " << csvPath
+        std::cerr << "Warning: config.csv not found at " << filePath
                   << ". App will use default settings.\n";
         return;
     }

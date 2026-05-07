@@ -17,5 +17,5 @@ class ConfigManager
     private:
         std::vector<std::pair<std::string, std::string>> config; 
         std::string fileName = "config.csv";
-        std::filesystem::path csvPath;
+        std::string filePath;
 };

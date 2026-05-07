@@ -271,15 +271,6 @@ void DatabaseManager::loadDb_Singular(std::string requestedDate)
 
 void DatabaseManager::updateFilePath()
 {
-    std::string tempPath;
-    #ifdef _WIN32
-        tempPath = std::getenv("USERPROFILE");
-    #else
-        const char* home = std::getenv("HOME");
-        if (!home) throw std::runtime_error("HOME env var not set");
-        tempPath = home;
-    #endif
-
     //Now construct the path acc to the date
 
     //Get ms sinc epoch
@@ -287,7 +278,16 @@ void DatabaseManager::updateFilePath()
 	uint64_t t = std::chrono::duration_cast<std::chrono::milliseconds>(
         nowSystem.time_since_epoch()).count();
 
-    tempPath += "/HPR_DB/" + convertToDate_MMYY(t) + "/";
+    std::string tempPath;
+    #ifdef _WIN32
+        tempPath = std::getenv("APPDATA");
+        tempPath += "/HPR/HPR_DB";
+    #else
+        const char* home = std::getenv("HOME");
+        if (!home) throw std::runtime_error("HOME env var not set");
+        tempPath = home;
+        tempPath += "/.local/share/HPR/" + convertToDate_MMYY(t) + "/";
+    #endif
     
     filePath = tempPath;
     
