@@ -4,6 +4,10 @@ A lightweight, offline activity tracker for Windows and Linux. HPR runs silently
 
 > Currently in active development. Core tracking and persistence are fully functional. UI is pretty, the data is real.
 
+<p align="center">
+  <img src="./assets/HPRhome.png" alt="HPR Home Screen" width="800"/>
+</p>
+
 ---
 ---
 
