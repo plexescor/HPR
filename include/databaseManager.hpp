@@ -9,6 +9,10 @@
 #include <sqlite_modern_cpp.h>
 #include <future>
 
+#ifdef _WIN32
+    #include <windows.h>
+#endif
+
 class DatabaseManager
 {
     public:
@@ -43,7 +47,11 @@ class DatabaseManager
         size_t singular_DbLoadEventId;
 
         //Lock
-        int lockFd;
+        #ifdef _WIN32
+            HANDLE lockHandle = INVALID_HANDLE_VALUE;
+        #else
+            int lockFd = -1;
+        #endif
 
         //Async tasks
         std::future<void> historyLoadTask_Singular;

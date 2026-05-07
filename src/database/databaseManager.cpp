@@ -14,7 +14,13 @@
 #include <thread>
 #include <filesystem>
 #include <future>
-#include <fcntl.h>
+#ifdef _WIN32
+    #include <windows.h>
+#else
+    #include <fcntl.h>
+    #include <unistd.h>
+    #include <sys/stat.h>
+#endif
 
 DatabaseManager::DatabaseManager()
 {
@@ -23,13 +29,29 @@ DatabaseManager::DatabaseManager()
 
     // Try to create a lock file
     std::string lockPath = filePath + "hpr.lock";
-    int fd = open(lockPath.c_str(), O_CREAT | O_EXCL, 0644);
-    if (fd == -1) {
-        std::cerr << "[HPR] Already running. Exiting.\n";
-        exit(1);
-    }
 
-    lockFd = fd;
+    #ifdef _WIN32
+        lockHandle = CreateFileA(
+            lockPath.c_str(),
+            GENERIC_WRITE,
+            0,              // no sharing — exclusive
+            NULL,
+            CREATE_NEW,     // fails if already exists
+            FILE_ATTRIBUTE_NORMAL | FILE_FLAG_DELETE_ON_CLOSE,
+            NULL
+        );
+        if (lockHandle == INVALID_HANDLE_VALUE) {
+            std::cerr << "[HPR] Already running. Exiting.\n";
+            exit(1);
+        }
+    #else
+        int fd = open(lockPath.c_str(), O_CREAT | O_EXCL, 0644);
+        if (fd == -1) {
+            std::cerr << "[HPR] Already running. Exiting.\n";
+            exit(1);
+        }
+        lockFd = fd;
+    #endif
 
     if (!loadStateFromDB())
     {
@@ -55,9 +77,14 @@ DatabaseManager::~DatabaseManager()
     running = false;
     if (writer.joinable()) writer.join();
 
-    //Delete lock
-    close(lockFd);
-    std::filesystem::remove(filePath + "hpr.lock");
+    #ifdef _WIN32
+    if (lockHandle != INVALID_HANDLE_VALUE) {
+        CloseHandle(lockHandle);
+    }
+    #else
+        close(lockFd);
+        std::filesystem::remove(filePath + "hpr.lock");
+    #endif
 }
 
 void DatabaseManager::initDatabase(bool copyData)
