@@ -89,18 +89,22 @@ add_custom_command(TARGET HPR POST_BUILD
 )
 
 # Copy some config installer to binary path
-add_custom_command(TARGET HPR POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    ${CMAKE_SOURCE_DIR}/shippedWithBinary/installHPRConfig.sh
-    $<TARGET_FILE_DIR:HPR>/installHPRConfig.sh
-)
+if(UNIX)
+    add_custom_command(TARGET HPR POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_SOURCE_DIR}/shippedWithBinary/installHPRConfig.sh
+        $<TARGET_FILE_DIR:HPR>/installHPRConfig.sh
+    )
 
-# Copy some config installer to binary path, windows
-add_custom_command(TARGET HPR POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    ${CMAKE_SOURCE_DIR}/shippedWithBinary/installHPRConfig.bat
-    $<TARGET_FILE_DIR:HPR>/installHPRConfig.bat
-)
+else()
+
+    # Copy some config installer to binary path, windows
+    add_custom_command(TARGET HPR POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        ${CMAKE_SOURCE_DIR}/shippedWithBinary/installHPRConfig.bat
+        $<TARGET_FILE_DIR:HPR>/installHPRConfig.bat
+    )
+endif()
 
 #copy assets folder next to binary on every build
 add_custom_command(TARGET HPR POST_BUILD
