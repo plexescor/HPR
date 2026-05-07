@@ -176,12 +176,12 @@ bool HPRInterpreter::initialiseSlintUiPath()
     std::string tempPath;
     #ifdef _WIN32
         tempPath = std::getenv("APPDATA");
-        tempPath += "/HPR/HPR_Config/instance/";
+        tempPath += "/HPR/HPR_Config/ui/";
     #else
         const char* home = std::getenv("HOME");
         if (!home) throw std::runtime_error("HOME env var not set");
         tempPath = home;
-        tempPath += "/.config/HPR/instance/";
+        tempPath += "/.config/HPR/ui/";
     #endif
 
     std::filesystem::create_directories(tempPath);
