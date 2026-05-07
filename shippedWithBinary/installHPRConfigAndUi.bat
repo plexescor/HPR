@@ -12,13 +12,13 @@ if "%1"=="--force" (
     echo ================================================
     echo.
     echo !! WARNING: --force is set. This will overwrite your
-    echo    existing config files with the default shipped files.
-    echo    Any changes YOU made to aliases.csv or config.csv
-    echo    will be permanently lost!
+    echo    existing config files and UI assets with the defaults.
+    echo    Any changes YOU made to aliases.csv, config.csv,
+    echo    or the ui/ folder will be permanently lost!
     echo.
     set /p "confirm=   Are you sure? (y/N): "
     if /i not "%confirm%"=="y" (
-        echo    Aborted. Your config files are untouched.
+        echo    Aborted. Your configuration is untouched.
         exit /b 0
     )
     echo.
@@ -28,7 +28,7 @@ if "%1"=="--force" (
     echo ================================================
     echo.
     echo This script will copy HPR's required config files
-    echo to the correct locations on your system.
+    echo and UI assets to the correct locations on your system.
     echo.
 )
 
@@ -66,13 +66,28 @@ if exist "%CONFIG_DIR%\config.csv" (
 )
 
 echo.
+
+if exist "%CONFIG_DIR%\ui\" (
+    if "%FORCE%"=="false" (
+        echo ^>^> ui/ folder already exists -- skipping.
+        echo    ^(run with --force to overwrite UI assets!^)
+    ) else (
+        xcopy /E /I /Y "%SCRIPT_DIR%ui" "%CONFIG_DIR%\ui" >nul
+        echo ^>^> ui/ folder copied successfully.
+    )
+) else (
+    xcopy /E /I /Y "%SCRIPT_DIR%ui" "%CONFIG_DIR%\ui" >nul
+    echo ^>^> ui/ folder copied successfully.
+)
+
+echo.
 echo ================================================
 echo   Done! You can now run HPR.
 echo.
-echo   Your config files are located at:
+echo   Your configuration is located at:
 echo   %CONFIG_DIR%
 echo.
-echo   To reset config to defaults, run:
+echo   To reset config and UI to defaults, run:
 echo   copyHPRConfig.bat --force
 echo   (WARNING: this will overwrite your edits!)
 echo ================================================

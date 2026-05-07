@@ -92,8 +92,8 @@ add_custom_command(TARGET HPR POST_BUILD
 if(UNIX)
     add_custom_command(TARGET HPR POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_SOURCE_DIR}/shippedWithBinary/installHPRConfig.sh
-        $<TARGET_FILE_DIR:HPR>/installHPRConfig.sh
+        ${CMAKE_SOURCE_DIR}/shippedWithBinary/installHPRConfigAndUi.sh
+        $<TARGET_FILE_DIR:HPR>/installHPRConfigAndUi.sh
     )
 
 else()
@@ -101,8 +101,8 @@ else()
     # Copy some config installer to binary path, windows
     add_custom_command(TARGET HPR POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        ${CMAKE_SOURCE_DIR}/shippedWithBinary/installHPRConfig.bat
-        $<TARGET_FILE_DIR:HPR>/installHPRConfig.bat
+        ${CMAKE_SOURCE_DIR}/shippedWithBinary/installHPRConfigAndUi.bat
+        $<TARGET_FILE_DIR:HPR>/installHPRConfigAndUi.bat
     )
 endif()
 
@@ -111,6 +111,13 @@ add_custom_command(TARGET HPR POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
     ${CMAKE_SOURCE_DIR}/assets
     $<TARGET_FILE_DIR:HPR>/assets
+)
+
+#copy ui folder to binary every build
+add_custom_command(TARGET HPR POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_SOURCE_DIR}/src/ui
+    $<TARGET_FILE_DIR:HPR>/ui
 )
 
 

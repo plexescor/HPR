@@ -12,13 +12,13 @@ if [[ "$1" == "--force" ]]; then
     echo "================================================"
     echo ""
     echo "!! WARNING: --force is set. This will overwrite your"
-    echo "   existing config files with the default shipped files."
-    echo "   Any changes YOU made to aliases.csv or config.csv"
-    echo "   will be permanently lost!"
+    echo "   existing config files and UI assets with the defaults."
+    echo "   Any changes YOU made to aliases.csv, config.csv,"
+    echo "   or the ui/ folder will be permanently lost!"
     echo ""
     read -p "   Are you sure? (y/N): " confirm
     if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
-        echo "   Aborted. Your config files are untouched."
+        echo "   Aborted. Your configuration is untouched."
         exit 0
     fi
     echo ""
@@ -28,7 +28,7 @@ else
     echo "================================================"
     echo ""
     echo "This script will copy HPR's required config files"
-    echo "to the correct locations on your system."
+    echo "and UI assets to the correct locations on your system."
     echo ""
 fi
 
@@ -61,13 +61,28 @@ else
 fi
 
 echo ""
+
+# Check and copy ui/ folder
+if [[ -d "$CONFIG_DIR/ui" ]] && [[ "$FORCE" == false ]]; then
+    echo ">> ui/ folder already exists — skipping."
+    echo "   (run with --force to overwrite UI assets!)"
+else
+    # Remove existing directory if forcing to ensure a clean reset
+    if [[ -d "$CONFIG_DIR/ui" ]]; then
+        rm -rf "$CONFIG_DIR/ui"
+    fi
+    cp -r "$SCRIPT_DIR/ui" "$CONFIG_DIR/"
+    echo ">> ui/ folder copied successfully."
+fi
+
+echo ""
 echo "================================================"
 echo "  Done! You can now run HPR."
 echo ""
-echo "  Your config files are located at:"
+echo "  Your configuration is located at:"
 echo "  $CONFIG_DIR"
 echo ""
-echo "  To reset config to defaults, run:"
+echo "  To reset config and UI to defaults, run:"
 echo "  ./copyHPRConfig.sh --force"
 echo "  (WARNING: this will overwrite your edits!)"
 echo "================================================"
