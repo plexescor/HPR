@@ -223,7 +223,7 @@ The pipeline strips trailing newline and carriage return characters left over fr
 **Late-Binding Custom Aliases:**
 Unlike other trackers that hardcode translations or overwrite database history, HPR uses a Late-Binding architecture via the `AliasManager` class. The database stores the raw, mathematically pure OS strings. 
 
-During the UI update loop (`HPR::trackingLoop`), these raw strings are dynamically translated using a `aliases.csv` file (automatically copied to the binary path via CMake). This file allows users to define custom substring matches without touching C++ code. To ensure maximum performance, `AliasManager` employs a "Hybrid Memoization" architecture: it performs an initial O(N) substring search (`std::string::contains`) through the CSV rules, and instantly saves the result to an O(1) `std::unordered_map` RAM cache for all subsequent queries. Adding, it supports Hot Reload.
+During the UI update loop (managed by `UiModelManager` and invoked by the `trackingLoop`), these raw strings are dynamically translated using a `aliases.csv` file (automatically copied to the binary path via CMake). This file allows users to define custom substring matches without touching C++ code. To ensure maximum performance, `AliasManager` employs a "Hybrid Memoization" architecture: it performs an initial O(N) substring search (`std::string::contains`) through the CSV rules, and instantly saves the result to an O(1) `std::unordered_map` RAM cache for all subsequent queries. Additionally, it supports Hot Reload.
 
 ## System Command Execution
 
@@ -286,8 +286,8 @@ The application architecture is designed to be easily extensible. To track a new
 1.  **Define in Slint**: Update `app-window.slint` with a new property or struct declaration and an appropriate UI element to render the data.
 2.  **Define in State**: Add the new field or collection within the `AppState::AppState` struct in `appState.hpp`.
 3.  **Collect Data**: Update `getCurrentWindow_Loop()` to populate the new field. Ensure this operation occurs strictly within the `std::lock_guard<std::mutex>` block.
-4.  **UI Bridge**: Update `HPR::trackingLoop()` to read the field and pass it into the UI lambda function via `slint::invoke_from_event_loop`.
-    *   *Crucial*: If the data is a collection (like a list), use the `syncModel` helper in `HPR.cpp` to perform a surgical update. This prevents UI crashes during layout changes (like window maximization).
+4.  **UI Bridge**: Update the `trackingLoop` (in `HPR.cpp` or `HPRInterpreter.cpp`) to pass the new field into the `modelManager.update()` call, which then handles the UI thread dispatch via `slint::invoke_from_event_loop`.
+    *   *Crucial*: If the data is a collection (like a list), use the `syncModel` helper (now located within the `UiModelManager::update` logic) to perform a surgical update. This prevents UI crashes during layout changes (like window maximization).
 5.  **Persistence**: Update `DatabaseManager::initDatabase` to create the required table and modify `writeLoop` to persist the new field.
 
 ## Known Issues and Limitations
