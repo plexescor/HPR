@@ -19,7 +19,9 @@ if(WIN32)
 		src/appState/appState.cpp
 		src/miscellaneous/timeUtils.cpp
         src/miscellaneous/aliasManager.cpp
+        src/miscellaneous/configManager.cpp
 		src/ui-cpp/HPR.cpp
+        src/ui-cpp/HPRInterpreter.cpp
         src/ui-cpp/uiEventBridge.cpp
         src/ui-cpp/uiModelManager.cpp
 		src/window/getCurrentWindow.cpp
@@ -39,7 +41,9 @@ elseif(LINUX)
         src/appState/appState.cpp
         src/miscellaneous/timeUtils.cpp
         src/miscellaneous/aliasManager.cpp
+        src/miscellaneous/configManager.cpp
         src/ui-cpp/HPR.cpp
+        src/ui-cpp/HPRInterpreter.cpp
         src/ui-cpp/uiEventBridge.cpp
         src/ui-cpp/uiModelManager.cpp
         src/window/getCurrentWindow.cpp
