@@ -130,8 +130,6 @@ void HPR::trackingLoop()
 
 void HPR::run()
 {
-    tracker = std::thread(&HPR::trackingLoop, this);
-
     UiEventBridge uiEventBridge(ui);
 
     #ifdef _WIN32
@@ -148,6 +146,7 @@ void HPR::run()
     #endif
 
     ui->show();
+    tracker = std::thread(&HPR::trackingLoop, this);
     slint::run_event_loop(slint::EventLoopMode::RunUntilQuit);
     running = false; // safety net
 }

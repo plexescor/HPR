@@ -3,7 +3,8 @@
 #include "getCurrentWindow.hpp"
 #include "HPR.hpp"
 #include "trayManager.hpp"
-
+#include "configManager.hpp"
+#include "HPRInterpreter.hpp"
 
 #ifdef _WIN32
 	#include <windows.h>
@@ -19,6 +20,7 @@
 		// Force software rendeing
 		// _putenv_s("SLINT_BACKEND", "winit-software");
 
+		ConfigManager conf;
 		TrayManager tray;
 		tray.run();
 
@@ -29,19 +31,35 @@
 		dbm.run();
 		cwm.run();
 
-		HPR app;
+		//If not to use interpreter, use inbuilt ui
+		if (!conf.getConfig("use-interpreter", false))
+		{
+			HPR app;
 		
-		tray.onQuit = [&]() {
-			app.quit();
-		};
+			tray.onQuit = [&]() {
+				app.quit();
+			};
 
-		tray.onShow = [&]() {
-			app.show();
-		};
+			tray.onShow = [&]() {
+				app.show();
+			};
 
-		app.run();
+			app.run();
+		}	
+		//use custom gui
+		else
+		{
+			HPRInterpreter app;
+			tray.onQuit = [&]() {
+				app.quit();
+			};
 
-		
+			tray.onShow = [&]() {
+				app.show();
+			};
+
+			app.run();
+		}
 
 		return 0;
 	}
@@ -58,8 +76,18 @@
 		dbm.run();
 		cwm.run();
 
-		HPR app;
-		app.run();
+		//If not to use interpreter, use inbuilt ui
+		if (!conf.getConfig("use-interpreter", false))
+		{
+			HPR app;
+			app.run();
+		}	
+		//use custom gui
+		else
+		{
+			HPRInterpreter app;
+			app.run();
+		}
 
 		return 0;
 	}

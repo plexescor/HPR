@@ -18,21 +18,26 @@ class HPRInterpreter {
         ~HPRInterpreter();
         void show();
         void hide();
-        void run(); // blocking call i believe
+        void run();
         void quit();
 
     private:
         void trackingLoop(); // runs on separate thread so that it polls shit continously (correct spelling?)
+        bool initialiseSlintUiPath();
 
     private:
         //Interpreter stuff
         slint::interpreter::ComponentCompiler compiler;
         std::optional<slint::interpreter::ComponentDefinition> definition;
-        slint::ComponentHandle<slint::interpreter::ComponentInstance> instance;
+        std::optional<slint::ComponentHandle<slint::interpreter::ComponentInstance>> instance;
+        std::optional<slint::ComponentWeakHandle<slint::interpreter::ComponentInstance>> weak_instance;
+
+        std::string filePath;
+        std::string fileName = "app-window.slint";
 
         std::atomic<bool> running{true};
         std::thread tracker;
 
         AliasManager aliasManager;
-        UiModelManager modelManager;
+        std::optional<UiModelManager> modelManager;
 };
