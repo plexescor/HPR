@@ -68,8 +68,9 @@
 	int main()
 	{
 		// Force software rendeing
-		setenv("SLINT_BACKEND", "winit-software", 1);
+		// setenv("SLINT_BACKEND", "winit-software", 1);
 
+		ConfigManager conf;
 		DatabaseManager dbm;
 		CurrentWindowManager cwm;
 
