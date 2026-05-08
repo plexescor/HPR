@@ -84,7 +84,7 @@ void UiModelManager::update(const std::map<std::string, long> &rawTimeLog,
 
     // Middle man
     // From Window, to window, timestamp in str
-    std::map<std::pair<std::string, std::string>, std::string> translatedSwitchHistory;
+    // std::map<std::pair<std::string, std::string>, std::string> translatedSwitchHistory;
 
     // For max value specifically
     struct TempSwitchHistory
@@ -95,12 +95,12 @@ void UiModelManager::update(const std::map<std::string, long> &rawTimeLog,
     };
 
     std::vector<TempSwitchHistory> tempSwitchVec;
-    tempSwitchVec.reserve(translatedSwitchHistory.size());
+    tempSwitchVec.reserve(rawHistory.size());
 
     for (const auto &[route, timeStampS] : rawHistory)
     {
-        if (timeStampS.empty())
-            continue; // Safety guard
+        if (timeStampS.empty()) continue; // Safety guard
+           
         const auto &[from, to] = route;
 
         const auto maxVal = *std::max_element(timeStampS.begin(), timeStampS.end());
