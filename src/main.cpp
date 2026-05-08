@@ -20,6 +20,10 @@
 		// Force software rendeing
 		// _putenv_s("SLINT_BACKEND", "winit-software");
 
+		//tray integration is a pain on linux
+		//so i am not implementing that shit because
+		//then i need to depend on gtk or qt which i dont want
+		//even raw SNI stuff wont work on all shit
 		ConfigManager conf;
 		TrayManager tray;
 		tray.run();
