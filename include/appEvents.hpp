@@ -36,6 +36,7 @@ class EventHub
         //potentially some other data
         static size_t connect(Event event, std::function<void(EventData)> callback) 
         {
+            std::lock_guard<std::mutex> lock(hubMutex);
             static size_t nextId = 0;
             size_t id = nextId++;
             subscribers[event][id] = callback;
@@ -45,6 +46,7 @@ class EventHub
         //Disconnect
         static void disconnect(Event event, size_t id) 
         {
+            std::lock_guard<std::mutex> lock(hubMutex);
             if (subscribers.count(event)) {
                 subscribers[event].erase(id);
             }
@@ -54,7 +56,7 @@ class EventHub
         //be emitted to the listeners
         static void emit(Event event, EventData data = {}) 
         {
-
+            std::lock_guard<std::mutex> lock(hubMutex);
             if (subscribers.count(event)) 
             {
                 //iterate through the map of IDs and Callbacks
@@ -65,5 +67,7 @@ class EventHub
         }
 
     private:
+        //Dont take risks
+        static inline std::mutex hubMutex;
         static inline std::map<Event, std::map<size_t, std::function<void(EventData)>>> subscribers;
 };
