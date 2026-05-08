@@ -6,7 +6,7 @@
 #include "getCurrentWindow.hpp"
 #include "timeUtils.hpp"
 #include "aliasManager.hpp"
-#include "uiEventBridge_Interpreted.hpp"
+#include "uiEventBridge.hpp"
 
 #include <thread>
 #include <atomic>
@@ -159,7 +159,7 @@ void HPRInterpreter::run()
     //For saving my time
     auto &inst = instance.value();
 
-    UiEventBridge_Interpreted uiEventBridge(inst);
+    UiEventBridge uiEventBridge(inst);
 
     #ifdef _WIN32
         inst->window().on_close_requested([this, inst]() -> slint::CloseRequestResponse {

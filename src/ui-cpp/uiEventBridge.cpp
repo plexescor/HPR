@@ -6,13 +6,12 @@
 #include "app-window.h"
 #include <slint.h>
 
+//CONSTRUCTOR FOR **COMPILED** UI
 UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow>& ui)
 {
-    // -----------------------Connecting to the Event Hub ----------------------------------------
-    loadDbSingularId = EventHub::connect(Event::HISTORY_LOADED_SINGULAR, [this](EventData data)
-    {
-        this->showHistoricalDataSingular();
-    });
+
+    //Connect to event hub
+    init();
 
     ui->on_loadHistoricalData_Singular([](slint::SharedString dateFromUi) 
     {
@@ -33,9 +32,53 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow>& ui)
     });
 }
 
+//CONSTRUCTOR FOR **INTERPRETED** UI
+UiEventBridge::UiEventBridge(
+    slint::ComponentHandle<slint::interpreter::ComponentInstance>& ui)
+{
+    //Connect to event hub
+    init();
+
+    ui->set_callback("loadHistoricalData_Singular",
+        [](auto args) -> slint::interpreter::Value 
+        {
+            // args is std::span<const slint::interpreter::Value>
+            if (args.size() > 0) {
+                // Safely convert the interpreter value to an optional SharedString
+                auto opt_str = args[0].to_string();
+                
+                if (opt_str.has_value()) {
+                    // Dereference the optional to get the SharedString, then cast to std::string
+                    std::string requestedDate = std::string(opt_str.value());
+
+                    EventHub::emit(
+                        Event::LOAD_DATABASE_SINGULAR,
+                        DatabaseDate_Singular{requestedDate}
+                    );
+                }
+            }
+            return slint::interpreter::Value(); // void return
+        });
+    ui->set_callback("loadLiveData", [this](auto args) -> slint::interpreter::Value
+    {
+        //No need for event hub
+        this->showLiveData();
+        return slint::interpreter::Value(); // void return
+    });
+}
+
+
 UiEventBridge::~UiEventBridge()
 {
     EventHub::disconnect(Event::HISTORY_LOADED_SINGULAR, loadDbSingularId);
+}
+
+void UiEventBridge::init() {
+    // -----------------------Connecting to the Event Hub ----------------------------------------
+    loadDbSingularId = EventHub::connect(Event::HISTORY_LOADED_SINGULAR, [this](EventData data)
+    {
+        this->showHistoricalDataSingular();
+    });
 }
 
 void UiEventBridge::showHistoricalDataSingular()

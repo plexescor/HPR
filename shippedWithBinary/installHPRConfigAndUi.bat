@@ -14,7 +14,7 @@ if "%1"=="--force" (
     echo !! WARNING: --force is set. This will overwrite your
     echo    existing config files and UI assets with the defaults.
     echo    Any changes YOU made to aliases.csv, config.csv,
-    echo    or the ui/ folder will be permanently lost!
+    echo    ui/, or assets/ will be permanently lost!
     echo.
     set /p "confirm=   Are you sure? (y/N): "
     if /i not "%confirm%"=="y" (
@@ -28,7 +28,7 @@ if "%1"=="--force" (
     echo ================================================
     echo.
     echo This script will copy HPR's required config files
-    echo and UI assets to the correct locations on your system.
+    echo and UI/assets to the correct locations on your system.
     echo.
 )
 
@@ -37,6 +37,7 @@ if not exist "%CONFIG_DIR%" mkdir "%CONFIG_DIR%"
 echo    Config dir : %CONFIG_DIR%
 echo.
 
+:: aliases.csv
 if exist "%CONFIG_DIR%\aliases.csv" (
     if "%FORCE%"=="false" (
         echo ^>^> aliases.csv already exists -- skipping.
@@ -52,6 +53,7 @@ if exist "%CONFIG_DIR%\aliases.csv" (
 
 echo.
 
+:: config.csv
 if exist "%CONFIG_DIR%\config.csv" (
     if "%FORCE%"=="false" (
         echo ^>^> config.csv already exists -- skipping.
@@ -67,11 +69,13 @@ if exist "%CONFIG_DIR%\config.csv" (
 
 echo.
 
+:: ui folder
 if exist "%CONFIG_DIR%\ui\" (
     if "%FORCE%"=="false" (
         echo ^>^> ui/ folder already exists -- skipping.
         echo    ^(run with --force to overwrite UI assets!^)
     ) else (
+        rmdir /S /Q "%CONFIG_DIR%\ui"
         xcopy /E /I /Y "%SCRIPT_DIR%ui" "%CONFIG_DIR%\ui" >nul
         echo ^>^> ui/ folder copied successfully.
     )
@@ -79,6 +83,17 @@ if exist "%CONFIG_DIR%\ui\" (
     xcopy /E /I /Y "%SCRIPT_DIR%ui" "%CONFIG_DIR%\ui" >nul
     echo ^>^> ui/ folder copied successfully.
 )
+
+echo.
+
+:: assets folder
+:: ALWAYS replace silently
+if exist "%CONFIG_DIR%\assets\" (
+    rmdir /S /Q "%CONFIG_DIR%\assets"
+)
+
+xcopy /E /I /Y "%SCRIPT_DIR%assets" "%CONFIG_DIR%\assets" >nul
+echo ^>^> assets/ folder copied successfully.
 
 echo.
 echo ================================================

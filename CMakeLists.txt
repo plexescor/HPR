@@ -23,7 +23,6 @@ if(WIN32)
 		src/ui-cpp/HPR.cpp
         src/ui-cpp/HPRInterpreter.cpp
         src/ui-cpp/uiEventBridge.cpp
-        src/ui-cpp/uiEventBridge_Interpreted.cpp
         src/ui-cpp/uiModelManager.cpp
 		src/window/getCurrentWindow.cpp
 		src/window/validateAndUpdateWindow.cpp
@@ -46,7 +45,6 @@ elseif(LINUX)
         src/ui-cpp/HPR.cpp
         src/ui-cpp/HPRInterpreter.cpp
         src/ui-cpp/uiEventBridge.cpp
-        src/ui-cpp/uiEventBridge_Interpreted.cpp
         src/ui-cpp/uiModelManager.cpp
         src/window/getCurrentWindow.cpp
         src/window/validateAndUpdateWindow.cpp
