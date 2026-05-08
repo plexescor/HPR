@@ -54,7 +54,7 @@
 				app.show();
 			};
 
-			app.run();
+			app.run(); //blocking call, run on main
 		}	
 		//use custom gui
 		else
@@ -68,7 +68,7 @@
 				app.show();
 			};
 
-			app.run();
+			app.run();//blocking call, run on main
 		}
 
 		return 0;
@@ -100,13 +100,13 @@
 		if (!conf.getConfig("use-interpreter", false))
 		{
 			HPR app;
-			app.run();
+			app.run();//blocking call, run on main
 		}	
 		//use custom gui
 		else
 		{
 			HPRInterpreter app;
-			app.run();
+			app.run();//blocking call, run on main
 		}
 
 		return 0;
