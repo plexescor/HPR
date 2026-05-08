@@ -1,0 +1,28 @@
+// ── Section header ───────────────────────────────────────────────────────────
+export component SectionHeader inherits Rectangle {
+    in property <string> label;
+    height: 30px;
+    background: transparent;
+
+    HorizontalLayout {
+        spacing: 10px;
+        padding-left: 2px;
+        alignment: start;
+
+        Text {
+            text: root.label;
+            font-size: 9px;
+            font-weight: 700;
+            letter-spacing: 2.5px;
+            color: #ffffff40;
+            vertical-alignment: center;
+        }
+
+        Rectangle {
+            height: 1px;
+            background: #ffffff08;
+            vertical-stretch: 0;
+            y: parent.height / 2;
+        }
+    }
+}

@@ -1,0 +1,52 @@
+// ── Sidebar button with tooltip ──────────────────────────────────────────────
+export component SidebarButton inherits Rectangle {
+    in property <string> icon;
+    in property <string> tip;
+    callback clicked;
+
+    height: 27px;
+    width: 38px;
+    border-radius: 6px;
+    background: ta.has-hover ? #ffffff18 : #ffffff0a;
+    border-width: 1px;
+    border-color: ta.has-hover ? #ffffff22 : #ffffff10;
+    animate background { duration: 100ms; easing: ease-out; }
+
+    Text {
+        text: icon;
+        font-size: 14px;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+        width: 100%;
+        height: 100%;
+    }
+
+    // Tooltip bubble — floats to the right, z:100 paints over sibling content
+    Rectangle {
+        z: 100;
+        opacity: ta.has-hover ? 1.0 : 0.0;
+        animate opacity { duration: 175ms; delay: 500ms; easing: ease-out; }
+
+        x: parent.width + 8px;
+        y: (parent.height - self.height) / 2;
+        height: tip-text.preferred-height + 8px;
+        width: tip-text.preferred-width + 14px;
+        border-radius: 4px;
+        background: #1e293b;
+        border-width: 1px;
+        border-color: #ffffff18;
+
+        tip-text := Text {
+            x: 7px;
+            y: 4px;
+            text: tip;
+            color: #94a3b8;
+            font-size: 11px;
+            font-weight: 500;
+        }
+    }
+
+    ta := TouchArea {
+        clicked => { root.clicked(); }
+    }
+}
