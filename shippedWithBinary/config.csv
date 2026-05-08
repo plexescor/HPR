@@ -1,4 +1,4 @@
 #use-interpreter -> enable it to use custom ui by utilising .slint files
-#without recompilation
+#without recompilation -> slint files in: $HPR_CONFIG_DIR/ui/
 use-interpreter,false
 hardware-acceleration,true
