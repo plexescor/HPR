@@ -1,4 +1,5 @@
 import { ListView, Button, DatePickerPopup} from "std-widgets.slint";
+
 import { LiveDot } from "./live-dot.slint";
 import { Card } from "./card.slint";
 
@@ -51,7 +52,6 @@ component AppRow inherits Rectangle {
     in property <bool>   is-even;
     in property <int>    row-index;
 
-    // in property <color>  bar-color: #a3e635;
     in property <color> bar-color: Colors.hsv(mod(app-name.character-count * 47, 360), 0.75, 0.85);
 
     height: 48px;
@@ -187,6 +187,59 @@ component SwitchRow inherits Rectangle {
     ta := TouchArea {}
 }
 
+// ── Sidebar button with tooltip ──────────────────────────────────────────────
+component SidebarButton inherits Rectangle {
+    in property <string> icon;
+    in property <string> tip;
+    callback clicked;
+
+    height: 27px;
+    width: 38px;
+    border-radius: 6px;
+    background: ta.has-hover ? #ffffff18 : #ffffff0a;
+    border-width: 1px;
+    border-color: ta.has-hover ? #ffffff22 : #ffffff10;
+    animate background { duration: 100ms; easing: ease-out; }
+
+    Text {
+        text: icon;
+        font-size: 14px;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+        width: 100%;
+        height: 100%;
+    }
+
+    // Tooltip bubble — floats to the right, z:100 paints over sibling content
+    Rectangle {
+        z: 100;
+        opacity: ta.has-hover ? 1.0 : 0.0;
+        animate opacity { duration: 175ms; delay: 500ms; easing: ease-out; }
+
+        x: parent.width + 8px;
+        y: (parent.height - self.height) / 2;
+        height: tip-text.preferred-height + 8px;
+        width: tip-text.preferred-width + 14px;
+        border-radius: 4px;
+        background: #1e293b;
+        border-width: 1px;
+        border-color: #ffffff18;
+
+        tip-text := Text {
+            x: 7px;
+            y: 4px;
+            text: tip;
+            color: #94a3b8;
+            font-size: 11px;
+            font-weight: 500;
+        }
+    }
+
+    ta := TouchArea {
+        clicked => { root.clicked(); }
+    }
+}
+
 // ── Main Window ──────────────────────────────────────────────────────────────
 export component MainWindow inherits Window {
     icon: @image-url("../../assets/logo_256png.png");
@@ -205,185 +258,241 @@ export component MainWindow inherits Window {
     preferred-width: 780px;
     preferred-height: 600px;
 
-    // Color palette 8 distinct colors that
     property <[color]> bar-palette: [
-        #a3e635,  // lime
-        #38bdf8,  // sky blue
-        #f472b6,  // pink
-        #fb923c,  // orange
-        #c084fc,  // purple
-        #34d399,  // emerald
-        #facc15,  // yellow
-        #f87171,  // red
+        #a3e635,
+        #38bdf8,
+        #f472b6,
+        #fb923c,
+        #c084fc,
+        #34d399,
+        #facc15,
+        #f87171,
     ];
 
-    VerticalLayout {
+    date-picker := DatePickerPopup {
+        x: (root.width - self.width) / 2;
+        y: (root.height - self.height) / 2;
+        close-policy: PopupClosePolicy.no-auto-close;
+        accepted(date) => {
+            root.loadHistoricalData_Singular(
+                (date.day < 10 ? "0" : "") + date.day + "-" +
+                (date.month < 10 ? "0" : "") + date.month + "-" +
+                (Math.mod(date.year, 100) < 10 ? "0" : "") + Math.mod(date.year, 100)
+            );
+            date-picker.close();
+        }
+        canceled => { date-picker.close(); }
+    }
+
+    HorizontalLayout {
         padding: 0px;
         spacing: 0px;
         width: 100%;
         height: 100%;
 
-        // ── Topbar ───────────────────────────────────────────────────────
-        Rectangle {
-            height: 46px;
-            background: #07090f;
+        // ── Left Sidebar ─────────────────────────────────────────────────
+        // z:1 makes the whole sidebar paint above the main content column
+        sidebar-ta := TouchArea {
+            z: 1;
+            width: sidebar-ta.has-hover ? 55px : 28px;
+            animate width { duration: 180ms; easing: ease-in-out; }
 
             Rectangle {
-                y: parent.height - 1px;
-                height: 1px;
-                background: @linear-gradient(90deg, #ffffff00 0%, #ffffff12 40%, #ffffff12 60%, #ffffff00 100%);
-            }
+                x: 0px;
+                width: 100%;
+                height: 100%;
 
-            HorizontalLayout {
-                padding-left: 18px;
-                padding-right: 18px;
-                alignment: space-between;
+                background: sidebar-ta.has-hover ? #0d1117 : transparent;
+                animate background { duration: 240ms; easing: ease-in-out; }
 
-                HorizontalLayout {
-                    spacing: 10px;
-                    alignment: start;
-
-                    Text {
-                        text: "HPR";
-                        color: #f1f5f9;
-                        font-size: 12px;
-                        font-weight: 700;
-                        letter-spacing: 4px;
-                        vertical-alignment: center;
-                    }
-
-                    Rectangle {
-                        width: 1px;
-                        height: 12px;
-                        background: #ffffff12;
-                        y: (parent.height - self.height) / 2;
-                    }
-
-                    Text {
-                        text: "Human Pattern Recorder";
-                        color: #ffffff40;
-                        font-size: 11px;
-                        letter-spacing: 0.3px;
-                        vertical-alignment: center;
-                    }
-
-                    date-picker := DatePickerPopup {
-                        x: (root.width - self.width) / 2;
-                        y: (root.height - self.height) / 2;
-                        close-policy: PopupClosePolicy.no-auto-close;
-                        accepted(date) => {
-                            root.loadHistoricalData_Singular(
-                                (date.day < 10 ? "0" : "") + date.day + "-" +
-                                (date.month < 10 ? "0" : "") + date.month + "-" +
-                                (Math.mod(date.year, 100) < 10 ? "0" : "") + Math.mod(date.year, 100)
-                            );
-
-                            date-picker.close();
-                        }
-                        canceled => { date-picker.close(); }
-                    }
-
-                    Button {
-                        text: "History";
-                        width: 120px;
-                        height: 30px;
-                        y: (parent.height - self.height) / 2;
-                        clicked => { date-picker.show(); }
-                    }
-
-                    Button {
-                        text: "Load Live";
-                        width: 120px;
-                        height: 30px;
-                        y: (parent.height - self.height) / 2;
-                        clicked => {       
-                            root.loadLiveData(); 
-                        }
-                    }
+                // Right border
+                Rectangle {
+                    x: parent.width - 1px;
+                    width: 1px;
+                    height: parent.height;
+                    background: sidebar-ta.has-hover ? #ffffff08 : transparent;
+                    animate background { duration: 240ms; easing: ease-in-out; }
                 }
 
+                // Collapsed: just the ">" arrow tab
                 Rectangle {
-                    height: 26px;
-                    width: active-lbl.preferred-width + 30px;
-                    border-radius: 13px;
+                    visible: !sidebar-ta.has-hover;
+                    x: 0px;
+                    y: (parent.height - self.height) / 2;
+                    width: 16px;
+                    height: 32px;
+                    border-radius: 6px;
                     background: #ffffff07;
                     border-width: 1px;
                     border-color: #ffffff10;
-                    y: (parent.height - self.height) / 2;
 
-                    HorizontalLayout {
-                        padding-left: 9px;
-                        spacing: 6px;
-                        alignment: start;
+                    Text {
+                        text: "›";
+                        color: #ffffff40;
+                        font-size: 16px;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                        width: 100%;
+                        height: 100%;
+                    }
+                }
 
-                        LiveDot {
-                            y: (parent.height - self.height) / 2;
+                // Expanded: buttons
+                VerticalLayout {
+                    visible: sidebar-ta.has-hover;
+                    padding: 2px;
+                    spacing: 8px;
+                    alignment: center;
+                    width: 75%;
+                    height: 100%;
 
-                            //If too long make it red
-                            is-alert: windowName_S.character-count > 84;
-                        }
+                    SidebarButton {
+                        icon: "🕘";
+                        tip: "View historical data";
+                        clicked => { date-picker.show(); }
+                    }
 
-                        active-lbl := Text {
-                            text: windowName_S;
-                            color: #94a3b8;
-                            font-size: 11px;
-                            font-weight: 500;
-                            vertical-alignment: center;
-                            wrap: no-wrap; 
-                            overflow: elide;
-                            max-width: 550px;
-                        }
+                    SidebarButton {
+                        icon: "⚡";
+                        tip: "Switch to live view";
+                        clicked => { root.loadLiveData(); }
                     }
                 }
             }
         }
 
-        // ── Body ─────────────────────────────────────────────────────────
+        // ── Main content (topbar + body) ──────────────────────────────────
         VerticalLayout {
-            padding: 12px;
-            spacing: 10px;
+            padding: 0px;
+            spacing: 0px;
+            horizontal-stretch: 1;
 
-            SectionHeader { label: "TIME PER APP"; }
+            // ── Topbar ───────────────────────────────────────────────────────
+            Rectangle {
+                height: 46px;
+                background: #07090f;
 
-            Card {
-                Flickable {
-                    width: 100%;
-                    height: 100%;
-                    interactive: false;
-                    viewport-height: appContent.preferred-height;
+                Rectangle {
+                    y: parent.height - 1px;
+                    height: 1px;
+                    background: @linear-gradient(90deg, #ffffff00 0%, #ffffff12 40%, #ffffff12 60%, #ffffff00 100%);
+                }
 
-                    appContent := VerticalLayout {
-                        width: 100%;
-                        for entry[i] in timePerApp_S: AppRow {
-                            app-name: entry.name;
-                            ratio: trackedTime_S > 0 ? (entry.duration_i * 1.0) / (trackedTime_S * 1.0) : 0.0;
-                            duration: entry.duration + " (" + Math.round(self.ratio * 100) + "%" + ")";
-                            is-even: mod(i, 2) == 0;
-                            row-index: i;
-                            bar-color: Colors.hsv(mod(entry.name.character-count * 47, 360), 0.75, 0.85);
+                HorizontalLayout {
+                    padding-left: 18px;
+                    padding-right: 18px;
+                    alignment: space-between;
+
+                    HorizontalLayout {
+                        spacing: 10px;
+                        alignment: start;
+
+                        Text {
+                            text: "HPR";
+                            color: #f1f5f9;
+                            font-size: 12px;
+                            font-weight: 700;
+                            letter-spacing: 4px;
+                            vertical-alignment: center;
+                        }
+
+                        Rectangle {
+                            width: 1px;
+                            height: 12px;
+                            background: #ffffff12;
+                            y: (parent.height - self.height) / 2;
+                        }
+
+                        Text {
+                            text: "Human Pattern Recorder";
+                            color: #ffffff40;
+                            font-size: 11px;
+                            letter-spacing: 0.3px;
+                            vertical-alignment: center;
+                        }
+                    }
+
+                    Rectangle {
+                        height: 26px;
+                        width: active-lbl.preferred-width + 30px;
+                        border-radius: 13px;
+                        background: #ffffff07;
+                        border-width: 1px;
+                        border-color: #ffffff10;
+                        y: (parent.height - self.height) / 2;
+
+                        HorizontalLayout {
+                            padding-left: 9px;
+                            spacing: 6px;
+                            alignment: start;
+
+                            LiveDot {
+                                y: (parent.height - self.height) / 2;
+                                is-alert: windowName_S.character-count > 84;
+                            }
+
+                            active-lbl := Text {
+                                text: windowName_S;
+                                color: #94a3b8;
+                                font-size: 11px;
+                                font-weight: 500;
+                                vertical-alignment: center;
+                                wrap: no-wrap;
+                                overflow: elide;
+                                max-width: 550px;
+                            }
                         }
                     }
                 }
             }
 
-            SectionHeader { label: "SWITCH HISTORY"; }
+            // ── Body ─────────────────────────────────────────────────────
+            VerticalLayout {
+                padding: 12px;
+                spacing: 10px;
 
-            Card {
-                vertical-stretch: 1;
+                SectionHeader { label: "TIME PER APP"; }
 
-                Flickable {
-                    width: 100%;
-                    height: 100%;
-                    interactive: false;
-                    viewport-height: swContent.preferred-height;
-
-                    swContent := VerticalLayout {
+                Card {
+                    Flickable {
                         width: 100%;
-                        for entry[i] in switchHistory_S: SwitchRow {
-                            from-window: entry.fromWindow;
-                            to-window:   entry.toWindow;
-                            timestamp:   entry.maxTimeStamp;
-                            is-even: mod(i, 2) == 0;
+                        height: 100%;
+                        interactive: false;
+                        viewport-height: appContent.preferred-height;
+
+                        appContent := VerticalLayout {
+                            width: 100%;
+                            for entry[i] in timePerApp_S: AppRow {
+                                app-name: entry.name;
+                                ratio: trackedTime_S > 0 ? (entry.duration_i * 1.0) / (trackedTime_S * 1.0) : 0.0;
+                                duration: entry.duration + " (" + Math.round(self.ratio * 100) + "%" + ")";
+                                is-even: mod(i, 2) == 0;
+                                row-index: i;
+                                bar-color: Colors.hsv(mod(entry.name.character-count * 47, 360), 0.75, 0.85);
+                            }
+                        }
+                    }
+                }
+
+                SectionHeader { label: "SWITCH HISTORY"; }
+
+                Card {
+                    vertical-stretch: 1;
+
+                    Flickable {
+                        width: 100%;
+                        height: 100%;
+                        interactive: false;
+                        viewport-height: swContent.preferred-height;
+
+                        swContent := VerticalLayout {
+                            width: 100%;
+                            for entry[i] in switchHistory_S: SwitchRow {
+                                from-window: entry.fromWindow;
+                                to-window:   entry.toWindow;
+                                timestamp:   entry.maxTimeStamp;
+                                is-even: mod(i, 2) == 0;
+                            }
                         }
                     }
                 }
