@@ -53,6 +53,7 @@ export component MainWindow inherits Window {
         y: (root.height - self.height) / 2;
         close-policy: PopupClosePolicy.no-auto-close;
         accepted(date) => {
+            //Convert to this format: DD-MM-YY
             root.loadHistoricalData_Singular(
                 (date.day < 10 ? "0" : "") + date.day + "-" +
                 (date.month < 10 ? "0" : "") + date.month + "-" +
