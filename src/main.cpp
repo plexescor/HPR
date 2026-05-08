@@ -17,14 +17,18 @@
 		(void)lpCmdLine;
 		(void)nShowCmd;
 
-		// Force software rendeing
-		// _putenv_s("SLINT_BACKEND", "winit-software");
-
 		//tray integration is a pain on linux
 		//so i am not implementing that shit because
 		//then i need to depend on gtk or qt which i dont want
 		//even raw SNI stuff wont work on all shit
 		ConfigManager conf;
+
+		//Check for hardware-acceleration flag
+		if (!conf.getConfig("hardware-acceleration", true))
+		{
+			_putenv_s("SLINT_BACKEND", "winit-software", 1);
+		}
+
 		TrayManager tray;
 		tray.run();
 
@@ -71,10 +75,18 @@
 #else
 	int main()
 	{
-		// Force software rendeing
-		// setenv("SLINT_BACKEND", "winit-software", 1);
-
 		ConfigManager conf;
+
+		//Check for hardware-acceleration flag
+		//DEV NOTE: if you are on hyprland, if HA is on, the ram usage of HPR in BTOP++ can be ~250mb
+		//Its not true, idk why but hyprland counts the memory used by libllvm, livnvidia and stuff
+		//as used by HPR, if you get a actual breakdown of memory used by HPR, HPR will only account for only like ~30mb
+		//still if it bothers you, just turn HA off in config
+		if (!conf.getConfig("hardware-acceleration", true))
+		{
+			setenv("SLINT_BACKEND", "winit-software", 1);
+		}
+
 		DatabaseManager dbm;
 		CurrentWindowManager cwm;
 
