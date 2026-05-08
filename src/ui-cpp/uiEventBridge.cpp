@@ -1,5 +1,6 @@
 #include "uiEventBridge.hpp"
 #include "appEvents.hpp"
+#include "appState.hpp"
 
 // Slint stuff
 #include "app-window.h"
@@ -24,6 +25,12 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow>& ui)
             DatabaseDate_Singular{requestedDate}
         );
     });
+
+    ui->on_loadLiveData([this]() 
+    {
+        //No need for event hub
+        this->showLiveData();
+    });
 }
 
 UiEventBridge::~UiEventBridge()
@@ -33,5 +40,14 @@ UiEventBridge::~UiEventBridge()
 
 void UiEventBridge::showHistoricalDataSingular()
 {
-    //No shit
+    //Make the current app state historical
+    std::lock_guard<std::mutex> lock(AppState::stateMutex);
+    AppState::state.currentView = AppState::CurrentView::HISTORICAL_SINGULAR;
+}
+
+void UiEventBridge::showLiveData()
+{
+    //Make the current app state historical
+    std::lock_guard<std::mutex> lock(AppState::stateMutex);
+    AppState::state.currentView = AppState::CurrentView::LIVE;
 }

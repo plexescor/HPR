@@ -9,6 +9,7 @@ class UiEventBridge_Interpreted
 
     private:
         void showHistoricalDataSingular();
+        void showLiveData();
 
     private:
         size_t loadDbSingularId;

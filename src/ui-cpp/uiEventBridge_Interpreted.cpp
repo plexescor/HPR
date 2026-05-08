@@ -1,5 +1,6 @@
 #include "uiEventBridge_Interpreted.hpp"
 #include "appEvents.hpp"
+#include "appState.hpp"
 #include <slint-interpreter.h>
 
 UiEventBridge_Interpreted::UiEventBridge_Interpreted(
@@ -39,5 +40,14 @@ UiEventBridge_Interpreted::~UiEventBridge_Interpreted()
 
 void UiEventBridge_Interpreted::showHistoricalDataSingular()
 {
-    //No shit
+    //Make the current app state historical
+    std::lock_guard<std::mutex> lock(AppState::stateMutex);
+    AppState::state.currentView = AppState::CurrentView::HISTORICAL_SINGULAR;
+}
+
+void UiEventBridge_Interpreted::showLiveData()
+{
+    //Make the current app state historical
+    std::lock_guard<std::mutex> lock(AppState::stateMutex);
+    AppState::state.currentView = AppState::CurrentView::LIVE;
 }

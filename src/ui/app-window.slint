@@ -192,6 +192,7 @@ export component MainWindow inherits Window {
     icon: @image-url("../../assets/logo_256png.png");
     
     callback loadHistoricalData_Singular(string);
+    callback loadLiveData;
 
     in property <int>             trackedTime_S;
     in property <string>          windowName_S;
@@ -273,6 +274,16 @@ export component MainWindow inherits Window {
                         y: (parent.height - self.height) / 2;
                         clicked => {       
                             root.loadHistoricalData_Singular("06-05-26"); 
+                        }
+                    }
+
+                    Button {
+                        text: "Load Live";
+                        width: 120px;
+                        height: 30px;
+                        y: (parent.height - self.height) / 2;
+                        clicked => {       
+                            root.loadLiveData(); 
                         }
                     }
                 }

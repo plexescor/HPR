@@ -21,7 +21,8 @@
 // ------------    Actual Events -------------------------------
     enum class Event {
         LOAD_DATABASE_SINGULAR,
-        HISTORY_LOADED_SINGULAR
+        HISTORY_LOADED_SINGULAR,
+        LOAD_LIVE_DATA
     };
 
 using EventData = std::variant<Empty, DatabaseDate_Singular>;

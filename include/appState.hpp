@@ -8,10 +8,13 @@
 
 namespace AppState {
     
+    enum CurrentView {HISTORICAL_SINGULAR, LIVE};
+
     struct AppState {
 
+        CurrentView currentView = CurrentView::LIVE;
         std::string currentPlatform;
-
+        
         std::string currentWindow;
         std::string previousWindow;
         

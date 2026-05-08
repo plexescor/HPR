@@ -10,6 +10,7 @@ class UiEventBridge
 
     private:
         void showHistoricalDataSingular();
+        void showLiveData();
 
     private:
         size_t loadDbSingularId;

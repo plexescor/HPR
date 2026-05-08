@@ -125,9 +125,20 @@ void HPRInterpreter::trackingLoop()
             // Scoped mutex to hold it for as little time as possible
             {
                 std::lock_guard<std::mutex> lock(AppState::stateMutex);
-                window = AppState::state.currentWindow;
-                timeLog = AppState::state.timeLog_PerApp;
-                switchHistory = AppState::state.switchHistory;
+                //If live view, show today's data
+                if (AppState::state.currentView == AppState::CurrentView::LIVE)
+                {
+                    window = AppState::state.currentWindow;
+                    timeLog = AppState::state.timeLog_PerApp;
+                    switchHistory = AppState::state.switchHistory;
+                }
+                else if (AppState::state.currentView == AppState::CurrentView::HISTORICAL_SINGULAR)
+                {
+                    std::lock_guard<std::mutex> lock(AppState::historyStateMutex);
+                    //ALWAYS GET CURRENT LATEST WINDOW NO MATTER THE VIEW
+                    window = AppState::state.currentWindow;
+                    timeLog = AppState::historicalData_State.timeLog_PerApp;
+                }
             }
 
             modelManager.value().update_Interpreted(
