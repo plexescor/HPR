@@ -1,4 +1,4 @@
-import { ListView, Button } from "std-widgets.slint";
+import { ListView, Button, DatePickerPopup} from "std-widgets.slint";
 import { LiveDot } from "./live-dot.slint";
 import { Card } from "./card.slint";
 
@@ -267,14 +267,28 @@ export component MainWindow inherits Window {
                         vertical-alignment: center;
                     }
 
+                    date-picker := DatePickerPopup {
+                        x: (root.width - self.width) / 2;
+                        y: (root.height - self.height) / 2;
+                        close-policy: PopupClosePolicy.no-auto-close;
+                        accepted(date) => {
+                            root.loadHistoricalData_Singular(
+                                (date.day < 10 ? "0" : "") + date.day + "-" +
+                                (date.month < 10 ? "0" : "") + date.month + "-" +
+                                (Math.mod(date.year, 100) < 10 ? "0" : "") + Math.mod(date.year, 100)
+                            );
+
+                            date-picker.close();
+                        }
+                        canceled => { date-picker.close(); }
+                    }
+
                     Button {
-                        text: "Load May 6th";
+                        text: "History";
                         width: 120px;
                         height: 30px;
                         y: (parent.height - self.height) / 2;
-                        clicked => {       
-                            root.loadHistoricalData_Singular("06-05-26"); 
-                        }
+                        clicked => { date-picker.show(); }
                     }
 
                     Button {
