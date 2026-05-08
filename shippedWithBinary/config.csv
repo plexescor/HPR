@@ -1,3 +1,4 @@
 #use-interpreter -> enable it to use custom ui by utilising .slint files
 #without recompilation
 use-interpreter,false
+hardware-acceleration,true
