@@ -29,6 +29,7 @@
 			_putenv_s("SLINT_BACKEND", "winit-software", 1);
 		}
 
+		//This call is non blocking, it just starts a new BG thread
 		TrayManager tray;
 		tray.run();
 
@@ -36,6 +37,7 @@
 		DatabaseManager dbm;
 		CurrentWindowManager cwm;
 		
+		//This calls are non blocking, they just start a new BG thread
 		dbm.run();
 		cwm.run();
 
@@ -90,6 +92,7 @@
 		DatabaseManager dbm;
 		CurrentWindowManager cwm;
 
+		//This calls are non blocking, they just start a new BG thread
 		dbm.run();
 		cwm.run();
 
