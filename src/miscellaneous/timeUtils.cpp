@@ -5,6 +5,7 @@
 #include <chrono>
 #include <ctime>
 #include <iomanip>
+#include <stdexcept>
 #include <sstream>
 
 std::string convertToDate_DDMMYY(uint64_t ms)
@@ -78,4 +79,72 @@ std::string formatTime_HHMMSS(int ms)
     oss << seconds << "s";
 
     return oss.str();
+}
+
+uint64_t parseDate_DDMMYY(const std::string& dateStr)
+{
+    std::tm tm = {};
+    std::istringstream iss(dateStr);
+    iss >> std::get_time(&tm, "%d-%m-%y");
+
+    if (iss.fail())
+        throw std::invalid_argument("parseDate_DDMMYY: invalid format, expected DD-MM-YY, got: " + dateStr);
+
+    tm.tm_hour = 0; tm.tm_min = 0; tm.tm_sec = 0;
+    tm.tm_isdst = -1;
+
+    std::time_t tt = std::mktime(&tm);
+    if (tt == -1)
+        throw std::runtime_error("parseDate_DDMMYY: mktime failed for: " + dateStr);
+
+    return static_cast<uint64_t>(tt) * 1000ULL;
+}
+
+uint64_t parseDate_MMYY(const std::string& dateStr)
+{
+    std::tm tm = {};
+    std::istringstream iss(dateStr);
+    iss >> std::get_time(&tm, "%m-%y");
+
+    if (iss.fail())
+        throw std::invalid_argument("parseDate_MMYY: invalid format, expected MM-YY, got: " + dateStr);
+
+    tm.tm_mday = 1; // default to 1st of the month
+    tm.tm_hour = 0; tm.tm_min = 0; tm.tm_sec = 0;
+    tm.tm_isdst = -1;
+
+    std::time_t tt = std::mktime(&tm);
+    if (tt == -1)
+        throw std::runtime_error("parseDate_MMYY: mktime failed for: " + dateStr);
+
+    return static_cast<uint64_t>(tt) * 1000ULL;
+}
+
+// validates DD-MM-YY format strictly, throws if wrong, returns MM-YY on success
+std::string extractMMYY_from_DDMMYY(const std::string& dateStr)
+{
+    // must be exactly 8 chars: DD-MM-YY
+    if (dateStr.size() != 8
+        || !std::isdigit((unsigned char)dateStr[0])
+        || !std::isdigit((unsigned char)dateStr[1])
+        || dateStr[2] != '-'
+        || !std::isdigit((unsigned char)dateStr[3])
+        || !std::isdigit((unsigned char)dateStr[4])
+        || dateStr[5] != '-'
+        || !std::isdigit((unsigned char)dateStr[6])
+        || !std::isdigit((unsigned char)dateStr[7]))
+    {
+        throw std::invalid_argument("extractMMYY_from_DDMMYY: expected DD-MM-YY, got: " + dateStr);
+    }
+
+    // also validate via get_time so garbage like 99-99-25 gets caught
+    std::tm tm = {};
+    std::istringstream iss(dateStr);
+    iss >> std::get_time(&tm, "%d-%m-%y");
+
+    if (iss.fail())
+        throw std::invalid_argument("extractMMYY_from_DDMMYY: date values out of range: " + dateStr);
+
+    // slice out MM-YY (chars 3–7)
+    return dateStr.substr(3); // "MM-YY"
 }
