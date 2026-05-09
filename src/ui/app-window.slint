@@ -74,7 +74,7 @@ export component MainWindow inherits Window {
         // z:1 makes the whole sidebar paint above the main content column
         sidebar-ta := TouchArea {
             z: 1;
-            width: sidebar-ta.has-hover ? 55px : 16px;
+            width: sidebar-ta.has-hover ? 54px : 12px;
             animate width { duration: 180ms; easing: ease-in-out; }
 
             Rectangle {
@@ -99,9 +99,9 @@ export component MainWindow inherits Window {
                     visible: !sidebar-ta.has-hover;
                     x: 0px;
                     y: (parent.height - self.height) / 2;
-                    width: 16px;
-                    height: 32px;
-                    border-radius: 6px;
+                    width: 14px;
+                    height: 28px;
+                    border-radius: 4.5px;
                     background: #ffffff07;
                     border-width: 1px;
                     border-color: #ffffff10;
