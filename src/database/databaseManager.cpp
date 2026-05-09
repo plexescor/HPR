@@ -292,18 +292,25 @@ void DatabaseManager::loadDb_Singular(std::string requestedDate)
 
             //Create an intermediate map
             std::map<std::string, long> results;
+            std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> results_Switch;
 
             //load from db to the map
             histDb << "select name, duration from app_usage;"
                    >> [&results](std::string name, long duration) {
                        results[name] = duration;
                    };
+            
+            histDb << "select fromWindow, toWindow, timeStamp from switch_history;"
+                >> [&results_Switch](std::string from, std::string to, long long ts) {
+                    results_Switch[{from, to}].push_back((uint64_t)ts);
+                };
                 
 
             //YOU: see appstate for this
             {
                 std::lock_guard<std::mutex> lock(AppState::historyStateMutex);
                 AppState::historicalData_State.timeLog_PerApp = results;
+                AppState::historicalData_State.switchHistory = results_Switch;
                 AppState::historicalData_State.isLoaded = true;
             }
 

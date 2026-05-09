@@ -26,6 +26,7 @@ namespace AppState {
     //Intended to hold data for max 1 whole day
     struct HistoricalData {
         std::map<std::string, long> timeLog_PerApp;
+        std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> switchHistory;
         bool isLoaded = false;
     };
 

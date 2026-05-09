@@ -123,6 +123,7 @@ void HPR::trackingLoop()
                     //ALWAYS GET CURRENT LATEST WINDOW NO MATTER THE VIEW
                     window = AppState::state.currentWindow;
                     timeLog = AppState::historicalData_State.timeLog_PerApp;
+                    switchHistory = AppState::historicalData_State.switchHistory;
                 }
                 
                 
