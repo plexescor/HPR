@@ -53,7 +53,6 @@ export component MainWindow inherits Window {
         y: (root.height - self.height) / 2;
         close-policy: PopupClosePolicy.no-auto-close;
         accepted(date) => {
-            //Convert to this format: DD-MM-YY
             root.loadHistoricalData_Singular(
                 (date.day < 10 ? "0" : "") + date.day + "-" +
                 (date.month < 10 ? "0" : "") + date.month + "-" +
@@ -64,90 +63,21 @@ export component MainWindow inherits Window {
         canceled => { date-picker.close(); }
     }
 
-    HorizontalLayout {
-        padding: 0px;
-        spacing: 0px;
-        width: 100%;
-        height: 100%;
+    // ── Root container (Rectangle so sidebar can float) ──────────────────
+    Rectangle {
+        width: parent.width;
+        height: parent.height;
 
-        // ── Left Sidebar ─────────────────────────────────────────────────
-        // z:1 makes the whole sidebar paint above the main content column
-        sidebar-ta := TouchArea {
-            z: 1;
-            width: sidebar-ta.has-hover ? 54px : 12px;
-            animate width { duration: 180ms; easing: ease-in-out; }
-
-            Rectangle {
-                x: 0px;
-                width: 100%;
-                height: 100%;
-
-                background: sidebar-ta.has-hover ? #0d1117 : transparent;
-                animate background { duration: 240ms; easing: ease-in-out; }
-
-                // Right border
-                Rectangle {
-                    x: parent.width - 1px;
-                    width: 1px;
-                    height: parent.height;
-                    background: sidebar-ta.has-hover ? #ffffff08 : transparent;
-                    animate background { duration: 240ms; easing: ease-in-out; }
-                }
-
-                // Collapsed: just the ">" arrow tab
-                Rectangle {
-                    visible: !sidebar-ta.has-hover;
-                    x: 0px;
-                    y: (parent.height - self.height) / 2;
-                    width: 14px;
-                    height: 28px;
-                    border-radius: 4.5px;
-                    background: #ffffff07;
-                    border-width: 1px;
-                    border-color: #ffffff10;
-
-                    Text {
-                        text: "›";
-                        color: #ffffff40;
-                        font-size: 16px;
-                        horizontal-alignment: center;
-                        vertical-alignment: center;
-                        width: 100%;
-                        height: 100%;
-                    }
-                }
-
-                // Expanded: buttons
-                VerticalLayout {
-                    visible: sidebar-ta.has-hover;
-                    padding: 2px;
-                    spacing: 8px;
-                    alignment: center;
-                    width: 75%;
-                    height: 100%;
-
-                    SidebarButton {
-                        icon: "🕘";
-                        tip: "View historical data";
-                        clicked => { date-picker.show(); }
-                    }
-
-                    SidebarButton {
-                        icon: "⚡";
-                        tip: "Switch to live view";
-                        clicked => { root.loadLiveData(); }
-                    }
-                }
-            }
-        }
-
-        // ── Main content (topbar + body) ──────────────────────────────────
+        // ── Main content (full width, sits underneath) ────────────────────
         VerticalLayout {
+            x: 0px;
+            y: 0px;
+            width: parent.width;
+            height: parent.height;
             padding: 0px;
             spacing: 0px;
-            horizontal-stretch: 1;
 
-            // ── Topbar ───────────────────────────────────────────────────────
+            // ── Topbar ───────────────────────────────────────────────────
             Rectangle {
                 height: 46px;
                 background: #07090f;
@@ -229,11 +159,13 @@ export component MainWindow inherits Window {
             // ── Body ─────────────────────────────────────────────────────
             VerticalLayout {
                 padding: 12px;
+                padding-top: 0px;
                 spacing: 10px;
 
                 SectionHeader { label: "TIME PER APP"; }
 
                 Card {
+                    vertical-stretch: 1;
                     Flickable {
                         width: 100%;
                         height: 100%;
@@ -274,6 +206,79 @@ export component MainWindow inherits Window {
                                 is-even: mod(i, 2) == 0;
                             }
                         }
+                    }
+                }
+            }
+        }
+
+        // ── Floating Sidebar (paints above main content) ──────────────────
+        sidebar-ta := TouchArea {
+            x: 0px;
+            y: 0px;
+            z: 10;
+            width: self.has-hover ? 54px : 14px;
+            height: parent.height;
+            animate width { duration: 180ms; easing: ease-in-out; }
+
+            Rectangle {
+                x: 0px;
+                width: 100%;
+                height: 100%;
+
+                background: sidebar-ta.has-hover ? #0d1117cc : transparent;
+                animate background { duration: 240ms; easing: ease-in-out; }
+
+                // Right border
+                Rectangle {
+                    x: parent.width - 1px;
+                    width: 1px;
+                    height: parent.height;
+                    background: sidebar-ta.has-hover ? #ffffff08 : transparent;
+                    animate background { duration: 240ms; easing: ease-in-out; }
+                }
+
+                // Collapsed: just the ">" arrow tab
+                Rectangle {
+                    visible: !sidebar-ta.has-hover;
+                    x: 0px;
+                    y: (parent.height - self.height) / 2;
+                    width: 14px;
+                    height: 28px;
+                    border-radius: 4.5px;
+                    background: #ffffff07;
+                    border-width: 1px;
+                    border-color: #ffffff10;
+
+                    Text {
+                        text: "›";
+                        color: #ffffff40;
+                        font-size: 16px;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                        width: 100%;
+                        height: 100%;
+                    }
+                }
+
+                // Expanded: buttons
+                VerticalLayout {
+                    visible: sidebar-ta.has-hover;
+                    padding: 2px;
+                    spacing: 8px;
+                    alignment: center;
+                    width: 75%;
+                    height: 100%;
+
+                    SidebarButton {
+                        icon: "🕘";
+                        tip: "View historical data";
+                        clicked => { date-picker.show(); }
+                    }
+
+                    SidebarButton {
+                        icon: "⚡";
+                        tip: "Switch to live view";
+                        clicked => { root.loadLiveData(); }
                     }
                 }
             }
