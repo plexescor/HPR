@@ -3,34 +3,14 @@
 CONFIG_DIR="$HOME/.config/HPR"
 DATA_DIR="$HOME/.local/share/HPR"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-FORCE=false
 
-if [[ "$1" == "--force" ]]; then
-    FORCE=true
-    echo "================================================"
-    echo "       HPR Configuration Installer"
-    echo "================================================"
-    echo ""
-    echo "!! WARNING: --force is set. This will overwrite your"
-    echo "   existing config files and UI assets with the defaults."
-    echo "   Any changes YOU made to aliases.csv, config.csv,"
-    echo "   ui/, or assets/ will be permanently lost!"
-    echo ""
-    read -p "   Are you sure? (y/N): " confirm
-    if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
-        echo "   Aborted. Your configuration is untouched."
-        exit 0
-    fi
-    echo ""
-else
-    echo "================================================"
-    echo "       HPR Configuration Installer"
-    echo "================================================"
-    echo ""
-    echo "This script will copy HPR's required config files"
-    echo "and UI/assets to the correct locations on your system."
-    echo ""
-fi
+echo "================================================"
+echo "       HPR Configuration Installer"
+echo "================================================"
+echo ""
+echo "This script will copy HPR's required config files"
+echo "and UI/assets to the correct locations on your system."
+echo ""
 
 # Create dirs
 echo ">> Creating config directories if they don't exist..."
@@ -40,10 +20,15 @@ echo "   Config dir : $CONFIG_DIR"
 echo "   Data dir   : $DATA_DIR"
 echo ""
 
-# Check and copy aliases.csv
-if [[ -f "$CONFIG_DIR/aliases.csv" ]] && [[ "$FORCE" == false ]]; then
-    echo ">> aliases.csv already exists — skipping."
-    echo "   (run with --force to overwrite, but you will lose your edits!)"
+# aliases.csv
+if [[ -f "$CONFIG_DIR/aliases.csv" ]]; then
+    read -p ">> aliases.csv already exists. Overwrite? (y/N): " confirm_aliases
+    if [[ "$confirm_aliases" == "y" || "$confirm_aliases" == "Y" ]]; then
+        cp "$SCRIPT_DIR/aliases.csv" "$CONFIG_DIR/aliases.csv"
+        echo "   aliases.csv overwritten."
+    else
+        echo "   aliases.csv skipped. Your edits are safe."
+    fi
 else
     cp "$SCRIPT_DIR/aliases.csv" "$CONFIG_DIR/aliases.csv"
     echo ">> aliases.csv copied successfully."
@@ -51,10 +36,15 @@ fi
 
 echo ""
 
-# Check and copy config.csv
-if [[ -f "$CONFIG_DIR/config.csv" ]] && [[ "$FORCE" == false ]]; then
-    echo ">> config.csv already exists — skipping."
-    echo "   (run with --force to overwrite, but you will lose your edits!)"
+# config.csv
+if [[ -f "$CONFIG_DIR/config.csv" ]]; then
+    read -p ">> config.csv already exists. Overwrite? (y/N): " confirm_config
+    if [[ "$confirm_config" == "y" || "$confirm_config" == "Y" ]]; then
+        cp "$SCRIPT_DIR/config.csv" "$CONFIG_DIR/config.csv"
+        echo "   config.csv overwritten."
+    else
+        echo "   config.csv skipped. Your edits are safe."
+    fi
 else
     cp "$SCRIPT_DIR/config.csv" "$CONFIG_DIR/config.csv"
     echo ">> config.csv copied successfully."
@@ -62,30 +52,40 @@ fi
 
 echo ""
 
-# Check and copy ui/ folder
-if [[ -d "$CONFIG_DIR/ui" ]] && [[ "$FORCE" == false ]]; then
-    echo ">> ui/ folder already exists — skipping."
-    echo "   (run with --force to overwrite UI assets!)"
-else
-    # Remove existing directory if forcing to ensure a clean reset
-    if [[ -d "$CONFIG_DIR/ui" ]]; then
-        rm -rf "$CONFIG_DIR/ui"
-    fi
+# ui-REFERENCEONLY — ALWAYS overwrite silently
+if [[ -d "$CONFIG_DIR/ui-REFERENCEONLY" ]]; then
+    rm -rf "$CONFIG_DIR/ui-REFERENCEONLY"
+fi
+cp -r "$SCRIPT_DIR/ui" "$CONFIG_DIR/ui-REFERENCEONLY"
+echo ">> ui-REFERENCEONLY/ updated to latest defaults silently."
 
-    cp -r "$SCRIPT_DIR/ui" "$CONFIG_DIR/"
+echo ""
+
+# ui/ — only copy if doesnt exist, ask if it does
+if [[ -d "$CONFIG_DIR/ui" ]]; then
+    read -p ">> ui/ folder already exists. Overwrite? (y/N): " confirm_ui
+    if [[ "$confirm_ui" == "y" || "$confirm_ui" == "Y" ]]; then
+        rm -rf "$CONFIG_DIR/ui"
+        cp -r "$SCRIPT_DIR/ui" "$CONFIG_DIR/ui"
+        echo "   ui/ overwritten. Your custom UI has been replaced with defaults."
+    else
+        echo "   ui/ skipped. Your custom UI is safe."
+        echo "   Reference the latest default UI at:"
+        echo "   $CONFIG_DIR/ui-REFERENCEONLY/"
+    fi
+else
+    cp -r "$SCRIPT_DIR/ui" "$CONFIG_DIR/ui"
     echo ">> ui/ folder copied successfully."
 fi
 
 echo ""
 
-# Copy assets/ folder
-# ALWAYS replace without warning
+# assets/ — ALWAYS replace silently
 if [[ -d "$CONFIG_DIR/assets" ]]; then
     rm -rf "$CONFIG_DIR/assets"
 fi
-
 cp -r "$SCRIPT_DIR/assets" "$CONFIG_DIR/"
-echo ">> assets/ folder copied successfully."
+echo ">> assets/ folder updated silently."
 
 echo ""
 echo "================================================"
@@ -94,7 +94,6 @@ echo ""
 echo "  Your configuration is located at:"
 echo "  $CONFIG_DIR"
 echo ""
-echo "  To reset config and UI to defaults, run:"
-echo "  ./copyHPRConfig.sh --force"
-echo "  (WARNING: this will overwrite your edits!)"
+echo "  Latest default UI is always available at:"
+echo "  $CONFIG_DIR/ui-REFERENCEONLY/"
 echo "================================================"

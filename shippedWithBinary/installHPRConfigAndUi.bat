@@ -3,34 +3,14 @@ setlocal
 
 set "CONFIG_DIR=%APPDATA%\HPR\HPR_Config"
 set "SCRIPT_DIR=%~dp0"
-set "FORCE=false"
 
-if "%1"=="--force" (
-    set "FORCE=true"
-    echo ================================================
-    echo        HPR Configuration Installer
-    echo ================================================
-    echo.
-    echo !! WARNING: --force is set. This will overwrite your
-    echo    existing config files and UI assets with the defaults.
-    echo    Any changes YOU made to aliases.csv, config.csv,
-    echo    ui/, or assets/ will be permanently lost!
-    echo.
-    set /p "confirm=   Are you sure? (y/N): "
-    if /i not "%confirm%"=="y" (
-        echo    Aborted. Your configuration is untouched.
-        exit /b 0
-    )
-    echo.
-) else (
-    echo ================================================
-    echo        HPR Configuration Installer
-    echo ================================================
-    echo.
-    echo This script will copy HPR's required config files
-    echo and UI/assets to the correct locations on your system.
-    echo.
-)
+echo ================================================
+echo        HPR Configuration Installer
+echo ================================================
+echo.
+echo This script will copy HPR's required config files
+echo and UI/assets to the correct locations on your system.
+echo.
 
 echo ^>^> Creating config directory if it doesn't exist...
 if not exist "%CONFIG_DIR%" mkdir "%CONFIG_DIR%"
@@ -39,12 +19,12 @@ echo.
 
 :: aliases.csv
 if exist "%CONFIG_DIR%\aliases.csv" (
-    if "%FORCE%"=="false" (
-        echo ^>^> aliases.csv already exists -- skipping.
-        echo    ^(run with --force to overwrite, but you will lose your edits!^)
-    ) else (
+    set /p "confirm_aliases=^>^> aliases.csv already exists. Overwrite? (y/N): "
+    if /i "%confirm_aliases%"=="y" (
         copy /y "%SCRIPT_DIR%aliases.csv" "%CONFIG_DIR%\aliases.csv" >nul
-        echo ^>^> aliases.csv copied successfully.
+        echo    aliases.csv overwritten.
+    ) else (
+        echo    aliases.csv skipped. Your edits are safe.
     )
 ) else (
     copy /y "%SCRIPT_DIR%aliases.csv" "%CONFIG_DIR%\aliases.csv" >nul
@@ -55,12 +35,12 @@ echo.
 
 :: config.csv
 if exist "%CONFIG_DIR%\config.csv" (
-    if "%FORCE%"=="false" (
-        echo ^>^> config.csv already exists -- skipping.
-        echo    ^(run with --force to overwrite, but you will lose your edits!^)
-    ) else (
+    set /p "confirm_config=^>^> config.csv already exists. Overwrite? (y/N): "
+    if /i "%confirm_config%"=="y" (
         copy /y "%SCRIPT_DIR%config.csv" "%CONFIG_DIR%\config.csv" >nul
-        echo ^>^> config.csv copied successfully.
+        echo    config.csv overwritten.
+    ) else (
+        echo    config.csv skipped. Your edits are safe.
     )
 ) else (
     copy /y "%SCRIPT_DIR%config.csv" "%CONFIG_DIR%\config.csv" >nul
@@ -69,15 +49,26 @@ if exist "%CONFIG_DIR%\config.csv" (
 
 echo.
 
-:: ui folder
+:: ui-REFERENCEONLY folder — ALWAYS overwrite silently, no prompt
+if exist "%CONFIG_DIR%\ui-REFERENCEONLY\" (
+    rmdir /S /Q "%CONFIG_DIR%\ui-REFERENCEONLY"
+)
+xcopy /E /I /Y "%SCRIPT_DIR%ui" "%CONFIG_DIR%\ui-REFERENCEONLY" >nul
+echo ^>^> ui-REFERENCEONLY/ updated to latest defaults silently.
+
+echo.
+
+:: ui folder — only copy if doesnt exist, ask if it does
 if exist "%CONFIG_DIR%\ui\" (
-    if "%FORCE%"=="false" (
-        echo ^>^> ui/ folder already exists -- skipping.
-        echo    ^(run with --force to overwrite UI assets!^)
-    ) else (
+    set /p "confirm_ui=^>^> ui/ folder already exists. Overwrite? (y/N): "
+    if /i "%confirm_ui%"=="y" (
         rmdir /S /Q "%CONFIG_DIR%\ui"
         xcopy /E /I /Y "%SCRIPT_DIR%ui" "%CONFIG_DIR%\ui" >nul
-        echo ^>^> ui/ folder copied successfully.
+        echo    ui/ overwritten. Your custom UI has been replaced with defaults.
+    ) else (
+        echo    ui/ skipped. Your custom UI is safe.
+        echo    Reference the latest default UI at:
+        echo    %CONFIG_DIR%\ui-REFERENCEONLY\
     )
 ) else (
     xcopy /E /I /Y "%SCRIPT_DIR%ui" "%CONFIG_DIR%\ui" >nul
@@ -86,14 +77,12 @@ if exist "%CONFIG_DIR%\ui\" (
 
 echo.
 
-:: assets folder
-:: ALWAYS replace silently
+:: assets folder — ALWAYS replace silently
 if exist "%CONFIG_DIR%\assets\" (
     rmdir /S /Q "%CONFIG_DIR%\assets"
 )
-
 xcopy /E /I /Y "%SCRIPT_DIR%assets" "%CONFIG_DIR%\assets" >nul
-echo ^>^> assets/ folder copied successfully.
+echo ^>^> assets/ folder updated silently.
 
 echo.
 echo ================================================
@@ -102,9 +91,8 @@ echo.
 echo   Your configuration is located at:
 echo   %CONFIG_DIR%
 echo.
-echo   To reset config and UI to defaults, run:
-echo   copyHPRConfig.bat --force
-echo   (WARNING: this will overwrite your edits!)
+echo   Latest default UI is always available at:
+echo   %CONFIG_DIR%\ui-REFERENCEONLY\
 echo ================================================
 
 endlocal
