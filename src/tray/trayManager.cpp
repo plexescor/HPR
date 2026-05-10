@@ -42,6 +42,7 @@ void TrayManager::run()
     #define ID_TRAY_SHOW 1002
 
     static TrayManager* g_trayInstance = nullptr;
+    WNDPROC TrayManager::g_originalWndProc = nullptr;
 
     LRESULT CALLBACK TrayManager::trayWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
     {
@@ -73,6 +74,19 @@ void TrayManager::run()
             default:
                 return DefWindowProc(hwnd, msg, wParam, lParam);
         }
+    }
+
+    LRESULT CALLBACK TrayManager::hprSubclassProc(
+    HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam)
+    {
+        if (msg == WM_SIZE && wParam == SIZE_MINIMIZED)
+        {
+            if (g_trayInstance && g_trayInstance->onHide)
+                g_trayInstance->onHide();
+            return 0;
+        }
+
+        return CallWindowProcW(g_originalWndProc, hwnd, msg, wParam, lParam);
     }
 
     void TrayManager::createTrayIcon()
@@ -131,11 +145,35 @@ void TrayManager::run()
         g_trayInstance = this;
         createTrayIcon();
 
+        // Wait for HPR window to exist then subclass it
+        HWND hprHwnd = nullptr;
+        while (running && !hprHwnd)
+        {
+            hprHwnd = FindWindowW(nullptr, L"HPR");
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+
+        // Store original WndProc and replace with ours
+        if (hprHwnd)
+        {
+            g_originalWndProc = (WNDPROC)SetWindowLongPtrW(
+                hprHwnd, 
+                GWLP_WNDPROC, 
+                (LONG_PTR)hprSubclassProc
+            );
+        }
+
         MSG msg;
         while (running && GetMessage(&msg, NULL, 0, 0))
         {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
+        }
+
+        // Restore original WndProc on exit
+        if (hprHwnd && g_originalWndProc)
+        {
+            SetWindowLongPtrW(hprHwnd, GWLP_WNDPROC, (LONG_PTR)g_originalWndProc);
         }
 
         destroyTrayIcon();

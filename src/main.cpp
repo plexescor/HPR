@@ -53,6 +53,9 @@
 			tray.onShow = [&]() {
 				app.show();
 			};
+			tray.onHide = [&]() {
+				app.hide();
+			};
 
 			app.run(); //blocking call, run on main
 		}	
@@ -66,6 +69,9 @@
 
 			tray.onShow = [&]() {
 				app.show();
+			};
+			tray.onHide = [&]() {
+				app.hide();
 			};
 
 			app.run();//blocking call, run on main

@@ -23,6 +23,7 @@ class TrayManager
     public:
         std::function<void()> onQuit;
         std::function<void()> onShow;
+        std::function<void()> onHide;
 
     private:
         void trayManager_LoopWindows();
@@ -32,6 +33,8 @@ class TrayManager
             void destroyTrayIcon();
             void showContextMenu(HWND hwnd);
             static LRESULT CALLBACK trayWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+            static LRESULT CALLBACK hprSubclassProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam); 
+            static WNDPROC g_originalWndProc;
         #endif
 
     private:
