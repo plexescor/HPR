@@ -143,7 +143,7 @@ You have full control over your data at all times.
 | Feature | HPR | ActivityWatch | RescueTime | Toggl |
 |---|---|---|---|---|
 | Binary size | ~2 MB (excluding dynamic library) | 200 MB+ | Cloud app | Cloud app |
-| RAM usage | ~8 MB (Windows) ~20MB (KDE and GNOME) ~30 MB (Hyprland) | 200 MB+ | N/A | N/A |
+| RAM usage | ~22 MB & ~30 MB (Hyprland) | 200 MB+ | N/A | N/A |
 | Requires account | No | No | Yes | Yes |
 | Data leaves your machine | Never | Never | Yes | Yes |
 | Auto-tracking | Yes | Yes | Yes | No |
