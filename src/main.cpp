@@ -26,7 +26,7 @@
 		//Check for hardware-acceleration flag
 		if (!conf.getConfig("hardware-acceleration", true))
 		{
-			_putenv_s("SLINT_BACKEND", "winit-software", 1);
+			_putenv_s("SLINT_BACKEND", "winit-software");
 		}
 
 		//This call is non blocking, it just starts a new BG thread
