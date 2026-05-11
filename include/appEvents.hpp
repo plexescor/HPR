@@ -19,14 +19,20 @@
         std::string date;
     };
 
+    //An Error message
+    struct ErrorGui{
+        std::string error;
+    };
+
 // ------------    Actual Events -------------------------------
     enum class Event {
         LOAD_DATABASE_SINGULAR,
         HISTORY_LOADED_SINGULAR,
-        LOAD_LIVE_DATA
+        LOAD_LIVE_DATA,
+        ERROR
     };
 
-using EventData = std::variant<Empty, DatabaseDate_Singular>;
+using EventData = std::variant<Empty, DatabaseDate_Singular, ErrorGui>;
 
 class EventHub
 {

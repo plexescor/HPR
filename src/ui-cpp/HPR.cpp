@@ -6,6 +6,7 @@
 #include "timeUtils.hpp"
 #include "aliasManager.hpp"
 #include "uiEventBridge.hpp"
+#include "appEvents.hpp"
 
 // Slint stuff
 #include <slint.h>
