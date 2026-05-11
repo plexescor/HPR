@@ -55,6 +55,8 @@ void UiModelManager::update(const std::map<std::string, long> &rawTimeLog,
                             long &totalTrackedTime,
                             AliasManager &aliasManager)
 {
+
+    aliasManager.getAlias(currentWindowName);
     //----------------------TIME LOG-----------------------------------------------
 
     // make a middle man translatedTimeLog with correct aliases and push rawTimeLog
@@ -173,6 +175,8 @@ void UiModelManager::update_Interpreted(const std::map<std::string, long> &rawTi
                             long &totalTrackedTime,
                             AliasManager &aliasManager)
 {
+    aliasManager.getAlias(currentWindowName);
+
     //----------------------TIME LOG-----------------------------------------------
 
     std::map<std::string, long> translatedTimeLog;
