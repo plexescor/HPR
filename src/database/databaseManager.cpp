@@ -259,19 +259,14 @@ void DatabaseManager::loadDb_Singular(std::string requestedDate)
             
             std::string path;
 
-            //On windows, the "/" isnt returned
             #ifdef _WIN32
-                {
-                    std::lock_guard<std::mutex> lock(AppState::stateMutex);
-                    path = filePath + "/" + requestedDate + ".db";
-                }              
-            #endif
-
-            #ifdef __linux__
-                {
-                    std::lock_guard<std::mutex> lock(AppState::stateMutex);
-                    path = filePath + requestedDate + ".db";
-                }     
+                path = std::getenv("APPDATA");
+                path += "/HPR/HPR_DB/" + extractMMYY_from_DDMMYY(requestedDate) + "/" + requestedDate + ".db";
+            #else
+                const char* home = std::getenv("HOME");
+                if (!home) throw std::runtime_error("HOME env var not set");
+                path = home;
+                path += "/.local/share/HPR/HPR_DB/" + extractMMYY_from_DDMMYY(requestedDate) + "/" + requestedDate + ".db";
             #endif
 
             //Check if shit even exists
