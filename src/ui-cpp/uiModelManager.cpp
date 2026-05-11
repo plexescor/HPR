@@ -56,7 +56,7 @@ void UiModelManager::update(const std::map<std::string, long> &rawTimeLog,
                             AliasManager &aliasManager)
 {
 
-    aliasManager.getAlias(currentWindowName);
+    currentWindowName = aliasManager.getAlias(currentWindowName);
     //----------------------TIME LOG-----------------------------------------------
 
     // make a middle man translatedTimeLog with correct aliases and push rawTimeLog
