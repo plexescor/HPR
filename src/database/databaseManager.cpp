@@ -274,8 +274,6 @@ void DatabaseManager::loadDb_Singular(std::string requestedDate)
             {
                 EventHub::emit(Event::APP_ERROR, ErrorGui{"File not found! " + path});
                 std::cerr << "Historical file not found: " << path << std::endl;
-                
-                //Future: emit no such file
                 return; 
             }
 

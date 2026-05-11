@@ -11,7 +11,10 @@
 
 #include "aliasManager.hpp"
 
-AliasManager::AliasManager() { loadAliases(); }
+AliasManager::AliasManager() 
+{ 
+    loadAliases(); 
+}
 
 void AliasManager::loadAliases()
 {

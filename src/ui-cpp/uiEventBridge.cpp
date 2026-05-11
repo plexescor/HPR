@@ -57,11 +57,13 @@ UiEventBridge::UiEventBridge(
         [](auto args) -> slint::interpreter::Value 
         {
             // args is std::span<const slint::interpreter::Value>
-            if (args.size() > 0) {
+            if (args.size() > 0) 
+            {
                 // Safely convert the interpreter value to an optional SharedString
                 auto opt_str = args[0].to_string();
                 
-                if (opt_str.has_value()) {
+                if (opt_str.has_value()) 
+                {
                     // Dereference the optional to get the SharedString, then cast to std::string
                     std::string requestedDate = std::string(opt_str.value());
 
