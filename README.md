@@ -1,6 +1,12 @@
 # HPR - Human Pattern Recorder
 
 <p align="center">
+  <a href="https://ko-fi.com/plexescor">
+    <img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support on Ko-fi" />
+  </a>
+</p>
+
+<p align="center">
   <img src="./assets/logo_1254png.png" alt="HPR Logo" width="350"/>
 </p>
 
