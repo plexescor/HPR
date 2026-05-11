@@ -51,7 +51,7 @@ UiModelManager::~UiModelManager()
 
 void UiModelManager::update(const std::map<std::string, long> &rawTimeLog,
                             const std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> &rawHistory,
-                            const std::string &currentWindowName,
+                            std::string &currentWindowName,
                             long &totalTrackedTime,
                             AliasManager &aliasManager)
 {
@@ -171,11 +171,11 @@ void UiModelManager::update(const std::map<std::string, long> &rawTimeLog,
 
 void UiModelManager::update_Interpreted(const std::map<std::string, long> &rawTimeLog,
                             const std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> &rawHistory,
-                            const std::string &currentWindowName,
+                            std::string &currentWindowName,
                             long &totalTrackedTime,
                             AliasManager &aliasManager)
 {
-    aliasManager.getAlias(currentWindowName);
+    currentWindowName = aliasManager.getAlias(currentWindowName);
 
     //----------------------TIME LOG-----------------------------------------------
 
