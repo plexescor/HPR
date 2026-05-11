@@ -277,7 +277,7 @@ void DatabaseManager::loadDb_Singular(std::string requestedDate)
             //Check if shit even exists
             if (!std::filesystem::exists(path))
             {
-                EventHub::emit(Event::APP_ERROR, ErrorGui{"Error: File not found! " + path});
+                EventHub::emit(Event::APP_ERROR, ErrorGui{"File not found! " + path});
                 std::cerr << "Historical file not found: " << path << std::endl;
                 
                 //Future: emit no such file
