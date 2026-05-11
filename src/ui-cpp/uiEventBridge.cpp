@@ -117,7 +117,7 @@ void UiEventBridge::showHistoricalDataSingular()
 
 void UiEventBridge::showLiveData()
 {
-    //Make the current app state historical
+    //Make the current app state live
     std::lock_guard<std::mutex> lock(AppState::stateMutex);
     AppState::state.currentView = AppState::CurrentView::LIVE;
 }
