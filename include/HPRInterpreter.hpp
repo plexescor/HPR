@@ -10,6 +10,7 @@
 
 #include <thread>
 #include <atomic>
+#include <chrono>
 #include <optional>
 
 class HPRInterpreter {
@@ -40,4 +41,8 @@ class HPRInterpreter {
 
         AliasManager aliasManager;
         std::optional<UiModelManager> modelManager;
+
+        size_t errorId;
+        std::string activeGuiError = "";
+        std::chrono::steady_clock::time_point errorTimestamp;
 };

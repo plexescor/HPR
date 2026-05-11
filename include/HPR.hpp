@@ -11,6 +11,7 @@
 
 #include <thread>
 #include <atomic>
+#include <chrono>
 #include <optional>
 
 class HPR {
@@ -32,4 +33,8 @@ class HPR {
 
         AliasManager aliasManager;
         UiModelManager modelManager;
+
+        size_t errorId;
+        std::string activeGuiError = "";
+        std::chrono::steady_clock::time_point errorTimestamp;
 };

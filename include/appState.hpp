@@ -14,6 +14,8 @@ namespace AppState {
 
         CurrentView currentView = CurrentView::LIVE;
         std::string currentPlatform;
+
+        std::string currentError = "";
         
         std::string currentWindow;
         std::string previousWindow;

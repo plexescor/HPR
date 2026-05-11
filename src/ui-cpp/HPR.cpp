@@ -20,12 +20,14 @@
 #include <mutex>
 #include <vector>
 #include <algorithm>
+#include <chrono>
 
 HPR::HPR() : ui(MainWindow::create()), modelManager(ui)
 {
     #ifdef __linux__
         slint::set_xdg_app_id("HPR"); // So it has a class in hyprland
     #endif
+    
 }
 
 HPR::~HPR()
@@ -33,6 +35,8 @@ HPR::~HPR()
     running = false;
     if (tracker.joinable())
         tracker.join(); // Speaks for itself
+
+    EventHub::disconnect(Event::ERROR, errorId);
 }
 
 void HPR::show()
@@ -98,6 +102,19 @@ void HPR::trackingLoop()
         }
     #endif
 
+    errorId = EventHub::connect(Event::ERROR, [this] (EventData data)
+    {
+        if (std::holds_alternative<ErrorGui>(data)) 
+        {
+            std::string error = std::get<ErrorGui>(data).error;
+            activeGuiError = error;
+            if (!error.empty()) 
+            {
+                errorTimestamp = std::chrono::steady_clock::now();
+            }
+        }
+    });
+
     // Stuff native to c++, holds raw values
     long totalTrackedTime; // For the bars
     std::string window;
@@ -121,13 +138,26 @@ void HPR::trackingLoop()
                 else if (AppState::state.currentView == AppState::CurrentView::HISTORICAL_SINGULAR)
                 {
                     std::lock_guard<std::mutex> lock(AppState::historyStateMutex);
-                    //ALWAYS GET CURRENT LATEST WINDOW NO MATTER THE VIEW
                     window = AppState::state.currentWindow;
                     timeLog = AppState::historicalData_State.timeLog_PerApp;
                     switchHistory = AppState::historicalData_State.switchHistory;
                 }
-                
-                
+            }
+
+            //Overwrite the window variable if we have an active error
+            if (!activeGuiError.empty())
+            {
+                auto now = std::chrono::steady_clock::now();
+                if (std::chrono::duration_cast<std::chrono::seconds>(now - errorTimestamp).count() >= 3)
+                {
+                    // 3 seconds have passed, clear the error
+                    activeGuiError = "";
+                }
+                else
+                {
+                    // Still within 3 seconds, keep showing it
+                    window = "Error: " + activeGuiError;
+                }
             }
 
             modelManager.update(

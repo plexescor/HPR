@@ -7,6 +7,7 @@
 #include "timeUtils.hpp"
 #include "aliasManager.hpp"
 #include "uiEventBridge.hpp"
+#include "appEvents.hpp"
 
 #include <thread>
 #include <atomic>
@@ -15,6 +16,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <chrono>
 
 #ifdef _WIN32
     #include "Windows.h"
@@ -46,6 +48,8 @@ HPRInterpreter::~HPRInterpreter()
     running = false;
     if (tracker.joinable())
         tracker.join(); // Speaks for itself
+
+    EventHub::disconnect(Event::ERROR, errorId);
 }
 
 void HPRInterpreter::show()
@@ -112,6 +116,19 @@ void HPRInterpreter::trackingLoop()
         }
     #endif
 
+    errorId = EventHub::connect(Event::ERROR, [this] (EventData data)
+    {
+        if (std::holds_alternative<ErrorGui>(data)) 
+        {
+            std::string error = std::get<ErrorGui>(data).error;
+            activeGuiError = error;
+            if (!error.empty()) 
+            {
+                errorTimestamp = std::chrono::steady_clock::now();
+            }
+        }
+    });
+
     // Stuff native to c++, holds raw values
     long totalTrackedTime; // For the bars
     std::string window;
@@ -140,6 +157,24 @@ void HPRInterpreter::trackingLoop()
                     timeLog = AppState::historicalData_State.timeLog_PerApp;
                     switchHistory = AppState::historicalData_State.switchHistory;
                 }
+                
+                
+            }
+
+            //Overwrite the window variable if we have an active error
+            if (!activeGuiError.empty())
+            {
+                auto now = std::chrono::steady_clock::now();
+                if (std::chrono::duration_cast<std::chrono::seconds>(now - errorTimestamp).count() >= 3)
+                {
+                    // 3 seconds have passed, clear the error
+                    activeGuiError = "";
+                }
+                else
+                {
+                    // Still within 3 seconds, keep showing it
+                    window = "Error: " + activeGuiError;
+                }
             }
 
             modelManager.value().update_Interpreted(
@@ -161,6 +196,17 @@ void HPRInterpreter::trackingLoop()
 
 void HPRInterpreter::run()
 {
+
+    errorId = EventHub::connect(Event::ERROR, [this] (EventData data)
+    {
+        if (std::holds_alternative<ErrorGui>(data)) 
+        {
+            std::string error = std::get<ErrorGui>(data).error;
+            std::lock_guard<std::mutex> lock(AppState::stateMutex);
+            AppState::state.currentError = error;
+        }
+    });
+
     //For saving my time
     auto &inst = instance.value();
 

@@ -63,17 +63,18 @@ class EventHub
         //be emitted to the listeners
         static void emit(Event event, EventData data = {}) 
         {
-            // FUTURE: this thing can produce deadlock if a callback called
-            // connect or emit again, what we can do is create a local copy of the map and 
-            // iterate through it, but currently theres no need to account for that safety
-            // the best we can get out with not accounting is just reducing the slight copy
-            // overhead and memory usage
 
-            std::lock_guard<std::mutex> lock(hubMutex);
-            if (subscribers.count(event)) 
+            std::map<Event, std::map<size_t, std::function<void(EventData)>>> subscribersLocal;
+            
+            {
+                std::lock_guard<std::mutex> lock(hubMutex);
+                subscribersLocal = subscribers;
+            }
+            
+            if (subscribersLocal.count(event)) 
             {
                 //iterate through the map of IDs and Callbacks
-                for (auto const& [id, callback] : subscribers[event]) {
+                for (auto const& [id, callback] : subscribersLocal[event]) {
                     callback(data);
                 }
             }
