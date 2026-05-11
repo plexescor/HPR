@@ -1,5 +1,5 @@
 @echo off
-setlocal
+setlocal enabledelayedexpansion
 
 set "CONFIG_DIR=%APPDATA%\HPR\HPR_Config"
 set "SCRIPT_DIR=%~dp0"
@@ -20,7 +20,7 @@ echo.
 :: aliases.csv
 if exist "%CONFIG_DIR%\aliases.csv" (
     set /p "confirm_aliases=^>^> aliases.csv already exists. Overwrite? (y/N): "
-    if /i "%confirm_aliases%"=="y" (
+    if /i "!confirm_aliases!"=="y" (
         copy /y "%SCRIPT_DIR%aliases.csv" "%CONFIG_DIR%\aliases.csv" >nul
         echo    aliases.csv overwritten.
     ) else (
@@ -36,7 +36,7 @@ echo.
 :: config.csv
 if exist "%CONFIG_DIR%\config.csv" (
     set /p "confirm_config=^>^> config.csv already exists. Overwrite? (y/N): "
-    if /i "%confirm_config%"=="y" (
+    if /i "!confirm_config!"=="y" (
         copy /y "%SCRIPT_DIR%config.csv" "%CONFIG_DIR%\config.csv" >nul
         echo    config.csv overwritten.
     ) else (
@@ -61,7 +61,7 @@ echo.
 :: ui folder — only copy if doesnt exist, ask if it does
 if exist "%CONFIG_DIR%\ui\" (
     set /p "confirm_ui=^>^> ui/ folder already exists. Overwrite? (y/N): "
-    if /i "%confirm_ui%"=="y" (
+    if /i "!confirm_ui!"=="y" (
         rmdir /S /Q "%CONFIG_DIR%\ui"
         xcopy /E /I /Y "%SCRIPT_DIR%ui" "%CONFIG_DIR%\ui" >nul
         echo    ui/ overwritten. Your custom UI has been replaced with defaults.

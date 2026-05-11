@@ -26,6 +26,9 @@ export component MainWindow inherits Window {
     callback loadHistoricalData_Singular(string);
     callback loadLiveData;
 
+    //PLS Donate and dont remove it!
+    callback openKofi;
+
     in property <int>             trackedTime_S;
     in property <string>          windowName_S;
     in property <[TimeLog]>       timePerApp_S;
@@ -280,6 +283,12 @@ export component MainWindow inherits Window {
                         tip: "Switch to live view";
                         clicked => { root.loadLiveData(); }
                     }
+                    SidebarButton {
+                        icon: "☕";
+                        tip: "Support on Ko-fi";
+                        clicked => { root.openKofi(); }
+                    }
+
                 }
             }
         }

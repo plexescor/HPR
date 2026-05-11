@@ -6,6 +6,10 @@
 #include "app-window.h"
 #include <slint.h>
 
+#ifdef _WIN32
+    #include <windows.h>
+#endif
+
 //CONSTRUCTOR FOR **COMPILED** UI
 UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow>& ui)
 {
@@ -29,6 +33,16 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow>& ui)
     {
         //No need for event hub
         this->showLiveData();
+    });
+
+    ui->on_openKofi([this]()
+    {
+        //Open webbrowser
+        #ifdef _WIN32
+            ShellExecuteA(nullptr, "open", "https://ko-fi.com/plexescor", nullptr, nullptr, SW_SHOWNORMAL);
+        #else
+            system("xdg-open https://ko-fi.com/plexescor &");
+        #endif
     });
 }
 
@@ -63,6 +77,17 @@ UiEventBridge::UiEventBridge(
     {
         //No need for event hub
         this->showLiveData();
+        return slint::interpreter::Value(); // void return
+    });
+
+    ui->set_callback("openKofi", [this](auto args) -> slint::interpreter::Value
+    {
+        //open browser
+        #ifdef _WIN32
+            ShellExecuteA(nullptr, "open", "https://ko-fi.com/plexescor", nullptr, nullptr, SW_SHOWNORMAL);
+        #else
+            system("xdg-open https://ko-fi.com/plexescor &");
+        #endif
         return slint::interpreter::Value(); // void return
     });
 }
