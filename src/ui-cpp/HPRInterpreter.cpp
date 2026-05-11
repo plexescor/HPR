@@ -197,16 +197,6 @@ void HPRInterpreter::trackingLoop()
 void HPRInterpreter::run()
 {
 
-    errorId = EventHub::connect(Event::APP_ERROR, [this] (EventData data)
-    {
-        if (std::holds_alternative<ErrorGui>(data)) 
-        {
-            std::string error = std::get<ErrorGui>(data).error;
-            std::lock_guard<std::mutex> lock(AppState::stateMutex);
-            AppState::state.currentError = error;
-        }
-    });
-
     //For saving my time
     auto &inst = instance.value();
 
