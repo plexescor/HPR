@@ -136,23 +136,27 @@ void UiModelManager::update(const std::map<std::string, long> &rawTimeLog,
 
                 (*handle)->set_trackedTime_S(totalTrackedTime);
                 // Surgical update to prevent layout panics during resize/maximize
-                auto syncModel = [](auto model, const auto& vec) {
+                auto syncModel = [](auto model, const auto& vec) 
+                {
                     size_t existing_count = model->row_count();
                     size_t new_count = vec.size();
                     size_t min_count = (std::min)(existing_count, new_count);
 
                     // Update existing rows
-                    for (size_t i = 0; i < min_count; ++i) {
+                    for (size_t i = 0; i < min_count; ++i) 
+                    {
                         model->set_row_data(i, vec[i]);
                     }
 
                     // Remove excess rows from the end
-                    while (model->row_count() > new_count) {
+                    while (model->row_count() > new_count) 
+                    {
                         model->erase(model->row_count() - 1);
                     }
 
                     // Add new rows
-                    for (size_t i = existing_count; i < new_count; ++i) {
+                    for (size_t i = existing_count; i < new_count; ++i) 
+                    {
                         model->push_back(vec[i]);
                     }
                 };
@@ -198,7 +202,8 @@ void UiModelManager::update_Interpreted(const std::map<std::string, long> &rawTi
         auto sa = a.to_struct();
         auto sb = b.to_struct();
 
-        if (sa && sb) {
+        if (sa && sb) 
+        {
             // get_field returns an optional Value, then we convert to number, then dereference
             double da = sa->get_field("duration_i").value_or(slint::interpreter::Value(0.0)).to_number().value_or(0.0);
             double db = sb->get_field("duration_i").value_or(slint::interpreter::Value(0.0)).to_number().value_or(0.0);
