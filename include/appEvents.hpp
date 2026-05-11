@@ -29,7 +29,7 @@
         LOAD_DATABASE_SINGULAR,
         HISTORY_LOADED_SINGULAR,
         LOAD_LIVE_DATA,
-        ERROR
+        APP_ERROR //ERROR was reserved in msvc thats why
     };
 
 using EventData = std::variant<Empty, DatabaseDate_Singular, ErrorGui>;

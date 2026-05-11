@@ -49,7 +49,7 @@ HPRInterpreter::~HPRInterpreter()
     if (tracker.joinable())
         tracker.join(); // Speaks for itself
 
-    EventHub::disconnect(Event::ERROR, errorId);
+    EventHub::disconnect(Event::APP_ERROR, errorId);
 }
 
 void HPRInterpreter::show()
@@ -116,7 +116,7 @@ void HPRInterpreter::trackingLoop()
         }
     #endif
 
-    errorId = EventHub::connect(Event::ERROR, [this] (EventData data)
+    errorId = EventHub::connect(Event::APP_ERROR, [this] (EventData data)
     {
         if (std::holds_alternative<ErrorGui>(data)) 
         {
@@ -197,7 +197,7 @@ void HPRInterpreter::trackingLoop()
 void HPRInterpreter::run()
 {
 
-    errorId = EventHub::connect(Event::ERROR, [this] (EventData data)
+    errorId = EventHub::connect(Event::APP_ERROR, [this] (EventData data)
     {
         if (std::holds_alternative<ErrorGui>(data)) 
         {
