@@ -68,14 +68,13 @@ void PatternAnalyzer::generateInsights()
     if (!switchHistory.empty())
     {
         std::map<std::string, size_t> switchCounts;
-
+        const std::string selfApp = "HPR";
         for (const auto& [apps, vec] : switchHistory)
         {
             const std::string& fromApp = apps.first;
-
+            if (fromApp == selfApp) continue;
             switchCounts[fromApp] += vec.size();
         }
-
         auto maxIt = std::max_element(
             switchCounts.begin(),
             switchCounts.end(),
@@ -94,11 +93,12 @@ void PatternAnalyzer::generateInsights()
     if (!switchHistory.empty())
     {
         std::map<std::string, size_t> switchCounts;
+        const std::string selfApp = "HPR";
 
         for (const auto& [apps, vec] : switchHistory)
         {
             const std::string& toApp = apps.second;
-
+            if (toApp == selfApp) continue; // skip switches back to HPR
             switchCounts[toApp] += vec.size();
         }
 
@@ -119,50 +119,69 @@ void PatternAnalyzer::generateInsights()
     //Pattern 6: Longest Focus Session 
     if (!switchHistory.empty())
     {
-        // build per-app sorted timeline of switch-away timestamps
-        std::map<std::string, std::vector<uint64_t>> appSwitchTimes;
-
+        // For each app, collect: (arrived_at_ts, left_at_ts) pairs  
+        // Build per-app: list of departure timestamps (when we LEFT that app)
+        std::map<std::string, std::vector<uint64_t>> departures;
+        std::map<std::string, std::vector<uint64_t>> arrivals;
+        const std::string selfApp = "HPR";
         for (const auto& [apps, vec] : switchHistory)
-        {
-            const std::string& fromApp = apps.first;
+        {   
+            if (apps.second == selfApp) continue;
+            // std::cout << "FROM: [" << apps.first << "] TO: [" << apps.second << "]\n";
             for (uint64_t ts : vec)
             {
-                appSwitchTimes[fromApp].push_back(ts);
+                departures[apps.first].push_back(ts);
+                arrivals[apps.second].push_back(ts);
             }
         }
+
+        for (auto& [app, vec] : departures) std::sort(vec.begin(), vec.end());
+        for (auto& [app, vec] : arrivals)   std::sort(vec.begin(), vec.end());
 
         uint64_t bestDuration = 0;
         std::string bestApp;
 
-        // timestamps are epoch milliseconds — 8 hour cap to reject cross-session gaps
         const uint64_t maxGap_ms = 8ULL * 60 * 60 * 1000;
 
-        for (auto& [app, timestamps] : appSwitchTimes)
+        for (auto& [app, depTimes] : departures)
         {
-            std::sort(timestamps.begin(), timestamps.end());
+            auto arrIt = arrivals.find(app);
+            if (arrIt == arrivals.end()) continue;
 
-            // gap between consecutive switch-aways = uninterrupted session on that app
-            for (size_t i = 1; i < timestamps.size(); ++i)
+            const auto& arrTimes = arrIt->second;
+
+            // For each departure, find the most recent arrival before it
+            for (uint64_t dep : depTimes)
             {
-                uint64_t gap = timestamps[i] - timestamps[i - 1];
+                // last arrival strictly before dep
+                //i didnt wanna usr raw ptr :)
+                auto it = std::lower_bound(arrTimes.begin(), arrTimes.end(), dep);
+                while (it != arrTimes.begin()) {
+                    --it;
+                    if (*it < dep) break; // found strictly earlier arrival
+                    // if equal, keep going back
+                }
+                if (*it >= dep) continue; // no valid arrival found
 
-                // ignore cross-session gaps (e.g. yesterday → today)
-                if (gap >= maxGap_ms) continue;
+                uint64_t arr = *it;
+                uint64_t duration = dep - arr;
 
-                if (gap > bestDuration)
+                if (duration >= maxGap_ms) continue; // cross-session
+                if (duration < 1000) continue; // ignore sub-1s noise , same-event timestamp collisions
+
+                if (duration > bestDuration)
                 {
-                    bestDuration = gap;
+                    bestDuration = duration;
                     bestApp = app;
                 }
             }
         }
 
+
         if (!bestApp.empty())
         {
             std::string app = AppState::aliasManager.getAlias(bestApp);
-            // convert ms → seconds for formatTime_HHMMSS
-            std::string time = formatTime_HHMMSS(static_cast<int>(bestDuration / 1000));
-
+            std::string time = formatTime_HHMMSS(static_cast<int>(bestDuration));
             mostFocusedSession_O = time + " — " + app;
         }
     }

@@ -159,7 +159,7 @@ void HPR::trackingLoop()
             if (!activeGuiError.empty())
             {
                 auto now = std::chrono::steady_clock::now();
-                if (std::chrono::duration_cast<std::chrono::seconds>(now - errorTimestamp).count() >= 5)
+                if (std::chrono::duration_cast<std::chrono::minutes>(now - errorTimestamp).count() >= 5)
                 {
                     // 5 seconds have passed, clear the error
                     activeGuiError = "";
@@ -180,7 +180,7 @@ void HPR::trackingLoop()
             );
 
             // Update insight every 5 minutes (or on first frame)
-            if (firstRun || std::chrono::duration_cast<std::chrono::minutes>(now - lastInsightUpdate).count() >= 5) 
+            if (firstRun || std::chrono::duration_cast<std::chrono::seconds>(now - lastInsightUpdate).count() >= 5) 
             {
                 pa.generateInsights();
                 

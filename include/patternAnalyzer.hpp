@@ -25,12 +25,6 @@ class PatternAnalyzer
     private: //Local vars to hold mutex for little time
         std::map<std::string, long> timeLog_PerApp; 
         std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> switchHistory; 
-    
-    private: //Vars used internally
-        std::pair<std::string, int> mostSwitchedFrom;
-        std::pair<std::string, int> mostSwitcedTo;
-        std::pair<std::string, std::string> mostFocusedSession;
-        std::string mostProductiveHour;
 
     private: //The actual insights output as a string
         //_O is "Output"
