@@ -240,8 +240,6 @@ The following is what is actually planned in roughly the order it will be built.
 
 Human-readable insights derived entirely from code, no LLM involved. Things like most-used application today, longest uninterrupted focus session, total tracked time, and which application you switch away from most frequently. These are simple calculations on data HPR already has.
 
-Historical session browser so you can look at past days without opening SQLite files manually. Currently you can load one day at a time via the sidebar date picker.
-
 Data export to CSV and JSON.
 
 A premium tier is planned for the future. The free tier will always include full local tracking, full data ownership, and the code-derived basic insights. The premium tier is intended to include LLM-powered pattern analysis that can read your usage data and give you personalized observations about your working patterns, focus mode with application blocking, advanced reporting, and browser tab tracking. This is not imminent.
