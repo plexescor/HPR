@@ -179,8 +179,8 @@ void HPR::trackingLoop()
                 AppState::aliasManager
             );
 
-            // Update insight every 5 minutes (or on first frame)
-            if (firstRun || std::chrono::duration_cast<std::chrono::seconds>(now - lastInsightUpdate).count() >= 5) 
+            // Update insight every 30 (or on first frame)
+            if (firstRun || std::chrono::duration_cast<std::chrono::seconds>(now - lastInsightUpdate).count() >= 30) 
             {
                 pa.generateInsights();
                 
