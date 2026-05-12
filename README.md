@@ -236,9 +236,13 @@ hardware-acceleration,true  # set to false to eliminate GPU library overhead on 
 
 ## Roadmap
 
-The following is what is actually planned in roughly the order it will be built.
+> [!NOTE]
+> The core vision for HPR's free version is now **mostly complete**.  
+> The major foundational goals -- local-first tracking, privacy-focused architecture, detailed usage analytics, lightweight native performance, and fully offline ownership of data -- have already been implemented or are nearing completion.
+>
+> Future development for the free version will primarily focus on refinement, polish, stability improvements, UI/UX enhancements, and smaller quality-of-life features rather than massive missing functionality.
 
-Human-readable insights derived entirely from code, no LLM involved. Things like most-used application today, longest uninterrupted focus session, total tracked time, and which application you switch away from most frequently. These are simple calculations on data HPR already has.
+The following is what is actually planned in roughly the order it will be built.
 
 A premium tier is planned for the future. The free tier will always include full local tracking, full data ownership, and the code-derived basic insights. The premium tier is intended to include LLM-powered pattern analysis that can read your usage data and give you personalized observations about your working patterns, focus mode with application blocking, advanced reporting, and browser tab tracking. This is not imminent.
 
