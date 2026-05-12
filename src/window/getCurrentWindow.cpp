@@ -105,6 +105,16 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 	auto lastTimestamp = std::chrono::steady_clock::now(); // Get the tick's time
 	window = getCurrentWindow();
 	previousWindow = window;
+
+	// Record initial arrival so the first app session can be counted
+	{
+		std::lock_guard<std::mutex> lock(AppState::stateMutex);
+		auto nowSystem = std::chrono::system_clock::now();
+		uint64_t t = std::chrono::duration_cast<std::chrono::milliseconds>(
+						 nowSystem.time_since_epoch())
+						 .count();
+		AppState::state.switchHistory[{"Unknown", window}].push_back(t);
+	}
 	while (running)
 	{
 		window = getCurrentWindow();
