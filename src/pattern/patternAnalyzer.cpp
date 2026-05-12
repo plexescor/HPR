@@ -125,19 +125,23 @@ void PatternAnalyzer::generateInsights()
         std::vector<Event> events;
         
         // Use multiple possible names for the HPR window to be safe
-        auto isSelf = [](const std::string& name) {
-            return name == "HPR" || name == "antigravity" || name == "Unknown";
+        auto isSelf = [](const std::string& name) 
+        {
+            return name == "HPR" name == "Unknown";
         };
 
-        for (const auto& [apps, vec] : switchHistory) {
-            for (uint64_t ts : vec) {
+        for (const auto& [apps, vec] : switchHistory) 
+        {
+            for (uint64_t ts : vec) 
+            {
                 if (!isSelf(apps.first))  events.push_back({ts, apps.first, false});
                 if (!isSelf(apps.second)) events.push_back({ts, apps.second, true});
             }
         }
 
         // Sort all switch events by time
-        std::sort(events.begin(), events.end(), [](const Event& a, const Event& b) {
+        std::sort(events.begin(), events.end(), [](const Event& a, const Event& b) 
+        {
             if (a.ts != b.ts) return a.ts < b.ts;
             return a.isArrival < b.isArrival; // Process departures before arrivals if same ms
         });
@@ -146,17 +150,26 @@ void PatternAnalyzer::generateInsights()
         std::string bestApp;
         std::map<std::string, uint64_t> activeSessions;
 
-        for (const auto& e : events) {
-            if (e.isArrival) {
-                // Open a new session (overwrites any dangling arrival)
+        for (const auto& e : events) 
+        {
+            if (e.isArrival) 
+            {
+                // Open a new session
+                // if multiple arrives at the same time, it will take the last one
+                // which is fine
                 activeSessions[e.app] = e.ts;
-            } else {
-                // If we have a departure, it MUST match the most recent arrival for THIS app
-                if (activeSessions.count(e.app)) {
+            } 
+            else 
+            {
+                // if we have a departure, it MUST match the most recent arrival for THIS app
+                if (activeSessions.count(e.app)) 
+                {
                     uint64_t duration = e.ts - activeSessions[e.app];
                     
-                    // Sanity check: focus session can't be longer than 8 hours 
-                    if (duration > 1000 && duration < (8ULL * 60 * 60 * 1000)) {
+                    // Sanity cheacck: focus session can't be longer than 8 hours 
+                    // or if you are a god and in the flow state, then it canbe
+                    if (duration > 1000 && duration < (8ULL * 60 * 60 * 1000)) 
+                    {
                         if (duration > bestDuration) {
                             bestDuration = duration;
                             bestApp = e.app;
@@ -193,7 +206,7 @@ void PatternAnalyzer::generateInsights()
 
         std::sort(timestamps.begin(), timestamps.end());
 
-        // window must be between 60 and 90 mins — epochs are milliseconds
+        // window must be between 60 and 90 mins c epochs are milliseconds
         const uint64_t minWindow_ms = 60ULL * 60 * 1000;
         const uint64_t maxWindow_ms = 90ULL * 60 * 1000;
 
@@ -204,7 +217,7 @@ void PatternAnalyzer::generateInsights()
         size_t bestCount = SIZE_MAX;
         bool foundValid = false;
 
-        // sliding window — fewer switches in window = more focused
+        // sliding window , fewer switches in window = more focused
         for (size_t right = 0; right < timestamps.size(); ++right)
         {
             // shrink window from left if it exceeds 90 mins
