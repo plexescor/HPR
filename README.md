@@ -54,6 +54,7 @@
 - [UI Bridging and Slint Interoperability](#ui-bridging-and-slint-interoperability)
 - [Database Layer](#database-layer)
 - [Timing Model](#timing-model)
+- [Pattern Analysis Engine](#pattern-analysis-engine)
 - [Window Name Normalization and Aliasing](#window-name-normalization-and-aliasing)
 - [Class Lifecycle and Thread Management](#class-lifecycle-and-thread-management)
 - [Building From Source](#building-from-source)
@@ -473,6 +474,31 @@ HPR enforces a strict separation between duration measurement and wall-clock tim
 | `std::chrono::system_clock` | Recording when a window switch occurred, for display purposes only. |
 
 Using `system_clock` for duration measurement is a common bug. A DST change or NTP adjustment mid-session would corrupt accumulated time. HPR does not do this.
+
+---
+
+## Pattern Analysis Engine
+
+HPR includes a dedicated `PatternAnalyzer` class that performs real-time heuristic analysis on your usage logs. This engine transforms raw database entries into the "Insights" view in the UI.
+
+**Execution Lifecycle:**
+The `PatternAnalyzer` is instantiated within the `trackingLoop` of the UI bridge (`HPR.cpp` or `HPRInterpreter.cpp`). Every 5 seconds, it acquires a `std::lock_guard` on `AppState::stateMutex`, copies the current `timeLog` and `switchHistory`, and executes seven distinct patterns:
+
+1.  **Direct Aggregations (Patterns 1-5):** Simple statistical counts over `timeLog_PerApp` and `switchHistory` to identify most used apps, total tracked time, and switch frequency.
+2.  **Longest Focus Session (Pattern 6):** Implements a **Chronological Event-Matching Algorithm**. 
+    *   It flattens `switchHistory` into a single, global timeline of "Arrival" and "Departure" events.
+    *   It sorts the timeline (O(N log N)) and iterates through it once, pairing each app arrival with its immediate subsequent departure.
+    *   This logic is designed to be robust against system crashes and reboots; if a session is interrupted without a departure, the orphaned arrival is simply overwritten when the next session starts, preventing "ghost" sessions from spanning multiple days.
+3.  **Peak Productive Hour (Pattern 7):** Employs a **Sliding Window Heuristic**.
+    *   It scans all app-switch timestamps within a sliding window constrained between 60 and 90 minutes.
+    *   It counts the number of switches in every possible window.
+    *   The window with the **absolute lowest number of switches** is identified as the "Peak Productive Hour," based on the metric that minimal task-switching is the primary indicator of deep focus.
+
+**Data Filtering:**
+To ensure insights reflect actual work, the engine explicitly filters out "HPR" (the app itself), "Unknown" (noise/transitional windows), and common system artifacts from Pattern 6 and Pattern 7 calculations.
+
+**UI Propagation:**
+The resulting strings are pushed to `UiModelManager`, which dispatches them to the `insights-view.slint` component properties via `slint::invoke_from_event_loop`.
 
 ---
 
