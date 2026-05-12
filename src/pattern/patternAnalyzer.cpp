@@ -127,7 +127,7 @@ void PatternAnalyzer::generateInsights()
         // Use multiple possible names for the HPR window to be safe
         auto isSelf = [](const std::string& name) 
         {
-            return name == "HPR" name == "Unknown";
+            return name == "HPR" || name == "Unknown";
         };
 
         for (const auto& [apps, vec] : switchHistory) 
