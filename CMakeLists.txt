@@ -20,6 +20,7 @@ if(WIN32)
 		src/miscellaneous/timeUtils.cpp
         src/miscellaneous/aliasManager.cpp
         src/miscellaneous/configManager.cpp
+        src/pattern/patternAnalyzer.cpp
 		src/ui-cpp/HPR.cpp
         src/ui-cpp/HPRInterpreter.cpp
         src/ui-cpp/uiEventBridge.cpp
@@ -42,6 +43,7 @@ elseif(LINUX)
         src/miscellaneous/timeUtils.cpp
         src/miscellaneous/aliasManager.cpp
         src/miscellaneous/configManager.cpp
+        src/pattern/patternAnalyzer.cpp
         src/ui-cpp/HPR.cpp
         src/ui-cpp/HPRInterpreter.cpp
         src/ui-cpp/uiEventBridge.cpp

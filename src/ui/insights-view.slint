@@ -1,0 +1,174 @@
+import { Card } from "./card.slint";
+import { SectionHeader } from "./section-header.slint";
+
+export component InsightsView {
+    in property <string> mostUsedApp_S;
+    in property <string> totalTrackedTime_S;
+    in property <string> totalSwitches_S;
+    in property <string> mostSwitchedFrom_S;
+    in property <string> longestFocus_S;
+    in property <string> peakHour_S;
+
+    VerticalLayout {
+        padding: 12px;
+        padding-top: 0px;
+        spacing: 10px;
+
+        SectionHeader { label: "INSIGHTS"; }
+
+        Flickable {
+            vertical-stretch: 1;
+            interactive: true;
+            viewport-height: insightContent.preferred-height;
+
+            insightContent := VerticalLayout {
+                width: 100%;
+                spacing: 8px;
+
+                // ── Card 1 ───────────────────────────────────────────────
+                Card {
+                    height: 64px;
+                    HorizontalLayout {
+                        padding: 16px;
+                        alignment: space-between;
+                        Text {
+                            text: "MOST USED APP";
+                            font-size: 9px;
+                            font-weight: 700;
+                            letter-spacing: 2.5px;
+                            color: #ffffff40;
+                            vertical-alignment: center;
+                        }
+                        Text {
+                            text: mostUsedApp_S;
+                            font-size: 13px;
+                            font-weight: 600;
+                            color: #a3e635;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+
+                // ── Card 2 ───────────────────────────────────────────────
+                Card {
+                    height: 64px;
+                    HorizontalLayout {
+                        padding: 16px;
+                        alignment: space-between;
+                        Text {
+                            text: "TOTAL TRACKED TIME";
+                            font-size: 9px;
+                            font-weight: 700;
+                            letter-spacing: 2.5px;
+                            color: #ffffff40;
+                            vertical-alignment: center;
+                        }
+                        Text {
+                            text: totalTrackedTime_S;
+                            font-size: 13px;
+                            font-weight: 600;
+                            color: #38bdf8;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+
+                // ── Card 3 ───────────────────────────────────────────────
+                Card {
+                    height: 64px;
+                    HorizontalLayout {
+                        padding: 16px;
+                        alignment: space-between;
+                        Text {
+                            text: "TOTAL APP SWITCHES";
+                            font-size: 9px;
+                            font-weight: 700;
+                            letter-spacing: 2.5px;
+                            color: #ffffff40;
+                            vertical-alignment: center;
+                        }
+                        Text {
+                            text: totalSwitches_S;
+                            font-size: 13px;
+                            font-weight: 600;
+                            color: #f472b6;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+
+                // ── Card 4 ───────────────────────────────────────────────
+                Card {
+                    height: 64px;
+                    HorizontalLayout {
+                        padding: 16px;
+                        alignment: space-between;
+                        Text {
+                            text: "MOST SWITCHED FROM";
+                            font-size: 9px;
+                            font-weight: 700;
+                            letter-spacing: 2.5px;
+                            color: #ffffff40;
+                            vertical-alignment: center;
+                        }
+                        Text {
+                            text: mostSwitchedFrom_S;
+                            font-size: 13px;
+                            font-weight: 600;
+                            color: #fb923c;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+
+                // ── Card 5 ───────────────────────────────────────────────
+                Card {
+                    height: 64px;
+                    HorizontalLayout {
+                        padding: 16px;
+                        alignment: space-between;
+                        Text {
+                            text: "LONGEST FOCUS SESSION";
+                            font-size: 9px;
+                            font-weight: 700;
+                            letter-spacing: 2.5px;
+                            color: #ffffff40;
+                            vertical-alignment: center;
+                        }
+                        Text {
+                            text: longestFocus_S;
+                            font-size: 13px;
+                            font-weight: 600;
+                            color: #34d399;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+
+                // ── Card 6 ───────────────────────────────────────────────
+                Card {
+                    height: 64px;
+                    HorizontalLayout {
+                        padding: 16px;
+                        alignment: space-between;
+                        Text {
+                            text: "PEAK PRODUCTIVE HOUR";
+                            font-size: 9px;
+                            font-weight: 700;
+                            letter-spacing: 2.5px;
+                            color: #ffffff40;
+                            vertical-alignment: center;
+                        }
+                        Text {
+                            text: peakHour_S;
+                            font-size: 13px;
+                            font-weight: 600;
+                            color: #c084fc;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
