@@ -24,11 +24,14 @@
   A compiled, offline, zero-account activity tracker for Windows and Linux.<br/>
   Watches your active window. Logs your time. Stores everything locally. Talks to nothing.
 </p>
-
+---
 <p align="center">
-  <img src="./assets/HPRHome.png" alt="HPR Home Screen" width="800"/>
+  <img src="./assets/HPRHOME.png" alt="HPR Home Screen" width="800"/>
 </p>
-
+---
+<p align="center">
+  <img src="./assets/HPRINSIGHTS.png" alt="HPR Insights Screen" width="800"/>
+</p>
 ---
 
 ## Table of Contents
