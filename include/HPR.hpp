@@ -2,7 +2,6 @@
 #pragma once
 
 #include "appState.hpp"
-#include "aliasManager.hpp"
 #include "uiModelManager.hpp"
 
 //Slint stuff
@@ -31,7 +30,6 @@ class HPR {
         std::atomic<bool> running{true};
         std::thread tracker;
 
-        AliasManager aliasManager;
         UiModelManager modelManager;
 
         size_t errorId;

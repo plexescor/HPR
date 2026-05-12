@@ -282,3 +282,55 @@ void UiModelManager::update_Interpreted(const std::map<std::string, long> &rawTi
         }
     });
 }
+
+void UiModelManager::showInsights(const std::string &mostUsed,
+                          const std::string &totalTrackedTime,
+                          const std::string &switchCount,
+                          const std::string &mostSwitchedFrom,
+                          const std::string &mostSwitchedTo,
+                          const std::string &mostFocusedSession,
+                          const std::string &mostProductiveHour)
+{
+    if (!ui.has_value()) {
+        return; //skip update if ui handle aint ready
+    }
+    slint::ComponentWeakHandle<MainWindow> weak(ui.value());
+    slint::invoke_from_event_loop([weak, mostUsed, totalTrackedTime, switchCount, mostSwitchedFrom, mostSwitchedTo, mostFocusedSession, mostProductiveHour, this]()
+    {
+        if (auto handle = weak.lock())
+        {
+            (*handle)->set_mostUsedApp_S(slint::SharedString(mostUsed));
+            (*handle)->set_totalTrackedTime_S(slint::SharedString(totalTrackedTime));
+            (*handle)->set_totalSwitches_S(slint::SharedString(switchCount));
+            (*handle)->set_mostSwitchedFrom_S(slint::SharedString(mostSwitchedFrom));
+            (*handle)->set_mostSwitchedTo_S(slint::SharedString(mostSwitchedTo));
+            (*handle)->set_longestFocus_S(slint::SharedString(mostFocusedSession));
+            (*handle)->set_peakHour_S(slint::SharedString(mostProductiveHour));
+        }
+    });
+}
+
+void UiModelManager::showInsights_Interpreted(const std::string &mostUsed,
+                          const std::string &totalTrackedTime,
+                          const std::string &switchCount,
+                          const std::string &mostSwitchedFrom,
+                          const std::string &mostSwitchedTo,
+                          const std::string &mostFocusedSession,
+                          const std::string &mostProductiveHour)
+{
+    slint::ComponentWeakHandle<slint::interpreter::ComponentInstance> weak(ui_interp.value());
+    slint::invoke_from_event_loop([weak, mostUsed, totalTrackedTime, switchCount, mostSwitchedFrom, mostSwitchedTo, mostFocusedSession, mostProductiveHour, this]()
+    {
+        if (auto handle = weak.lock())
+        {
+            (*handle)->set_property("mostUsedApp_S",   slint::interpreter::Value(slint::SharedString(mostUsed)));
+            (*handle)->set_property("totalTrackedTime_S",   slint::interpreter::Value(slint::SharedString(totalTrackedTime)));
+            (*handle)->set_property("totalSwitches_S",   slint::interpreter::Value(slint::SharedString(switchCount)));
+            (*handle)->set_property("mostSwitchedFrom_S",   slint::interpreter::Value(slint::SharedString(mostSwitchedFrom)));
+            (*handle)->set_property("mostSwitchedTo_S",   slint::interpreter::Value(slint::SharedString(mostSwitchedTo)));
+            (*handle)->set_property("longestFocus_S",   slint::interpreter::Value(slint::SharedString(mostFocusedSession)));
+            (*handle)->set_property("peakHour_S",   slint::interpreter::Value(slint::SharedString(mostProductiveHour)));
+
+        }
+    });
+}

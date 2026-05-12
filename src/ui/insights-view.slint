@@ -6,6 +6,7 @@ export component InsightsView {
     in property <string> totalTrackedTime_S;
     in property <string> totalSwitches_S;
     in property <string> mostSwitchedFrom_S;
+    in property <string> mostSwitchedTo_S;
     in property <string> longestFocus_S;
     in property <string> peakHour_S;
 
@@ -105,6 +106,30 @@ export component InsightsView {
                         alignment: space-between;
                         Text {
                             text: "MOST SWITCHED FROM";
+                            font-size: 9px;
+                            font-weight: 700;
+                            letter-spacing: 2.5px;
+                            color: #ffffff40;
+                            vertical-alignment: center;
+                        }
+                        Text {
+                            text: mostSwitchedFrom_S;
+                            font-size: 13px;
+                            font-weight: 600;
+                            color: #fb923c;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+
+                // ── Card 4's brother, i dont wanna rename everything ───────────────────────────────────────────────
+                Card {
+                    height: 64px;
+                    HorizontalLayout {
+                        padding: 16px;
+                        alignment: space-between;
+                        Text {
+                            text: "MOST SWITCHED TO";
                             font-size: 9px;
                             font-weight: 700;
                             letter-spacing: 2.5px;

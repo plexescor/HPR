@@ -26,6 +26,22 @@ class UiModelManager
                             std::string &currentWindowName,
                             long &totalTrackedTime,
                             AliasManager &aliasManager);
+
+        void showInsights(const std::string &mostUsed,
+                          const std::string &totalTrackedTime,
+                          const std::string &switchCount,
+                          const std::string &mostSwitchedFrom,
+                          const std::string &mostSwitchedTo,
+                          const std::string &mostFocusedSession,
+                          const std::string &mostProductiveHour);
+
+        void showInsights_Interpreted(const std::string &mostUsed,
+                          const std::string &totalTrackedTime,
+                          const std::string &switchCount,
+                          const std::string &mostSwitchedFrom,
+                          const std::string &mostSwitchedTo,
+                          const std::string &mostFocusedSession,
+                          const std::string &mostProductiveHour);
     
     private: 
         std::optional<slint::ComponentHandle<MainWindow>> ui;

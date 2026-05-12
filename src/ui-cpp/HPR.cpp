@@ -7,6 +7,7 @@
 #include "aliasManager.hpp"
 #include "uiEventBridge.hpp"
 #include "appEvents.hpp"
+#include "patternAnalyzer.hpp"
 
 // Slint stuff
 #include <slint.h>
@@ -121,9 +122,19 @@ void HPR::trackingLoop()
     std::map<std::string, long> timeLog;
     std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> switchHistory;
 
+    //Special priority to insights because they arent exactly on demand loaded,
+    //rather updated every 5 minutes
+    auto lastInsightUpdate = std::chrono::steady_clock::now();
+    bool firstRun = true;
+
+    //The object
+    PatternAnalyzer pa;
+
     while (running)
     {
         {
+            auto now = std::chrono::steady_clock::now();
+            
             totalTrackedTime = 0; // reset to 0 at every iteration
             // Scoped mutex to hold it for as little time as possible
             {
@@ -165,8 +176,26 @@ void HPR::trackingLoop()
                 switchHistory,
                 window,
                 totalTrackedTime, 
-                aliasManager
+                AppState::aliasManager
             );
+
+            // Update insight every 5 minutes (or on first frame)
+            if (firstRun || std::chrono::duration_cast<std::chrono::minutes>(now - lastInsightUpdate).count() >= 5) 
+            {
+                pa.generateInsights();
+                
+                modelManager.showInsights(
+                    pa.getMostUsed(),
+                    pa.getTotalTrackedTime(),
+                    pa.getSwitchCount(),
+                    pa.getMostSwitchedFrom(),
+                    pa.getMostSwitchedTo(),
+                    pa.getMostFocusedSession(),
+                    pa.getMostProductiveHour()
+                );
+                lastInsightUpdate = now;
+                firstRun = false;
+            }
         }
 
         //Chunked sleep

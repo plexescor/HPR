@@ -1,4 +1,6 @@
 #pragma once
+#include "aliasManager.hpp"
+
 #include <string>
 #include <atomic>
 #include <mutex>
@@ -34,6 +36,8 @@ namespace AppState {
 
     extern AppState state;
     extern HistoricalData historicalData_State;
+
+    extern AliasManager aliasManager;
 
     extern std::mutex stateMutex;
     extern std::mutex historyStateMutex;
