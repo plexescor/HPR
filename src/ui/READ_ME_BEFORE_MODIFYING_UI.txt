@@ -37,12 +37,21 @@ runtime.
   windowName_S        (string)
   timePerApp_S        ([TimeLog])
   switchHistory_S     ([SwitchHistory])
+  mostUsedApp_S       (string)
+  totalTrackedTime_S  (string)
+  totalSwitches_S     (string)
+  mostSwitchedFrom_S  (string)
+  mostSwitchedTo_S    (string)
+  longestFocus_S      (string)
+  peakHour_S          (string)
 
 
 -- Callbacks (HPR wires these at startup) --
 
   loadHistoricalData_Singular(string)
+  loadInsights()
   loadLiveData()
+  openKofi()
 
 
 ================================================
@@ -105,6 +114,27 @@ Here is what it sends and what type it is:
       toWindow      → app switched to (string)
       maxTimeStamp  → time of most recent occurrence,
                       formatted as "hh:mm:ss am/pm" (string)
+
+  mostUsedApp_S
+    The app name with highest total duration (string).
+
+  totalTrackedTime_S
+    Formatted string of total time (e.g. "5h 22m") (string).
+
+  totalSwitches_S
+    Total number of app switches (string).
+
+  mostSwitchedFrom_S
+    App name that was switched away from most often (string).
+
+  mostSwitchedTo_S
+    App name that was switched into most often (string).
+
+  longestFocus_S
+    Human readable duration of longest session (string).
+
+  peakHour_S
+    The hour with most activity (e.g. "02:00 PM") (string).
 
 
 ================================================
@@ -205,8 +235,17 @@ UNSAFE — will break HPR:
   Renaming windowName_S
   Renaming timePerApp_S
   Renaming switchHistory_S
+  Renaming mostUsedApp_S
+  Renaming totalTrackedTime_S
+  Renaming totalSwitches_S
+  Renaming mostSwitchedFrom_S
+  Renaming mostSwitchedTo_S
+  Renaming longestFocus_S
+  Renaming peakHour_S
   Renaming loadHistoricalData_Singular
+  Renaming loadInsights
   Renaming loadLiveData
+  Renaming openKofi
   Changing the type of any in property
   Removing any of the above entirely
   Changing the date string format passed to
@@ -214,6 +253,6 @@ UNSAFE — will break HPR:
 
 
 ================================================
-  HPR v0.2
+  HPR v0.3
   github.com/plexescor/HPR
 ================================================
