@@ -224,6 +224,23 @@ void HPR::run()
     #endif
 
     ui->show();
+
+    #ifdef _WIN32
+    // post to event loop so it runs AFTER the window is actually visible
+    // cz when app is launched frshly, theres no icon
+    slint::invoke_from_event_loop([]() {
+        HWND hwnd = FindWindowW(nullptr, L"HPR");
+        if (hwnd) {
+            HICON hIconBig = (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(1),
+                IMAGE_ICON, 32, 32, LR_SHARED);
+            HICON hIconSmall = (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(1),
+                IMAGE_ICON, 16, 16, LR_SHARED);
+            if (hIconBig)   SendMessage(hwnd, WM_SETICON, ICON_BIG,   (LPARAM)hIconBig);
+            if (hIconSmall) SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIconSmall);
+        }
+    });
+    #endif
+
     tracker = std::thread(&HPR::trackingLoop, this);
     slint::run_event_loop(slint::EventLoopMode::RunUntilQuit);
     running = false; // safety net
