@@ -159,7 +159,7 @@ void HPR::trackingLoop()
             if (!activeGuiError.empty())
             {
                 auto now = std::chrono::steady_clock::now();
-                if (std::chrono::duration_cast<std::chrono::minutes>(now - errorTimestamp).count() >= 5)
+                if (std::chrono::duration_cast<std::chrono::seconds>(now - errorTimestamp).count() >= 5)
                 {
                     // 5 seconds have passed, clear the error
                     activeGuiError = "";
