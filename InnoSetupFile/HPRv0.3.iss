@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 ; Non-commercial use only
 #define MyAppName "HPR"
-#define MyAppVersion "v0.3"
+#define MyAppVersion "v0.4"
 #define MyAppPublisher "Plexescor"
 #define MyAppURL "github.com/plexescor/HPR"
 #define MyAppExeName "HPR.exe"
@@ -20,9 +20,9 @@ UninstallDisplayIcon={app}\{#MyAppExeName}
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 DisableProgramGroupPage=yes
-OutputDir=C:\HPR\INNO\v0.3
-OutputBaseFilename=HPRv0.3
-SetupIconFile=C:\HPR\v0.3\assets\icon.ico
+OutputDir=C:\HPR\INNO\v0.4
+OutputBaseFilename=HPRv0.4
+SetupIconFile=C:\HPR\v0.4\assets\icon.ico
 SolidCompression=yes
 WizardStyle=modern dark windows11
 
@@ -34,21 +34,21 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 ; -- App binaries --
-Source: "C:\HPR\v0.3\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\HPR\v0.3\slint_cpp.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\HPR\v0.4\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\HPR\v0.4\slint_cpp.dll"; DestDir: "{app}"; Flags: ignoreversion
 
 ; -- aliases.csv and config.csv: Pascal handles overwrite logic --
-Source: "C:\HPR\v0.3\aliases.csv"; DestDir: "{userappdata}\HPR\HPR_Config"; Flags: ignoreversion; Check: ShouldCopyAliases
-Source: "C:\HPR\v0.3\config.csv"; DestDir: "{userappdata}\HPR\HPR_Config"; Flags: ignoreversion; Check: ShouldCopyConfig
+Source: "C:\HPR\v0.4\aliases.csv"; DestDir: "{userappdata}\HPR\HPR_Config"; Flags: ignoreversion; Check: ShouldCopyAliases
+Source: "C:\HPR\v0.4\config.csv"; DestDir: "{userappdata}\HPR\HPR_Config"; Flags: ignoreversion; Check: ShouldCopyConfig
 
 ; -- assets: always silently overwrite --
-Source: "C:\HPR\v0.3\assets\*"; DestDir: "{userappdata}\HPR\HPR_Config\assets"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "C:\HPR\v0.4\assets\*"; DestDir: "{userappdata}\HPR\HPR_Config\assets"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 ; -- ui-REFERENCEONLY: always silently overwrite --
-Source: "C:\HPR\v0.3\ui\*"; DestDir: "{userappdata}\HPR\HPR_Config\ui-REFERENCEONLY"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "C:\HPR\v0.4\ui\*"; DestDir: "{userappdata}\HPR\HPR_Config\ui-REFERENCEONLY"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 ; -- ui: BeforeInstall deletes folder if user confirmed, onlyifdoesntexist skips if user said no --
-Source: "C:\HPR\v0.3\ui\*"; DestDir: "{userappdata}\HPR\HPR_Config\ui"; Flags: ignoreversion recursesubdirs createallsubdirs onlyifdoesntexist; BeforeInstall: DeleteUIIfConfirmed
+Source: "C:\HPR\v0.4\ui\*"; DestDir: "{userappdata}\HPR\HPR_Config\ui"; Flags: ignoreversion recursesubdirs createallsubdirs onlyifdoesntexist; BeforeInstall: DeleteUIIfConfirmed
 
 [Dirs]
 Name: "{userappdata}\HPR\HPR_Config"
