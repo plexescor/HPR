@@ -119,6 +119,17 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 	{
 		window = getCurrentWindow();
 
+		std::string lowerWindowName = window;
+
+		//Convert windowName to lowercase
+		std::transform(lowerWindowName.begin(), 
+			lowerWindowName.end(), 
+			lowerWindowName.begin(),
+			[](unsigned char c)
+			{ 
+				return std::tolower(c); 
+			});
+
 		if (window.contains("SCRIPT"))
 		{
 			std::lock_guard<std::mutex> lock(AppState::stateMutex);
@@ -128,6 +139,20 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 		if (window.contains("Unknown"))
 		{
 			continue;
+		}
+
+		//Tab
+		if (lowerWindowName.contains("chrome") 
+		|| lowerWindowName.contains("edge")
+		|| lowerWindowName.contains("firefox")
+		|| lowerWindowName.contains("brave"))
+		{
+			tab = getCurrentTab();
+		}
+
+		else
+		{
+			tab = "";
 		}
 
 		{
@@ -159,6 +184,14 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 			AppState::state.timeLog_PerApp[window] +=
 				std::chrono::duration_cast<std::chrono::milliseconds>(elapsed)
 					.count();
+
+			if (!tab.empty())
+			{
+				AppState::state.timeLog_PerTab[tab] +=
+				std::chrono::duration_cast<std::chrono::milliseconds>(elapsed)
+					.count();
+			}
+			
 		}
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
@@ -268,6 +301,113 @@ std::string CurrentWindowManager::getCurrentWindow_KDE()
 {
 	std::string cmd = R"(
 		echo 'print(workspace.activeWindow.resourceClass);' > /tmp/kwin_active.js &&
+		S=$(qdbus6 org.kde.KWin /Scripting org.kde.kwin.Scripting.loadScript /tmp/kwin_active.js kwin_tmp_$$) &&
+		T=$(date '+%Y-%m-%d %H:%M:%S') &&
+		qdbus6 org.kde.KWin /Scripting/Script$S org.kde.kwin.Script.run > /dev/null 2>&1 &&
+		sleep 0.1 &&
+		journalctl --since "$T" -o cat | grep '^js:' | tail -n 1 | sed 's/^js: //' ;
+		qdbus6 org.kde.KWin /Scripting/Script$S org.kde.kwin.Script.stop > /dev/null 2>&1 ;
+		qdbus6 org.kde.KWin /Scripting unloadScript kwin_tmp_$$ > /dev/null 2>&1
+	)";
+
+	std::string result = runSystemCommand(cmd);
+
+	// Trim trailing newline/whitespace
+	while (!result.empty() && (result.back() == '\n' || result.back() == '\r' ||
+							   result.back() == ' '))
+		result.pop_back();
+
+	// Strip "js: " prefix that KWin journals print() output with
+	const std::string prefix = "js: ";
+	if (result.starts_with(prefix))
+		result = result.substr(prefix.size());
+
+	return result;
+}
+
+//--------------------TABS------------------------------
+std::string CurrentWindowManager::getCurrentTab()
+{
+
+	if (currentPlatform.contains("Hyprland"))
+	{
+		tab = getCurrentTab_Hyprland();
+	}
+
+	else if (currentPlatform.contains("Windows"))
+	{
+		tab = getCurrentTab_Windows();
+	}
+
+	else if (currentPlatform.contains("GNOME_NO_EXTENSION"))
+	{
+		// This means we need to prompt the user to restart
+		// Return immediately
+
+		return "RUN THE \"installWindowCallsExtension.sh\" SCRIPT NEXT TO THE HPR "
+			   "BINARY AND THE RESTART PC";
+	}
+
+	else if (currentPlatform.contains("GNOME")) // Motherfucking GNOME
+	{
+		tab = getCurrentTab_Gnome();
+	}
+
+	else if (currentPlatform.contains("KDE"))
+	{
+		tab = getCurrentTab_KDE();
+	}
+
+	// Need to explicitly set this because shit happens if cached value is
+	// returned
+	// tab = validateAndUpdateWindow_Cross(window);
+	std::cout << tab << std::endl;
+	return tab;
+}
+
+std::string CurrentWindowManager::getCurrentTab_Hyprland()
+{
+	std::string command = "hyprctl activewindow -j | jq -r '.title'";
+
+	// std::cout << "getcurrhypr: " << runSystemCommand(command) << std::endl;
+	return runSystemCommand(command);
+}
+
+std::string CurrentWindowManager::getCurrentTab_Windows()
+{
+	#ifdef _WIN32
+		HWND hwnd = GetForegroundWindow();
+		if (!hwnd)
+			return "";
+
+		char title[512] = {};
+		GetWindowTextA(hwnd, title, sizeof(title));
+
+		return std::string(title);
+	#endif
+		return "";
+}
+std::string CurrentWindowManager::getCurrentTab_Gnome()
+{
+	std::string command =
+		"gdbus call --session --dest org.gnome.Shell --object-path "
+		"/org/gnome/Shell/Extensions/WindowsExt --method "
+		"org.gnome.Shell.Extensions.WindowsExt.FocusTitle";
+	std::string result = runSystemCommand(command);
+
+	// Parse the fucking dirty output
+	size_t start = result.find('\'');
+	size_t end = result.rfind('\'');
+	if (start != std::string::npos && end != std::string::npos && start != end)
+		return result.substr(start + 1, end - start - 1);
+
+	return "";
+}
+
+std::string CurrentWindowManager::getCurrentTab_KDE()
+{
+	std::string cmd = R"(
+		echo 'print(workspace.activeWindow.caption);' > /tmp/kwin_active.js &&
 		S=$(qdbus6 org.kde.KWin /Scripting org.kde.kwin.Scripting.loadScript /tmp/kwin_active.js kwin_tmp_$$) &&
 		T=$(date '+%Y-%m-%d %H:%M:%S') &&
 		qdbus6 org.kde.KWin /Scripting/Script$S org.kde.kwin.Script.run > /dev/null 2>&1 &&

@@ -1,0 +1,93 @@
+# ============================================================================
+# HPR Tab Aliases Configuration File
+#
+# HOW TO ADD NEW TABS:
+# 1. The format is exactly: raw name,Pretty Name (raw name must be fully
+#    lowercase and must be contained in the window title HPR sees)
+# 2. HPR uses "substring matching"! If you add `youtube,YouTube`, it will
+#    catch any window title containing "youtube" regardless of page title.
+# 3. Do NOT put spaces around the comma unless you specifically want them!
+# 4. Lines starting with # (like this one) or blank lines are safely ignored.
+# 5. Changes are applied INSTANTLY! HPR detects edits automatically.
+#    No restart needed - just save the file and watch the UI update.
+#
+# NOTE: Raw names must be fully lowercase. HPR lowercases the window title
+#       before matching, so casing in the raw column never matters.
+# ============================================================================
+
+# --- Video & Streaming ---
+youtube,YouTube
+netflix,Netflix
+prime video,Amazon Prime Video
+disney+,Disney+
+hotstar,Hotstar
+twitch,Twitch
+vimeo,Vimeo
+crunchyroll,Crunchyroll
+
+# --- Social Media ---
+twitter,Twitter
+instagram,Instagram
+facebook,Facebook
+reddit,Reddit
+linkedin,LinkedIn
+threads,Threads
+pinterest,Pinterest
+tumblr,Tumblr
+
+# --- Messaging & Communication ---
+whatsapp,WhatsApp Web
+gmail,Gmail
+outlook,Outlook
+telegram,Telegram
+
+# --- Development & Productivity ---
+github,GitHub
+gitlab,GitLab
+stack overflow,Stack Overflow
+codepen,CodePen
+replit,Replit
+google colab,Google Colab
+leetcode,LeetCode
+hackerrank,HackerRank
+codeforces,Codeforces
+vercel,Vercel
+netlify,Netlify
+google docs,Google Docs
+google sheets,Google Sheets
+google slides,Google Slides
+notion,Notion
+figma,Figma
+canva,Canva
+trello,Trello
+jira,Jira
+linear,Linear
+
+# --- Search & AI ---
+google search,Google Search
+bing,Bing
+duckduckgo,DuckDuckGo
+wikipedia,Wikipedia
+claude,Claude
+chatgpt,ChatGPT
+gemini,Gemini
+
+# --- News & Reading ---
+medium,Medium
+substack,Substack
+hacker news,Hacker News
+dev.to,Dev.to
+hashnode,Hashnode
+
+# --- Shopping ---
+amazon,Amazon
+flipkart,Flipkart
+meesho,Meesho
+myntra,Myntra
+
+# --- Learning ---
+udemy,Udemy
+coursera,Coursera
+khan academy,Khan Academy
+w3schools,W3Schools
+mdn web docs,MDN Web Docs

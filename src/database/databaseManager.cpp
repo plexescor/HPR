@@ -118,6 +118,7 @@ void DatabaseManager::initDatabase(bool copyData)
         {
             std::lock_guard<std::mutex> lock(AppState::stateMutex);
             timeLog_PerApp_D = AppState::state.timeLog_PerApp;
+            timeLog_PerTab_D = AppState::state.timeLog_PerTab;
             switchHistory_D = AppState::state.switchHistory;
         }
     }
@@ -133,6 +134,12 @@ void DatabaseManager::initDatabase(bool copyData)
          "   name text unique,"
          "   duration int"
          ");";
+
+    *db <<
+        "create table if not exists tab_usage("
+        "    name text unique,"
+        "    duration int"
+        ");";
 
     *db <<
          "create table if not exists switch_history ("
@@ -160,6 +167,11 @@ bool DatabaseManager::loadStateFromDB()
             AppState::state.timeLog_PerApp[name] += duration;
         };
 
+        *db << "select name, duration from tab_usage;"
+        >> [](std::string name, long duration) {
+            AppState::state.timeLog_PerTab[name] += duration;
+        };
+
         // Load switch_history into AppState  
         *db << "select fromWindow, toWindow, timeStamp from switch_history;"
         >> [](std::string from, std::string to, long long ts) {
@@ -185,12 +197,20 @@ void DatabaseManager::writeLoop()
             //Copy fresh data
             std::lock_guard<std::mutex> lock(AppState::stateMutex);
             timeLog_PerApp_D = AppState::state.timeLog_PerApp;
+            timeLog_PerTab_D = AppState::state.timeLog_PerTab;
             switchHistory_D = AppState::state.switchHistory;
         }
 
         for (const auto &[k, v] : timeLog_PerApp_D)
         {
             *db << "insert or replace into app_usage (name,duration) values (?,?);"
+               << k
+               << v;
+        }
+
+        for (const auto &[k, v] : timeLog_PerTab_D)
+        {
+            *db << "insert or replace into tab_usage (name,duration) values (?,?);"
                << k
                << v;
         }
@@ -228,6 +248,7 @@ void DatabaseManager::writeLoop()
             {
                 std::lock_guard<std::mutex> lock(AppState::stateMutex);
                 AppState::state.timeLog_PerApp.clear();
+                AppState::state.timeLog_PerTab.clear();
                 AppState::state.switchHistory.clear();
             }
 
@@ -286,12 +307,18 @@ void DatabaseManager::loadDb_Singular(std::string requestedDate)
 
             //Create an intermediate map
             std::map<std::string, long> results;
+            std::map<std::string, long> results_Tab;
             std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> results_Switch;
 
             //load from db to the map
             histDb << "select name, duration from app_usage;"
                    >> [&results](std::string name, long duration) {
                        results[name] = duration;
+                   };
+
+            histDb << "select name, duration from tab_usage;"
+                   >> [&results_Tab](std::string name, long duration) {
+                       results_Tab[name] = duration;
                    };
             
             histDb << "select fromWindow, toWindow, timeStamp from switch_history;"
@@ -304,6 +331,7 @@ void DatabaseManager::loadDb_Singular(std::string requestedDate)
             {
                 std::lock_guard<std::mutex> lock(AppState::historyStateMutex);
                 AppState::historicalData_State.timeLog_PerApp = results;
+                AppState::historicalData_State.timeLog_PerTab = results_Tab;
                 AppState::historicalData_State.switchHistory = results_Switch;
                 AppState::historicalData_State.isLoaded = true;
             }

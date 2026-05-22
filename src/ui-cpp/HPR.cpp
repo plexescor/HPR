@@ -117,9 +117,11 @@ void HPR::trackingLoop()
     });
 
     // Stuff native to c++, holds raw values
-    long totalTrackedTime; // For the bars
+    long totalTrackedTime;
+    long totalTrackedTime_Tab;
     std::string window;
     std::map<std::string, long> timeLog;
+    std::map<std::string, long> timeLog_Tab;
     std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> switchHistory;
 
     //Special priority to insights because they arent exactly on demand loaded,
@@ -136,6 +138,7 @@ void HPR::trackingLoop()
             auto now = std::chrono::steady_clock::now();
             
             totalTrackedTime = 0; // reset to 0 at every iteration
+            totalTrackedTime_Tab = 0;
             // Scoped mutex to hold it for as little time as possible
             {
                 std::lock_guard<std::mutex> lock(AppState::stateMutex);
@@ -144,6 +147,7 @@ void HPR::trackingLoop()
                 {
                     window = AppState::state.currentWindow;
                     timeLog = AppState::state.timeLog_PerApp;
+                    timeLog_Tab = AppState::state.timeLog_PerTab;
                     switchHistory = AppState::state.switchHistory;
                 }
                 else if (AppState::state.currentView == AppState::CurrentView::HISTORICAL_SINGULAR)
@@ -151,6 +155,7 @@ void HPR::trackingLoop()
                     std::lock_guard<std::mutex> lock(AppState::historyStateMutex);
                     window = AppState::state.currentWindow;
                     timeLog = AppState::historicalData_State.timeLog_PerApp;
+                    timeLog_Tab = AppState::historicalData_State.timeLog_PerTab;
                     switchHistory = AppState::historicalData_State.switchHistory;
                 }
             }
@@ -159,7 +164,7 @@ void HPR::trackingLoop()
             if (!activeGuiError.empty())
             {
                 auto now = std::chrono::steady_clock::now();
-                if (std::chrono::duration_cast<std::chrono::seconds>(now - errorTimestamp).count() >= 5)
+                if (std::chrono::duration_cast<std::chrono::minutes>(now - errorTimestamp).count() >= 5)
                 {
                     // 5 seconds have passed, clear the error
                     activeGuiError = "";
@@ -173,9 +178,11 @@ void HPR::trackingLoop()
 
             modelManager.update(
                 timeLog,
+                timeLog_Tab,
                 switchHistory,
                 window,
-                totalTrackedTime, 
+                totalTrackedTime,
+                totalTrackedTime_Tab, 
                 AppState::aliasManager
             );
 

@@ -36,6 +36,22 @@ fi
 
 echo ""
 
+# tabAliases.csv
+if [[ -f "$CONFIG_DIR/tabAliases.csv" ]]; then
+    read -p ">> tabAliases.csv already exists. Overwrite? (y/N): " confirm_aliases
+    if [[ "$confirm_aliases" == "y" || "$confirm_aliases" == "Y" ]]; then
+        cp "$SCRIPT_DIR/tabAliases.csv" "$CONFIG_DIR/tabAliases.csv"
+        echo "   tabAliases.csv overwritten."
+    else
+        echo "   tabAliases.csv skipped. Your edits are safe."
+    fi
+else
+    cp "$SCRIPT_DIR/tabAliases.csv" "$CONFIG_DIR/tabAliases.csv"
+    echo ">> tabAliases.csv copied successfully."
+fi
+
+echo ""
+
 # config.csv
 if [[ -f "$CONFIG_DIR/config.csv" ]]; then
     read -p ">> config.csv already exists. Overwrite? (y/N): " confirm_config

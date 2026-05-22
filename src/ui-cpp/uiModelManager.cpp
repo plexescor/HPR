@@ -15,6 +15,7 @@ UiModelManager::UiModelManager(slint::ComponentHandle<MainWindow> &ui_handle) : 
     this->ui = ui;
     // make shared so they aint null and no thing crashes
     timeLogModel = std::make_shared<slint::VectorModel<TimeLog>>();
+    timeLogModelTab = std::make_shared<slint::VectorModel<TimeLog_Tab>>();
     switchHistoryModel = std::make_shared<slint::VectorModel<SwitchHistory>>();
 
     slint::ComponentWeakHandle<MainWindow> weak(ui.value());
@@ -23,6 +24,7 @@ UiModelManager::UiModelManager(slint::ComponentHandle<MainWindow> &ui_handle) : 
         if (auto handle = weak.lock()) {
             //set in ui
             (*handle)->set_timePerApp_S(timeLogModel);
+            (*handle)->set_timePerTab_S(timeLogModelTab);
             (*handle)->set_switchHistory_S(switchHistoryModel);
         } 
     });
@@ -32,6 +34,7 @@ UiModelManager::UiModelManager(slint::ComponentHandle<MainWindow> &ui_handle) : 
 UiModelManager::UiModelManager(slint::ComponentHandle<slint::interpreter::ComponentInstance> &ui_handle) : ui_interp(ui_handle)
 {
     timeLogModel_interp = std::make_shared<slint::VectorModel<slint::interpreter::Value>>();
+    timeLogModelTab_interp = std::make_shared<slint::VectorModel<slint::interpreter::Value>>();
     switchHistoryModel_interp = std::make_shared<slint::VectorModel<slint::interpreter::Value>>();
 
     slint::ComponentWeakHandle<slint::interpreter::ComponentInstance> weak(ui_interp.value());
@@ -40,6 +43,7 @@ UiModelManager::UiModelManager(slint::ComponentHandle<slint::interpreter::Compon
         if (auto handle = weak.lock())
         {
             (*handle)->set_property("timePerApp_S",    slint::interpreter::Value(timeLogModel_interp));
+            (*handle)->set_property("timePerTab_S",    slint::interpreter::Value(timeLogModelTab_interp));
             (*handle)->set_property("switchHistory_S", slint::interpreter::Value(switchHistoryModel_interp));
         }
     });
@@ -50,9 +54,11 @@ UiModelManager::~UiModelManager()
 }
 
 void UiModelManager::update(const std::map<std::string, long> &rawTimeLog,
+                            const std::map<std::string, long> &rawTimeLog_Tab,
                             const std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> &rawHistory,
                             std::string &currentWindowName,
                             long &totalTrackedTime,
+                            long &totalTrackedTime_Tab,
                             AliasManager &aliasManager)
 {
 
@@ -68,6 +74,15 @@ void UiModelManager::update(const std::map<std::string, long> &rawTimeLog,
         totalTrackedTime += duration;
     }
 
+    //TAB
+    std::map<std::string, long> translatedTimeLog_Tab;
+    for (const auto &[raw, duration] : rawTimeLog_Tab)
+    {
+        translatedTimeLog_Tab[aliasManager.getAlias_Tab(raw)] += duration;
+        totalTrackedTime_Tab += duration;
+    }
+
+
     // create a vector of slint's TimeLog struct
     // Use pretty names
     std::vector<TimeLog> slintVec_TimeLog;
@@ -78,8 +93,19 @@ void UiModelManager::update(const std::map<std::string, long> &rawTimeLog,
                                     (int)duration});
     }
 
+    std::vector<TimeLog_Tab> slintVec_TimeLog_Tab;
+    for (const auto &[name, duration] : translatedTimeLog_Tab)
+    {
+        slintVec_TimeLog_Tab.push_back({slint::SharedString(name),
+                                    slint::SharedString(formatTime_HHMMSS(duration)), // The HH:MM:SS string
+                                    (int)duration});
+    }
+
     // Sort so most used comes at top
     std::sort(slintVec_TimeLog.begin(), slintVec_TimeLog.end(), [](const TimeLog &a, const TimeLog &b)
+              { return a.duration_i > b.duration_i; });
+
+    std::sort(slintVec_TimeLog_Tab.begin(), slintVec_TimeLog_Tab.end(), [](const TimeLog_Tab &a, const TimeLog_Tab &b)
               { return a.duration_i > b.duration_i; });
 
     //----------------------------------SWITCH HISTORY---------------------------------------
@@ -131,12 +157,13 @@ void UiModelManager::update(const std::map<std::string, long> &rawTimeLog,
         return; //skip update if ui handle aint ready
     }
     slint::ComponentWeakHandle<MainWindow> weak(ui.value());
-    slint::invoke_from_event_loop([weak, slintVec_TimeLog, slintVec_SwitchHistory, totalTrackedTime, currentWindowName, this]()
+    slint::invoke_from_event_loop([weak, slintVec_TimeLog, slintVec_TimeLog_Tab, slintVec_SwitchHistory, totalTrackedTime, totalTrackedTime_Tab, currentWindowName, this]()
     {
         if (auto handle = weak.lock()) {
                 (*handle)->set_windowName_S(slint::SharedString(currentWindowName));
 
                 (*handle)->set_trackedTime_S(totalTrackedTime);
+                (*handle)->set_trackedTime_Tab_S(totalTrackedTime_Tab);
                 // Surgical update to prevent layout panics during resize/maximize
                 auto syncModel = [](auto model, const auto& vec) 
                 {
@@ -164,15 +191,18 @@ void UiModelManager::update(const std::map<std::string, long> &rawTimeLog,
                 };
 
                 syncModel(timeLogModel, slintVec_TimeLog);
+                syncModel(timeLogModelTab, slintVec_TimeLog_Tab);
                 syncModel(switchHistoryModel, slintVec_SwitchHistory);
             }
     });
 }
 
 void UiModelManager::update_Interpreted(const std::map<std::string, long> &rawTimeLog,
+                            const std::map<std::string, long> &rawTimeLog_Tab,
                             const std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> &rawHistory,
                             std::string &currentWindowName,
                             long &totalTrackedTime,
+                            long &totalTrackedTime_Tab,
                             AliasManager &aliasManager)
 {
     currentWindowName = aliasManager.getAlias(currentWindowName);
@@ -180,6 +210,7 @@ void UiModelManager::update_Interpreted(const std::map<std::string, long> &rawTi
     //----------------------TIME LOG-----------------------------------------------
 
     std::map<std::string, long> translatedTimeLog;
+    std::map<std::string, long> translatedTimeLog_Tab;
 
     for (const auto &[raw, duration] : rawTimeLog)
     {
@@ -187,8 +218,15 @@ void UiModelManager::update_Interpreted(const std::map<std::string, long> &rawTi
         totalTrackedTime += duration;
     }
 
+    for (const auto &[raw, duration] : rawTimeLog)
+    {
+        translatedTimeLog_Tab[aliasManager.getAlias_Tab(raw)] += duration;
+        totalTrackedTime_Tab += duration;
+    }
+
     // interpreter uses Value, not typed structs
     std::vector<slint::interpreter::Value> slintVec_TimeLog;
+    std::vector<slint::interpreter::Value> slintVec_TimeLog_Tab;
 
     for (const auto &[name, duration] : translatedTimeLog)
     {
@@ -199,8 +237,33 @@ void UiModelManager::update_Interpreted(const std::map<std::string, long> &rawTi
         slintVec_TimeLog.push_back(slint::interpreter::Value(entry));
     }
 
+    for (const auto &[name, duration] : translatedTimeLog_Tab)
+    {
+        slint::interpreter::Struct entry;
+        entry.set_field("name",       slint::interpreter::Value(slint::SharedString(name)));
+        entry.set_field("duration",   slint::interpreter::Value(slint::SharedString(formatTime_HHMMSS(duration))));
+        entry.set_field("duration_i", slint::interpreter::Value((double)duration));
+        slintVec_TimeLog_Tab.push_back(slint::interpreter::Value(entry));
+    }
+
     // Sort by duration_i descending
     std::sort(slintVec_TimeLog.begin(), slintVec_TimeLog.end(),
+    [](const slint::interpreter::Value &a, const slint::interpreter::Value &b)
+    {
+        auto sa = a.to_struct();
+        auto sb = b.to_struct();
+
+        if (sa && sb) 
+        {
+            // get_field returns an optional Value, then we convert to number, then dereference
+            double da = sa->get_field("duration_i").value_or(slint::interpreter::Value(0.0)).to_number().value_or(0.0);
+            double db = sb->get_field("duration_i").value_or(slint::interpreter::Value(0.0)).to_number().value_or(0.0);
+            return da > db;
+        }
+        return false;
+    });
+
+    std::sort(slintVec_TimeLog_Tab.begin(), slintVec_TimeLog_Tab.end(),
     [](const slint::interpreter::Value &a, const slint::interpreter::Value &b)
     {
         auto sa = a.to_struct();
@@ -252,12 +315,13 @@ void UiModelManager::update_Interpreted(const std::map<std::string, long> &rawTi
     //-----------------Actually pushing changes to slint for rendering-----------------------
 
     slint::ComponentWeakHandle<slint::interpreter::ComponentInstance> weak(ui_interp.value());
-    slint::invoke_from_event_loop([weak, slintVec_TimeLog, slintVec_SwitchHistory, totalTrackedTime, currentWindowName, this]()
+    slint::invoke_from_event_loop([weak, slintVec_TimeLog, slintVec_TimeLog_Tab, slintVec_SwitchHistory, totalTrackedTime, totalTrackedTime_Tab, currentWindowName, this]()
     {
         if (auto handle = weak.lock())
         {
             (*handle)->set_property("windowName_S",   slint::interpreter::Value(slint::SharedString(currentWindowName)));
             (*handle)->set_property("trackedTime_S",  slint::interpreter::Value((double)totalTrackedTime));
+            (*handle)->set_property("trackedTime_Tab_S",  slint::interpreter::Value((double)totalTrackedTime_Tab));
 
             auto syncModel = [](
                 std::shared_ptr<slint::VectorModel<slint::interpreter::Value>> model,
@@ -278,6 +342,7 @@ void UiModelManager::update_Interpreted(const std::map<std::string, long> &rawTi
             };
 
             syncModel(timeLogModel_interp, slintVec_TimeLog);
+            syncModel(timeLogModelTab_interp, slintVec_TimeLog_Tab);
             syncModel(switchHistoryModel_interp, slintVec_SwitchHistory);
         }
     });

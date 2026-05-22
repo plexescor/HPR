@@ -21,10 +21,18 @@ class CurrentWindowManager
         std::string getCurrentWindow_Gnome();
         std::string getCurrentWindow_KDE();
 
+        std::string getCurrentTab();
+        std::string getCurrentTab_Hyprland();
+        std::string getCurrentTab_Windows();
+        std::string getCurrentTab_Gnome();
+        std::string getCurrentTab_KDE();
+
     private:
         std::string currentPlatform = "";
         std::string window = "";
         std::string previousWindow = "";
+
+        std::string tab = "";
 
         std::thread windowPollingThread;
         std::atomic<bool> running{true};

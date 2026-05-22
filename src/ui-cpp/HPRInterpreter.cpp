@@ -132,8 +132,10 @@ void HPRInterpreter::trackingLoop()
 
     // Stuff native to c++, holds raw values
     long totalTrackedTime; // For the bars
+    long totalTrackedTime_Tab;
     std::string window;
     std::map<std::string, long> timeLog;
+    std::map<std::string, long> timeLog_Tab;
     std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> switchHistory;
 
     //Special priority to insights because they arent exactly on demand loaded,
@@ -150,6 +152,7 @@ void HPRInterpreter::trackingLoop()
             auto now = std::chrono::steady_clock::now();
             
             totalTrackedTime = 0; // reset to 0 at every iteration
+            totalTrackedTime_Tab = 0;
             // Scoped mutex to hold it for as little time as possible
             {
                 std::lock_guard<std::mutex> lock(AppState::stateMutex);
@@ -158,6 +161,7 @@ void HPRInterpreter::trackingLoop()
                 {
                     window = AppState::state.currentWindow;
                     timeLog = AppState::state.timeLog_PerApp;
+                    timeLog_Tab = AppState::state.timeLog_PerTab;
                     switchHistory = AppState::state.switchHistory;
                 }
                 else if (AppState::state.currentView == AppState::CurrentView::HISTORICAL_SINGULAR)
@@ -166,6 +170,7 @@ void HPRInterpreter::trackingLoop()
                     //ALWAYS GET CURRENT LATEST WINDOW NO MATTER THE VIEW
                     window = AppState::state.currentWindow;
                     timeLog = AppState::historicalData_State.timeLog_PerApp;
+                    timeLog_Tab = AppState::historicalData_State.timeLog_PerTab;
                     switchHistory = AppState::historicalData_State.switchHistory;
                 }
                 
@@ -190,9 +195,11 @@ void HPRInterpreter::trackingLoop()
 
             modelManager.value().update_Interpreted(
                 timeLog,
+                timeLog_Tab,
                 switchHistory,
                 window,
                 totalTrackedTime, 
+                totalTrackedTime_Tab,
                 AppState::aliasManager
             );
 

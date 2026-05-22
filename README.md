@@ -190,7 +190,7 @@ Built without a console window so it sits in your tray and stays out of your way
 <details>
 <summary><strong>Windows</strong></summary>
 
-Around **20 MB RSS** in real use. That is HPR's own code plus whatever the Windows runtime pulls in. Nothing hidden in that number.
+Around **8 MB RSS** in real use. That is HPR's own code plus whatever the Windows runtime pulls in. Nothing hidden in that number.
 
 </details>
 
@@ -267,7 +267,7 @@ I need users, so I am going to be completely honest about where HPR stands right
 | Feature | HPR | ActivityWatch | RescueTime | Toggl |
 |---|---|---|---|---|
 | Binary size | ~2 MB | 200 MB+ | Cloud app | Cloud app |
-| RAM (real footprint) | ~22 MB private / ~47 MB reported (Linux), ~20 MB (Windows) | 200 MB+ | N/A | N/A |
+| RAM (real footprint) | ~22 MB private / ~47 MB reported (Linux), ~8 MB (Windows) | 200 MB+ | N/A | N/A |
 | Account required | No | No | Yes | Yes |
 | Data leaves your machine | Never | Never | Yes | Yes |
 | Automatic tracking | Yes | Yes | Yes | No |

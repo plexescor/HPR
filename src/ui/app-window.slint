@@ -3,8 +3,9 @@ import { LiveDot } from "./live-dot.slint";
 import { SidebarButton } from "./side-bar-button.slint";
 import { DataView } from "./data-view.slint";
 import { InsightsView } from "./insights-view.slint";
+import { TabView } from "./tab-view.slint";
 
-import { TimeLog, SwitchHistory } from "./types.slint";
+import { TimeLog, SwitchHistory, TimeLog_Tab } from "./types.slint";
 
 
 // ── Main Window ──────────────────────────────────────────────────────────────
@@ -19,9 +20,11 @@ export component MainWindow inherits Window {
     callback openKofi;
 
     in property <int>             trackedTime_S;
+    in property <int>             trackedTime_Tab_S;
     in property <string>          windowName_S;
     in property <[TimeLog]>       timePerApp_S;
     in property <[SwitchHistory]> switchHistory_S;
+    in property <[TimeLog_Tab]>   timePerTab_S;
 
     //Stuff for insights view: 
     in property <string>          mostUsedApp_S;
@@ -132,7 +135,7 @@ export component MainWindow inherits Window {
 
                             LiveDot {
                                 y: (parent.height - self.height) / 2;
-                                is-alert: windowName_S.character-count > 67;
+                                is-alert: windowName_S.character-count > 84;
                             }
 
                             active-lbl := Text {
@@ -168,6 +171,13 @@ export component MainWindow inherits Window {
                 longestFocus_S: root.longestFocus_S;
                 peakHour_S: root.peakHour_S;
             }
+
+            if active-view == "TAB" : TabView {
+                vertical-stretch: 1;
+                timePerTab_S: root.timePerTab_S;
+                trackedTime_S: root.trackedTime_Tab_S;
+            }
+
         }
 
         // ── Floating Sidebar ──────────────────────────────────────────────
@@ -229,6 +239,12 @@ export component MainWindow inherits Window {
                         icon: "🕘";
                         tip: "View historical data";
                         clicked => { date-picker.show(); }
+                    }
+
+                    SidebarButton {
+                        icon: "🌐";
+                        tip: "View usage per tab";
+                        clicked => { root.active-view = "TAB"; }
                     }
 
                     SidebarButton {
