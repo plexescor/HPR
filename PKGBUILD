@@ -49,6 +49,21 @@ package() {
     install -Dm755 ../shippedWithBinary/installHPRConfigAndUi.sh \
         "$pkgdir/usr/share/hpr/installHPRConfigAndUi.sh"
 
+    install -Dm644 ../shippedWithBinary/aliases.csv \
+    "$pkgdir/usr/share/hpr/aliases.csv"
+
+    install -Dm644 ../shippedWithBinary/tabAliases.csv \
+        "$pkgdir/usr/share/hpr/tabAliases.csv"
+
+    install -Dm644 ../shippedWithBinary/config.csv \
+        "$pkgdir/usr/share/hpr/config.csv"
+
+    cp -r ../shippedWithBinary/ui \
+        "$pkgdir/usr/share/hpr/ui"
+
+    cp -r ../shippedWithBinary/assets \
+        "$pkgdir/usr/share/hpr/assets"
+
     install -Dm644 /dev/stdin \
         "$pkgdir/usr/share/applications/hpr.desktop" << EOF
 [Desktop Entry]
