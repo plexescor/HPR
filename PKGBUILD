@@ -7,7 +7,7 @@ url="https://github.com/plexescor/HPR"
 license=('GPL')
 
 depends=('glibc')
-makedepends=('cmake' 'git')
+makedepends=('cmake' 'git' 'curl' 'tar')
 
 source=("$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz")
 sha256sums=('SKIP')
@@ -19,17 +19,36 @@ build() {
     ./installDependencies.sh
 
     cmake -B build -DCMAKE_BUILD_TYPE=Release
-    cmake --build build
+    cmake --build build -j20
 }
 
 package() {
     cd "HPR-$pkgver/build"
 
     chmod +x installHPRConfigAndUi.sh
-    sudo ./installHPRConfigAndUi.sh
+    ./installHPRConfigAndUi.sh || true
 
-    install -Dm755 HPR "$pkgdir/usr/bin/hpr"
+    install -Dm755 HPR \
+        "$pkgdir/usr/bin/hpr"
+
+    install -Dm644 ../assets/logo_256png.png \
+        "$pkgdir/usr/share/icons/hicolor/256x256/apps/hpr.png"
 
     install -Dm644 ../LICENSE.txt \
         "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+
+    mkdir -p "$pkgdir/usr/share/applications"
+
+    cat > "$pkgdir/usr/share/applications/hpr.desktop" << EOF
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=HPR
+Comment=Offline zero-account activity tracker
+Exec=hpr
+Icon=hpr
+Terminal=false
+Categories=Utility;
+StartupNotify=true
+EOF
 }
