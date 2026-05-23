@@ -45,6 +45,8 @@ package() {
     install -Dm755 "$srcdir/Slint-cpp-${_slint_ver}-Linux-x86_64/lib/libslint_cpp.so" \
         "$pkgdir/usr/lib/libslint_cpp.so"
 
+    bash "$srcdir/HPR-$pkgver/shippedWithBinary/installHPRConfigAndUi.sh"
+
     install -Dm644 /dev/stdin \
         "$pkgdir/usr/share/applications/hpr.desktop" << EOF
 [Desktop Entry]
