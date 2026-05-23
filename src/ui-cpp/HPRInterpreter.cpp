@@ -223,7 +223,7 @@ void HPRInterpreter::trackingLoop()
         }
 
         //Chunked sleep
-        for (int i = 0; i < 5 && running; i++)
+        for (int i = 0; i < 2 && running; i++)
         {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }

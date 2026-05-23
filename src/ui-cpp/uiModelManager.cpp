@@ -1,9 +1,11 @@
 #include "uiModelManager.hpp"
 #include "aliasManager.hpp"
 #include "timeUtils.hpp"
+#include "appState.hpp"
 
 #include <map>
 #include <cstdint>
+#include <mutex>
 
 // Slint stuff
 #include "app-window.h"
@@ -75,12 +77,33 @@ void UiModelManager::update(const std::map<std::string, long> &rawTimeLog,
     }
 
     //TAB
+    
+    bool isTabView;
     std::map<std::string, long> translatedTimeLog_Tab;
-    for (const auto &[raw, duration] : rawTimeLog_Tab)
     {
-        translatedTimeLog_Tab[aliasManager.getAlias_Tab(raw)] += duration;
-        totalTrackedTime_Tab += duration;
+        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        isTabView= AppState::state.useTabView;
     }
+
+    //if tab view is on, we show raw data without aliasing, because it is per *tab* and not per site, so aliasing would just mess things up. If tab view is off, we alias as normal
+    if (isTabView)
+    {
+        for (const auto &[raw, duration] : rawTimeLog_Tab)
+        {
+            translatedTimeLog_Tab[raw] += duration;
+            totalTrackedTime_Tab += duration;
+        }
+    }
+    else
+    {
+        for (const auto &[raw, duration] : rawTimeLog_Tab)
+        {
+            translatedTimeLog_Tab[aliasManager.getAlias_Tab(raw)] += duration;
+            totalTrackedTime_Tab += duration;
+        }
+    }
+    
+    
 
 
     // create a vector of slint's TimeLog struct
@@ -218,10 +241,28 @@ void UiModelManager::update_Interpreted(const std::map<std::string, long> &rawTi
         totalTrackedTime += duration;
     }
 
-    for (const auto &[raw, duration] : rawTimeLog)
+    bool isTabView;
     {
-        translatedTimeLog_Tab[aliasManager.getAlias_Tab(raw)] += duration;
-        totalTrackedTime_Tab += duration;
+        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        isTabView= AppState::state.useTabView;
+    }
+
+    //if tab view is on, we show raw data without aliasing, because it is per *tab* and not per site, so aliasing would just mess things up. If tab view is off, we alias as normal
+    if (isTabView)
+    {
+        for (const auto &[raw, duration] : rawTimeLog_Tab)
+        {
+            translatedTimeLog_Tab[raw] += duration;
+            totalTrackedTime_Tab += duration;
+        }
+    }
+    else
+    {
+        for (const auto &[raw, duration] : rawTimeLog_Tab)
+        {
+            translatedTimeLog_Tab[aliasManager.getAlias_Tab(raw)] += duration;
+            totalTrackedTime_Tab += duration;
+        }
     }
 
     // interpreter uses Value, not typed structs

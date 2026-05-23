@@ -22,7 +22,6 @@ component TabRow inherits Rectangle {
         padding-right: 14px;
         spacing: 12px;
 
-        // Index number
         Text {
             text: (row-index + 1) + ".";
             color: #ffffff20;
@@ -32,7 +31,6 @@ component TabRow inherits Rectangle {
             width: 18px;
         }
 
-        // Accent bar
         Rectangle {
             width: 3px;
             height: 20px;
@@ -69,7 +67,6 @@ component TabRow inherits Rectangle {
                 }
             }
 
-            // Bar track
             Rectangle {
                 height: 4px;
                 border-radius: 2px;
@@ -92,18 +89,69 @@ component TabRow inherits Rectangle {
     ta := TouchArea {}
 }
 
+component ViewToggleButton inherits Rectangle {
+    in property <string> label;
+    callback clicked;
+
+    width: 60px;
+    height: 24px;
+    border-radius: 5px;
+    background: ta.has-hover ? #ffffff1a : #ffffff10;
+    border-width: 1px;
+    border-color: ta.has-hover ? #ffffff28 : #ffffff18;
+    animate background { duration: 100ms; easing: ease-out; }
+    animate border-color { duration: 100ms; }
+
+    Text {
+        text: label;
+        font-size: 10px;
+        font-weight: 600;
+        color: ta.has-hover ? #e2e8f0 : #94a3b8;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+        animate color { duration: 100ms; }
+    }
+
+    ta := TouchArea {
+        clicked => { root.clicked(); }
+    }
+}
+
 export component TabView {
     in property <[TimeLog_Tab]> timePerTab_S;
     in property <int>           trackedTime_S;
+    callback per-tab-clicked;
+    callback per-site-clicked;
 
     VerticalLayout {
         padding: 12px;
         padding-top: 0px;
         spacing: 10px;
 
-        SectionHeader { label: "TIME PER TAB"; }
+        HorizontalLayout {
+            vertical-stretch: 0;
 
-        // Tab list — 60% of the vertical space
+            SectionHeader {
+                label: "TIME PER TAB";
+                horizontal-stretch: 1;
+            }
+
+            HorizontalLayout {
+                spacing: 4px;
+                alignment: end;
+
+                ViewToggleButton {
+                    label: "Per-Tab";
+                    clicked => { root.per-tab-clicked(); }
+                }
+
+                ViewToggleButton {
+                    label: "Per-Site";
+                    clicked => { root.per-site-clicked(); }
+                }
+            }
+        }
+
         Card {
             vertical-stretch: 0;
             max-height: 360px;

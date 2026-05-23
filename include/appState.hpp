@@ -15,6 +15,9 @@ namespace AppState {
     struct AppState {
 
         CurrentView currentView = CurrentView::LIVE;
+
+        bool useTabView = false; //which means data is shown per site and not per tab
+
         std::string currentPlatform;
 
         std::string currentError = "";

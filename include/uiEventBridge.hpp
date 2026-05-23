@@ -17,6 +17,8 @@ class UiEventBridge
         void init();
         void showHistoricalDataSingular();
         void showLiveData();
+        void tabViewClicked();
+        void siteViewClicked();
 
     private:
         size_t loadDbSingularId;
