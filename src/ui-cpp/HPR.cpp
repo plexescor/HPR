@@ -204,7 +204,7 @@ void HPR::trackingLoop()
                 firstRun = false;
             }
         }
-
+//dh
         //Chunked sleep
         for (int i = 0; i < 2 && running; i++)
         {
