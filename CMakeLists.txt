@@ -90,7 +90,7 @@ add_custom_command(TARGET HPR POST_BUILD
 
 # Copy some ui to shipped with binary path
 file(COPY ${CMAKE_SOURCE_DIR}/src/ui
-     DESTINATION ${CMAKE_BINARY_DIR}/shippedWithBinary)
+     DESTINATION ${CMAKE_SOURCE_DIR}/shippedWithBinary)
 
 # Copy some tabAliases.csv to binary path
 add_custom_command(TARGET HPR POST_BUILD
