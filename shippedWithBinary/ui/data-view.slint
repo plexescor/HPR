@@ -1,0 +1,64 @@
+import { Card } from "./card.slint";
+import { SectionHeader } from "./section-header.slint";
+import { AppRow } from "./app-row.slint";
+import { SwitchRow } from "./switch-row.slint";
+import { TimeLog, SwitchHistory } from "./types.slint";
+
+export component DataView {
+    in property <int>             trackedTime_S;
+    in property <[TimeLog]>       timePerApp_S;
+    in property <[SwitchHistory]> switchHistory_S;
+
+    VerticalLayout {
+        padding: 12px;
+        padding-top: 0px;
+        spacing: 10px;
+
+        SectionHeader { label: "TIME PER APP"; }
+
+        Card {
+            vertical-stretch: 1;
+            Flickable {
+                width: 100%;
+                height: 100%;
+                interactive: true;
+                viewport-height: appContent.preferred-height;
+
+                appContent := VerticalLayout {
+                    width: 100%;
+                    for entry[i] in timePerApp_S: AppRow {
+                        app-name: entry.name;
+                        ratio: trackedTime_S > 0 ? (entry.duration_i * 1.0) / (trackedTime_S * 1.0) : 0.0;
+                        duration: entry.duration + " (" + Math.round(self.ratio * 100) + "%" + ")";
+                        is-even: mod(i, 2) == 0;
+                        row-index: i;
+                        bar-color: Colors.hsv(mod(entry.name.character-count * 47, 360), 0.75, 0.85);
+                    }
+                }
+            }
+        }
+
+        SectionHeader { label: "SWITCH HISTORY"; }
+
+        Card {
+            vertical-stretch: 1;
+
+            Flickable {
+                width: 100%;
+                height: 100%;
+                interactive: true;
+                viewport-height: swContent.preferred-height;
+
+                swContent := VerticalLayout {
+                    width: 100%;
+                    for entry[i] in switchHistory_S: SwitchRow {
+                        from-window: entry.fromWindow;
+                        to-window:   entry.toWindow;
+                        timestamp:   entry.maxTimeStamp;
+                        is-even: mod(i, 2) == 0;
+                    }
+                }
+            }
+        }
+    }
+}

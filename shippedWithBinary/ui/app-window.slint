@@ -1,0 +1,275 @@
+import { DatePickerPopup } from "std-widgets.slint";
+import { LiveDot } from "./live-dot.slint";
+import { SidebarButton } from "./side-bar-button.slint";
+import { DataView } from "./data-view.slint";
+import { InsightsView } from "./insights-view.slint";
+import { TabView } from "./tab-view.slint";
+
+import { TimeLog, SwitchHistory, TimeLog_Tab } from "./types.slint";
+
+
+// ── Main Window ──────────────────────────────────────────────────────────────
+export component MainWindow inherits Window {
+    icon: @image-url("../../assets/logo_256png.png");
+
+    callback loadHistoricalData_Singular(string);
+    callback loadInsights;
+    callback loadLiveData;
+    callback tabViewClicked;
+    callback siteViewClicked;
+
+    //PLS Donate and dont remove it!
+    callback openKofi;
+
+    in property <int>             trackedTime_S;
+    in property <int>             trackedTime_Tab_S;
+    in property <string>          windowName_S;
+    in property <[TimeLog]>       timePerApp_S;
+    in property <[SwitchHistory]> switchHistory_S;
+    in property <[TimeLog_Tab]>   timePerTab_S;
+
+    //Stuff for insights view: 
+    in property <string>          mostUsedApp_S;
+    in property <string>          totalTrackedTime_S;
+    in property <string>          totalSwitches_S;
+    in property <string>          mostSwitchedFrom_S;
+    in property <string>          mostSwitchedTo_S;
+    in property <string>          longestFocus_S;
+    in property <string>          peakHour_S;
+
+    //As "LIVE" isnt accurate cz main view can also show historical data
+    //so i renamed to it "DATA"
+    property <string> active-view: "DATA";
+
+    title: "HPR";
+    default-font-size: 13px;
+    background: #07090f;
+    preferred-width: 780px;
+    preferred-height: 600px;
+
+    date-picker := DatePickerPopup {
+        x: (root.width - self.width) / 2;
+        y: (root.height - self.height) / 2;
+        close-policy: PopupClosePolicy.no-auto-close;
+        accepted(date) => {
+            root.loadHistoricalData_Singular(
+                (date.day < 10 ? "0" : "") + date.day + "-" +
+                (date.month < 10 ? "0" : "") + date.month + "-" +
+                (Math.mod(date.year, 100) < 10 ? "0" : "") + Math.mod(date.year, 100)
+            );
+            date-picker.close();
+        }
+        canceled => { date-picker.close(); }
+    }
+
+    // ── Root container ────────────────────────────────────────────────────
+    Rectangle {
+        width: parent.width;
+        height: parent.height;
+
+        // ── Main content ──────────────────────────────────────────────────
+        VerticalLayout {
+            x: 0px;
+            y: 0px;
+            width: parent.width;
+            height: parent.height;
+            padding: 0px;
+            spacing: 0px;
+
+            // ── Topbar ───────────────────────────────────────────────────
+            Rectangle {
+                height: 46px;
+                background: #07090f;
+
+                Rectangle {
+                    y: parent.height - 1px;
+                    height: 1px;
+                    background: @linear-gradient(90deg, #ffffff00 0%, #ffffff12 40%, #ffffff12 60%, #ffffff00 100%);
+                }
+
+                HorizontalLayout {
+                    padding-left: 18px;
+                    padding-right: 18px;
+                    alignment: space-between;
+
+                    HorizontalLayout {
+                        spacing: 10px;
+                        alignment: start;
+
+                        Text {
+                            text: "HPR";
+                            color: #f1f5f9;
+                            font-size: 12px;
+                            font-weight: 700;
+                            letter-spacing: 4px;
+                            vertical-alignment: center;
+                        }
+
+                        Rectangle {
+                            width: 1px;
+                            height: 12px;
+                            background: #ffffff12;
+                            y: (parent.height - self.height) / 2;
+                        }
+
+                        Text {
+                            text: "Human Pattern Recorder";
+                            color: #ffffff40;
+                            font-size: 11px;
+                            letter-spacing: 0.3px;
+                            vertical-alignment: center;
+                        }
+                    }
+
+                    Rectangle {
+                        height: 26px;
+                        width: active-lbl.preferred-width + 30px;
+                        border-radius: 13px;
+                        background: #ffffff07;
+                        border-width: 1px;
+                        border-color: #ffffff10;
+                        y: (parent.height - self.height) / 2;
+
+                        HorizontalLayout {
+                            padding-left: 9px;
+                            spacing: 6px;
+                            alignment: start;
+
+                            LiveDot {
+                                y: (parent.height - self.height) / 2;
+                                is-alert: windowName_S.character-count > 84;
+                            }
+
+                            active-lbl := Text {
+                                text: windowName_S;
+                                color: #94a3b8;
+                                font-size: 11px;
+                                font-weight: 500;
+                                vertical-alignment: center;
+                                wrap: no-wrap;
+                                overflow: elide;
+                                max-width: 550px;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ── Body ─────────────────────────────────────────────────────
+            if active-view == "DATA" : DataView {
+                vertical-stretch: 1;
+                trackedTime_S: root.trackedTime_S;
+                timePerApp_S: root.timePerApp_S;
+                switchHistory_S: root.switchHistory_S;
+            }
+            
+            if active-view == "INSIGHTS" : InsightsView {
+                vertical-stretch: 1;
+                mostUsedApp_S: root.mostUsedApp_S;
+                totalTrackedTime_S: root.totalTrackedTime_S;
+                totalSwitches_S: root.totalSwitches_S;
+                mostSwitchedFrom_S: root.mostSwitchedFrom_S;
+                mostSwitchedTo_S: root.mostSwitchedTo_S;
+                longestFocus_S: root.longestFocus_S;
+                peakHour_S: root.peakHour_S;
+            }
+
+            if active-view == "TAB" : TabView {
+                vertical-stretch: 1;
+                timePerTab_S: root.timePerTab_S;
+                trackedTime_S: root.trackedTime_Tab_S;
+                per-tab-clicked => { root.tabViewClicked(); }
+                per-site-clicked => { root.siteViewClicked(); }
+            }
+
+        }
+
+        // ── Floating Sidebar ──────────────────────────────────────────────
+        sidebar-ta := TouchArea {
+            x: 0px;
+            y: 0px;
+            z: 10;
+            width: self.has-hover ? 54px : 14px;
+            height: parent.height;
+            animate width { duration: 180ms; easing: ease-in-out; }
+
+            Rectangle {
+                x: 0px;
+                width: 100%;
+                height: 100%;
+
+                background: sidebar-ta.has-hover ? #0d1117cc : transparent;
+                animate background { duration: 240ms; easing: ease-in-out; }
+
+                Rectangle {
+                    x: parent.width - 1px;
+                    width: 1px;
+                    height: parent.height;
+                    background: sidebar-ta.has-hover ? #ffffff08 : transparent;
+                    animate background { duration: 240ms; easing: ease-in-out; }
+                }
+
+                Rectangle {
+                    visible: !sidebar-ta.has-hover;
+                    x: 0px;
+                    y: (parent.height - self.height) / 2;
+                    width: 14px;
+                    height: 28px;
+                    border-radius: 4.5px;
+                    background: #ffffff07;
+                    border-width: 1px;
+                    border-color: #ffffff10;
+
+                    Text {
+                        text: "›";
+                        color: #ffffff40;
+                        font-size: 16px;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                        width: 100%;
+                        height: 100%;
+                    }
+                }
+
+                VerticalLayout {
+                    visible: sidebar-ta.has-hover;
+                    padding: 2px;
+                    spacing: 8px;
+                    alignment: center;
+                    width: 75%;
+                    height: 100%;
+
+                    SidebarButton {
+                        icon: "🕘";
+                        tip: "View historical data";
+                        clicked => { date-picker.show(); }
+                    }
+
+                    SidebarButton {
+                        icon: "🌐";
+                        tip: "View usage per tab";
+                        clicked => { root.active-view = "TAB"; }
+                    }
+
+                    SidebarButton {
+                        icon: "📊";
+                        tip: "View insights";
+                        clicked => { root.active-view = "INSIGHTS"; }
+                    }
+
+                    SidebarButton {
+                        icon: "⚡";
+                        tip: "Switch to live view";
+                        clicked => { root.loadLiveData(); root.active-view = "DATA" }
+                    }
+
+                    SidebarButton {
+                        icon: "☕";
+                        tip: "Support on Ko-fi";
+                        clicked => { root.openKofi(); }
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,185 @@
+import { Card } from "./card.slint";
+import { SectionHeader } from "./section-header.slint";
+import { TimeLog_Tab } from "./types.slint";
+
+component TabRow inherits Rectangle {
+    in property <string> tab-title;
+    in property <string> duration;
+    in property <float>  ratio;
+    in property <bool>   is-even;
+    in property <int>    row-index;
+    in property <color>  bar-color;
+
+    height: 48px;
+    border-radius: 5px;
+    clip: true;
+
+    background: ta.has-hover ? #ffffff0e : (is-even ? #ffffff03 : transparent);
+    animate background { duration: 100ms; easing: ease-out; }
+
+    HorizontalLayout {
+        padding-left: 16px;
+        padding-right: 14px;
+        spacing: 12px;
+
+        Text {
+            text: (row-index + 1) + ".";
+            color: #ffffff20;
+            font-size: 10px;
+            font-weight: 600;
+            vertical-alignment: center;
+            width: 18px;
+        }
+
+        Rectangle {
+            width: 3px;
+            height: 20px;
+            border-radius: 2px;
+            background: ta.has-hover ? bar-color : bar-color.mix(#00000000, 0.45);
+            animate background { duration: 100ms; }
+            y: (parent.height - self.height) / 2;
+        }
+
+        VerticalLayout {
+            padding-top: 8px;
+            padding-bottom: 8px;
+            spacing: 5px;
+            horizontal-stretch: 1;
+
+            HorizontalLayout {
+                Text {
+                    text: tab-title;
+                    color: ta.has-hover ? #e2e8f0 : #94a3b8;
+                    font-size: 12px;
+                    vertical-alignment: center;
+                    animate color { duration: 100ms; }
+                    overflow: elide;
+                    horizontal-stretch: 1;
+                }
+
+                Text {
+                    text: duration;
+                    color: ta.has-hover ? bar-color : bar-color.mix(#00000000, 0.45);
+                    font-size: 10px;
+                    font-weight: 600;
+                    vertical-alignment: center;
+                    animate color { duration: 100ms; }
+                }
+            }
+
+            Rectangle {
+                height: 4px;
+                border-radius: 2px;
+                background: #ffffff08;
+
+                Rectangle {
+                    x: 0;
+                    height: 4px;
+                    border-radius: 2px;
+                    width: parent.width * ratio;
+                    background: ta.has-hover
+                        ? @linear-gradient(90deg, bar-color 0%, bar-color.mix(#ffffff, 0.3) 100%)
+                        : @linear-gradient(90deg, bar-color.mix(#00000000, 0.45) 0%, bar-color.mix(#ffffff, 0.15).mix(#00000000, 0.45) 100%);
+                    animate background { duration: 100ms; }
+                    animate width { duration: 400ms; easing: ease-out; }
+                }
+            }
+        }
+    }
+    ta := TouchArea {}
+}
+
+component ViewToggleButton inherits Rectangle {
+    in property <string> label;
+    callback clicked;
+
+    width: 60px;
+    height: 24px;
+    border-radius: 5px;
+    background: ta.has-hover ? #ffffff1a : #ffffff10;
+    border-width: 1px;
+    border-color: ta.has-hover ? #ffffff28 : #ffffff18;
+    animate background { duration: 100ms; easing: ease-out; }
+    animate border-color { duration: 100ms; }
+
+    Text {
+        text: label;
+        font-size: 10px;
+        font-weight: 600;
+        color: ta.has-hover ? #e2e8f0 : #94a3b8;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+        animate color { duration: 100ms; }
+    }
+
+    ta := TouchArea {
+        clicked => { root.clicked(); }
+    }
+}
+
+export component TabView {
+    in property <[TimeLog_Tab]> timePerTab_S;
+    in property <int>           trackedTime_S;
+    callback per-tab-clicked;
+    callback per-site-clicked;
+
+    VerticalLayout {
+        padding: 12px;
+        padding-top: 0px;
+        spacing: 10px;
+
+        HorizontalLayout {
+            vertical-stretch: 0;
+
+            SectionHeader {
+                label: "TIME PER TAB";
+                horizontal-stretch: 1;
+            }
+
+            HorizontalLayout {
+                spacing: 4px;
+                alignment: end;
+
+                ViewToggleButton {
+                    label: "Per-Tab";
+                    clicked => { root.per-tab-clicked(); }
+                }
+
+                ViewToggleButton {
+                    label: "Per-Site";
+                    clicked => { root.per-site-clicked(); }
+                }
+            }
+        }
+
+        Card {
+            vertical-stretch: 0;
+            max-height: 360px;
+
+            Flickable {
+                width: 100%;
+                height: 100%;
+                interactive: true;
+                viewport-height: tabContent.preferred-height;
+
+                tabContent := VerticalLayout {
+                    width: 100%;
+                    for entry[i] in timePerTab_S: TabRow {
+                        tab-title: entry.name;
+                        ratio: trackedTime_S > 0
+                            ? (entry.duration_i * 1.0) / (trackedTime_S * 1.0)
+                            : 0.0;
+                        duration: entry.duration
+                            + " (" + Math.round(self.ratio * 100) + "%" + ")";
+                        is-even:   mod(i, 2) == 0;
+                        row-index: i;
+                        bar-color: Colors.hsv(
+                            mod(entry.name.character-count * 61, 360),
+                            0.70, 0.88
+                        );
+                    }
+                }
+            }
+        }
+    }
+}
