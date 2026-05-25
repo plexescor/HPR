@@ -88,6 +88,16 @@ That is the whole pitch. A compiled binary that watches one thing and writes it 
 
 ---
 
+## Browser Tab Tracking
+
+HPR supports tracking browser tabs per site and per tab, without requiring any browser extensions. When the active window is a supported browser (Chrome, Edge, Firefox, or Brave), HPR automatically queries the window's title (which contains the active tab name) alongside the application name. This tab usage time is aggregated and tracked separately, giving you a detailed breakdown of which websites and tabs you spend your time on.
+
+In the UI, you can toggle how this data is displayed by clicking the **Tab View** and **Site View** buttons:
+- **Tab View**: Shows raw, unaliased tab names. This allows you to differentiate between specific pages (for example, tracking time spent across two different YouTube videos).
+- **Site View**: Applies rules from `tabAliases.csv` to group your tabs by website. This view collapses specific pages into their parent domains (e.g., combining all YouTube tabs into a single "YouTube" entry), showing you only the high-level sites you visited.
+
+---
+
 ## What It Does Not Do
 
 > [!CAUTION]
@@ -123,23 +133,26 @@ A normal day of use is 30 to 100 KB. A full year sits under 50 MB total.
 
 ## Installation
 
-> [!NOTE]
-> No formal installer yet. That is on the roadmap. For now it is three commands and you are running.
+**Arch Linux (AUR)**
+HPR is available on the AUR. You can install it using your preferred helper:
+```bash
+yay -S hpr
+```
 
-**Linux**
+> [!NOTE]
+> No formal installer for Linux yet. For now it is three commands and you are running.
+
+**Windows**
+Download and run the setup executable. The Inno Setup installer automatically handles placing `aliases.csv`, `tabAliases.csv`, `config.csv`, and the `ui/` folder into your config directory. If you have already customized any of these files, the installer will prompt you before overwriting them, making updates completely safe. It also drops the latest default UI into `ui-REFERENCEONLY/` every time so you always have a clean reference to diff against.
+
+**Linux (Manual)**
 ```bash
 chmod +x installHPRConfigAndUi.sh
 ./installHPRConfigAndUi.sh
 ./HPR
 ```
 
-**Windows**
-```bat
-installHPRConfigAndUi.bat
-HPR.exe
-```
-
-The setup script copies `aliases.csv`, `config.csv`, and the `ui/` folder to the right config directory for your platform. If you have already customized any of those files, it asks before touching them, so running it again after an update is completely safe. It also drops the latest default UI into `ui-REFERENCEONLY/` every time so you always have a clean reference to diff against.
+The Linux setup script handles copying the config and UI files and provides the same safe-overwrite prompts as the Windows installer.
 
 <details>
 <summary>Where does everything go?</summary>
@@ -275,7 +288,7 @@ I need users, so I am going to be completely honest about where HPR stands right
 | Embedded web server | No | Yes | No | No |
 | Open source | Yes | Yes | No | No |
 | Launch time | Instant | Several seconds | N/A | N/A |
-| Free | Yes (premium planned) | Yes | Limited | Limited |
+| Free | Yes | Yes | Limited | Limited |
 
 ActivityWatch is the most honest comparison. It is a mature, maintained project with a full web dashboard, browser extensions, a plugin ecosystem, and years of production use. HPR has none of that yet. What HPR has that ActivityWatch does not: a fraction of the memory footprint, native Wayland from day one, no Python runtime, no embedded web server running in the background.
 
@@ -285,7 +298,7 @@ If you need something mature and battle-tested today, use ActivityWatch. If the 
 
 ## Aliases
 
-Raw window titles from the OS are inconsistent. `Visual Studio Code` on one machine, `code` on another, `code.exe` on Windows. HPR ships with an `aliases.csv` that collapses all of those into one label.
+Raw window titles from the OS are inconsistent. `Visual Studio Code` on one machine, `code` on another, `code.exe` on Windows. HPR ships with an `aliases.csv` that collapses all of those into one label. For browser tabs, a separate `tabAliases.csv` handles collapsing specific URLs and page titles into generic website names.
 
 A few bundled examples:
 - `code` catches `vscode`, `code-oss`, `code.exe`, and similar variants
@@ -352,11 +365,8 @@ The setup script drops the defaults there on first run. Edit freely from that po
 >
 > What comes next is refinement, not new pillars. Polish, stability, quality-of-life improvements, UI work.
 
-**Free tier, permanently:**
-Full local tracking. Full data ownership. All current features and all future non-premium features.
-
-**Premium tier, planned but not imminent:**
-LLM-powered pattern analysis. Focus mode with application blocking. Advanced reporting. Browser tab tracking.
+**Fully Free:**
+HPR is now completely free. Full local tracking. Full data ownership. All current features and all future features including LLM-powered pattern analysis, Focus mode with application blocking, and Advanced reporting.
 
 ---
 
@@ -379,7 +389,7 @@ Main Thread          (Slint event loop)
 
 **Window poller** lives in `CurrentWindowManager::getCurrentWindow_Loop`. It calls the platform-specific window getter every 50ms, acquires `stateMutex`, and updates the current window name and accumulated time.
 
-**UI bridge** is `HPR::trackingLoop` or `HPRInterpreter::trackingLoop`. It wakes every 500ms, reads application state, and dispatches model updates to the Slint main thread via `slint::invoke_from_event_loop`. User interactions flow back through `UiEventBridge` into `EventHub`.
+**UI bridge** is `HPR::trackingLoop` or `HPRInterpreter::trackingLoop`. It wakes every 500ms, reads application and tab state, and dispatches model updates to the Slint main thread using `UiModelManager` via `slint::invoke_from_event_loop`. User interactions flow back through `UiEventBridge` into `EventHub`.
 
 **Database writer** is `DatabaseManager::writeLoop`. It flushes to SQLite every 10 seconds and also responds to `LOAD_DATABASE_SINGULAR` events to load historical data asynchronously without touching the UI thread.
 
@@ -395,6 +405,7 @@ namespace AppState {
         std::string currentWindow;
         std::string previousWindow;
         std::map<std::string, long> timeLog_PerApp;
+        std::map<std::string, long> timeLog_PerTab;
         std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> switchHistory;
     };
     extern AppState state;
@@ -404,7 +415,7 @@ namespace AppState {
 
 Instantiated exactly once in `appState.cpp`. Every thread that touches it acquires `stateMutex` via `std::lock_guard`. The locking strategy is deliberately coarse-grained: lock the whole struct, copy what you need, release immediately, do all work on the copy. Locks are always scoped inside `{}` so the hold duration is obvious in the code.
 
-`timeLog_PerApp` accumulates raw millisecond durations per application name. `switchHistory` keys on `std::pair<string, string>` (from, to) and stores a `vector<uint64_t>` of Unix millisecond timestamps for every recorded transition between those two applications.
+`timeLog_PerApp` and `timeLog_PerTab` accumulate raw millisecond durations per application name and browser tab, respectively. `switchHistory` keys on `std::pair<string, string>` (from, to) and stores a `vector<uint64_t>` of Unix millisecond timestamps for every recorded transition between those two applications.
 
 ---
 
@@ -606,7 +617,7 @@ The extension points follow a fixed five-step order:
 1. **Slint:** Add a new property, struct, or UI element to `app-window.slint`
 2. **State:** Add the field to `AppState::AppState` in `appState.hpp`
 3. **Collection:** Populate it inside `getCurrentWindow_Loop()` within the `lock_guard` block
-4. **Bridge:** Thread the field through `modelManager.update()` in both `HPR.cpp` and `HPRInterpreter.cpp`. Use `syncModel` for any collection type to prevent resize panics.
+4. **Bridge:** Thread the field through `modelManager.update()` (as seen with `timeLog_Tab`) in both `HPR.cpp` and `HPRInterpreter.cpp`. Use `syncModel` for any collection type to prevent resize panics.
 5. **Persistence:** Add the table in `DatabaseManager::initDatabase` and flush it in `writeLoop`
 
 ---
