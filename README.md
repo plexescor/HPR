@@ -540,7 +540,7 @@ Using `system_clock` for duration measurement is a classic bug that corrupts acc
 
 ## Pattern Analysis Engine
 
-`PatternAnalyzer` is the engine behind the Insights view. Every 5 seconds inside `trackingLoop`, it acquires a lock on `stateMutex`, copies the current state, releases immediately, then runs seven analysis passes on the copy.
+`PatternAnalyzer` is the engine behind the Insights view. Every 30 seconds inside `trackingLoop`, it acquires a lock on `stateMutex`, copies the current state, releases immediately, then runs seven analysis passes on the copy.
 
 **Patterns 1 through 5** are direct aggregations over `timeLog_PerApp` and `switchHistory`: most-used application, total tracked time today, top switch pairs, switch frequency distribution.
 
@@ -610,14 +610,29 @@ Shutdown is always clean. The database writer finishes its current flush before 
 ```bash
 git clone https://github.com/plexescor/HPR
 cd HPR
-sudo ./installDependencies.sh
 ```
 
-Windows: run `installDependencies.bat`. Both scripts pull Slint 1.16.1, `slint-lsp`, and `slint-viewer` from GitHub releases and install to `/usr/local/`.
+**Linux — install Slint (choose one):**
+```bash
+# System-wide (requires sudo, cmake finds Slint automatically)
+sudo ./installDependencies.sh
 
+# User-local (no sudo needed)
+./installDependencies.sh
+```
+
+Windows: run `installDependencies.bat`. Pulls Slint 1.16.1, `slint-lsp`, and `slint-viewer` from GitHub releases.
+
+**Build:**
 ```bash
 mkdir build && cd build
+
+# If you ran the install script without sudo:
+cmake .. -DCMAKE_PREFIX_PATH="$HOME/.local"
+
+# If you ran with sudo (system-wide):
 cmake ..
+
 cmake --build . --parallel 8
 ```
 
@@ -658,7 +673,7 @@ The extension points follow a fixed five-step order:
 > **GNOME without the extension:** If `window-calls-extended` is absent, HPR sets its internal platform identifier to `GNOME_NO_EXTENSION` and returns an instruction string from the poll loop rather than a window name. It will not attempt to run the install script autonomously. That is intentional behavior, not a bug.
 
 > [!WARNING]
-> **KDE backend:** The KDE backend injects a JavaScript payload into KWin via `qdbus6` on every 50ms tick and scrapes the system journal for the output. That means shell forks and disk reads at 20 Hz. Somehow this lands at around 1% CPU, which surprised me as much as it will surprise you. Every other approach I tested did not work. This one does and has been validated across multiple KDE configurations. It is a hack. It is a working hack. I am at peace with it.
+> **KDE backend:** The KDE backend injects a JavaScript payload into KWin via `qdbus6` / `qdbus-qt6` (auto-detected at startup) on every 50ms tick and scrapes the system journal for the output. That means shell forks and disk reads at 20 Hz. Somehow this lands at around 1% CPU, which surprised me as much as it will surprise you. Every other approach I tested did not work. This one does and has been validated across multiple KDE configurations. It is a hack. It is a working hack. I am at peace with it.
 
 > [!NOTE]
 > **Linux platform detection:** HPR reads `$XDG_CURRENT_DESKTOP` and matches substrings via `std::string::contains`. Non-standard desktop session variables or nested compositor configurations may not resolve correctly.
