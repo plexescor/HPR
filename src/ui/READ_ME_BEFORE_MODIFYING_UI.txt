@@ -22,9 +22,12 @@ hardcoded in HPR's C++ backend. Rename any of
 these and HPR will fail to compile or crash at
 runtime.
 
--- Structs (defined in app-window.slint) --
+-- Structs (defined in types.slint) --
 
   TimeLog
+    fields: name, duration, duration_i
+
+  TimeLog_Tab
     fields: name, duration, duration_i
 
   SwitchHistory
@@ -34,8 +37,10 @@ runtime.
 -- Properties (HPR writes these every 500ms) --
 
   trackedTime_S       (int)
+  trackedTime_Tab_S   (int)
   windowName_S        (string)
   timePerApp_S        ([TimeLog])
+  timePerTab_S        ([TimeLog_Tab])
   switchHistory_S     ([SwitchHistory])
   mostUsedApp_S       (string)
   totalTrackedTime_S  (string)
@@ -51,6 +56,8 @@ runtime.
   loadHistoricalData_Singular(string)
   loadInsights()
   loadLiveData()
+  tabViewClicked()
+  siteViewClicked()
   openKofi()
 
 
@@ -105,6 +112,13 @@ Here is what it sends and what type it is:
       duration    → human readable "2h 14m 30s" (string)
       duration_i  → raw milliseconds as int, use for
                     bar widths, sorting, math
+
+  trackedTime_Tab_S
+    Total milliseconds tracked today across all tabs (int).
+
+  timePerTab_S
+    List of TimeLog_Tab structs, sorted by duration descending.
+    Same fields and behavior as timePerApp_S, but for browser tabs.
 
   switchHistory_S
     List of SwitchHistory structs, sorted by most
@@ -229,11 +243,14 @@ SAFE — go ahead:
 
 UNSAFE — will break HPR:
   Renaming TimeLog
+  Renaming TimeLog_Tab
   Renaming SwitchHistory
   Renaming any field inside those structs
   Renaming trackedTime_S
+  Renaming trackedTime_Tab_S
   Renaming windowName_S
   Renaming timePerApp_S
+  Renaming timePerTab_S
   Renaming switchHistory_S
   Renaming mostUsedApp_S
   Renaming totalTrackedTime_S
@@ -245,6 +262,8 @@ UNSAFE — will break HPR:
   Renaming loadHistoricalData_Singular
   Renaming loadInsights
   Renaming loadLiveData
+  Renaming tabViewClicked
+  Renaming siteViewClicked
   Renaming openKofi
   Changing the type of any in property
   Removing any of the above entirely
