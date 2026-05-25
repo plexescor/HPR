@@ -691,7 +691,7 @@ If HPR has been useful to you, a Ko-fi helps keep development going:
 
 <p align="center">
   <sub>
-    Active development &nbsp;|&nbsp; v0.4 &nbsp;|&nbsp;
+    Active development &nbsp;|&nbsp; v0.5 &nbsp;|&nbsp;
     Hyprland · GNOME · KDE Plasma · Windows 10/11 &nbsp;|&nbsp;
     C++23 · Slint 1.16.1 · SQLite3 amalgamation · sqlite_modern_cpp
   </sub>
