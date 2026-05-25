@@ -36,18 +36,19 @@ CurrentWindowManager::CurrentWindowManager()
 		AppState::state.currentPlatform = currentPlatform;
 	}
 
-	// resolve the correct qdbus binary for this distro
-	// thanks https://github.com/tempodat
-	// arch/most distros use qdbus6, Fedora ships it as qdbus-qt6, some have plain qdbus
-	std::string resolveQdbus = "command -v qdbus6 || command -v qdbus-qt6 || command -v qdbus";
-	qdbusCmd = runSystemCommand(resolveQdbus);
-	if (!qdbusCmd.empty() && qdbusCmd.back() == '\n')
-		qdbusCmd.pop_back();
-	if (qdbusCmd.empty())
-		qdbusCmd = "qdbus6"; // fallback
-	std::cout << "[HPR] Using qdbus binary: " << qdbusCmd << std::endl;
-	
-
+	if (currentPlatform.contains("KDE"))
+	{
+		// resolve the correct qdbus binary for this distro
+		// thanks https://github.com/tempodat
+		// arch/most distros use qdbus6, Fedora ships it as qdbus-qt6, some have plain qdbus
+		std::string resolveQdbus = "command -v qdbus6 || command -v qdbus-qt6 || command -v qdbus";
+		qdbusCmd = runSystemCommand(resolveQdbus);
+		if (!qdbusCmd.empty() && qdbusCmd.back() == '\n')
+			qdbusCmd.pop_back();
+		if (qdbusCmd.empty())
+			qdbusCmd = "qdbus6"; // fallback
+		std::cout << "[HPR] Using qdbus binary: " << qdbusCmd << std::endl;
+	}
 	
 	if (currentPlatform.contains("GNOME"))
 	{
