@@ -177,7 +177,7 @@ Windows: %APPDATA%\HPR\HPR_DB\
 
 | Platform | Backend | Extra Setup |
 |---|---|---|
-| Hyprland (Wayland) | `hyprctl` IPC | None. Works on first launch. |
+| Hyprland (Wayland) | `hyprctl` IPC | None.  |
 | GNOME (Wayland) | `window-calls-extended` shell extension | One-time only. Run `installWindowCallsExtension.sh`, log out, log back in. |
 | KDE Plasma (Wayland / X11) | KWin scripting via `qdbus6` | None. |
 | Windows 10 / 11 | Win32 API | None. |
