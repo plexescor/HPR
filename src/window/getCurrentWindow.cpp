@@ -159,7 +159,9 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 		|| lowerWindowName.contains("firefox")
 		|| lowerWindowName.contains("brave"))
 		{
+			// std::cout << lowerWindowName << std::endl;
 			tab = getCurrentTab();
+			// std::cout << tab << std::endl;
 		}
 
 		else
@@ -197,8 +199,20 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 				std::chrono::duration_cast<std::chrono::milliseconds>(elapsed)
 					.count();
 
-			if (!tab.empty() && (tab.contains("chrome") || tab.contains("edge") || tab.contains("firefox") || tab.contains("brave")))
+			std::string lowerTabName = tab;
+
+			//Convert windowName to lowercase
+			std::transform(lowerTabName.begin(), 
+				lowerTabName.end(), 
+				lowerTabName.begin(),
+				[](unsigned char c)
+				{ 
+					return std::tolower(c); 
+				});
+
+			if (!tab.empty() && (lowerTabName.contains("chrome") || lowerTabName.contains("edge") || lowerTabName.contains("firefox") || lowerTabName.contains("brave")))
 			{
+				// std::cout << tab << std::endl;
 				AppState::state.timeLog_PerTab[tab] +=
 				std::chrono::duration_cast<std::chrono::milliseconds>(elapsed)
 					.count();
@@ -391,10 +405,18 @@ std::string CurrentWindowManager::getCurrentTab_Windows()
 		if (!hwnd)
 			return "";
 
-		char title[512] = {};
-		GetWindowTextA(hwnd, title, sizeof(title));
+		wchar_t title[512] = {};
+		GetWindowTextW(hwnd, title, sizeof(title) / sizeof(wchar_t));
 
-		return std::string(title);
+		std::wstring wstr(title);
+		if (wstr.empty())
+			return "";
+
+		int size_needed = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), NULL, 0, NULL, NULL);
+		std::string strTo(size_needed, 0);
+		WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), &strTo[0], size_needed, NULL, NULL);
+
+		return strTo;
 	#endif
 		return "";
 }

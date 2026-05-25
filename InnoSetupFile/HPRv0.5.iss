@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 ; Non-commercial use only
 #define MyAppName "HPR"
-#define MyAppVersion "v0.4"
+#define MyAppVersion "v0.5"
 #define MyAppPublisher "Plexescor"
 #define MyAppURL "github.com/plexescor/HPR"
 #define MyAppExeName "HPR.exe"
@@ -20,9 +20,9 @@ UninstallDisplayIcon={app}\{#MyAppExeName}
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 DisableProgramGroupPage=yes
-OutputDir=C:\HPR\INNO\v0.4
-OutputBaseFilename=HPRv0.4
-SetupIconFile=C:\HPR\v0.4\assets\icon.ico
+OutputDir=C:\HPR\INNO\v0.5
+OutputBaseFilename=HPRv0.5
+SetupIconFile=C:\HPR\v0.5\assets\icon.ico
 SolidCompression=yes
 WizardStyle=modern dark windows11
 
@@ -34,22 +34,21 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 
 [Files]
 ; -- App binaries --
-Source: "C:\HPR\v0.4\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\HPR\v0.4\slint_cpp.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\HPR\v0.5\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\HPR\v0.5\slint_cpp.dll"; DestDir: "{app}"; Flags: ignoreversion
 
-; -- aliases.csv and tabAliases.csv and config.csv: Pascal handles overwrite logic --
-Source: "C:\HPR\v0.4\aliases.csv"; DestDir: "{userappdata}\HPR\HPR_Config"; Flags: ignoreversion; Check: ShouldCopyAliases
-Source: "C:\HPR\v0.4\tabAliases.csv"; DestDir: "{userappdata}\HPR\HPR_Config"; Flags: ignoreversion; Check: ShouldCopyTabAliases
-Source: "C:\HPR\v0.4\config.csv"; DestDir: "{userappdata}\HPR\HPR_Config"; Flags: ignoreversion; Check: ShouldCopyConfig
+; -- aliases.csv and config.csv: Pascal handles overwrite logic --
+Source: "C:\HPR\v0.5\aliases.csv"; DestDir: "{userappdata}\HPR\HPR_Config"; Flags: ignoreversion; Check: ShouldCopyAliases
+Source: "C:\HPR\v0.5\config.csv"; DestDir: "{userappdata}\HPR\HPR_Config"; Flags: ignoreversion; Check: ShouldCopyConfig
 
 ; -- assets: always silently overwrite --
-Source: "C:\HPR\v0.4\assets\*"; DestDir: "{userappdata}\HPR\HPR_Config\assets"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "C:\HPR\v0.5\assets\*"; DestDir: "{userappdata}\HPR\HPR_Config\assets"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 ; -- ui-REFERENCEONLY: always silently overwrite --
-Source: "C:\HPR\v0.4\ui\*"; DestDir: "{userappdata}\HPR\HPR_Config\ui-REFERENCEONLY"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "C:\HPR\v0.5\ui\*"; DestDir: "{userappdata}\HPR\HPR_Config\ui-REFERENCEONLY"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 ; -- ui: BeforeInstall deletes folder if user confirmed, onlyifdoesntexist skips if user said no --
-Source: "C:\HPR\v0.4\ui\*"; DestDir: "{userappdata}\HPR\HPR_Config\ui"; Flags: ignoreversion recursesubdirs createallsubdirs onlyifdoesntexist; BeforeInstall: DeleteUIIfConfirmed
+Source: "C:\HPR\v0.5\ui\*"; DestDir: "{userappdata}\HPR\HPR_Config\ui"; Flags: ignoreversion recursesubdirs createallsubdirs onlyifdoesntexist; BeforeInstall: DeleteUIIfConfirmed
 
 [Dirs]
 Name: "{userappdata}\HPR\HPR_Config"
@@ -65,7 +64,6 @@ Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChang
 
 var
   AliasOverwriteConfirmed: Boolean;
-  TabAliasOverwriteConfirmed: Boolean;
   ConfigOverwriteConfirmed: Boolean;
   UIOverwriteConfirmed: Boolean;
   DeleteUIIfConfirmedDone: Boolean;
@@ -84,12 +82,6 @@ function ShouldCopyAliases(): Boolean;
 begin
   Result := (not FileExists(ExpandConstant('{userappdata}\HPR\HPR_Config\aliases.csv')))
             or AliasOverwriteConfirmed;
-end;
-
-function ShouldCopyTabAliases(): Boolean;
-begin
-  Result := (not FileExists(ExpandConstant('{userappdata}\HPR\HPR_Config\tabAliases.csv')))
-            or TabAliasOverwriteConfirmed;
 end;
 
 function ShouldCopyConfig(): Boolean;
@@ -118,17 +110,6 @@ begin
         mbConfirmation, MB_YESNO
       );
       AliasOverwriteConfirmed := (Res = IDYES);
-    end;
-
-    // tabAliases.csv
-    if FileExists(ConfigDir + '\tabAliases.csv') then
-    begin
-      Res := MsgBox(
-        'tabAliases.csv already exists.' + #13#10 +
-        'Overwrite it? Your custom edits will be lost.',
-        mbConfirmation, MB_YESNO
-      );
-      TabAliasOverwriteConfirmed := (Res = IDYES);
     end;
 
     // config.csv
