@@ -51,7 +51,7 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow>& ui)
         #ifdef _WIN32
             ShellExecuteA(nullptr, "open", "https://ko-fi.com/plexescor", nullptr, nullptr, SW_SHOWNORMAL);
         #else
-            system("xdg-open https://ko-fi.com/plexescor &");
+            int lol = system("xdg-open https://ko-fi.com/plexescor &");
         #endif
     });
 }
@@ -112,7 +112,7 @@ UiEventBridge::UiEventBridge(
         #ifdef _WIN32
             ShellExecuteA(nullptr, "open", "https://ko-fi.com/plexescor", nullptr, nullptr, SW_SHOWNORMAL);
         #else
-            system("xdg-open https://ko-fi.com/plexescor &");
+            int idc = system("xdg-open https://ko-fi.com/plexescor &");
         #endif
         return slint::interpreter::Value(); // void return
     });
