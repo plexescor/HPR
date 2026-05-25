@@ -197,7 +197,7 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 				std::chrono::duration_cast<std::chrono::milliseconds>(elapsed)
 					.count();
 
-			if (!tab.empty())
+			if (!tab.empty() && (tab.contains("chrome") || tab.contains("edge") || tab.contains("firefox") || tab.contains("brave")))
 			{
 				AppState::state.timeLog_PerTab[tab] +=
 				std::chrono::duration_cast<std::chrono::milliseconds>(elapsed)
