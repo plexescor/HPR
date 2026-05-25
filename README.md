@@ -27,6 +27,14 @@
 
 ---
 
+> [!IMPORTANT]
+> **HPR is now fully free and open source.**
+> The premium version (previously closed source) has been merged into the free version. Every feature — current and future — is available to everyone at no cost. If HPR saves you time or you just want to support continued development, a Ko-fi donation goes a long way.
+>
+> <a href="https://ko-fi.com/plexescor"><img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support on Ko-fi" /></a>
+
+---
+
 <p align="center">
   <img src="./assets/HPRHOME.png" alt="HPR Home Screen" width="800"/>
 </p>
@@ -85,6 +93,10 @@ At any point you get three things live:
 Click the date picker and pull up any day you have ever run HPR. It loads that day's database asynchronously off a plain SQLite file sitting on your own disk. No sync step. No cloud roundtrip. No spinner talking to a server.
 
 That is the whole pitch. A compiled binary that watches one thing and writes it down. Everything else is just what happens when you do that well.
+
+<p align="center">
+  <a href="https://ko-fi.com/plexescor"><img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support on Ko-fi" /></a>
+</p>
 
 ---
 
@@ -179,7 +191,7 @@ Windows: %APPDATA%\HPR\HPR_DB\
 |---|---|---|
 | Hyprland (Wayland) | `hyprctl` IPC | None.  |
 | GNOME (Wayland) | `window-calls-extended` shell extension | One-time only. Run `installWindowCallsExtension.sh`, log out, log back in. |
-| KDE Plasma (Wayland / X11) | KWin scripting via `qdbus6` | None. |
+| KDE Plasma (Wayland / X11) | KWin scripting via `qdbus6` / `qdbus-qt6` (auto-detected) | None. |
 | Windows 10 / 11 | Win32 API | None. |
 
 <details>
@@ -271,6 +283,10 @@ The only external network call in the entire codebase is a `git clone` inside th
 
 Your data is a folder on your disk. Removing your data means deleting that folder. No server to request deletion from. No account to close. No support ticket to file.
 
+<p align="center">
+  <a href="https://ko-fi.com/plexescor"><img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support on Ko-fi" /></a>
+</p>
+
 ---
 
 ## Comparison With Other Trackers
@@ -293,6 +309,10 @@ I need users, so I am going to be completely honest about where HPR stands right
 ActivityWatch is the most honest comparison. It is a mature, maintained project with a full web dashboard, browser extensions, a plugin ecosystem, and years of production use. HPR has none of that yet. What HPR has that ActivityWatch does not: a fraction of the memory footprint, native Wayland from day one, no Python runtime, no embedded web server running in the background.
 
 If you need something mature and battle-tested today, use ActivityWatch. If the architecture and footprint appeal to you and you can tolerate being early, HPR is worth following.
+
+<p align="center">
+  <a href="https://ko-fi.com/plexescor"><img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support on Ko-fi" /></a>
+</p>
 
 ---
 
@@ -365,8 +385,14 @@ The setup script drops the defaults there on first run. Edit freely from that po
 >
 > What comes next is refinement, not new pillars. Polish, stability, quality-of-life improvements, UI work.
 
-**Fully Free:**
-HPR is now completely free. Full local tracking. Full data ownership. All current features and all future features including LLM-powered pattern analysis, Focus mode with application blocking, and Advanced reporting.
+**Fully Free and Open Source:**
+HPR is now completely free. The premium version (previously closed source) has been merged into this repo. Full local tracking. Full data ownership. All current features and all future features including LLM-powered pattern analysis, Focus mode with application blocking, and Advanced reporting — all free, forever.
+
+If HPR is useful to you, please consider supporting development:
+
+<p align="center">
+  <a href="https://ko-fi.com/plexescor"><img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support on Ko-fi" /></a>
+</p>
 
 ---
 
@@ -544,7 +570,7 @@ if (windowName.contains("searchhost")
     return "Unknown";
 ```
 
-The `js::` filter is specifically for KDE. The KDE backend injects a JavaScript payload into KWin via `qdbus6` on every tick, and during that injection KWin's own JS runtime briefly appears as the active window. Without this filter, strings like `js::kwin_tmp_1234` silently accumulate time in your log every single poll cycle.
+The `js::` filter is specifically for KDE. The KDE backend injects a JavaScript payload into KWin via `qdbus6` (or `qdbus-qt6` on Fedora — auto-detected at startup) on every tick, and during that injection KWin's own JS runtime briefly appears as the active window. Without this filter, strings like `js::kwin_tmp_1234` silently accumulate time in your log every single poll cycle.
 
 **Late-binding aliases:**
 
@@ -575,7 +601,11 @@ Shutdown is always clean. The database writer finishes its current flush before 
 - CMake 3.21+
 - GCC 13+, Clang 16+, or MSVC 2022+ with C++23 support
 - Slint 1.16.1 (the install script handles this)
-- Linux only: `jq` for Hyprland, `gdbus` for GNOME, `qdbus6` for KDE
+- Linux only: `jq` for Hyprland, `gdbus` for GNOME, `qdbus6` / `qdbus-qt6` for KDE (HPR auto-detects which is available)
+
+<p align="center">
+  <a href="https://ko-fi.com/plexescor"><img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support on Ko-fi" /></a>
+</p>
 
 ```bash
 git clone https://github.com/plexescor/HPR
@@ -650,6 +680,12 @@ uiModelManager.cpp    →  how C++ state becomes Slint models in both UI modes
 One rule for all new code: anything that touches shared state goes through `AppState::stateMutex`. Lock, copy, release, work on the copy. Every existing access follows this pattern.
 
 No formal process. Open an issue or submit a pull request.
+
+If HPR has been useful to you, a Ko-fi helps keep development going:
+
+<p align="center">
+  <a href="https://ko-fi.com/plexescor"><img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support on Ko-fi" /></a>
+</p>
 
 ---
 
