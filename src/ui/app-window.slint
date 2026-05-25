@@ -10,8 +10,6 @@ import { TimeLog, SwitchHistory, TimeLog_Tab } from "./types.slint";
 
 // ── Main Window ──────────────────────────────────────────────────────────────
 export component MainWindow inherits Window {
-    icon: @image-url("../../assets/logo_256png.png");
-
     callback loadHistoricalData_Singular(string);
     callback loadInsights;
     callback loadLiveData;

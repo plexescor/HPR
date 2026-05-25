@@ -29,6 +29,7 @@ class CurrentWindowManager
 
     private:
         std::string currentPlatform = "";
+        std::string qdbusCmd = "qdbus6";
         std::string window = "";
         std::string previousWindow = "";
 

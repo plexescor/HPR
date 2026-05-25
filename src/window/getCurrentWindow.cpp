@@ -35,6 +35,17 @@ CurrentWindowManager::CurrentWindowManager()
 		std::lock_guard<std::mutex> lock(AppState::stateMutex);
 		AppState::state.currentPlatform = currentPlatform;
 	}
+
+	// resolve the correct qdbus binary for this distro
+	// thanks https://github.com/tempodat
+	// arch/most distros use qdbus6, Fedora ships it as qdbus-qt6, some have plain qdbus
+	std::string resolveQdbus = "command -v qdbus6 || command -v qdbus-qt6 || command -v qdbus";
+	qdbusCmd = runSystemCommand(resolveQdbus);
+	if (!qdbusCmd.empty() && qdbusCmd.back() == '\n')
+		qdbusCmd.pop_back();
+	if (qdbusCmd.empty())
+		qdbusCmd = "qdbus6"; // fallback
+	std::cout << "[HPR] Using qdbus binary: " << qdbusCmd << std::endl;
 	
 
 	
@@ -299,16 +310,15 @@ std::string CurrentWindowManager::getCurrentWindow_Gnome()
 
 std::string CurrentWindowManager::getCurrentWindow_KDE()
 {
-	std::string cmd = R"(
-		echo 'print(workspace.activeWindow.resourceClass);' > /tmp/kwin_active.js &&
-		S=$(qdbus6 org.kde.KWin /Scripting org.kde.kwin.Scripting.loadScript /tmp/kwin_active.js kwin_tmp_$$) &&
-		T=$(date '+%Y-%m-%d %H:%M:%S') &&
-		qdbus6 org.kde.KWin /Scripting/Script$S org.kde.kwin.Script.run > /dev/null 2>&1 &&
-		sleep 0.1 &&
-		journalctl --since "$T" -o cat | grep '^js:' | tail -n 1 | sed 's/^js: //' ;
-		qdbus6 org.kde.KWin /Scripting/Script$S org.kde.kwin.Script.stop > /dev/null 2>&1 ;
-		qdbus6 org.kde.KWin /Scripting unloadScript kwin_tmp_$$ > /dev/null 2>&1
-	)";
+	std::string cmd =
+		"echo 'print(workspace.activeWindow.resourceClass);' > /tmp/kwin_active.js && "
+		"S=$(" + qdbusCmd + " org.kde.KWin /Scripting org.kde.kwin.Scripting.loadScript /tmp/kwin_active.js kwin_tmp_$$) && "
+		"T=$(date '+%Y-%m-%d %H:%M:%S') && "
+		+ qdbusCmd + " org.kde.KWin /Scripting/Script$S org.kde.kwin.Script.run > /dev/null 2>&1 && "
+		"sleep 0.1 && "
+		"journalctl --since \"$T\" -o cat | grep '^js:' | tail -n 1 | sed 's/^js: //' ; "
+		+ qdbusCmd + " org.kde.KWin /Scripting/Script$S org.kde.kwin.Script.stop > /dev/null 2>&1 ; "
+		+ qdbusCmd + " org.kde.KWin /Scripting unloadScript kwin_tmp_$$ > /dev/null 2>&1";
 
 	std::string result = runSystemCommand(cmd);
 
@@ -406,16 +416,15 @@ std::string CurrentWindowManager::getCurrentTab_Gnome()
 
 std::string CurrentWindowManager::getCurrentTab_KDE()
 {
-	std::string cmd = R"(
-		echo 'print(workspace.activeWindow.caption);' > /tmp/kwin_active.js &&
-		S=$(qdbus6 org.kde.KWin /Scripting org.kde.kwin.Scripting.loadScript /tmp/kwin_active.js kwin_tmp_$$) &&
-		T=$(date '+%Y-%m-%d %H:%M:%S') &&
-		qdbus6 org.kde.KWin /Scripting/Script$S org.kde.kwin.Script.run > /dev/null 2>&1 &&
-		sleep 0.1 &&
-		journalctl --since "$T" -o cat | grep '^js:' | tail -n 1 | sed 's/^js: //' ;
-		qdbus6 org.kde.KWin /Scripting/Script$S org.kde.kwin.Script.stop > /dev/null 2>&1 ;
-		qdbus6 org.kde.KWin /Scripting unloadScript kwin_tmp_$$ > /dev/null 2>&1
-	)";
+	std::string cmd =
+		"echo 'print(workspace.activeWindow.caption);' > /tmp/kwin_active.js && "
+		"S=$(" + qdbusCmd + " org.kde.KWin /Scripting org.kde.kwin.Scripting.loadScript /tmp/kwin_active.js kwin_tmp_$$) && "
+		"T=$(date '+%Y-%m-%d %H:%M:%S') && "
+		+ qdbusCmd + " org.kde.KWin /Scripting/Script$S org.kde.kwin.Script.run > /dev/null 2>&1 && "
+		"sleep 0.1 && "
+		"journalctl --since \"$T\" -o cat | grep '^js:' | tail -n 1 | sed 's/^js: //' ; "
+		+ qdbusCmd + " org.kde.KWin /Scripting/Script$S org.kde.kwin.Script.stop > /dev/null 2>&1 ; "
+		+ qdbusCmd + " org.kde.KWin /Scripting unloadScript kwin_tmp_$$ > /dev/null 2>&1";
 
 	std::string result = runSystemCommand(cmd);
 

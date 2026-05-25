@@ -89,7 +89,7 @@ not limited to:
 
 
 ================================================
-  HOW THE DATA FLOWS INTO YOUR UI
+  HOW THE DATwindowA FLOWS INTO YOUR UI
 ================================================
 
 HPR's C++ backend updates your UI every 500ms.
