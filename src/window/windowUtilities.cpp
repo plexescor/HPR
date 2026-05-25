@@ -1,6 +1,9 @@
 #include <cstdio> //For piping
 #include <iostream>
 #include <string>
+#ifdef __linux__
+#include <sys/wait.h> // WEXITSTATUS
+#endif
 
 #include "windowUtilities.hpp"
 
@@ -24,7 +27,7 @@ std::string runSystemCommand(std::string &command) {
     int exitCode = pclose(pipe);
 
     if (exitCode != 0) {
-      std::cerr << "Running the command failed! Exit Code: " << exitCode;
+      std::cerr << "Running the command failed! Exit Code: " << WEXITSTATUS(exitCode) << std::endl;
     }
 
     // std::cout << "Output; " << output << std::endl;
