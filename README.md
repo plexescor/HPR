@@ -53,7 +53,9 @@
 </p>
 
 <p align="center">
-  <video src="./assets/HPRVideo.mp4" autoplay loop muted playsinline width="800"></video>
+  
+https://github.com/user-attachments/assets/d5b2ce71-bae0-4e9a-805e-7c508b738970
+
 </p>
 
 ---
