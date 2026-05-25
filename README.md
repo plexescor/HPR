@@ -47,6 +47,17 @@
 
 ---
 
+<p align="center">
+  <strong>See HPR in action</strong><br/>
+  <sub>Live window tracking, switch history, and the Insights engine — all running locally, zero accounts.</sub>
+</p>
+
+<p align="center">
+  <video src="./assets/HPRVideo.mp4" autoplay loop muted playsinline width="800"></video>
+</p>
+
+---
+
 ## Table of Contents
 
 - [What It Does](#what-it-does)
