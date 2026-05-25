@@ -39,7 +39,7 @@ Source: "C:\HPR\v0.5\slint_cpp.dll"; DestDir: "{app}"; Flags: ignoreversion
 
 ; -- aliases.csv and config.csv: Pascal handles overwrite logic --
 Source: "C:\HPR\v0.5\aliases.csv"; DestDir: "{userappdata}\HPR\HPR_Config"; Flags: ignoreversion; Check: ShouldCopyAliases
-Source: "C:\HPR\v0.5\tabAliases.csv"; DestDir: "{userappdata}\HPR\HPR_Config"; Flags: ignoreversion; Check: ShouldCopyAliases
+Source: "C:\HPR\v0.5\tabAliases.csv"; DestDir: "{userappdata}\HPR\HPR_Config"; Flags: ignoreversion; Check: ShouldCopyTabAliases
 Source: "C:\HPR\v0.5\config.csv"; DestDir: "{userappdata}\HPR\HPR_Config"; Flags: ignoreversion; Check: ShouldCopyConfig
 
 ; -- assets: always silently overwrite --
