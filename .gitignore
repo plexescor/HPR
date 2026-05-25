@@ -1,4 +1,6 @@
 build
+build/ui
+shippedWithBinary/ui
 build1
 .vscode
 
