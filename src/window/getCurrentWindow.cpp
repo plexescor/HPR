@@ -266,10 +266,21 @@ std::string CurrentWindowManager::getCurrentWindow()
 
 std::string CurrentWindowManager::getCurrentWindow_Hyprland()
 {
-	std::string command = "hyprctl activewindow -j | jq -r '.class'";
-
-	// std::cout << "getcurrhypr: " << runSystemCommand(command) << std::endl;
-	return runSystemCommand(command);
+	std::string cmd = "hyprctl activewindow -j";
+    std::string json = runSystemCommand(cmd);
+    
+    // Find "class":"value"
+    const std::string key = "\"class\":";
+    size_t keyPos = json.find(key);
+    if (keyPos == std::string::npos) return "";
+    
+    size_t quoteStart = json.find('"', keyPos + key.size());
+    if (quoteStart == std::string::npos) return "";
+    
+    size_t quoteEnd = json.find('"', quoteStart + 1);
+    if (quoteEnd == std::string::npos) return "";
+    
+    return json.substr(quoteStart + 1, quoteEnd - quoteStart - 1);
 }
 
 std::string CurrentWindowManager::getCurrentWindow_Windows()
@@ -390,12 +401,23 @@ std::string CurrentWindowManager::getCurrentTab()
 	return tab;
 }
 
-std::string CurrentWindowManager::getCurrentTab_Hyprland()
+std::string CurrentWindowManager::getCurrentWindow_Hyprland()
 {
-	std::string command = "hyprctl activewindow -j | jq -r '.title'";
-
-	// std::cout << "getcurrhypr: " << runSystemCommand(command) << std::endl;
-	return runSystemCommand(command);
+	std::string cmd = "hyprctl activewindow -j";
+    std::string json = runSystemCommand(cmd);
+    
+    // Find "title":"value"
+    const std::string key = "\"title\":";
+    size_t keyPos = json.find(key);
+    if (keyPos == std::string::npos) return "";
+    
+    size_t quoteStart = json.find('"', keyPos + key.size());
+    if (quoteStart == std::string::npos) return "";
+    
+    size_t quoteEnd = json.find('"', quoteStart + 1);
+    if (quoteEnd == std::string::npos) return "";
+    
+    return json.substr(quoteStart + 1, quoteEnd - quoteStart - 1);
 }
 
 std::string CurrentWindowManager::getCurrentTab_Windows()
