@@ -31,7 +31,7 @@
 > **HPR is now fully free and open source.**
 > The premium version (previously closed source) has been merged into the free version. Every feature — current and future — is available to everyone at no cost. If HPR saves you time or you just want to support continued development, a Ko-fi donation goes a long way.
 >
-> <a href="https://ko-fi.com/plexescor"><img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support on Ko-fi" /></a>
+
 
 ---
 
@@ -108,10 +108,6 @@ At any point you get three things live:
 Click the date picker and pull up any day you have ever run HPR. It loads that day's database asynchronously off a plain SQLite file sitting on your own disk. No sync step. No cloud roundtrip. No spinner talking to a server.
 
 That is the whole pitch. A compiled binary that watches one thing and writes it down. Everything else is just what happens when you do that well.
-
-<p align="center">
-  <a href="https://ko-fi.com/plexescor"><img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support on Ko-fi" /></a>
-</p>
 
 ---
 
@@ -298,9 +294,6 @@ The only external network call in the entire codebase is a `git clone` inside th
 
 Your data is a folder on your disk. Removing your data means deleting that folder. No server to request deletion from. No account to close. No support ticket to file.
 
-<p align="center">
-  <a href="https://ko-fi.com/plexescor"><img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support on Ko-fi" /></a>
-</p>
 
 ---
 
@@ -325,9 +318,6 @@ ActivityWatch is the most honest comparison. It is a mature, maintained project 
 
 If you need something mature and battle-tested today, use ActivityWatch. If the architecture and footprint appeal to you and you can tolerate being early, HPR is worth following.
 
-<p align="center">
-  <a href="https://ko-fi.com/plexescor"><img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support on Ko-fi" /></a>
-</p>
 
 ---
 
@@ -404,10 +394,6 @@ The setup script drops the defaults there on first run. Edit freely from that po
 HPR is now completely free. The premium version (previously closed source) has been merged into this repo. Full local tracking. Full data ownership. All current features and all future features including LLM-powered pattern analysis, Focus mode with application blocking, and Advanced reporting — all free, forever.
 
 If HPR is useful to you, please consider supporting development:
-
-<p align="center">
-  <a href="https://ko-fi.com/plexescor"><img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support on Ko-fi" /></a>
-</p>
 
 ---
 
@@ -618,9 +604,6 @@ Shutdown is always clean. The database writer finishes its current flush before 
 - Slint 1.16.1 (the install script handles this)
 - Linux only: `jq` for Hyprland, `gdbus` for GNOME, `qdbus6` / `qdbus-qt6` for KDE (HPR auto-detects which is available)
 
-<p align="center">
-  <a href="https://ko-fi.com/plexescor"><img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support on Ko-fi" /></a>
-</p>
 
 ```bash
 git clone https://github.com/plexescor/HPR
@@ -712,10 +695,6 @@ One rule for all new code: anything that touches shared state goes through `AppS
 No formal process. Open an issue or submit a pull request.
 
 If HPR has been useful to you, a Ko-fi helps keep development going:
-
-<p align="center">
-  <a href="https://ko-fi.com/plexescor"><img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support on Ko-fi" /></a>
-</p>
 
 ---
 
