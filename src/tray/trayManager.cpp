@@ -441,7 +441,7 @@ void TrayManager::trayManager_LoopLinux()
         else if (dbus_message_is_method_call(msg,
                 "org.kde.StatusNotifierItem", "Activate"))
         {
-            std::cerr << "[TrayManager] Activate (left click)\n";
+            // std::cerr << "[TrayManager] Activate (left click)\n";
             if (onShow) onShow();
 
             // protocol requires a reply even if empty
@@ -456,7 +456,7 @@ void TrayManager::trayManager_LoopLinux()
         else if (dbus_message_is_method_call(msg,
                 "org.kde.StatusNotifierItem", "ContextMenu"))
         {
-            std::cerr << "[TrayManager] ContextMenu (waybar sends this for all clicks)\n";
+            // std::cerr << "[TrayManager] ContextMenu (waybar sends this for all clicks)\n";
             if (onShow) onShow();
 
             DBusMessage* reply = dbus_message_new_method_return(msg);
@@ -469,7 +469,7 @@ void TrayManager::trayManager_LoopLinux()
         else if (dbus_message_is_method_call(msg,
                 "org.kde.StatusNotifierItem", "SecondaryActivate"))
         {
-            std::cerr << "[TrayManager] SecondaryActivate (middle click) -> quit\n";
+            // std::cerr << "[TrayManager] SecondaryActivate (middle click) -> quit\n";
             if (onQuit) onQuit();
 
             DBusMessage* reply = dbus_message_new_method_return(msg);
@@ -481,7 +481,7 @@ void TrayManager::trayManager_LoopLinux()
         // log anything else so we can see if waybar sends unexpected methods
         else
         {
-            std::cerr << "[TrayManager] unhandled: iface=" << iface << " member=" << member << "\n";
+            // std::cerr << "[TrayManager] unhandled: iface=" << iface << " member=" << member << "\n";
         }
 
 
