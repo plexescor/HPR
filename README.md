@@ -92,6 +92,7 @@ https://github.com/user-attachments/assets/a5fbe1f1-0cdc-41c8-a77b-68f40d96d531
 - [Adding a New Platform](#adding-a-new-platform)
 - [Adding New Tracked Data](#adding-new-tracked-data)
 - [Known Issues and Limitations](#known-issues-and-limitations)
+- [Common Issues and Fixes](#common-issues-and-fixes)
 - [Contributing](#contributing)
 
 ---
@@ -263,7 +264,7 @@ Works with Waybar on Hyprland, KDE's system tray, and Cinnamon's panel out of th
 |---|---|---|
 | Hyprland (Wayland) | `hyprctl` IPC | None.  |
 | GNOME (Wayland) | Custom GNOME Shell extension ([lol-another-window-extension](https://github.com/plexescor/lol-another-window-extension)) | One-time only. Run the bundled install script, log out, log back in. |
-| KDE Plasma (Wayland / X11) | KWin scripting via `qdbus6` / `qdbus-qt6` (auto-detected) | None. |
+| KDE Plasma (Wayland / X11) | KWin scripting via `qdbus6` / `qdbus-qt6` (auto-detected) | None on most distros. Linux Mint users may need to install `qdbus` manually — see [Common Issues and Fixes](#common-issues-and-fixes). |
 | Cinnamon (X11 + Wayland) | `org.Cinnamon.Eval` D-Bus method | None. |
 | Windows 10 / 11 | Win32 API | None. |
 
@@ -754,6 +755,46 @@ The extension points follow a fixed five-step order:
 
 > [!NOTE]
 > **Cinnamon Wayland:** Cinnamon's Wayland session is still experimental in Linux Mint. The `org.Cinnamon.Eval` D-Bus backend works on both X11 and Wayland sessions, but Wayland-specific stability or behavior changes are dependent on the Cinnamon/Muffin team's ongoing development.
+
+---
+
+## Common Issues and Fixes
+
+<details>
+<summary><strong>KDE: HPR is not tracking the active window</strong></summary>
+
+HPR's KDE backend works by injecting a small JavaScript snippet into KWin over D-Bus using `qdbus6` or `qdbus-qt6`. These are Qt6 debugging utilities. They are **not** installed by default on a standard KDE desktop — they ship as part of Qt's developer/tooling packages.
+
+If HPR launches on a KDE session but the active window is never detected (always shows Unknown or empty), install the relevant package for your distribution:
+
+**Arch Linux**
+```bash
+sudo pacman -S qt5-tools
+```
+
+**Ubuntu / Debian / KDE Neon / Linux Mint**
+```bash
+sudo apt install qdbus-qt5
+# or for Qt6:
+sudo apt install qt6-tools-dev
+```
+
+**Fedora**
+```bash
+sudo dnf install qt6-qttools
+```
+
+**openSUSE**
+```bash
+sudo zypper install qt6-tools
+```
+
+After installing, restart HPR. It auto-detects the available binary (`qdbus6` → `qdbus-qt6` → `qdbus`) at startup.
+
+> [!NOTE]
+> This is a one-time install. The Qt6 tools package is small and has no runtime overhead on HPR itself.
+
+</details>
 
 ---
 
