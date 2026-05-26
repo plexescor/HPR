@@ -390,7 +390,7 @@ void TrayManager::trayManager_LoopLinux()
     if (dbus_error_is_set(&err))
     {
         // Non-fatal: we just won't auto-retry on GNOME, but the rest still works
-        std::cerr << "[TrayManager] add_match warning: " << err.message << "\n";
+        // std::cerr << "[TrayManager] add_match warning: " << err.message << "\n";
         dbus_error_free(&err);
     }
     dbus_connection_flush(dbusConn);
@@ -414,7 +414,7 @@ void TrayManager::trayManager_LoopLinux()
 
         if (!iface || !member) { dbus_message_unref(msg); continue; }
 
-        std::cerr << "[TrayManager] msg: iface=" << iface << " member=" << member << "\n";
+        // std::cerr << "[TrayManager] msg: iface=" << iface << " member=" << member << "\n";
 
         if (dbus_message_is_method_call(msg,
                 "org.freedesktop.DBus.Introspectable", "Introspect"))
@@ -438,7 +438,7 @@ void TrayManager::trayManager_LoopLinux()
                 DBUS_TYPE_STRING, &propName,
                 DBUS_TYPE_INVALID);
 
-            std::cerr << "[TrayManager] Get: prop=" << (propName ? propName : "(null)") << "\n";
+            // std::cerr << "[TrayManager] Get: prop=" << (propName ? propName : "(null)") << "\n";
 
             // ToolTip is a struct type, handle it separately from the simple string props
             if (propName && std::string(propName) == "ToolTip")
@@ -490,7 +490,7 @@ void TrayManager::trayManager_LoopLinux()
                 else
                 {
                     // Unknown property: send a proper error so the caller doesn't hang/timeout
-                    std::cerr << "[TrayManager] Get: unknown prop '" << (propName ? propName : "") << "', sending error reply\n";
+                    // std::cerr << "[TrayManager] Get: unknown prop '" << (propName ? propName : "") << "', sending error reply\n";
                     DBusMessage* errReply = dbus_message_new_error(
                         msg,
                         "org.freedesktop.DBus.Error.UnknownProperty",
@@ -559,7 +559,7 @@ void TrayManager::trayManager_LoopLinux()
 
         else if (isGnome && dbus_message_is_method_call(msg, "com.canonical.dbusmenu", "GetLayout"))
         {
-            std::cerr << "[TrayManager] GetLayout\n";
+            // std::cerr << "[TrayManager] GetLayout\n";
             DBusMessage*    reply = dbus_message_new_method_return(msg);
             DBusMessageIter it, root, rootProps, children;
             dbus_message_iter_init_append(reply, &it);
@@ -636,7 +636,7 @@ void TrayManager::trayManager_LoopLinux()
             dbus_message_iter_init(msg, &eIter);
             dbus_message_iter_get_basic(&eIter, &itemId);
 
-            std::cerr << "[TrayManager] dbusmenu Event id=" << itemId << "\n";
+            // std::cerr << "[TrayManager] dbusmenu Event id=" << itemId << "\n";
             if (itemId == 1) { if (onShow) onShow(); }
             if (itemId == 2) { if (onQuit) onQuit(); }
 
@@ -678,7 +678,7 @@ void TrayManager::trayManager_LoopLinux()
         else if (dbus_message_is_method_call(msg,
                 "org.kde.StatusNotifierItem", "Activate"))
         {
-            std::cerr << "[TrayManager] Activate (left click)\n";
+            // std::cerr << "[TrayManager] Activate (left click)\n";
             if (onShow) onShow();
 
             DBusMessage* reply = dbus_message_new_method_return(msg);
@@ -691,7 +691,7 @@ void TrayManager::trayManager_LoopLinux()
         else if (dbus_message_is_method_call(msg,
                 "org.kde.StatusNotifierItem", "ContextMenu"))
         {
-            std::cerr << "[TrayManager] ContextMenu (waybar sends this for all clicks)\n";
+            // std::cerr << "[TrayManager] ContextMenu (waybar sends this for all clicks)\n";
             if (onShow) onShow();
 
             DBusMessage* reply = dbus_message_new_method_return(msg);
@@ -704,7 +704,7 @@ void TrayManager::trayManager_LoopLinux()
         else if (dbus_message_is_method_call(msg,
                 "org.kde.StatusNotifierItem", "SecondaryActivate"))
         {
-            std::cerr << "[TrayManager] SecondaryActivate (middle click) -> quit\n";
+            // std::cerr << "[TrayManager] SecondaryActivate (middle click) -> quit\n";
             if (onQuit) onQuit();
 
             DBusMessage* reply = dbus_message_new_method_return(msg);
@@ -729,13 +729,13 @@ void TrayManager::trayManager_LoopLinux()
             if (name && std::string(name) == "org.kde.StatusNotifierWatcher"
                 && newOwner && newOwner[0] != '\0')
             {
-                std::cerr << "[TrayManager] SNI watcher appeared, re-registering\n";
+                // std::cerr << "[TrayManager] SNI watcher appeared, re-registering\n";
                 registerWithSNIWatcher(dbusConn, serviceName);
             }
         }
         else
         {
-            std::cerr << "[TrayManager] unhandled: iface=" << iface << " member=" << member << "\n";
+            // std::cerr << "[TrayManager] unhandled: iface=" << iface << " member=" << member << "\n";
         }
 
         dbus_message_unref(msg);
