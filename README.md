@@ -203,12 +203,25 @@ Windows: %APPDATA%\HPR\HPR_DB\
 | Hyprland (Wayland) | `hyprctl` IPC | None.  |
 | GNOME (Wayland) | `window-calls-extended` shell extension | One-time only. Run `installWindowCallsExtension.sh`, log out, log back in. |
 | KDE Plasma (Wayland / X11) | KWin scripting via `qdbus6` / `qdbus-qt6` (auto-detected) | None. |
+| Cinnamon (X11 + Wayland) | `org.Cinnamon.Eval` D-Bus method | None. |
 | Windows 10 / 11 | Win32 API | None. |
 
 <details>
 <summary>GNOME setup walkthrough</summary>
 
 On first launch HPR checks whether `window-calls-extended` is active. If it is not, it tells you directly rather than silently returning garbage. Run the bundled `installWindowCallsExtension.sh`, which clones and enables the extension. Because GNOME on Wayland cannot hot-reload shell extensions, you log out and back in once. Every launch after that is fully automatic. It was either do it this way or not support GNOME at all, and I was not leaving GNOME users out.
+
+</details>
+
+<details>
+<summary>Cinnamon details</summary>
+
+Cinnamon runs on top of its own window manager, **Muffin** (a fork of GNOME's Mutter). Unlike the other Linux backends, Cinnamon exposes a D-Bus method — `org.Cinnamon.Eval` — that evaluates arbitrary JavaScript directly inside the live Cinnamon process. HPR uses this to query the internal `global.display.focus_window` object:
+
+- **Window class** (application name): `global.display.focus_window.get_wm_class()`
+- **Window title** (active tab / document): `global.get_window_actors().filter(a => a.meta_window.has_focus())[0].get_meta_window().get_title()`
+
+Because this goes through Cinnamon's own compositor internals rather than X11 display properties, it works identically on both the **X11 session** (default on Linux Mint) and the **experimental Wayland session** without any code branching. No extra tools or extensions need to be installed.
 
 </details>
 
@@ -602,7 +615,7 @@ Shutdown is always clean. The database writer finishes its current flush before 
 - CMake 3.21+
 - GCC 13+, Clang 16+, or MSVC 2022+ with C++23 support
 - Slint 1.16.1 (the install script handles this)
-- Linux only: `jq` for Hyprland, `gdbus` for GNOME, `qdbus6` / `qdbus-qt6` for KDE (HPR auto-detects which is available)
+- Linux only: `jq` for Hyprland, `gdbus` for GNOME and Cinnamon, `qdbus6` / `qdbus-qt6` for KDE (HPR auto-detects which is available)
 
 
 ```bash
@@ -676,6 +689,9 @@ The extension points follow a fixed five-step order:
 > [!NOTE]
 > **Linux platform detection:** HPR reads `$XDG_CURRENT_DESKTOP` and matches substrings via `std::string::contains`. Non-standard desktop session variables or nested compositor configurations may not resolve correctly.
 
+> [!NOTE]
+> **Cinnamon Wayland:** Cinnamon's Wayland session is still experimental in Linux Mint. The `org.Cinnamon.Eval` D-Bus backend works on both X11 and Wayland sessions, but Wayland-specific stability or behavior changes are dependent on the Cinnamon/Muffin team's ongoing development.
+
 ---
 
 ## Contributing
@@ -701,7 +717,7 @@ If HPR has been useful to you, a Ko-fi helps keep development going:
 <p align="center">
   <sub>
     Active development &nbsp;|&nbsp; v0.5 &nbsp;|&nbsp;
-    Hyprland · GNOME · KDE Plasma · Windows 10/11 &nbsp;|&nbsp;
+    Hyprland · GNOME · KDE Plasma · Cinnamon · Windows 10/11 &nbsp;|&nbsp;
     C++23 · Slint 1.16.1 · SQLite3 amalgamation · sqlite_modern_cpp
   </sub>
 </p>
