@@ -51,6 +51,29 @@ LinuxInitialiser::LinuxInitialiser()
             std::filesystem::copy_options::overwrite_existing);
     }
 
+    // Write index.theme — required by the XDG icon theme spec so that
+    // St.IconTheme (used by GNOME's AppIndicator extension) recognises
+    // this directory as a valid icon theme and can resolve "hpr" → hpr.png.
+    // Without this file, St.IconTheme::lookup_icon_for_scale() returns null
+    // and the tray icon silently shows nothing.  Other DEs are unaffected.
+    std::string indexThemePath = configDir + "icons/hicolor/index.theme";
+    if (!std::filesystem::exists(indexThemePath))
+    {
+        std::ofstream indexTheme(indexThemePath);
+        if (indexTheme.is_open())
+        {
+            indexTheme << "[Icon Theme]\n"
+                       << "Name=hicolor\n"
+                       << "Comment=HPR hicolor icon theme\n"
+                       << "Directories=256x256/apps\n"
+                       << "\n"
+                       << "[256x256/apps]\n"
+                       << "Size=256\n"
+                       << "Type=Fixed\n";
+            indexTheme.close();
+        }
+    }
+
     s_iconThemePath = configDir + "icons";
 
     // Write a .desktop file to ~/.local/share/applications/hpr.desktop.

@@ -213,16 +213,41 @@ static const char* SNI_INTROSPECTION_XML =
     "  \"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd\">"
     "<node>"
     "  <interface name=\"org.kde.StatusNotifierItem\">"
-    "    <property name=\"Category\"      type=\"s\"          access=\"read\"/>"
-    "    <property name=\"Id\"            type=\"s\"          access=\"read\"/>"
-    "    <property name=\"Title\"         type=\"s\"          access=\"read\"/>"
-    "    <property name=\"Status\"        type=\"s\"          access=\"read\"/>"
-    "    <property name=\"IconName\"      type=\"s\"          access=\"read\"/>"
-    "    <property name=\"IconThemePath\" type=\"s\"          access=\"read\"/>"
+    "    <property name=\"Category\"      type=\"s\"            access=\"read\"/>"
+    "    <property name=\"Id\"            type=\"s\"            access=\"read\"/>"
+    "    <property name=\"Title\"         type=\"s\"            access=\"read\"/>"
+    "    <property name=\"Status\"        type=\"s\"            access=\"read\"/>"
+    "    <property name=\"IconName\"      type=\"s\"            access=\"read\"/>"
+    "    <property name=\"IconThemePath\" type=\"s\"            access=\"read\"/>"
+    "    <property name=\"Menu\"          type=\"o\"            access=\"read\"/>"
     "    <property name=\"ToolTip\"       type=\"(sa(iiay)ss)\" access=\"read\"/>"
     "    <method name=\"Activate\"><arg type=\"i\" direction=\"in\"/><arg type=\"i\" direction=\"in\"/></method>"
     "    <method name=\"ContextMenu\"><arg type=\"i\" direction=\"in\"/><arg type=\"i\" direction=\"in\"/></method>"
     "    <method name=\"SecondaryActivate\"><arg type=\"i\" direction=\"in\"/><arg type=\"i\" direction=\"in\"/></method>"
+    "    <method name=\"ProvideXdgActivationToken\"><arg type=\"s\" direction=\"in\"/></method>"
+    "  </interface>"
+    "  <interface name=\"com.canonical.dbusmenu\">"
+    "    <method name=\"GetLayout\">"
+    "      <arg name=\"parentId\"       type=\"i\"          direction=\"in\"/>"
+    "      <arg name=\"recursionDepth\" type=\"i\"          direction=\"in\"/>"
+    "      <arg name=\"propertyNames\"  type=\"as\"         direction=\"in\"/>"
+    "      <arg name=\"revision\"       type=\"u\"          direction=\"out\"/>"
+    "      <arg name=\"layout\"         type=\"(ia{sv}av)\" direction=\"out\"/>"
+    "    </method>"
+    "    <method name=\"AboutToShow\">"
+    "      <arg name=\"id\"             type=\"i\" direction=\"in\"/>"
+    "      <arg name=\"needsUpdate\"    type=\"b\" direction=\"out\"/>"
+    "    </method>"
+    "    <method name=\"Event\">"
+    "      <arg name=\"id\"             type=\"i\" direction=\"in\"/>"
+    "      <arg name=\"eventId\"        type=\"s\" direction=\"in\"/>"
+    "      <arg name=\"data\"           type=\"v\" direction=\"in\"/>"
+    "      <arg name=\"timestamp\"      type=\"u\" direction=\"in\"/>"
+    "    </method>"
+    "    <signal name=\"LayoutUpdated\">"
+    "      <arg name=\"revision\"       type=\"u\"/>"
+    "      <arg name=\"parent\"         type=\"i\"/>"
+    "    </signal>"
     "  </interface>"
     "  <interface name=\"org.freedesktop.DBus.Properties\">"
     "    <method name=\"Get\">"
@@ -239,6 +264,7 @@ static const char* SNI_INTROSPECTION_XML =
     "    <method name=\"Introspect\"><arg type=\"s\" direction=\"out\"/></method>"
     "  </interface>"
     "</node>";
+
 
 // appends a key-value string pair into a dbus dict iterator, used for GetAll
 static void appendStringProp(DBusMessageIter* arr, const char* key, const char* val)
@@ -283,6 +309,29 @@ static void replyWithToolTip(DBusConnection* conn, DBusMessage* msg)
     dbus_message_unref(reply);
 }
 
+// Helper: send RegisterStatusNotifierItem to the watcher.
+// Called once at startup and again any time the watcher (re)appears on the bus
+// (e.g. on GNOME when the AppIndicator extension finishes loading).
+static void registerWithSNIWatcher(DBusConnection* conn, const std::string& serviceName)
+{
+    DBusMessage* msg = dbus_message_new_method_call(
+        "org.kde.StatusNotifierWatcher",
+        "/StatusNotifierWatcher",
+        "org.kde.StatusNotifierWatcher",
+        "RegisterStatusNotifierItem"
+    );
+    if (msg)
+    {
+        const char* svcCStr = serviceName.c_str();
+        dbus_message_append_args(msg,
+            DBUS_TYPE_STRING, &svcCStr,
+            DBUS_TYPE_INVALID);
+        dbus_connection_send(conn, msg, nullptr);
+        dbus_connection_flush(conn);
+        dbus_message_unref(msg);
+    }
+}
+
 void TrayManager::trayManager_LoopLinux()
 {
     DBusError err;
@@ -323,25 +372,28 @@ void TrayManager::trayManager_LoopLinux()
         return;
     }
 
-    // tell the watcher we exist, this is what makes the icon show up in waybar/kde/cinnamon
+    // Subscribe to NameOwnerChanged for org.kde.StatusNotifierWatcher so we
+    // know when GNOME's AppIndicator extension (or any SNI host) comes online
+    // after we have already started.  Without this the registration call below
+    // is silently dropped when the watcher isn't up yet.
+    dbus_bus_add_match(dbusConn,
+        "type='signal'"
+        ",sender='org.freedesktop.DBus'"
+        ",interface='org.freedesktop.DBus'"
+        ",member='NameOwnerChanged'"
+        ",arg0='org.kde.StatusNotifierWatcher'",
+        &err);
+    if (dbus_error_is_set(&err))
     {
-        DBusMessage* msg = dbus_message_new_method_call(
-            "org.kde.StatusNotifierWatcher",
-            "/StatusNotifierWatcher",
-            "org.kde.StatusNotifierWatcher",
-            "RegisterStatusNotifierItem"
-        );
-        if (msg)
-        {
-            const char* svcCStr = serviceName.c_str();
-            dbus_message_append_args(msg,
-                DBUS_TYPE_STRING, &svcCStr,
-                DBUS_TYPE_INVALID);
-            dbus_connection_send(dbusConn, msg, nullptr);
-            dbus_connection_flush(dbusConn);
-            dbus_message_unref(msg);
-        }
+        // Non-fatal: we just won't auto-retry on GNOME, but the rest still works
+        std::cerr << "[TrayManager] add_match warning: " << err.message << "\n";
+        dbus_error_free(&err);
     }
+    dbus_connection_flush(dbusConn);
+
+    // tell the watcher we exist — this is what makes the icon show up in waybar/kde/cinnamon.
+    // On GNOME the watcher may not be up yet; the NameOwnerChanged handler below will retry.
+    registerWithSNIWatcher(dbusConn, serviceName);
 
     while (running)
     {
@@ -357,6 +409,8 @@ void TrayManager::trayManager_LoopLinux()
         const char* member = dbus_message_get_member(msg);
 
         if (!iface || !member) { dbus_message_unref(msg); continue; }
+
+        std::cerr << "[TrayManager] msg: iface=" << iface << " member=" << member << "\n";
 
         if (dbus_message_is_method_call(msg,
                 "org.freedesktop.DBus.Introspectable", "Introspect"))
@@ -380,10 +434,28 @@ void TrayManager::trayManager_LoopLinux()
                 DBUS_TYPE_STRING, &propName,
                 DBUS_TYPE_INVALID);
 
+            std::cerr << "[TrayManager] Get: prop=" << (propName ? propName : "(null)") << "\n";
+
             // ToolTip is a struct type, handle it separately from the simple string props
             if (propName && std::string(propName) == "ToolTip")
             {
                 replyWithToolTip(dbusConn, msg);
+            }
+            // Menu is an object path (type 'o'), not a string — handle separately.
+            // GNOME's AppIndicator extension polls this in a loop and removes the icon
+            // if it doesn't get a valid reply. '/' means "no dbusmenu".
+            else if (propName && std::string(propName) == "Menu")
+            {
+                const char* menuPath = "/";
+                DBusMessage*    reply     = dbus_message_new_method_return(msg);
+                DBusMessageIter replyIter, variant;
+                dbus_message_iter_init_append(reply, &replyIter);
+                dbus_message_iter_open_container(&replyIter, DBUS_TYPE_VARIANT, "o", &variant);
+                dbus_message_iter_append_basic(&variant, DBUS_TYPE_OBJECT_PATH, &menuPath);
+                dbus_message_iter_close_container(&replyIter, &variant);
+                dbus_connection_send(dbusConn, reply, nullptr);
+                dbus_connection_flush(dbusConn);
+                dbus_message_unref(reply);
             }
             else
             {
@@ -396,18 +468,30 @@ void TrayManager::trayManager_LoopLinux()
                 else if (propName && std::string(propName) == "IconName")      value = themePath.empty() ? "application-x-executable" : "hpr";
                 else if (propName && std::string(propName) == "IconThemePath") value = themePath.c_str();
 
-                DBusMessage*    reply     = dbus_message_new_method_return(msg);
-                DBusMessageIter replyIter, variant;
-                dbus_message_iter_init_append(reply, &replyIter);
                 if (value)
                 {
+                    DBusMessage*    reply     = dbus_message_new_method_return(msg);
+                    DBusMessageIter replyIter, variant;
+                    dbus_message_iter_init_append(reply, &replyIter);
                     dbus_message_iter_open_container(&replyIter, DBUS_TYPE_VARIANT, "s", &variant);
                     dbus_message_iter_append_basic(&variant, DBUS_TYPE_STRING, &value);
                     dbus_message_iter_close_container(&replyIter, &variant);
+                    dbus_connection_send(dbusConn, reply, nullptr);
+                    dbus_connection_flush(dbusConn);
+                    dbus_message_unref(reply);
                 }
-                dbus_connection_send(dbusConn, reply, nullptr);
-                dbus_connection_flush(dbusConn);
-                dbus_message_unref(reply);
+                else
+                {
+                    // Unknown property: send a proper error so the caller doesn't hang/timeout
+                    std::cerr << "[TrayManager] Get: unknown prop '" << (propName ? propName : "") << "', sending error reply\n";
+                    DBusMessage* errReply = dbus_message_new_error(
+                        msg,
+                        "org.freedesktop.DBus.Error.UnknownProperty",
+                        propName ? propName : "unknown");
+                    dbus_connection_send(dbusConn, errReply, nullptr);
+                    dbus_connection_flush(dbusConn);
+                    dbus_message_unref(errReply);
+                }
             }
         }
 
@@ -431,7 +515,162 @@ void TrayManager::trayManager_LoopLinux()
             if (!themePath.empty())
                 appendStringProp(&arr, "IconThemePath", iconThemePath);
 
+            // Menu: object path, type 'o' — GNOME polls this; '/' means no dbusmenu
+            {
+                DBusMessageIter entry, variant;
+                const char* menuKey  = "Menu";
+                const char* menuPath = "/";
+                dbus_message_iter_open_container(&arr, DBUS_TYPE_DICT_ENTRY, nullptr, &entry);
+                dbus_message_iter_append_basic(&entry, DBUS_TYPE_STRING, &menuKey);
+                dbus_message_iter_open_container(&entry, DBUS_TYPE_VARIANT, "o", &variant);
+                dbus_message_iter_append_basic(&variant, DBUS_TYPE_OBJECT_PATH, &menuPath);
+                dbus_message_iter_close_container(&entry, &variant);
+                dbus_message_iter_close_container(&arr, &entry);
+            }
+
             dbus_message_iter_close_container(&replyIter, &arr);
+            dbus_connection_send(dbusConn, reply, nullptr);
+            dbus_connection_flush(dbusConn);
+            dbus_message_unref(reply);
+        }
+
+        // GetLayout: GNOME renders our right-click menu natively from this layout.
+        // We return 2 items: "Show HPR" (id=1) and "Quit" (id=2).
+        // This ONLY affects GNOME — other DEs (Waybar/KDE/Cinnamon) never call this.
+        else if (dbus_message_is_method_call(msg, "com.canonical.dbusmenu", "GetLayout"))
+        {
+            std::cerr << "[TrayManager] GetLayout\n";
+            DBusMessage*    reply = dbus_message_new_method_return(msg);
+            DBusMessageIter it, root, rootProps, children;
+            dbus_message_iter_init_append(reply, &it);
+
+            // revision: u = 1
+            dbus_uint32_t rev = 1;
+            dbus_message_iter_append_basic(&it, DBUS_TYPE_UINT32, &rev);
+
+            // root layout: (i a{sv} av)
+            dbus_message_iter_open_container(&it, DBUS_TYPE_STRUCT, nullptr, &root);
+            dbus_int32_t rootId = 0;
+            dbus_message_iter_append_basic(&root, DBUS_TYPE_INT32, &rootId);
+            // root has no own props
+            dbus_message_iter_open_container(&root, DBUS_TYPE_ARRAY, "{sv}", &rootProps);
+            dbus_message_iter_close_container(&root, &rootProps);
+
+            // children: av — each child is a variant wrapping (i a{sv} av)
+            dbus_message_iter_open_container(&root, DBUS_TYPE_ARRAY, "v", &children);
+
+            // Helper lambda-like struct to append one menu item
+            auto appendItem = [&](dbus_int32_t id, const char* label) {
+                DBusMessageIter vari, item, props, gc, entry, val;
+                dbus_message_iter_open_container(&children, DBUS_TYPE_VARIANT, "(ia{sv}av)", &vari);
+                dbus_message_iter_open_container(&vari, DBUS_TYPE_STRUCT, nullptr, &item);
+                dbus_message_iter_append_basic(&item, DBUS_TYPE_INT32, &id);
+
+                dbus_message_iter_open_container(&item, DBUS_TYPE_ARRAY, "{sv}", &props);
+                // "label" prop
+                {
+                    const char* k = "label";
+                    dbus_message_iter_open_container(&props, DBUS_TYPE_DICT_ENTRY, nullptr, &entry);
+                    dbus_message_iter_append_basic(&entry, DBUS_TYPE_STRING, &k);
+                    dbus_message_iter_open_container(&entry, DBUS_TYPE_VARIANT, "s", &val);
+                    dbus_message_iter_append_basic(&val, DBUS_TYPE_STRING, &label);
+                    dbus_message_iter_close_container(&entry, &val);
+                    dbus_message_iter_close_container(&props, &entry);
+                }
+                // "enabled" prop
+                {
+                    const char* k = "enabled";
+                    dbus_bool_t v = TRUE;
+                    dbus_message_iter_open_container(&props, DBUS_TYPE_DICT_ENTRY, nullptr, &entry);
+                    dbus_message_iter_append_basic(&entry, DBUS_TYPE_STRING, &k);
+                    dbus_message_iter_open_container(&entry, DBUS_TYPE_VARIANT, "b", &val);
+                    dbus_message_iter_append_basic(&val, DBUS_TYPE_BOOLEAN, &v);
+                    dbus_message_iter_close_container(&entry, &val);
+                    dbus_message_iter_close_container(&props, &entry);
+                }
+                // "visible" prop
+                {
+                    const char* k = "visible";
+                    dbus_bool_t v = TRUE;
+                    dbus_message_iter_open_container(&props, DBUS_TYPE_DICT_ENTRY, nullptr, &entry);
+                    dbus_message_iter_append_basic(&entry, DBUS_TYPE_STRING, &k);
+                    dbus_message_iter_open_container(&entry, DBUS_TYPE_VARIANT, "b", &val);
+                    dbus_message_iter_append_basic(&val, DBUS_TYPE_BOOLEAN, &v);
+                    dbus_message_iter_close_container(&entry, &val);
+                    dbus_message_iter_close_container(&props, &entry);
+                }
+                dbus_message_iter_close_container(&item, &props);
+                // no grandchildren
+                dbus_message_iter_open_container(&item, DBUS_TYPE_ARRAY, "v", &gc);
+                dbus_message_iter_close_container(&item, &gc);
+
+                dbus_message_iter_close_container(&vari, &item);
+                dbus_message_iter_close_container(&children, &vari);
+            };
+
+            appendItem(1, "Show HPR");
+            appendItem(2, "Quit");
+
+            dbus_message_iter_close_container(&root, &children);
+            dbus_message_iter_close_container(&it, &root);
+
+            dbus_connection_send(dbusConn, reply, nullptr);
+            dbus_connection_flush(dbusConn);
+            dbus_message_unref(reply);
+        }
+
+        // Event: fired when user clicks an item in the right-click context menu on GNOME.
+        // id=1 → Show HPR, id=2 → Quit. Other DEs never send this.
+        else if (dbus_message_is_method_call(msg, "com.canonical.dbusmenu", "Event"))
+        {
+            dbus_int32_t  itemId    = 0;
+            const char*   eventType = nullptr;
+            dbus_uint32_t timestamp = 0;
+            DBusMessageIter eIter;
+            dbus_message_iter_init(msg, &eIter);
+            dbus_message_iter_get_basic(&eIter, &itemId);
+
+            std::cerr << "[TrayManager] dbusmenu Event id=" << itemId << "\n";
+
+            if (itemId == 1) { if (onShow) onShow(); }
+            if (itemId == 2) { if (onQuit) onQuit(); }
+
+            DBusMessage* reply = dbus_message_new_method_return(msg);
+            dbus_connection_send(dbusConn, reply, nullptr);
+            dbus_connection_flush(dbusConn);
+            dbus_message_unref(reply);
+        }
+
+        // AboutToShow: sent before GNOME renders the right-click menu popup.
+        // Just reply false (no update needed). Do NOT call onShow here —
+        // the actual action comes from the Event handler when user clicks an item.
+        else if (dbus_message_is_method_call(msg, "com.canonical.dbusmenu", "AboutToShow"))
+        {
+            std::cerr << "[TrayManager] AboutToShow (menu about to open)\n";
+            DBusMessage* reply = dbus_message_new_method_return(msg);
+            dbus_bool_t needsUpdate = FALSE;
+            dbus_message_append_args(reply, DBUS_TYPE_BOOLEAN, &needsUpdate, DBUS_TYPE_INVALID);
+            dbus_connection_send(dbusConn, reply, nullptr);
+            dbus_connection_flush(dbusConn);
+            dbus_message_unref(reply);
+        }
+
+        // ProvideXdgActivationToken: GNOME 45+ sends this BEFORE LMB/MMB clicks.
+        // It passes a Wayland XDG activation token — set it as env var so the
+        // window toolkit (Slint) can use it to request focus from the compositor.
+        // Just ACK, never call onShow — the real action comes from Activate/SecondaryActivate.
+        else if (dbus_message_is_method_call(msg,
+                "org.kde.StatusNotifierItem", "ProvideXdgActivationToken"))
+        {
+            const char* token = nullptr;
+            dbus_message_get_args(msg, &err, DBUS_TYPE_STRING, &token, DBUS_TYPE_INVALID);
+            if (token && token[0] != '\0')
+            {
+                std::cerr << "[TrayManager] ProvideXdgActivationToken: " << token << "\n";
+                setenv("XDG_ACTIVATION_TOKEN", token, 1);
+            }
+            dbus_error_free(&err);
+            DBusMessage* reply = dbus_message_new_method_return(msg);
             dbus_connection_send(dbusConn, reply, nullptr);
             dbus_connection_flush(dbusConn);
             dbus_message_unref(reply);
@@ -441,7 +680,7 @@ void TrayManager::trayManager_LoopLinux()
         else if (dbus_message_is_method_call(msg,
                 "org.kde.StatusNotifierItem", "Activate"))
         {
-            // std::cerr << "[TrayManager] Activate (left click)\n";
+            std::cerr << "[TrayManager] Activate (left click)\n";
             if (onShow) onShow();
 
             // protocol requires a reply even if empty
@@ -456,7 +695,7 @@ void TrayManager::trayManager_LoopLinux()
         else if (dbus_message_is_method_call(msg,
                 "org.kde.StatusNotifierItem", "ContextMenu"))
         {
-            // std::cerr << "[TrayManager] ContextMenu (waybar sends this for all clicks)\n";
+            std::cerr << "[TrayManager] ContextMenu (waybar sends this for all clicks)\n";
             if (onShow) onShow();
 
             DBusMessage* reply = dbus_message_new_method_return(msg);
@@ -469,7 +708,7 @@ void TrayManager::trayManager_LoopLinux()
         else if (dbus_message_is_method_call(msg,
                 "org.kde.StatusNotifierItem", "SecondaryActivate"))
         {
-            // std::cerr << "[TrayManager] SecondaryActivate (middle click) -> quit\n";
+            std::cerr << "[TrayManager] SecondaryActivate (middle click) -> quit\n";
             if (onQuit) onQuit();
 
             DBusMessage* reply = dbus_message_new_method_return(msg);
@@ -478,10 +717,34 @@ void TrayManager::trayManager_LoopLinux()
             dbus_message_unref(reply);
         }
 
+        // NameOwnerChanged: re-register whenever the SNI watcher (re)appears.
+        // This is the key fix for GNOME — the AppIndicator extension can start
+        // seconds after HPR, so we must retry registration when it comes online.
+        else if (dbus_message_is_signal(msg, "org.freedesktop.DBus", "NameOwnerChanged"))
+        {
+            const char* name     = nullptr;
+            const char* oldOwner = nullptr;
+            const char* newOwner = nullptr;
+            dbus_message_get_args(msg, &err,
+                DBUS_TYPE_STRING, &name,
+                DBUS_TYPE_STRING, &oldOwner,
+                DBUS_TYPE_STRING, &newOwner,
+                DBUS_TYPE_INVALID);
+            dbus_error_free(&err);
+
+            // newOwner non-empty means the watcher just appeared (or restarted)
+            if (name && std::string(name) == "org.kde.StatusNotifierWatcher"
+                && newOwner && newOwner[0] != '\0')
+            {
+                std::cerr << "[TrayManager] SNI watcher appeared, re-registering\n";
+                registerWithSNIWatcher(dbusConn, serviceName);
+            }
+        }
+
         // log anything else so we can see if waybar sends unexpected methods
         else
         {
-            // std::cerr << "[TrayManager] unhandled: iface=" << iface << " member=" << member << "\n";
+            std::cerr << "[TrayManager] unhandled: iface=" << iface << " member=" << member << "\n";
         }
 
 
