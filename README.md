@@ -262,7 +262,7 @@ Works with Waybar on Hyprland, KDE's system tray, and Cinnamon's panel out of th
 | Platform | Backend | Extra Setup |
 |---|---|---|
 | Hyprland (Wayland) | `hyprctl` IPC | None.  |
-| GNOME (Wayland) | Custom GNOME Shell extension ([lol-another-window-extension](https://github.com/plexescor/lol-another-window-extension)) | One-time only. Run `installWindowCallsExtension.sh`, log out, log back in. |
+| GNOME (Wayland) | Custom GNOME Shell extension ([lol-another-window-extension](https://github.com/plexescor/lol-another-window-extension)) | One-time only. Run the bundled install script, log out, log back in. |
 | KDE Plasma (Wayland / X11) | KWin scripting via `qdbus6` / `qdbus-qt6` (auto-detected) | None. |
 | Cinnamon (X11 + Wayland) | `org.Cinnamon.Eval` D-Bus method | None. |
 | Windows 10 / 11 | Win32 API | None. |
@@ -270,7 +270,7 @@ Works with Waybar on Hyprland, KDE's system tray, and Cinnamon's panel out of th
 <details>
 <summary>GNOME setup walkthrough</summary>
 
-On first launch HPR checks whether its GNOME extension is active. If it is not, it tells you directly rather than silently returning garbage. Run the bundled `installWindowCallsExtension.sh`, which clones [lol-another-window-extension](https://github.com/plexescor/lol-another-window-extension) - a custom extension built specifically for HPR - and enables it. Because GNOME on Wayland cannot hot-reload shell extensions, you log out and back in once. Every launch after that is fully automatic. It was either do it this way or not support GNOME at all, and I was not leaving GNOME users out.
+On first launch HPR checks whether its GNOME extension is active. If it is not, it tells you directly rather than silently returning garbage. Run the bundled `installWindowCallsExtension.sh`, which clones and installs [lol-another-window-extension](https://github.com/plexescor/lol-another-window-extension) — a custom shell extension built specifically for HPR — and enables it. Because GNOME on Wayland cannot hot-reload shell extensions, you log out and back in once. Every launch after that is fully automatic. It was either do it this way or not support GNOME at all, and I was not leaving GNOME users out.
 
 </details>
 
@@ -383,6 +383,8 @@ I need users, so I am going to be completely honest about where HPR stands right
 | Data leaves your machine | Never | Never | Yes | Yes |
 | Automatic tracking | Yes | Yes | Yes | No |
 | Native Wayland | Yes | Partial | N/A | N/A |
+| System tray | Yes (native, no libs) | Yes | Yes | Yes |
+| VS Code project tracking | Yes (built-in, no extension) | Via plugin | No | No |
 | Embedded web server | No | Yes | No | No |
 | Open source | Yes | Yes | No | No |
 | Launch time | Instant | Several seconds | N/A | N/A |
