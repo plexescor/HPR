@@ -270,7 +270,7 @@ static void replyWithToolTip(DBusConnection* conn, DBusMessage* msg)
     dbus_message_iter_open_container(&ttStruct, DBUS_TYPE_ARRAY, "(iiay)", &iconArr);
     dbus_message_iter_close_container(&ttStruct, &iconArr);
 
-    const char* ttTitle = "HPR - Human Pattern Recorder";
+    const char* ttTitle = "HPR - Human Pattern Recorder\nLeft/Right click: Open HPR  |  Middle click: Quit";
     const char* ttBody  = "Left/Right click: Open HPR  |  Middle click: Quit";
     dbus_message_iter_append_basic(&ttStruct, DBUS_TYPE_STRING, &ttTitle);
     dbus_message_iter_append_basic(&ttStruct, DBUS_TYPE_STRING, &ttBody);
