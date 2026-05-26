@@ -6,7 +6,7 @@
 #include <string>
 #include <sys/stat.h>
 
-// Static member definition
+// Static member definition lazy bruv
 std::string LinuxInitialiser::s_iconThemePath;
 
 const std::string& LinuxInitialiser::getIconThemePath()
