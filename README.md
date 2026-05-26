@@ -264,7 +264,7 @@ Works with Waybar on Hyprland, KDE's system tray, and Cinnamon's panel out of th
 |---|---|---|
 | Hyprland (Wayland) | `hyprctl` IPC | None.  |
 | GNOME (Wayland) | Custom GNOME Shell extension ([lol-another-window-extension](https://github.com/plexescor/lol-another-window-extension)) | One-time only. Run the bundled install script, log out, log back in. |
-| KDE Plasma (Wayland / X11) | KWin scripting via `qdbus6` / `qdbus-qt6` (auto-detected) | None on most distros. Linux Mint users may need to install `qdbus` manually — see [Common Issues and Fixes](#common-issues-and-fixes). |
+| KDE Plasma 6+ (Wayland / X11) | KWin scripting via `qdbus6` / `qdbus-qt6` (auto-detected) | Plasma 5 is not supported. Requires Plasma 6+. |
 | Cinnamon (X11 + Wayland) | `org.Cinnamon.Eval` D-Bus method | None. |
 | Windows 10 / 11 | Win32 API | None. |
 
@@ -748,6 +748,10 @@ The extension points follow a fixed five-step order:
 > **GNOME without the extension:** If [lol-another-window-extension](https://github.com/plexescor/lol-another-window-extension) is absent, HPR sets its internal platform identifier to `GNOME_NO_EXTENSION` and returns an instruction string from the poll loop rather than a window name. It will not attempt to run the install script autonomously. That is intentional behavior, not a bug.
 
 > [!WARNING]
+> **KDE Plasma 5 is unsupported.**
+> HPR's KDE backend relies on Plasma 6 KWin scripting behavior and may fail completely on Plasma 5 systems using legacy `qdbus`.
+
+> [!WARNING]
 > **KDE backend:** The KDE backend injects a JavaScript payload into KWin via `qdbus6` / `qdbus-qt6` (auto-detected at startup) on every 50ms tick and scrapes the system journal for the output. That means shell forks and disk reads at 20 Hz. Somehow this lands at around 1% CPU, which surprised me as much as it will surprise you. Every other approach I tested did not work. This one does and has been validated across multiple KDE configurations. It is a hack. It is a working hack. I am at peace with it.
 
 > [!NOTE]
@@ -759,6 +763,32 @@ The extension points follow a fixed five-step order:
 ---
 
 ## Common Issues and Fixes
+
+<details>
+<summary><strong>KDE Plasma 5: HPR does not detect windows / always shows Unknown</strong></summary>
+
+HPR's KDE backend currently depends on Plasma 6 KWin scripting behavior and is not compatible with KDE Plasma 5 systems using legacy `qdbus`.
+
+If you are on Plasma 5, active window tracking may:
+- fail completely
+- return empty values
+- show `Unknown`
+- never update at all
+
+Check your Plasma version:
+```bash
+plasmashell --version
+```
+
+If the output starts with `5.` (for example `5.27.x`), your system is unsupported.
+
+**Fix:** upgrade to KDE Plasma 6.
+
+Most rolling-release distributions already ship Plasma 6. On Ubuntu-based distributions you may need to wait for newer repos or switch distributions/releases.
+
+After upgrading to Plasma 6, restart HPR.
+
+</details>
 
 <details>
 <summary><strong>KDE: HPR is not tracking the active window</strong></summary>
