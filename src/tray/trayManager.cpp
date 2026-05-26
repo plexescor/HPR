@@ -467,7 +467,7 @@ void TrayManager::trayManager_LoopLinux()
                 const char* value = nullptr;
                 if      (propName && std::string(propName) == "Category")      value = "ApplicationStatus";
                 else if (propName && std::string(propName) == "Id")            value = "HPR";
-                else if (propName && std::string(propName) == "Title")         value = "HPR - Human Pattern Recorder";
+                else if (propName && std::string(propName) == "Title")         value = "HPR - Human Pattern Recorder\nLeft/Right click: Open HPR  |  Middle click: Quit";
                 else if (propName && std::string(propName) == "Status")        value = "Active";
                 else if (propName && std::string(propName) == "IconName")
                     value = themePath.empty() ? "application-x-executable" : "hpr";
@@ -512,7 +512,7 @@ void TrayManager::trayManager_LoopLinux()
 
             appendStringProp(&arr, "Category",  "ApplicationStatus");
             appendStringProp(&arr, "Id",         "HPR");
-            appendStringProp(&arr, "Title",      "HPR - Human Pattern Recorder");
+            appendStringProp(&arr, "Title",      "HPR - Human Pattern Recorder\nLeft/Right click: Open HPR  |  Middle click: Quit");
             appendStringProp(&arr, "Status",     "Active");
 
             if (isGnome)
