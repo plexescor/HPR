@@ -252,8 +252,7 @@ void HPRInterpreter::run()
         });
     #else
         inst->window().on_close_requested([this]() -> slint::CloseRequestResponse {
-            running = false;
-            slint::quit_event_loop();
+            this->hide();
             return slint::CloseRequestResponse::KeepWindowShown;
         });
     #endif
