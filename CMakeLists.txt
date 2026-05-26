@@ -10,7 +10,7 @@ set(CMAKE_BUILD_PARALLEL_LEVEL 8)
 
 find_package(Slint QUIET)
 
-# Find libdbus-1 on Linux (base system library, no GUI toolkit dependency)
+# Find libdbus-1 on Linu
 if(LINUX)
     find_package(PkgConfig REQUIRED)
     pkg_check_modules(DBUS REQUIRED dbus-1)
