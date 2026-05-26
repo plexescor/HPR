@@ -201,7 +201,7 @@ Windows: %APPDATA%\HPR\HPR_DB\
 | Platform | Backend | Extra Setup |
 |---|---|---|
 | Hyprland (Wayland) | `hyprctl` IPC | None.  |
-| GNOME (Wayland) | `window-calls-extended` shell extension | One-time only. Run `installWindowCallsExtension.sh`, log out, log back in. |
+| GNOME (Wayland) | Custom GNOME Shell extension ([lol-another-window-extension](https://github.com/plexescor/lol-another-window-extension)) | One-time only. Run `installWindowCallsExtension.sh`, log out, log back in. |
 | KDE Plasma (Wayland / X11) | KWin scripting via `qdbus6` / `qdbus-qt6` (auto-detected) | None. |
 | Cinnamon (X11 + Wayland) | `org.Cinnamon.Eval` D-Bus method | None. |
 | Windows 10 / 11 | Win32 API | None. |
@@ -209,7 +209,7 @@ Windows: %APPDATA%\HPR\HPR_DB\
 <details>
 <summary>GNOME setup walkthrough</summary>
 
-On first launch HPR checks whether `window-calls-extended` is active. If it is not, it tells you directly rather than silently returning garbage. Run the bundled `installWindowCallsExtension.sh`, which clones and enables the extension. Because GNOME on Wayland cannot hot-reload shell extensions, you log out and back in once. Every launch after that is fully automatic. It was either do it this way or not support GNOME at all, and I was not leaving GNOME users out.
+On first launch HPR checks whether its GNOME extension is active. If it is not, it tells you directly rather than silently returning garbage. Run the bundled `installWindowCallsExtension.sh`, which clones [lol-another-window-extension](https://github.com/plexescor/lol-another-window-extension) — a custom extension built specifically for HPR — and enables it. Because GNOME on Wayland cannot hot-reload shell extensions, you log out and back in once. Every launch after that is fully automatic. It was either do it this way or not support GNOME at all, and I was not leaving GNOME users out.
 
 </details>
 
@@ -681,7 +681,7 @@ The extension points follow a fixed five-step order:
 ## Known Issues and Limitations
 
 > [!WARNING]
-> **GNOME without the extension:** If `window-calls-extended` is absent, HPR sets its internal platform identifier to `GNOME_NO_EXTENSION` and returns an instruction string from the poll loop rather than a window name. It will not attempt to run the install script autonomously. That is intentional behavior, not a bug.
+> **GNOME without the extension:** If [lol-another-window-extension](https://github.com/plexescor/lol-another-window-extension) is absent, HPR sets its internal platform identifier to `GNOME_NO_EXTENSION` and returns an instruction string from the poll loop rather than a window name. It will not attempt to run the install script autonomously. That is intentional behavior, not a bug.
 
 > [!WARNING]
 > **KDE backend:** The KDE backend injects a JavaScript payload into KWin via `qdbus6` / `qdbus-qt6` (auto-detected at startup) on every 50ms tick and scrapes the system journal for the output. That means shell forks and disk reads at 20 Hz. Somehow this lands at around 1% CPU, which surprised me as much as it will surprise you. Every other approach I tested did not work. This one does and has been validated across multiple KDE configurations. It is a hack. It is a working hack. I am at peace with it.

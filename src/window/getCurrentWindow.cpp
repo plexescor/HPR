@@ -54,15 +54,15 @@ CurrentWindowManager::CurrentWindowManager()
 	{
 		// Check if extension files already exist on disk
 		std::string extDir = std::string(getenv("HOME")) + 
-			"/.local/share/gnome-shell/extensions/window-calls-extended@hseliger.eu";
+			"/.local/share/gnome-shell/extensions/lol-another-window-extension@plexescor";
 		
 		bool filesExist = std::filesystem::exists(extDir);
 
 		// Check if window-calls-extended is working
 		std::string checkCmd =
 			"gdbus call --session --dest org.gnome.Shell --object-path "
-			"/org/gnome/Shell/Extensions/WindowsExt --method "
-			"org.gnome.Shell.Extensions.WindowsExt.FocusClass 2>&1";
+			"/org/gnome/Shell/Extensions/LolAnotherWindowExtension --method "
+			"org.gnome.Shell.Extensions.LolAnotherWindowExtension.FocusClass 2>&1";
 		std::string checkResult = runSystemCommand(checkCmd);
 
 		std::cout << "[HPR] Extension check result: " << checkResult << std::endl;
@@ -72,7 +72,7 @@ CurrentWindowManager::CurrentWindowManager()
 			if (filesExist)
 			{
 				std::cout << "[HPR] Extension files found, enabling..." << std::endl;
-				std::string cmd = "gnome-extensions enable window-calls-extended@hseliger.eu";
+				std::string cmd = "gnome-extensions enable lol-another-window-extension@plexescor";
 				runSystemCommand(cmd);
 				currentPlatform = "GNOME";
 			}
@@ -326,8 +326,8 @@ std::string CurrentWindowManager::getCurrentWindow_Gnome()
 {
 	std::string command =
 		"gdbus call --session --dest org.gnome.Shell --object-path "
-		"/org/gnome/Shell/Extensions/WindowsExt --method "
-		"org.gnome.Shell.Extensions.WindowsExt.FocusClass";
+		"/org/gnome/Shell/Extensions/LolAnotherWindowExtension --method "
+		"org.gnome.Shell.Extensions.LolAnotherWindowExtension.FocusClass";
 	std::string result = runSystemCommand(command);
 
 	// Parse the fucking dirty output
@@ -484,8 +484,8 @@ std::string CurrentWindowManager::getCurrentTab_Gnome()
 {
 	std::string command =
 		"gdbus call --session --dest org.gnome.Shell --object-path "
-		"/org/gnome/Shell/Extensions/WindowsExt --method "
-		"org.gnome.Shell.Extensions.WindowsExt.FocusTitle";
+		"/org/gnome/Shell/Extensions/LolAnotherWindowExtension --method "
+		"org.gnome.Shell.Extensions.LolAnotherWindowExtension.FocusTitle";
 	std::string result = runSystemCommand(command);
 
 	// Parse the fucking dirty output

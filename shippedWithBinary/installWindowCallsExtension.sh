@@ -2,12 +2,12 @@
 
 # =============================================================================
 # HPR - GNOME Extension Installer
-# Installs: window-calls-extended@hseliger.eu
+# Installs: lol-another-window-extension@plexescor
 # =============================================================================
 
-EXT_ID="window-calls-extended@hseliger.eu"
+EXT_ID="lol-another-window-extension@plexescor"
 EXT_DIR="$HOME/.local/share/gnome-shell/extensions/$EXT_ID"
-REPO_URL="https://github.com/hseliger/window-calls-extended"
+REPO_URL="https://github.com/plexescor/lol-another-window-extension"
 
 echo ""
 echo "[HPR] ============================================================"
