@@ -5,12 +5,15 @@
 #include <atomic>
 #include <functional>
 
-
 #include "appState.hpp"
 
 #ifdef _WIN32
     #include <windows.h>
     #include <psapi.h>
+#endif
+
+#ifdef __linux__
+    #include <dbus/dbus.h>
 #endif
 
 class TrayManager
@@ -35,6 +38,11 @@ class TrayManager
             static LRESULT CALLBACK trayWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
             static LRESULT CALLBACK hprSubclassProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam); 
             static WNDPROC g_originalWndProc;
+        #endif
+
+        #ifdef __linux__
+            void trayManager_LoopLinux();
+            DBusConnection* dbusConn = nullptr;
         #endif
 
     private:

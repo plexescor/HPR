@@ -17,10 +17,6 @@
 		(void)lpCmdLine;
 		(void)nShowCmd;
 
-		//tray integration is a pain on linux
-		//so i am not implementing that shit because
-		//then i need to depend on gtk or qt which i dont want
-		//even raw SNI stuff wont work on all shit
 		ConfigManager conf;
 
 		//Check for hardware-acceleration flag
@@ -95,6 +91,10 @@
 			setenv("SLINT_BACKEND", "winit-software", 1);
 		}
 
+		//This call is non blocking, it just starts a new BG thread
+		TrayManager tray;
+		tray.run();
+
 		DatabaseManager dbm;
 		CurrentWindowManager cwm;
 
@@ -106,12 +106,34 @@
 		if (!conf.getConfig("use-interpreter", false))
 		{
 			HPR app;
+
+			tray.onQuit = [&]() {
+				app.quit();
+			};
+			tray.onShow = [&]() {
+				app.show();
+			};
+			tray.onHide = [&]() {
+				app.hide();
+			};
+
 			app.run();//blocking call, run on main
 		}	
 		//use custom gui
 		else
 		{
 			HPRInterpreter app;
+
+			tray.onQuit = [&]() {
+				app.quit();
+			};
+			tray.onShow = [&]() {
+				app.show();
+			};
+			tray.onHide = [&]() {
+				app.hide();
+			};
+
 			app.run();//blocking call, run on main
 		}
 

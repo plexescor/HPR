@@ -10,10 +10,18 @@
     #include <psapi.h>
 #endif
 
+#ifdef __linux__
+    #include <dbus/dbus.h>
+    #include <unistd.h>   // getpid()
+#endif
+
 TrayManager::TrayManager()
 {
     #ifdef _WIN32
         currentPlatform = "Windows";
+    #endif
+    #ifdef __linux__
+        currentPlatform = "Linux";
     #endif
 }
 
@@ -25,13 +33,27 @@ TrayManager::~TrayManager()
     #endif
 
     running = false;
+
+    // join first, then unref — unreffing while the thread still uses the connection would be a race
     if (trayThread.joinable()) trayThread.join();
+
+    #ifdef __linux__
+        // dbus_bus_get returns a shared connection, never call close() on it, only unref
+        if (dbusConn)
+        {
+            dbus_connection_unref(dbusConn);
+            dbusConn = nullptr;
+        }
+    #endif
 }
 
 void TrayManager::run()
 {
     #ifdef _WIN32
         trayThread = std::thread(&TrayManager::trayManager_LoopWindows, this);
+    #endif
+    #ifdef __linux__
+        trayThread = std::thread(&TrayManager::trayManager_LoopLinux, this);
     #endif
 }
 
@@ -179,5 +201,283 @@ void TrayManager::run()
         destroyTrayIcon();
         g_trayInstance = nullptr;
     }
+
+#endif
+
+#ifdef __linux__
+
+// panels call Introspect first, if you don't reply to this they just silently drop your item
+static const char* SNI_INTROSPECTION_XML =
+    "<!DOCTYPE node PUBLIC \"-//freedesktop//DTD D-BUS Object Introspection 1.0//EN\""
+    "  \"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd\">"
+    "<node>"
+    "  <interface name=\"org.kde.StatusNotifierItem\">"
+    "    <property name=\"Category\"  type=\"s\"          access=\"read\"/>"
+    "    <property name=\"Id\"        type=\"s\"          access=\"read\"/>"
+    "    <property name=\"Title\"     type=\"s\"          access=\"read\"/>"
+    "    <property name=\"Status\"    type=\"s\"          access=\"read\"/>"
+    "    <property name=\"IconName\"  type=\"s\"          access=\"read\"/>"
+    "    <property name=\"ToolTip\"   type=\"(sa(iiay)ss)\" access=\"read\"/>"
+    "    <method name=\"Activate\"><arg type=\"i\" direction=\"in\"/><arg type=\"i\" direction=\"in\"/></method>"
+    "    <method name=\"ContextMenu\"><arg type=\"i\" direction=\"in\"/><arg type=\"i\" direction=\"in\"/></method>"
+    "    <method name=\"SecondaryActivate\"><arg type=\"i\" direction=\"in\"/><arg type=\"i\" direction=\"in\"/></method>"
+    "  </interface>"
+    "  <interface name=\"org.freedesktop.DBus.Properties\">"
+    "    <method name=\"Get\">"
+    "      <arg name=\"interface_name\" type=\"s\" direction=\"in\"/>"
+    "      <arg name=\"property_name\"  type=\"s\" direction=\"in\"/>"
+    "      <arg name=\"value\"          type=\"v\" direction=\"out\"/>"
+    "    </method>"
+    "    <method name=\"GetAll\">"
+    "      <arg name=\"interface_name\" type=\"s\" direction=\"in\"/>"
+    "      <arg name=\"props\"          type=\"a{sv}\" direction=\"out\"/>"
+    "    </method>"
+    "  </interface>"
+    "  <interface name=\"org.freedesktop.DBus.Introspectable\">"
+    "    <method name=\"Introspect\"><arg type=\"s\" direction=\"out\"/></method>"
+    "  </interface>"
+    "</node>";
+
+// appends a key-value string pair into a dbus dict iterator, used for GetAll
+static void appendStringProp(DBusMessageIter* arr, const char* key, const char* val)
+{
+    DBusMessageIter entry, variant;
+    dbus_message_iter_open_container(arr,  DBUS_TYPE_DICT_ENTRY, nullptr, &entry);
+    dbus_message_iter_append_basic(&entry, DBUS_TYPE_STRING, &key);
+    dbus_message_iter_open_container(&entry, DBUS_TYPE_VARIANT, "s", &variant);
+    dbus_message_iter_append_basic(&variant, DBUS_TYPE_STRING, &val);
+    dbus_message_iter_close_container(&entry, &variant);
+    dbus_message_iter_close_container(arr,  &entry);
+}
+
+// builds and sends a ToolTip reply — type is (sa(iiay)ss): icon_name, icon_data[], title, description
+// panels like waybar show the title+description on hover
+static void replyWithToolTip(DBusConnection* conn, DBusMessage* msg)
+{
+    DBusMessage*    reply = dbus_message_new_method_return(msg);
+    DBusMessageIter replyIter, variant, ttStruct, iconArr;
+
+    dbus_message_iter_init_append(reply, &replyIter);
+    dbus_message_iter_open_container(&replyIter, DBUS_TYPE_VARIANT, "(sa(iiay)ss)", &variant);
+    dbus_message_iter_open_container(&variant, DBUS_TYPE_STRUCT, nullptr, &ttStruct);
+
+    const char* ttIconName = "";
+    dbus_message_iter_append_basic(&ttStruct, DBUS_TYPE_STRING, &ttIconName);
+
+    // icon data array, leave empty
+    dbus_message_iter_open_container(&ttStruct, DBUS_TYPE_ARRAY, "(iiay)", &iconArr);
+    dbus_message_iter_close_container(&ttStruct, &iconArr);
+
+    const char* ttTitle = "HPR - Human Pattern Recorder";
+    const char* ttBody  = "Left/Right click: Open HPR  |  Middle click: Quit";
+    dbus_message_iter_append_basic(&ttStruct, DBUS_TYPE_STRING, &ttTitle);
+    dbus_message_iter_append_basic(&ttStruct, DBUS_TYPE_STRING, &ttBody);
+
+    dbus_message_iter_close_container(&variant, &ttStruct);
+    dbus_message_iter_close_container(&replyIter, &variant);
+
+    dbus_connection_send(conn, reply, nullptr);
+    dbus_connection_flush(conn);
+    dbus_message_unref(reply);
+}
+
+void TrayManager::trayManager_LoopLinux()
+{
+    DBusError err;
+    dbus_error_init(&err);
+
+    dbusConn = dbus_bus_get(DBUS_BUS_SESSION, &err);
+    if (dbus_error_is_set(&err))
+    {
+        std::cerr << "[TrayManager] dbus session connect failed: " << err.message << "\n";
+        dbus_error_free(&err);
+        return;
+    }
+    if (!dbusConn)
+    {
+        std::cerr << "[TrayManager] could not connect to session bus\n";
+        return;
+    }
+
+    // service name has to follow org.kde.StatusNotifierItem-<PID>-<instance>, thats just the convention
+    std::string serviceName = "org.kde.StatusNotifierItem-"
+                            + std::to_string(getpid()) + "-1";
+
+    int ret = dbus_bus_request_name(dbusConn, serviceName.c_str(),
+                                    DBUS_NAME_FLAG_REPLACE_EXISTING, &err);
+    if (dbus_error_is_set(&err))
+    {
+        std::cerr << "[TrayManager] request_name failed: " << err.message << "\n";
+        dbus_error_free(&err);
+        dbus_connection_unref(dbusConn);
+        dbusConn = nullptr;
+        return;
+    }
+    if (ret != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER)
+    {
+        std::cerr << "[TrayManager] could not become primary owner of SNI bus name\n";
+        dbus_connection_unref(dbusConn);
+        dbusConn = nullptr;
+        return;
+    }
+
+    // tell the watcher we exist, this is what makes the icon show up in waybar/kde/cinnamon
+    {
+        DBusMessage* msg = dbus_message_new_method_call(
+            "org.kde.StatusNotifierWatcher",
+            "/StatusNotifierWatcher",
+            "org.kde.StatusNotifierWatcher",
+            "RegisterStatusNotifierItem"
+        );
+        if (msg)
+        {
+            const char* svcCStr = serviceName.c_str();
+            dbus_message_append_args(msg,
+                DBUS_TYPE_STRING, &svcCStr,
+                DBUS_TYPE_INVALID);
+            dbus_connection_send(dbusConn, msg, nullptr);
+            dbus_connection_flush(dbusConn);
+            dbus_message_unref(msg);
+        }
+    }
+
+    while (running)
+    {
+        // poll for 100ms so we can check running without blocking forever
+        if (!dbus_connection_read_write(dbusConn, 100))
+            break;
+
+        DBusMessage* msg = dbus_connection_pop_message(dbusConn);
+        if (!msg)
+            continue;
+
+        const char* iface  = dbus_message_get_interface(msg);
+        const char* member = dbus_message_get_member(msg);
+
+        if (!iface || !member) { dbus_message_unref(msg); continue; }
+
+        if (dbus_message_is_method_call(msg,
+                "org.freedesktop.DBus.Introspectable", "Introspect"))
+        {
+            DBusMessage* reply = dbus_message_new_method_return(msg);
+            dbus_message_append_args(reply,
+                DBUS_TYPE_STRING, &SNI_INTROSPECTION_XML,
+                DBUS_TYPE_INVALID);
+            dbus_connection_send(dbusConn, reply, nullptr);
+            dbus_connection_flush(dbusConn);
+            dbus_message_unref(reply);
+        }
+
+        else if (dbus_message_is_method_call(msg,
+                "org.freedesktop.DBus.Properties", "Get"))
+        {
+            const char* propName  = nullptr;
+            const char* ifaceName = nullptr;
+            dbus_message_get_args(msg, &err,
+                DBUS_TYPE_STRING, &ifaceName,
+                DBUS_TYPE_STRING, &propName,
+                DBUS_TYPE_INVALID);
+
+            // ToolTip is a struct type, handle it separately from the simple string props
+            if (propName && std::string(propName) == "ToolTip")
+            {
+                replyWithToolTip(dbusConn, msg);
+            }
+            else
+            {
+                const char* value = nullptr;
+                if      (propName && std::string(propName) == "Category")  value = "ApplicationStatus";
+                else if (propName && std::string(propName) == "Id")        value = "HPR";
+                else if (propName && std::string(propName) == "Title")     value = "HPR - Human Pattern Recorder";
+                else if (propName && std::string(propName) == "Status")    value = "Active";
+                else if (propName && std::string(propName) == "IconName")  value = "application-x-executable";
+
+                DBusMessage*    reply     = dbus_message_new_method_return(msg);
+                DBusMessageIter replyIter, variant;
+                dbus_message_iter_init_append(reply, &replyIter);
+                if (value)
+                {
+                    dbus_message_iter_open_container(&replyIter, DBUS_TYPE_VARIANT, "s", &variant);
+                    dbus_message_iter_append_basic(&variant, DBUS_TYPE_STRING, &value);
+                    dbus_message_iter_close_container(&replyIter, &variant);
+                }
+                dbus_connection_send(dbusConn, reply, nullptr);
+                dbus_connection_flush(dbusConn);
+                dbus_message_unref(reply);
+            }
+        }
+
+        else if (dbus_message_is_method_call(msg,
+                "org.freedesktop.DBus.Properties", "GetAll"))
+        {
+            DBusMessage*    reply     = dbus_message_new_method_return(msg);
+            DBusMessageIter replyIter, arr;
+            dbus_message_iter_init_append(reply, &replyIter);
+            dbus_message_iter_open_container(&replyIter, DBUS_TYPE_ARRAY, "{sv}", &arr);
+
+            appendStringProp(&arr, "Category",  "ApplicationStatus");
+            appendStringProp(&arr, "Id",         "HPR");
+            appendStringProp(&arr, "Title",      "HPR - Human Pattern Recorder");
+            appendStringProp(&arr, "Status",     "Active");
+            // replace with "hpr" if you ever install a custom icon into /usr/share/icons
+            appendStringProp(&arr, "IconName",   "application-x-executable");
+
+            dbus_message_iter_close_container(&replyIter, &arr);
+            dbus_connection_send(dbusConn, reply, nullptr);
+            dbus_connection_flush(dbusConn);
+            dbus_message_unref(reply);
+        }
+
+        // left click = show the window
+        else if (dbus_message_is_method_call(msg,
+                "org.kde.StatusNotifierItem", "Activate"))
+        {
+            std::cerr << "[TrayManager] Activate (left click)\n";
+            if (onShow) onShow();
+
+            // protocol requires a reply even if empty
+            DBusMessage* reply = dbus_message_new_method_return(msg);
+            dbus_connection_send(dbusConn, reply, nullptr);
+            dbus_connection_flush(dbusConn);
+            dbus_message_unref(reply);
+        }
+
+        // waybar sends ContextMenu for ALL clicks (left and right), Activate is never fired
+        // so ContextMenu = show the window, there is no tray-quit on waybar without dbusmenu
+        else if (dbus_message_is_method_call(msg,
+                "org.kde.StatusNotifierItem", "ContextMenu"))
+        {
+            std::cerr << "[TrayManager] ContextMenu (waybar sends this for all clicks)\n";
+            if (onShow) onShow();
+
+            DBusMessage* reply = dbus_message_new_method_return(msg);
+            dbus_connection_send(dbusConn, reply, nullptr);
+            dbus_connection_flush(dbusConn);
+            dbus_message_unref(reply);
+        }
+
+        // middle click = quit
+        else if (dbus_message_is_method_call(msg,
+                "org.kde.StatusNotifierItem", "SecondaryActivate"))
+        {
+            std::cerr << "[TrayManager] SecondaryActivate (middle click) -> quit\n";
+            if (onQuit) onQuit();
+
+            DBusMessage* reply = dbus_message_new_method_return(msg);
+            dbus_connection_send(dbusConn, reply, nullptr);
+            dbus_connection_flush(dbusConn);
+            dbus_message_unref(reply);
+        }
+
+        // log anything else so we can see if waybar sends unexpected methods
+        else
+        {
+            std::cerr << "[TrayManager] unhandled: iface=" << iface << " member=" << member << "\n";
+        }
+
+
+        dbus_message_unref(msg);
+    }
+}
 
 #endif

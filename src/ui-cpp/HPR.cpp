@@ -230,9 +230,9 @@ void HPR::run()
             return slint::CloseRequestResponse::KeepWindowShown;
         });
     #else
+        // same as windows, X button just hides to tray
         ui->window().on_close_requested([this]() -> slint::CloseRequestResponse {
-            running = false;
-            slint::quit_event_loop();
+            ui->hide();
             return slint::CloseRequestResponse::KeepWindowShown;
         });
     #endif

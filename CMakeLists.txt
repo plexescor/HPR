@@ -10,6 +10,12 @@ set(CMAKE_BUILD_PARALLEL_LEVEL 8)
 
 find_package(Slint QUIET)
 
+# Find libdbus-1 on Linux (base system library, no GUI toolkit dependency)
+if(LINUX)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(DBUS REQUIRED dbus-1)
+endif()
+
 #No console in windows
 if(WIN32)
   add_executable(HPR WIN32
@@ -63,6 +69,11 @@ if (MSVC)
 endif()
 
 target_link_libraries(HPR PRIVATE Slint::Slint)
+
+if(LINUX)
+    target_include_directories(HPR PRIVATE ${DBUS_INCLUDE_DIRS})
+    target_link_libraries(HPR PRIVATE ${DBUS_LIBRARIES})
+endif()
 
 slint_target_sources(HPR src/ui/app-window.slint)
 

@@ -12,7 +12,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/status-active_development-brightgreen?style=flat-square" />
-  <img src="https://img.shields.io/badge/version-v0.5-blue?style=flat-square" />
+  <img src="https://img.shields.io/badge/version-v0.6-blue?style=flat-square" />
   <img src="https://img.shields.io/badge/language-C%2B%2B23-orange?style=flat-square" />
   <img src="https://img.shields.io/badge/UI-Slint_1.16.1-purple?style=flat-square" />
   <img src="https://img.shields.io/badge/DB-SQLite3_bundled-lightgrey?style=flat-square" />
@@ -29,7 +29,7 @@
 
 > [!IMPORTANT]
 > **HPR is now fully free and open source.**
-> The premium version (previously closed source) has been merged into the free version. Every feature — current and future — is available to everyone at no cost. If HPR saves you time or you just want to support continued development, a Ko-fi donation goes a long way.
+> The premium version (previously closed source) has been merged into the free version. Every feature - current and future - is available to everyone at no cost. If HPR saves you time or you just want to support continued development, a Ko-fi donation goes a long way.
 >
 
 
@@ -49,7 +49,7 @@
 
 <p align="center">
   <strong>See HPR in action</strong><br/>
-  <sub>Live window tracking, switch history, and the Insights engine — all running locally, zero accounts.</sub>
+  <sub>Live window tracking, switch history, and the Insights engine - all running locally, zero accounts.</sub>
 </p>
 
 <p align="center">
@@ -66,6 +66,9 @@ https://github.com/user-attachments/assets/a5fbe1f1-0cdc-41c8-a77b-68f40d96d531
 
 - [What It Does](#what-it-does)
 - [What It Does Not Do](#what-it-does-not-do)
+- [Browser Tab Tracking](#browser-tab-tracking)
+- [VS Code Project Tracking](#vs-code-project-tracking)
+- [System Tray](#system-tray)
 - [Data Storage](#data-storage)
 - [Installation](#installation)
 - [Platform Support](#platform-support)
@@ -109,6 +112,17 @@ Click the date picker and pull up any day you have ever run HPR. It loads that d
 
 That is the whole pitch. A compiled binary that watches one thing and writes it down. Everything else is just what happens when you do that well.
 
+**Tray controls:**
+
+| Action | Windows | Linux (Waybar / KDE / Cinnamon) |
+|---|---|---|
+| Open HPR | Right click → **Show HPR** | Left or right click |
+| Quit HPR | Right click → **Quit** | Middle click |
+| Left click | Does nothing | Opens HPR |
+
+> [!NOTE]
+> On Linux, hovering over the tray icon shows **"HPR - Human Pattern Recorder"** as the tooltip title and **"Left/Right click: Open HPR \| Middle click: Quit"** as the description.
+
 ---
 
 ## Browser Tab Tracking
@@ -118,6 +132,24 @@ HPR supports tracking browser tabs per site and per tab, without requiring any b
 In the UI, you can toggle how this data is displayed by clicking the **Tab View** and **Site View** buttons:
 - **Tab View**: Shows raw, unaliased tab names. This allows you to differentiate between specific pages (for example, tracking time spent across two different YouTube videos).
 - **Site View**: Applies rules from `tabAliases.csv` to group your tabs by website. This view collapses specific pages into their parent domains (e.g., combining all YouTube tabs into a single "YouTube" entry), showing you only the high-level sites you visited.
+
+---
+
+## VS Code Project Tracking
+
+HPR tracks which VS Code project you are in, not just that VS Code is open. No extension required. No VS Code plugin to install. No marketplace. Nothing.
+
+VS Code puts the active project name directly in its window title in the format `filename - project - Visual Studio Code`. HPR reads that title on every poll tick. When it detects the active window is VS Code (matching `code`, `vscode`, or `visual studio code` case-insensitively against the raw title), it calls the platform-specific window title getter a second time to pull the full title string and parse it:
+
+1. Strip the trailing ` - Visual Studio Code` suffix
+2. Find the last ` - ` separator in what remains
+3. Everything after that separator is the project name
+
+The ` - ` separator (with spaces) is used instead of a bare `-` because project names can contain dashes. Nobody names their project `foo - bar`, so this is a safe split point.
+
+The result goes into `timeLog_PerProject`, a separate time accumulator that runs in parallel with the normal per-app log. In the UI you get a dedicated Project View that shows time broken down by project name for the day. You can toggle between **Raw View** (the unprocessed title substring) and the default parsed view which applies `projectAliases.csv` on top.
+
+This works on every supported platform - Hyprland, GNOME, KDE, Cinnamon, and Windows - because each backend already has a window title getter and VS Code puts the project name in the title on all of them.
 
 ---
 
@@ -196,6 +228,28 @@ Windows: %APPDATA%\HPR\HPR_DB\
 
 ---
 
+## System Tray
+
+HPR lives in your system tray and keeps running when you close the window. The only way to actually quit it is through the tray.
+
+**Windows:**
+- Left click → does nothing
+- Right click → context menu with **Show HPR** and **Quit**
+- Minimizing or closing the window hides it to tray, does not quit
+
+**Linux (Waybar · KDE · Cinnamon):**
+
+HPR registers as a `org.kde.StatusNotifierItem` on the session D-Bus. This is the same protocol that Discord, Steam, and every other modern app uses for tray icons on Linux. No libraries linked. No GTK. No Qt. Pure D-Bus over `libdbus-1`.
+
+- Left or right click → open HPR (Waybar routes both clicks to the same D-Bus method, this is a Waybar limitation not an HPR one)
+- Middle click → quit HPR
+- Hover → shows **"HPR - Human Pattern Recorder"** with hint text **"Left/Right click: Open HPR | Middle click: Quit"**
+- Closing the window hides HPR to tray, does not quit
+
+Works with Waybar on Hyprland, KDE's system tray, and Cinnamon's panel out of the box with zero configuration.
+
+---
+
 ## Platform Support
 
 | Platform | Backend | Extra Setup |
@@ -209,14 +263,14 @@ Windows: %APPDATA%\HPR\HPR_DB\
 <details>
 <summary>GNOME setup walkthrough</summary>
 
-On first launch HPR checks whether its GNOME extension is active. If it is not, it tells you directly rather than silently returning garbage. Run the bundled `installWindowCallsExtension.sh`, which clones [lol-another-window-extension](https://github.com/plexescor/lol-another-window-extension) — a custom extension built specifically for HPR — and enables it. Because GNOME on Wayland cannot hot-reload shell extensions, you log out and back in once. Every launch after that is fully automatic. It was either do it this way or not support GNOME at all, and I was not leaving GNOME users out.
+On first launch HPR checks whether its GNOME extension is active. If it is not, it tells you directly rather than silently returning garbage. Run the bundled `installWindowCallsExtension.sh`, which clones [lol-another-window-extension](https://github.com/plexescor/lol-another-window-extension) - a custom extension built specifically for HPR - and enables it. Because GNOME on Wayland cannot hot-reload shell extensions, you log out and back in once. Every launch after that is fully automatic. It was either do it this way or not support GNOME at all, and I was not leaving GNOME users out.
 
 </details>
 
 <details>
 <summary>Cinnamon details</summary>
 
-Cinnamon runs on top of its own window manager, **Muffin** (a fork of GNOME's Mutter). Unlike the other Linux backends, Cinnamon exposes a D-Bus method — `org.Cinnamon.Eval` — that evaluates arbitrary JavaScript directly inside the live Cinnamon process. HPR uses this to query the internal `global.display.focus_window` object:
+Cinnamon runs on top of its own window manager, **Muffin** (a fork of GNOME's Mutter). Unlike the other Linux backends, Cinnamon exposes a D-Bus method - `org.Cinnamon.Eval` - that evaluates arbitrary JavaScript directly inside the live Cinnamon process. HPR uses this to query the internal `global.display.focus_window` object:
 
 - **Window class** (application name): `global.display.focus_window.get_wm_class()`
 - **Window title** (active tab / document): `global.get_window_actors().filter(a => a.meta_window.has_focus())[0].get_meta_window().get_title()`
@@ -404,7 +458,7 @@ The setup script drops the defaults there on first run. Edit freely from that po
 > What comes next is refinement, not new pillars. Polish, stability, quality-of-life improvements, UI work.
 
 **Fully Free and Open Source:**
-HPR is now completely free. The premium version (previously closed source) has been merged into this repo. Full local tracking. Full data ownership. All current features and all future features including LLM-powered pattern analysis, Focus mode with application blocking, and Advanced reporting — all free, forever.
+HPR is now completely free. The premium version (previously closed source) has been merged into this repo. Full local tracking. Full data ownership. All current features and all future features including LLM-powered pattern analysis, Focus mode with application blocking, and Advanced reporting - all free, forever.
 
 If HPR is useful to you, please consider supporting development:
 
@@ -420,9 +474,9 @@ HPR is a multi-threaded C++23 application organized around a single shared state
 
 ```
 Main Thread          (Slint event loop)
-  Window Poller      [50ms  tick  —  CurrentWindowManager]
-  UI Bridge          [500ms tick  —  HPR / HPRInterpreter + UiModelManager]
-  Database Writer    [10s   tick + event-driven  —  DatabaseManager]
+  Window Poller      [50ms  tick  -  CurrentWindowManager]
+  UI Bridge          [500ms tick  -  HPR / HPRInterpreter + UiModelManager]
+  Database Writer    [10s   tick + event-driven  -  DatabaseManager]
 ```
 
 **Main thread** is `main.cpp`. It instantiates `ConfigManager`, `DatabaseManager`, and `CurrentWindowManager`, picks either `HPR` or `HPRInterpreter` based on config, then enters the Slint event loop.
@@ -584,7 +638,7 @@ if (windowName.contains("searchhost")
     return "Unknown";
 ```
 
-The `js::` filter is specifically for KDE. The KDE backend injects a JavaScript payload into KWin via `qdbus6` (or `qdbus-qt6` on Fedora — auto-detected at startup) on every tick, and during that injection KWin's own JS runtime briefly appears as the active window. Without this filter, strings like `js::kwin_tmp_1234` silently accumulate time in your log every single poll cycle.
+The `js::` filter is specifically for KDE. The KDE backend injects a JavaScript payload into KWin via `qdbus6` (or `qdbus-qt6` on Fedora - auto-detected at startup) on every tick, and during that injection KWin's own JS runtime briefly appears as the active window. Without this filter, strings like `js::kwin_tmp_1234` silently accumulate time in your log every single poll cycle.
 
 **Late-binding aliases:**
 
@@ -623,7 +677,7 @@ git clone https://github.com/plexescor/HPR
 cd HPR
 ```
 
-**Linux — install Slint (choose one):**
+**Linux - install Slint (choose one):**
 ```bash
 # System-wide (requires sudo, cmake finds Slint automatically)
 sudo ./installDependencies.sh
@@ -716,7 +770,7 @@ If HPR has been useful to you, a Ko-fi helps keep development going:
 
 <p align="center">
   <sub>
-    Active development &nbsp;|&nbsp; v0.5 &nbsp;|&nbsp;
+    Active development &nbsp;|&nbsp; v0.6 &nbsp;|&nbsp;
     Hyprland · GNOME · KDE Plasma · Cinnamon · Windows 10/11 &nbsp;|&nbsp;
     C++23 · Slint 1.16.1 · SQLite3 amalgamation · sqlite_modern_cpp
   </sub>
