@@ -401,7 +401,7 @@ std::string CurrentWindowManager::getCurrentTab()
 	return tab;
 }
 
-std::string CurrentWindowManager::getCurrentWindow_Hyprland()
+std::string CurrentWindowManager::getCurrentTab_Hyprland()
 {
 	std::string cmd = "hyprctl activewindow -j";
     std::string json = runSystemCommand(cmd);
