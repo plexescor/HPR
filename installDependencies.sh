@@ -39,6 +39,66 @@ require_cmd() {
 require_cmd curl
 require_cmd tar
 
+# ── Distro detection + dbus install ──────────────────────────────────────────
+install_dbus() {
+    info "Checking for dbus development package..."
+
+    if pkg-config --exists dbus-1 2>/dev/null; then
+        success "dbus-1 already installed, skipping."
+        return
+    fi
+
+    info "dbus-1 not found — installing..."
+
+    if command -v pacman &>/dev/null; then
+        info "Detected Arch Linux (pacman)"
+        if [[ $EUID -eq 0 ]]; then
+            pacman -Sy --noconfirm dbus
+        else
+            sudo pacman -Sy --noconfirm dbus
+        fi
+
+    elif command -v apt-get &>/dev/null; then
+        info "Detected Debian/Ubuntu (apt)"
+        if [[ $EUID -eq 0 ]]; then
+            apt-get update -qq && apt-get install -y libdbus-1-dev
+        else
+            sudo apt-get update -qq && sudo apt-get install -y libdbus-1-dev
+        fi
+
+    elif command -v dnf &>/dev/null; then
+        info "Detected Fedora/RHEL (dnf)"
+        if [[ $EUID -eq 0 ]]; then
+            dnf install -y dbus-devel
+        else
+            sudo dnf install -y dbus-devel
+        fi
+
+    elif command -v zypper &>/dev/null; then
+        info "Detected openSUSE (zypper)"
+        if [[ $EUID -eq 0 ]]; then
+            zypper install -y dbus-1-devel
+        else
+            sudo zypper install -y dbus-1-devel
+        fi
+
+    elif command -v yum &>/dev/null; then
+        info "Detected CentOS/older RHEL (yum)"
+        if [[ $EUID -eq 0 ]]; then
+            yum install -y dbus-devel
+        else
+            sudo yum install -y dbus-devel
+        fi
+
+    else
+        error "Could not detect package manager. Install dbus dev package manually (e.g. libdbus-1-dev / dbus-devel / dbus) then re-run."
+    fi
+
+    success "dbus-1 installed."
+}
+
+install_dbus
+
 # ── Print mode ────────────────────────────────────────────────────────────────
 if [[ "${INSTALL_MODE}" == "system" ]]; then
     info "Running as root — installing system-wide:"
