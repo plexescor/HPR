@@ -258,6 +258,11 @@ std::string CurrentWindowManager::getCurrentWindow()
 		window = getCurrentWindow_KDE();
 	}
 
+	else if (currentPlatform.contains("Cinnamon"))
+	{
+		window = getCurrentWindow_Cinnamon();
+	}
+
 	// Need to explicitly set this because shit happens if cached value is
 	// returned
 	window = validateAndUpdateWindow_Cross(window);
@@ -361,6 +366,34 @@ std::string CurrentWindowManager::getCurrentWindow_KDE()
 	return result;
 }
 
+std::string CurrentWindowManager::getCurrentWindow_Cinnamon()
+{
+	std::string cmd = "gdbus call --session --dest org.Cinnamon --object-path /org/Cinnamon --method org.Cinnamon.Eval \"global.display.focus_window.get_wm_class()\"";
+	std::string rawOutput = runSystemCommand(cmd);
+	// Find the positions of the single-quotes wrapping the inner string
+	size_t startQuote = rawOutput.find('\'');
+	size_t endQuote = rawOutput.rfind('\'');
+	
+	if (startQuote == std::string::npos || endQuote == std::string::npos || startQuote >= endQuote) {
+		return ""; // return empty if quotes aren't matched
+	}
+	
+	// Extract everything between the single quotes
+	std::string inner = rawOutput.substr(startQuote + 1, endQuote - startQuote - 1);
+	
+	// strip the literal double-quotes if they exist
+	if (inner.length() >= 2 && inner.front() == '"' && inner.back() == '"') {
+		inner = inner.substr(1, inner.length() - 2);
+	}
+	
+	// trim any trailing newlines or extra whitespaces
+	while (!inner.empty() && (inner.back() == '\n' || inner.back() == '\r' || inner.back() == ' ')) {
+		inner.pop_back();
+	}
+
+	return inner;
+}
+
 //--------------------TABS------------------------------
 std::string CurrentWindowManager::getCurrentTab()
 {
@@ -394,10 +427,15 @@ std::string CurrentWindowManager::getCurrentTab()
 		tab = getCurrentTab_KDE();
 	}
 
+	else if (currentPlatform.contains("Cinnamon"))
+	{
+		tab = getCurrentTab_Cinnamon();
+	}
+
 	// Need to explicitly set this because shit happens if cached value is
 	// returned
 	// tab = validateAndUpdateWindow_Cross(window);
-	std::cout << tab << std::endl;
+	// std::cout << tab << std::endl;
 	return tab;
 }
 
@@ -484,4 +522,34 @@ std::string CurrentWindowManager::getCurrentTab_KDE()
 		result = result.substr(prefix.size());
 
 	return result;
+}
+
+std::string CurrentWindowManager::getCurrentTab_Cinnamon()
+{
+	std::string cmd = "gdbus call --session --dest org.Cinnamon --object-path /org/Cinnamon --method org.Cinnamon.Eval 'global.get_window_actors().filter(a => a.meta_window.has_focus())[0].get_meta_window().get_title()'";
+	
+	std::string rawOutput = runSystemCommand(cmd);
+
+	// Find the positions of the single-quotes wrapping the inner string
+    size_t startQuote = rawOutput.find('\'');
+    size_t endQuote = rawOutput.rfind('\'');
+    
+    if (startQuote == std::string::npos || endQuote == std::string::npos || startQuote >= endQuote) {
+        return ""; // return empty if quotes aren't matched
+    }
+    
+    // Extract everything between the single quotes
+    std::string inner = rawOutput.substr(startQuote + 1, endQuote - startQuote - 1);
+    
+    // strip the literal double-quotes if they exist
+    if (inner.length() >= 2 && inner.front() == '"' && inner.back() == '"') {
+        inner = inner.substr(1, inner.length() - 2);
+    }
+    
+    // trim any trailing newlines or extra whitespaces
+    while (!inner.empty() && (inner.back() == '\n' || inner.back() == '\r' || inner.back() == ' ')) {
+        inner.pop_back();
+    }
+
+    return inner;
 }
