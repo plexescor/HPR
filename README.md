@@ -209,6 +209,13 @@ chmod +x installHPRConfigAndUi.sh
 
 The Linux setup script handles copying the config and UI files and provides the same safe-overwrite prompts as the Windows installer.
 
+On first launch HPR automatically creates a desktop entry at `~/.local/share/applications/hpr.desktop`. This registers HPR with your desktop environment so it appears in your application launcher and the taskbar/dock correctly associates the window with its icon. No manual `.desktop` file setup is required.
+
+The entry is only written when it is missing or stale. On subsequent launches HPR checks whether the `Exec=` and `Icon=` fields inside the existing file already point to the current binary and icon locations. If they match, the file is left completely untouched. If they do not match (for example, the binary was moved or rebuilt to a different path), HPR rewrites the entry to reflect the new location.
+
+> [!NOTE]
+> This only applies when running HPR directly from a build or binary without installing. If you installed via the AUR, the system-wide desktop entry at `/usr/share/applications/hpr.desktop` is already managed by the package — HPR detects this and skips the local entry entirely.
+
 <details>
 <summary>Where does everything go?</summary>
 

@@ -47,6 +47,7 @@ elseif(LINUX)
         src/database/databaseManager.cpp
         src/appState/appState.cpp
         src/miscellaneous/timeUtils.cpp
+        src/miscellaneous/linuxUtilities.cpp
         src/miscellaneous/aliasManager.cpp
         src/miscellaneous/configManager.cpp
         src/pattern/patternAnalyzer.cpp

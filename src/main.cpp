@@ -5,7 +5,7 @@
 #include "trayManager.hpp"
 #include "configManager.hpp"
 #include "HPRInterpreter.hpp"
-
+#include "linuxUtilities.hpp"
 #ifdef _WIN32
 	#include <windows.h>
 
@@ -90,6 +90,8 @@
 		{
 			setenv("SLINT_BACKEND", "winit-software", 1);
 		}
+
+		LinuxInitialiser linuxInit; //Just a utility class to create config directory and check for icon
 
 		//This call is non blocking, it just starts a new BG thread
 		TrayManager tray;

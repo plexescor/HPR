@@ -13,6 +13,7 @@
 #ifdef __linux__
     #include <dbus/dbus.h>
     #include <unistd.h>   // getpid()
+    #include "linuxUtilities.hpp"
 #endif
 
 TrayManager::TrayManager()
@@ -212,12 +213,13 @@ static const char* SNI_INTROSPECTION_XML =
     "  \"http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd\">"
     "<node>"
     "  <interface name=\"org.kde.StatusNotifierItem\">"
-    "    <property name=\"Category\"  type=\"s\"          access=\"read\"/>"
-    "    <property name=\"Id\"        type=\"s\"          access=\"read\"/>"
-    "    <property name=\"Title\"     type=\"s\"          access=\"read\"/>"
-    "    <property name=\"Status\"    type=\"s\"          access=\"read\"/>"
-    "    <property name=\"IconName\"  type=\"s\"          access=\"read\"/>"
-    "    <property name=\"ToolTip\"   type=\"(sa(iiay)ss)\" access=\"read\"/>"
+    "    <property name=\"Category\"      type=\"s\"          access=\"read\"/>"
+    "    <property name=\"Id\"            type=\"s\"          access=\"read\"/>"
+    "    <property name=\"Title\"         type=\"s\"          access=\"read\"/>"
+    "    <property name=\"Status\"        type=\"s\"          access=\"read\"/>"
+    "    <property name=\"IconName\"      type=\"s\"          access=\"read\"/>"
+    "    <property name=\"IconThemePath\" type=\"s\"          access=\"read\"/>"
+    "    <property name=\"ToolTip\"       type=\"(sa(iiay)ss)\" access=\"read\"/>"
     "    <method name=\"Activate\"><arg type=\"i\" direction=\"in\"/><arg type=\"i\" direction=\"in\"/></method>"
     "    <method name=\"ContextMenu\"><arg type=\"i\" direction=\"in\"/><arg type=\"i\" direction=\"in\"/></method>"
     "    <method name=\"SecondaryActivate\"><arg type=\"i\" direction=\"in\"/><arg type=\"i\" direction=\"in\"/></method>"
@@ -385,12 +387,14 @@ void TrayManager::trayManager_LoopLinux()
             }
             else
             {
+                const std::string& themePath = LinuxInitialiser::getIconThemePath();
                 const char* value = nullptr;
-                if      (propName && std::string(propName) == "Category")  value = "ApplicationStatus";
-                else if (propName && std::string(propName) == "Id")        value = "HPR";
-                else if (propName && std::string(propName) == "Title")     value = "HPR - Human Pattern Recorder";
-                else if (propName && std::string(propName) == "Status")    value = "Active";
-                else if (propName && std::string(propName) == "IconName")  value = "application-x-executable";
+                if      (propName && std::string(propName) == "Category")      value = "ApplicationStatus";
+                else if (propName && std::string(propName) == "Id")            value = "HPR";
+                else if (propName && std::string(propName) == "Title")         value = "HPR - Human Pattern Recorder";
+                else if (propName && std::string(propName) == "Status")        value = "Active";
+                else if (propName && std::string(propName) == "IconName")      value = themePath.empty() ? "application-x-executable" : "hpr";
+                else if (propName && std::string(propName) == "IconThemePath") value = themePath.c_str();
 
                 DBusMessage*    reply     = dbus_message_new_method_return(msg);
                 DBusMessageIter replyIter, variant;
@@ -410,17 +414,22 @@ void TrayManager::trayManager_LoopLinux()
         else if (dbus_message_is_method_call(msg,
                 "org.freedesktop.DBus.Properties", "GetAll"))
         {
+            const std::string& themePath = LinuxInitialiser::getIconThemePath();
+            const char* iconName      = themePath.empty() ? "application-x-executable" : "hpr";
+            const char* iconThemePath = themePath.c_str();
+
             DBusMessage*    reply     = dbus_message_new_method_return(msg);
             DBusMessageIter replyIter, arr;
             dbus_message_iter_init_append(reply, &replyIter);
             dbus_message_iter_open_container(&replyIter, DBUS_TYPE_ARRAY, "{sv}", &arr);
 
-            appendStringProp(&arr, "Category",  "ApplicationStatus");
-            appendStringProp(&arr, "Id",         "HPR");
-            appendStringProp(&arr, "Title",      "HPR - Human Pattern Recorder");
-            appendStringProp(&arr, "Status",     "Active");
-            // replace with "hpr" if you ever install a custom icon into /usr/share/icons
-            appendStringProp(&arr, "IconName",   "application-x-executable");
+            appendStringProp(&arr, "Category",      "ApplicationStatus");
+            appendStringProp(&arr, "Id",             "HPR");
+            appendStringProp(&arr, "Title",          "HPR - Human Pattern Recorder");
+            appendStringProp(&arr, "Status",         "Active");
+            appendStringProp(&arr, "IconName",       iconName);
+            if (!themePath.empty())
+                appendStringProp(&arr, "IconThemePath", iconThemePath);
 
             dbus_message_iter_close_container(&replyIter, &arr);
             dbus_connection_send(dbusConn, reply, nullptr);
