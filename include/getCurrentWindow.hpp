@@ -28,6 +28,13 @@ class CurrentWindowManager
         std::string getCurrentTab_Gnome();
         std::string getCurrentTab_KDE();
         std::string getCurrentTab_Cinnamon();
+
+        std::string getCurrentVSCodeProject();
+        std::string getCurrentVSCodeProject_Hyprland();
+        std::string getCurrentVSCodeProject_Windows();
+        std::string getCurrentVSCodeProject_Gnome();
+        std::string getCurrentVSCodeProject_KDE();
+        std::string getCurrentVSCodeProject_Cinnamon();
     private:
         std::string currentPlatform = "";
         std::string qdbusCmd = "qdbus6";
@@ -35,6 +42,7 @@ class CurrentWindowManager
         std::string previousWindow = "";
 
         std::string tab = "";
+        std::string project = "";
 
         std::thread windowPollingThread;
         std::atomic<bool> running{true};

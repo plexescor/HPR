@@ -41,6 +41,7 @@ Source: "C:\HPR\v0.5\slint_cpp.dll"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\HPR\v0.5\aliases.csv"; DestDir: "{userappdata}\HPR\HPR_Config"; Flags: ignoreversion; Check: ShouldCopyAliases
 Source: "C:\HPR\v0.5\tabAliases.csv"; DestDir: "{userappdata}\HPR\HPR_Config"; Flags: ignoreversion; Check: ShouldCopyTabAliases
 Source: "C:\HPR\v0.5\config.csv"; DestDir: "{userappdata}\HPR\HPR_Config"; Flags: ignoreversion; Check: ShouldCopyConfig
+Source: "C:\HPR\v0.5\projectAliases.csv"; DestDir: "{userappdata}\HPR\HPR_Config"; Flags: ignoreversion; Check: ShouldCopyProjectAliases
 
 ; -- assets: always silently overwrite --
 Source: "C:\HPR\v0.5\assets\*"; DestDir: "{userappdata}\HPR\HPR_Config\assets"; Flags: ignoreversion recursesubdirs createallsubdirs
@@ -66,6 +67,7 @@ Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChang
 var
   AliasOverwriteConfirmed: Boolean;
   TabAliasOverwriteConfirmed: Boolean;
+  ProjectAliasOverwriteConfirmed: Boolean;
   ConfigOverwriteConfirmed: Boolean;
   UIOverwriteConfirmed: Boolean;
   DeleteUIIfConfirmedDone: Boolean;
@@ -90,6 +92,12 @@ function ShouldCopyTabAliases(): Boolean;
 begin
   Result := (not FileExists(ExpandConstant('{userappdata}\HPR\HPR_Config\tabAliases.csv')))
             or TabAliasOverwriteConfirmed;
+end;
+
+function ShouldCopyProjectAliases(): Boolean;
+begin
+  Result := (not FileExists(ExpandConstant('{userappdata}\HPR\HPR_Config\projectAliases.csv')))
+            or ProjectAliasOverwriteConfirmed;
 end;
 
 function ShouldCopyConfig(): Boolean;
@@ -129,6 +137,17 @@ begin
         mbConfirmation, MB_YESNO
       );
       TabAliasOverwriteConfirmed := (Res = IDYES);
+    end;
+
+    // projectAliases.csv
+    if FileExists(ConfigDir + '\projectAliases.csv') then
+    begin
+      Res := MsgBox(
+        'projectAliases.csv already exists.' + #13#10 +
+        'Overwrite it? Your custom edits will be lost.',
+        mbConfirmation, MB_YESNO
+      );
+      ProjectAliasOverwriteConfirmed := (Res = IDYES);
     end;
 
     // config.csv

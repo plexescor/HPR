@@ -16,19 +16,23 @@ class UiModelManager
 
         void update(const std::map<std::string, long> &rawTimeLog,
                             const std::map<std::string, long> &rawTimeLog_Tab,
+                            const std::map<std::string, long> &rawTimeLog_Project,
                             const std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> &rawHistory,
                             std::string &currentWindowName,
                             long &totalTrackedTime,
                             long &totalTrackedTime_Tab,
+                            long &totalTrackedTime_Project,
                             AliasManager &aliasManager
         );
 
         void update_Interpreted(const std::map<std::string, long> &rawTimeLog,
                             const std::map<std::string, long> &rawTimeLog_Tab,
+                            const std::map<std::string, long> &rawTimeLog_Project,
                             const std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> &rawHistory,
                             std::string &currentWindowName,
                             long &totalTrackedTime,
                             long &totalTrackedTime_Tab,
+                            long &totalTrackedTime_Project,
                             AliasManager &aliasManager);
 
         void showInsights(const std::string &mostUsed,
@@ -53,6 +57,7 @@ class UiModelManager
         //Slint models
         std::shared_ptr<slint::VectorModel<TimeLog>> timeLogModel;
         std::shared_ptr<slint::VectorModel<TimeLog_Tab>> timeLogModelTab;
+        std::shared_ptr<slint::VectorModel<TimeLog_Project>> timeLogModelProject;
         std::shared_ptr<slint::VectorModel<SwitchHistory>> switchHistoryModel;
 
         //Middle men
@@ -63,5 +68,6 @@ class UiModelManager
         std::optional<slint::ComponentHandle<slint::interpreter::ComponentInstance>> ui_interp;
         std::shared_ptr<slint::VectorModel<slint::interpreter::Value>> timeLogModel_interp;
         std::shared_ptr<slint::VectorModel<slint::interpreter::Value>> timeLogModelTab_interp;
+        std::shared_ptr<slint::VectorModel<slint::interpreter::Value>> timeLogModelProject_interp;
         std::shared_ptr<slint::VectorModel<slint::interpreter::Value>> switchHistoryModel_interp;
 };  

@@ -4,8 +4,9 @@ import { SidebarButton } from "./side-bar-button.slint";
 import { DataView } from "./data-view.slint";
 import { InsightsView } from "./insights-view.slint";
 import { TabView } from "./tab-view.slint";
+import { ProjectView } from "./project-view.slint";
 
-import { TimeLog, SwitchHistory, TimeLog_Tab } from "./types.slint";
+import { TimeLog, SwitchHistory, TimeLog_Tab, TimeLog_Project } from "./types.slint";
 
 
 // ── Main Window ──────────────────────────────────────────────────────────────
@@ -15,6 +16,8 @@ export component MainWindow inherits Window {
     callback loadLiveData;
     callback tabViewClicked;
     callback siteViewClicked;
+    callback rawViewClicked;
+    callback filterViewClicked;
 
     //PLS Donate and dont remove it!
     callback openKofi;
@@ -24,7 +27,9 @@ export component MainWindow inherits Window {
     in property <string>          windowName_S;
     in property <[TimeLog]>       timePerApp_S;
     in property <[SwitchHistory]> switchHistory_S;
-    in property <[TimeLog_Tab]>   timePerTab_S;
+    in property <[TimeLog_Tab]>     timePerTab_S;
+    in property <[TimeLog_Project]> timePerProject_S;
+    in property <int>               trackedTime_Project_S;
 
     //Stuff for insights view: 
     in property <string>          mostUsedApp_S;
@@ -180,6 +185,14 @@ export component MainWindow inherits Window {
                 per-site-clicked => { root.siteViewClicked(); }
             }
 
+            if active-view == "PROJECT" : ProjectView {
+                vertical-stretch: 1;
+                timePerProject_S: root.timePerProject_S;
+                trackedTime_S: root.trackedTime_Project_S;
+                raw-view-clicked => { root.rawViewClicked(); }
+                filter-view-clicked => { root.filterViewClicked(); }
+            }
+
         }
 
         // ── Floating Sidebar ──────────────────────────────────────────────
@@ -238,31 +251,37 @@ export component MainWindow inherits Window {
                     height: 100%;
 
                     SidebarButton {
-                        icon: "🕘";
+                        icon: @image-url("./images/calendar.svg");
                         tip: "View historical data";
                         clicked => { date-picker.show(); }
                     }
 
                     SidebarButton {
-                        icon: "🌐";
+                        icon: @image-url("./images/tab.svg");
                         tip: "View usage per tab";
                         clicked => { root.active-view = "TAB"; }
                     }
 
                     SidebarButton {
-                        icon: "📊";
+                        icon: @image-url("./images/project.svg");
+                        tip: "View usage per project";
+                        clicked => { root.active-view = "PROJECT"; }
+                    }
+
+                    SidebarButton {
+                        icon: @image-url("./images/insights.svg");
                         tip: "View insights";
                         clicked => { root.active-view = "INSIGHTS"; }
                     }
 
                     SidebarButton {
-                        icon: "⚡";
+                        icon: @image-url("./images/live.svg");
                         tip: "Switch to live view";
                         clicked => { root.loadLiveData(); root.active-view = "DATA" }
                     }
 
                     SidebarButton {
-                        icon: "☕";
+                        icon: @image-url("./images/ko-fi.svg");
                         tip: "Support on Ko-fi";
                         clicked => { root.openKofi(); }
                     }

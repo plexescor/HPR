@@ -104,7 +104,7 @@ CurrentWindowManager::~CurrentWindowManager()
 
 void CurrentWindowManager::run()
 {
-	std::cout << "Running Loop!\n";
+	// std::cout << "Running Loop!\n";
 
 	windowPollingThread =
 		std::thread(&CurrentWindowManager::getCurrentWindow_Loop, this);
@@ -153,8 +153,15 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 			continue;
 		}
 
+		if (lowerWindowName.contains("code") 
+		|| lowerWindowName.contains("vscode")
+		|| lowerWindowName.contains("visual studio code"))
+		{
+			project = getCurrentVSCodeProject();
+		}
+
 		//Tab
-		if (lowerWindowName.contains("chrome") 
+		else if (lowerWindowName.contains("chrome") 
 		|| lowerWindowName.contains("edge")
 		|| lowerWindowName.contains("firefox")
 		|| lowerWindowName.contains("brave"))
@@ -167,6 +174,7 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 		else
 		{
 			tab = "";
+			project = "";
 		}
 
 		{
@@ -210,6 +218,17 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 					return std::tolower(c); 
 				});
 
+			std::string lowerProjectName = project;
+
+			//Convert windowName to lowercase
+			std::transform(lowerProjectName.begin(), 
+				lowerProjectName.end(), 
+				lowerProjectName.begin(),
+				[](unsigned char c)
+				{ 
+					return std::tolower(c); 
+				});
+
 			if (!tab.empty() && (lowerTabName.contains("chrome") || lowerTabName.contains("edge") || lowerTabName.contains("firefox") || lowerTabName.contains("brave")))
 			{
 				// std::cout << tab << std::endl;
@@ -218,6 +237,12 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 					.count();
 			}
 			
+			if (!project.empty() && (lowerProjectName.contains("visual studio code") || lowerProjectName.contains("vscode") || lowerProjectName.contains("code")))
+			{
+				AppState::state.timeLog_PerProject[project] +=
+				std::chrono::duration_cast<std::chrono::milliseconds>(elapsed)
+					.count();
+			}
 		}
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
@@ -525,6 +550,165 @@ std::string CurrentWindowManager::getCurrentTab_KDE()
 }
 
 std::string CurrentWindowManager::getCurrentTab_Cinnamon()
+{
+	std::string cmd = "gdbus call --session --dest org.Cinnamon --object-path /org/Cinnamon --method org.Cinnamon.Eval 'global.get_window_actors().filter(a => a.meta_window.has_focus())[0].get_meta_window().get_title()'";
+	
+	std::string rawOutput = runSystemCommand(cmd);
+
+	// Find the positions of the single-quotes wrapping the inner string
+    size_t startQuote = rawOutput.find('\'');
+    size_t endQuote = rawOutput.rfind('\'');
+    
+    if (startQuote == std::string::npos || endQuote == std::string::npos || startQuote >= endQuote) {
+        return ""; // return empty if quotes aren't matched
+    }
+    
+    // Extract everything between the single quotes
+    std::string inner = rawOutput.substr(startQuote + 1, endQuote - startQuote - 1);
+    
+    // strip the literal double-quotes if they exist
+    if (inner.length() >= 2 && inner.front() == '"' && inner.back() == '"') {
+        inner = inner.substr(1, inner.length() - 2);
+    }
+    
+    // trim any trailing newlines or extra whitespaces
+    while (!inner.empty() && (inner.back() == '\n' || inner.back() == '\r' || inner.back() == ' ')) {
+        inner.pop_back();
+    }
+
+    return inner;
+}
+
+std::string CurrentWindowManager::getCurrentVSCodeProject()
+{
+	if (currentPlatform.contains("Hyprland"))
+	{
+		project = getCurrentVSCodeProject_Hyprland();
+	}
+
+	else if (currentPlatform.contains("Windows"))
+	{
+		project = getCurrentVSCodeProject_Windows();
+	}
+
+	else if (currentPlatform.contains("GNOME_NO_EXTENSION"))
+	{
+		// This means we need to prompt the user to restart
+		// Return immediately
+
+		return "RUN THE \"installWindowCallsExtension.sh\" SCRIPT NEXT TO THE HPR "
+			   "BINARY AND THE RESTART PC";
+	}
+
+	else if (currentPlatform.contains("GNOME")) // Motherfucking GNOME
+	{
+		project = getCurrentVSCodeProject_Gnome();
+	}
+
+	else if (currentPlatform.contains("KDE"))
+	{
+		project = getCurrentVSCodeProject_KDE();
+	}
+
+	else if (currentPlatform.contains("Cinnamon"))
+	{
+		project = getCurrentVSCodeProject_Cinnamon();
+	}
+
+	// Need to explicitly set this because shit happens if cached value is
+	// returned
+	// project = validateAndUpdateWindow_Cross(window);
+	// std::cout << project << std::endl;
+	return project;
+}
+
+std::string CurrentWindowManager::getCurrentVSCodeProject_Hyprland()
+{
+	std::string cmd = "hyprctl activewindow -j";
+    std::string json = runSystemCommand(cmd);
+
+	// Find "title":"value"
+    const std::string key = "\"title\":";
+    size_t keyPos = json.find(key);
+    if (keyPos == std::string::npos) return "";
+    
+    size_t quoteStart = json.find('"', keyPos + key.size());
+    if (quoteStart == std::string::npos) return "";
+    
+    size_t quoteEnd = json.find('"', quoteStart + 1);
+    if (quoteEnd == std::string::npos) return "";
+    
+    return json.substr(quoteStart + 1, quoteEnd - quoteStart - 1);
+}
+
+std::string CurrentWindowManager::getCurrentVSCodeProject_Windows()
+{
+	#ifdef _WIN32
+		HWND hwnd = GetForegroundWindow();
+		if (!hwnd)
+			return "";
+
+		wchar_t title[512] = {};
+		GetWindowTextW(hwnd, title, sizeof(title) / sizeof(wchar_t));
+
+		std::wstring wstr(title);
+		if (wstr.empty())
+			return "";
+
+		int size_needed = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), NULL, 0, NULL, NULL);
+		std::string strTo(size_needed, 0);
+		WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), &strTo[0], size_needed, NULL, NULL);
+
+		return strTo;
+	#endif
+		return "";
+}
+
+std::string CurrentWindowManager::getCurrentVSCodeProject_Gnome()
+{
+	std::string command =
+		"gdbus call --session --dest org.gnome.Shell --object-path "
+		"/org/gnome/Shell/Extensions/LolAnotherWindowExtension --method "
+		"org.gnome.Shell.Extensions.LolAnotherWindowExtension.FocusTitle";
+	std::string result = runSystemCommand(command);
+
+	// Parse the fucking dirty output
+	size_t start = result.find('\'');
+	size_t end = result.rfind('\'');
+	if (start != std::string::npos && end != std::string::npos && start != end)
+		return result.substr(start + 1, end - start - 1);
+
+	return "";
+}
+
+std::string CurrentWindowManager::getCurrentVSCodeProject_KDE()
+{
+	std::string cmd =
+		"echo 'print(workspace.activeWindow.caption);' > /tmp/kwin_active.js && "
+		"S=$(" + qdbusCmd + " org.kde.KWin /Scripting org.kde.kwin.Scripting.loadScript /tmp/kwin_active.js kwin_tmp_$$) && "
+		"T=$(date '+%Y-%m-%d %H:%M:%S') && "
+		+ qdbusCmd + " org.kde.KWin /Scripting/Script$S org.kde.kwin.Script.run > /dev/null 2>&1 && "
+		"sleep 0.1 && "
+		"journalctl --since \"$T\" -o cat | grep '^js:' | tail -n 1 | sed 's/^js: //' ; "
+		+ qdbusCmd + " org.kde.KWin /Scripting/Script$S org.kde.kwin.Script.stop > /dev/null 2>&1 ; "
+		+ qdbusCmd + " org.kde.KWin /Scripting unloadScript kwin_tmp_$$ > /dev/null 2>&1";
+
+	std::string result = runSystemCommand(cmd);
+
+	// Trim trailing newline/whitespace
+	while (!result.empty() && (result.back() == '\n' || result.back() == '\r' ||
+							   result.back() == ' '))
+		result.pop_back();
+
+	// Strip "js: " prefix that KWin journals print() output with
+	const std::string prefix = "js: ";
+	if (result.starts_with(prefix))
+		result = result.substr(prefix.size());
+
+	return result;
+}
+
+std::string CurrentWindowManager::getCurrentVSCodeProject_Cinnamon()
 {
 	std::string cmd = "gdbus call --session --dest org.Cinnamon --object-path /org/Cinnamon --method org.Cinnamon.Eval 'global.get_window_actors().filter(a => a.meta_window.has_focus())[0].get_meta_window().get_title()'";
 	

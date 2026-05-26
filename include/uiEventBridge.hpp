@@ -19,6 +19,8 @@ class UiEventBridge
         void showLiveData();
         void tabViewClicked();
         void siteViewClicked();
+        void filterViewClicked();
+        void rawViewClicked();
 
     private:
         size_t loadDbSingularId;

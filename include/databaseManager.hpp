@@ -42,6 +42,7 @@ class DatabaseManager
 
         std::map<std::string, long> timeLog_PerApp_D; 
         std::map<std::string, long> timeLog_PerTab_D; 
+        std::map<std::string, long> timeLog_PerProject_D;
         std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> switchHistory_D;
 
         //Ids for event listener

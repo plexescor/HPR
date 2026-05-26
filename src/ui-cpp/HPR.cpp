@@ -119,9 +119,11 @@ void HPR::trackingLoop()
     // Stuff native to c++, holds raw values
     long totalTrackedTime;
     long totalTrackedTime_Tab;
+    long totalTrackedTime_Project;
     std::string window;
     std::map<std::string, long> timeLog;
     std::map<std::string, long> timeLog_Tab;
+    std::map<std::string, long> timeLog_Project;
     std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> switchHistory;
 
     //Special priority to insights because they arent exactly on demand loaded,
@@ -139,6 +141,7 @@ void HPR::trackingLoop()
             
             totalTrackedTime = 0; // reset to 0 at every iteration
             totalTrackedTime_Tab = 0;
+            totalTrackedTime_Project = 0;
             // Scoped mutex to hold it for as little time as possible
             {
                 std::lock_guard<std::mutex> lock(AppState::stateMutex);
@@ -148,6 +151,7 @@ void HPR::trackingLoop()
                     window = AppState::state.currentWindow;
                     timeLog = AppState::state.timeLog_PerApp;
                     timeLog_Tab = AppState::state.timeLog_PerTab;
+                    timeLog_Project = AppState::state.timeLog_PerProject;
                     switchHistory = AppState::state.switchHistory;
                 }
                 else if (AppState::state.currentView == AppState::CurrentView::HISTORICAL_SINGULAR)
@@ -156,6 +160,7 @@ void HPR::trackingLoop()
                     window = AppState::state.currentWindow;
                     timeLog = AppState::historicalData_State.timeLog_PerApp;
                     timeLog_Tab = AppState::historicalData_State.timeLog_PerTab;
+                    timeLog_Project = AppState::historicalData_State.timeLog_PerProject;
                     switchHistory = AppState::historicalData_State.switchHistory;
                 }
             }
@@ -179,10 +184,12 @@ void HPR::trackingLoop()
             modelManager.update(
                 timeLog,
                 timeLog_Tab,
+                timeLog_Project,
                 switchHistory,
                 window,
                 totalTrackedTime,
                 totalTrackedTime_Tab, 
+                totalTrackedTime_Project,
                 AppState::aliasManager
             );
 
@@ -249,6 +256,7 @@ void HPR::run()
     #endif
 
     tracker = std::thread(&HPR::trackingLoop, this);
+    // std::cout << "After this cout, Ui is visible\n";
     slint::run_event_loop(slint::EventLoopMode::RunUntilQuit);
     running = false; // safety net
 }

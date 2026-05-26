@@ -17,7 +17,7 @@ namespace AppState {
         CurrentView currentView = CurrentView::LIVE;
 
         bool useTabView = false; //which means data is shown per site and not per tab
-
+        bool isRawProjectView = false; //which means VSCode projects are shown as they are, without aliasing or parsing
         std::string currentPlatform;
 
         std::string currentError = "";
@@ -31,12 +31,16 @@ namespace AppState {
 
         //Tabs
         std::map<std::string, long> timeLog_PerTab;
+
+        //Projects
+        std::map<std::string, long> timeLog_PerProject;
     };
 
     //Intended to hold data for max 1 whole day
     struct HistoricalData {
         std::map<std::string, long> timeLog_PerApp;
         std::map<std::string, long> timeLog_PerTab;
+        std::map<std::string, long> timeLog_PerProject;
         std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> switchHistory;
         bool isLoaded = false;
     };

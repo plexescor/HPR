@@ -49,6 +49,22 @@ if exist "%CONFIG_DIR%\tabAliases.csv" (
 
 echo.
 
+:: projectAliases.csv
+if exist "%CONFIG_DIR%\projectAliases.csv" (
+    set /p "confirm_aliases=^>^> projectAliases.csv already exists. Overwrite? (y/N): "
+    if /i "!confirm_aliases!"=="y" (
+        copy /y "%SCRIPT_DIR%projectAliases.csv" "%CONFIG_DIR%\projectAliases.csv" >nul
+        echo    projectAliases.csv overwritten.
+    ) else (
+        echo    projectAliases.csv skipped. Your edits are safe.
+    )
+) else (
+    copy /y "%SCRIPT_DIR%projectAliases.csv" "%CONFIG_DIR%\projectAliases.csv" >nul
+    echo ^>^> projectAliases.csv copied successfully.
+)
+
+echo.
+
 :: config.csv
 if exist "%CONFIG_DIR%\config.csv" (
     set /p "confirm_config=^>^> config.csv already exists. Overwrite? (y/N): "

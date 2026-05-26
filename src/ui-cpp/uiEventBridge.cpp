@@ -45,6 +45,16 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow>& ui)
         this->siteViewClicked();
     });
 
+    ui->on_rawViewClicked([this]() 
+    {
+        this->rawViewClicked();
+    });
+
+    ui->on_filterViewClicked([this]() 
+    {
+        this->filterViewClicked();
+    });
+
     ui->on_openKofi([this]()
     {
         //Open webbrowser
@@ -106,6 +116,20 @@ UiEventBridge::UiEventBridge(
         return slint::interpreter::Value(); // void return
     });
 
+    ui->set_callback("rawViewClicked", [this](auto args) -> slint::interpreter::Value
+    {
+        //No need for event hub
+        this->rawViewClicked();
+        return slint::interpreter::Value(); // void return
+    });
+
+    ui->set_callback("filterViewClicked", [this](auto args) -> slint::interpreter::Value
+    {
+        //No need for event hub
+        this->filterViewClicked();
+        return slint::interpreter::Value(); // void return
+    });
+
     ui->set_callback("openKofi", [this](auto args) -> slint::interpreter::Value
     {
         //open browser
@@ -158,4 +182,18 @@ void UiEventBridge::siteViewClicked()
     //Make the current app state live
     std::lock_guard<std::mutex> lock(AppState::stateMutex);
     AppState::state.useTabView = false;
+}
+
+void UiEventBridge::filterViewClicked()
+{
+    //Make the current app state live
+    std::lock_guard<std::mutex> lock(AppState::stateMutex);
+    AppState::state.isRawProjectView = false;
+}
+
+void UiEventBridge::rawViewClicked()
+{
+    //Make the current app state live
+    std::lock_guard<std::mutex> lock(AppState::stateMutex);
+    AppState::state.isRawProjectView = true;
 }
