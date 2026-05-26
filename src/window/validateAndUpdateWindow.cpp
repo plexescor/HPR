@@ -29,6 +29,7 @@ std::string validateAndUpdateWindow_Cross(std::string &windowName)
         || windowName.contains("plasmashell")
         || windowName.contains("js::")
         || windowName.contains("null")
+        || windowName.contains("lockapp")
         || windowName.contains("{}") //on cinammon when HPR is lauched via desktop file, the first window is always {}, this is a quick fix for that
         || windowName.contains("please wait"))
     {
