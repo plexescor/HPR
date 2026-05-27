@@ -38,9 +38,6 @@ Name: "startupicon"; Description: "Start HPR automatically at Windows startup"; 
 Source: "C:\HPR\v0.6\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\HPR\v0.6\slint_cpp.dll"; DestDir: "{app}"; Flags: ignoreversion
 
-[Registry]
-Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "HPR"; ValueData: "{app}\{#MyAppExeName}"; Tasks: startupicon; Flags: uninsdeletevalue
-
 ; -- aliases.csv and config.csv: Pascal handles overwrite logic --
 Source: "C:\HPR\v0.6\aliases.csv"; DestDir: "{userappdata}\HPR\HPR_Config"; Flags: ignoreversion; Check: ShouldCopyAliases
 Source: "C:\HPR\v0.6\tabAliases.csv"; DestDir: "{userappdata}\HPR\HPR_Config"; Flags: ignoreversion; Check: ShouldCopyTabAliases
@@ -58,6 +55,10 @@ Source: "C:\HPR\v0.6\ui\*"; DestDir: "{userappdata}\HPR\HPR_Config\ui"; Flags: i
 
 [Dirs]
 Name: "{userappdata}\HPR\HPR_Config"
+
+
+[Registry]
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "HPR"; ValueData: "{app}\{#MyAppExeName}"; Tasks: startupicon; Flags: uninsdeletevalue
 
 [Icons]
 Name: "{autoprograms}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"
