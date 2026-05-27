@@ -30,12 +30,16 @@ WizardStyle=modern dark windows11
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [Tasks]
-Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
+Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: checkablealone
+Name: "startupicon"; Description: "Start HPR automatically at Windows startup"; GroupDescription: "Startup:"; Flags: checkablealone
 
 [Files]
 ; -- App binaries --
 Source: "C:\HPR\v0.6\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\HPR\v0.6\slint_cpp.dll"; DestDir: "{app}"; Flags: ignoreversion
+
+[Registry]
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "HPR"; ValueData: "{app}\{#MyAppExeName}"; Tasks: startupicon; Flags: uninsdeletevalue
 
 ; -- aliases.csv and config.csv: Pascal handles overwrite logic --
 Source: "C:\HPR\v0.6\aliases.csv"; DestDir: "{userappdata}\HPR\HPR_Config"; Flags: ignoreversion; Check: ShouldCopyAliases
