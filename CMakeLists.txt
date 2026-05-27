@@ -34,6 +34,7 @@ if(WIN32)
 		src/window/getCurrentWindow.cpp
 		src/window/validateAndUpdateWindow.cpp
     	src/window/windowUtilities.cpp
+        src/extension/extensionManager.cpp
 
         #sqLite stuff
         external/sqLite/sqlite3.c
@@ -58,6 +59,7 @@ elseif(LINUX)
         src/window/getCurrentWindow.cpp
         src/window/validateAndUpdateWindow.cpp
         src/window/windowUtilities.cpp
+        src/extension/extensionManager.cpp
 
         #sqLite stuff
         external/sqLite/sqlite3.c

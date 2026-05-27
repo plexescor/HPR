@@ -22,19 +22,13 @@ class CurrentWindowManager
         std::string getCurrentWindow_KDE();
         std::string getCurrentWindow_Cinnamon();
 
-        std::string getCurrentTab();
-        std::string getCurrentTab_Hyprland();
-        std::string getCurrentTab_Windows();
-        std::string getCurrentTab_Gnome();
-        std::string getCurrentTab_KDE();
-        std::string getCurrentTab_Cinnamon();
+        std::string getCurrentTitle();
+        std::string getCurrentTitle_Hyprland();
+        std::string getCurrentTitle_Windows();
+        std::string getCurrentTitle_Gnome();
+        std::string getCurrentTitle_KDE();
+        std::string getCurrentTitle_Cinnamon();
 
-        std::string getCurrentVSCodeProject();
-        std::string getCurrentVSCodeProject_Hyprland();
-        std::string getCurrentVSCodeProject_Windows();
-        std::string getCurrentVSCodeProject_Gnome();
-        std::string getCurrentVSCodeProject_KDE();
-        std::string getCurrentVSCodeProject_Cinnamon();
     private:
         std::string currentPlatform = "";
         std::string qdbusCmd = "qdbus6";
