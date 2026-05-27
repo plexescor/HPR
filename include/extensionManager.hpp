@@ -3,7 +3,7 @@
 #include <vector>
 #include <thread>
 #include <atomic>
-
+#include "sol.hpp"
 struct LoadedExtension 
 {
     std::filesystem::path path;
@@ -21,7 +21,7 @@ class ExtensionManager
     public:
         ExtensionManager();
         ~ExtensionManager();
-
+        void run();
         void loadExtensions();
 
     private:

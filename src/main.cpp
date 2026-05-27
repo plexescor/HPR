@@ -6,7 +6,8 @@
 #include "configManager.hpp"
 #include "HPRInterpreter.hpp"
 #include "linuxUtilities.hpp"
-#ifdef _WIN32
+#include "extensionManager.hpp"
+#ifdef __linux__
 	#include <windows.h>
 
 	int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
@@ -37,6 +38,8 @@
 		dbm.run();
 		cwm.run();
 
+		ExtensionManager ext;
+		ext.run();
 		//If not to use interpreter, use inbuilt ui
 		if (!conf.getConfig("use-interpreter", false))
 		{
@@ -86,12 +89,12 @@
 		//Its not true, idk why but hyprland counts the memory used by libllvm, livnvidia and stuff
 		//as used by HPR, if you get a actual breakdown of memory used by HPR, HPR will only account for only like ~30mb
 		//still if it bothers you, just turn HA off in config
-		if (!conf.getConfig("hardware-acceleration", true))
-		{
-			setenv("SLINT_BACKEND", "winit-software", 1);
-		}
+		//if (!conf.getConfig("hardware-acceleration", true))
+		//{
+		//	setenv("SLINT_BACKEND", "winit-software", 1);
+		//}
 
-		LinuxInitialiser linuxInit; //Just a utility class to create config directory and check for icon
+		//LinuxInitialiser linuxInit; //Just a utility class to create config directory and check for icon
 
 		//This call is non blocking, it just starts a new BG thread
 		TrayManager tray;
@@ -103,6 +106,9 @@
 		//This calls are non blocking, they just start a new BG thread
 		dbm.run();
 		cwm.run();
+
+		ExtensionManager ext;
+		ext.run();
 
 		//If not to use interpreter, use inbuilt ui
 		if (!conf.getConfig("use-interpreter", false))

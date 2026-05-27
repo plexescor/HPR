@@ -19,12 +19,28 @@ ExtensionManager::ExtensionManager()
 
 ExtensionManager::~ExtensionManager()
 {
-    //Join all threads vro
+    //two passes for "fastness"
     for (auto& ext : extensions)
     {
         ext->running = false;
+    }
+
+    for (auto& ext : extensions)
+    {
         if (ext->thread.joinable())
             ext->thread.join();
+    }
+}
+
+void ExtensionManager::run()
+{
+    for (auto& ext : extensions)
+    {
+        ext->thread = std::thread(
+            &ExtensionManager::runExtension,
+            this,
+            std::ref(*ext)
+        );
     }
 }
 
@@ -41,10 +57,19 @@ void ExtensionManager::loadExtensions()
             ext->path = entry.path();
             
             registerFunctions(ext->lua);
-            ext->lua.script_file(entry.path().string());
-            
-            ext->thread = std::thread(&ExtensionManager::runExtension, this, std::ref(*ext));
-            
+
+            try
+            {
+                ext->lua.script_file(entry.path().string());
+            }
+            catch (const std::exception& e)
+            {
+                std::cerr << "Failed to load extension: "
+                        << entry.path()
+                        << "\nError: " << e.what() << '\n';
+                continue;
+            }
+                        
             extensions.push_back(std::move(ext));
         }
     }
@@ -55,13 +80,26 @@ void ExtensionManager::runExtension(LoadedExtension& ext)
     sol::function onTick = ext.lua["onTick"];
     while (ext.running)
     {
-        if (onTick.valid()) onTick();
+        try
+        {
+            if (onTick.valid())
+                onTick();
+        }
+        catch (const std::exception& e)
+        {
+            std::cerr << "Extension error in "
+                      << ext.path
+                      << ": "
+                      << e.what()
+                      << '\n';
+        }
         std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
 }
 
 void ExtensionManager::registerFunctions(sol::state& lua)
 {
+    //Functions exposed to lua
     lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::table);
     
     lua["HPR"] = lua.create_table();
