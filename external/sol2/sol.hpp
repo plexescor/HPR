@@ -34,7 +34,7 @@
 
 // beginning of sol/version.hpp
 
-#include <sol/config.hpp>
+#include <config.hpp>
 
 #define SOL_VERSION_MAJOR 3
 #define SOL_VERSION_MINOR 2

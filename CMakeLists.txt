@@ -71,6 +71,18 @@ if (MSVC)
     target_compile_options(HPR PRIVATE /MP)
 endif()
 
+# Lua static lib
+file(GLOB_RECURSE LUA_SOURCES "external/lua/*.c")
+list(FILTER LUA_SOURCES EXCLUDE REGEX ".*(lua|luac)\\.c$")
+add_library(lua_static STATIC ${LUA_SOURCES})
+target_include_directories(lua_static PUBLIC external/lua/)
+
+# Link to HPR
+target_link_libraries(HPR PRIVATE lua_static)
+
+# sol2 headers
+target_include_directories(HPR PRIVATE external/sol2/)
+
 target_link_libraries(HPR PRIVATE Slint::Slint)
 
 if(LINUX)
