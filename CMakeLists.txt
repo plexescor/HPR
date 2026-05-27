@@ -78,6 +78,11 @@ endif()
 
 slint_target_sources(HPR src/ui/app-window.slint)
 
+# Embed resources directly into the application binary instead of relying on absolute paths
+set_target_properties(HPR PROPERTIES 
+    SLINT_EMBED_RESOURCES embed-files
+)
+
 target_include_directories(HPR
     PRIVATE
     include/
