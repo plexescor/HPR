@@ -1,5 +1,20 @@
 #pragma once
 #include <string>
+#include <vector>
+#include <thread>
+#include <atomic>
+
+struct LoadedExtension 
+{
+    std::filesystem::path path;
+    sol::state lua;
+    std::thread thread;
+    std::atomic<bool> running{true};
+
+    LoadedExtension() = default;
+    LoadedExtension(const LoadedExtension&) = delete;
+    LoadedExtension& operator=(const LoadedExtension&) = delete;
+};
 
 class ExtensionManager 
 {
@@ -11,8 +26,10 @@ class ExtensionManager
 
     private:
         void updateExtensionPath();
+        void registerFunctions(sol::state& lua);
+        void runExtension(LoadedExtension& ext);
 
     private:
-        sol::state lua;
+        std::vector<std::unique_ptr<LoadedExtension>> extensions;
         std::string extensionPath;
 };
