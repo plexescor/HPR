@@ -257,6 +257,27 @@ void registerBuiltinBackends()
     registerBackend
     ({
         "Hyprland",
+
+        // matchesEnvironment
+        [](const std::string& env) 
+        {
+            return env.contains("Hyprland");
+        },
+
+        []()
+        {
+            //no shit
+        },
+
+        []()
+        {
+            std::string cmd = "hyprctl -j activewindow";
+            std::string result =
+                runSystemCommand(cmd);
+
+            return result.contains("class");
+        },
+
         []() -> std::string
         {
             std::string cmd = "hyprctl activewindow -j";
@@ -299,6 +320,48 @@ void registerBuiltinBackends()
     registerBackend
     ({
         "Windows",
+
+        // matchesEnvironment
+        [](const std::string& env) 
+        {
+            #ifdef _WIN32
+                return env.contains("Windows");
+            #endif
+            return false;
+        },
+
+        []()
+        {
+            //no shit
+        },
+
+        []()
+        {
+            #ifdef _WIN32
+                HWND hwnd = GetForegroundWindow();
+
+                DWORD pid = 0;
+                GetWindowThreadProcessId(hwnd, &pid);
+
+                HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
+
+                char procName[MAX_PATH] = {};
+                DWORD size = MAX_PATH;
+                QueryFullProcessImageNameA(hProcess, 0, procName, &size);
+                CloseHandle(hProcess);
+
+                // Extract just the filename from full path
+                std::string fullPath(procName);
+                size_t lastSlash = fullPath.find_last_of("\\/");
+                std::string filename = (lastSlash != std::string::npos) ? fullPath.substr(lastSlash + 1) : fullPath;
+
+                //if it contains .exe, then yes its ready or whateevr
+                return filename.contains(".exe");
+            #endif
+                return false;
+        },
+
+
         []() -> std::string
         {
             #ifdef _WIN32
@@ -361,6 +424,27 @@ void registerBuiltinBackends()
     registerBackend
     ({
         "Cinnamon",
+
+        // matchesEnvironment
+        [](const std::string& env) 
+        {
+            return env.contains("Cinnamon");
+        },
+
+        []()
+        {
+            //no shit
+        },
+
+        []()
+        {
+            std::string cmd = "gdbus call --session --dest org.Cinnamon --object-path /org/Cinnamon --method org.Cinnamon.Eval \"global.display.focus_window.get_wm_class()\"";
+            std::string rawOutput = runSystemCommand(cmd);
+
+            return rawOutput.contains("('");
+        },
+
+
         []() -> std::string
         {
             std::string cmd = "gdbus call --session --dest org.Cinnamon --object-path /org/Cinnamon --method org.Cinnamon.Eval \"global.display.focus_window.get_wm_class()\"";
