@@ -13,6 +13,7 @@
 #include "extensionManager.hpp"
 #include "window_E.hpp"
 #include "windowUtilities.hpp"
+#include "windowBackendRegistery.hpp"
 
 
 ExtensionManager::ExtensionManager() 
@@ -33,6 +34,7 @@ ExtensionManager::~ExtensionManager()
         if (ext->thread.joinable())
             ext->thread.join();
     }
+    registeredBackends.clear();
 }
 
 void ExtensionManager::run()
@@ -114,7 +116,13 @@ void ExtensionManager::runExtension(LoadedExtension& ext)
                       << e.what()
                       << '\n';
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(sleepTime));
+        int slept = 0;
+        while (ext.running && slept < sleepTime)
+        {
+            int chunk = (sleepTime - slept < 100) ? (sleepTime - slept) : 100;
+            std::this_thread::sleep_for(std::chrono::milliseconds(chunk));
+            slept += chunk;
+        }
     }
 }
 

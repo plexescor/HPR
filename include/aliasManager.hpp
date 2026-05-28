@@ -4,6 +4,7 @@
 #include <string>
 #include <filesystem>
 #include <vector>
+#include <mutex>
 
 class AliasManager
 {
@@ -48,4 +49,5 @@ class AliasManager
         std::unordered_map<std::string, std::string> reverseCacheDictionary;
         std::unordered_map<std::string, std::string> reverseCacheDictionary_Tab;
         std::unordered_map<std::string, std::string> reverseCacheDictionary_Project;
+        std::mutex mutex;
 };

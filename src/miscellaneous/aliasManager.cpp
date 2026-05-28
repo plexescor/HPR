@@ -165,6 +165,7 @@ void AliasManager::loadAliases_Project()
 
 std::string AliasManager::getAlias(const std::string &rawName)
 {
+    std::lock_guard lock(mutex);
     std::string lowerName = rawName;
 
     //Convert to lower case
@@ -225,6 +226,7 @@ std::string AliasManager::getAlias(const std::string &rawName)
 
 std::string AliasManager::getAlias_Tab(const std::string &rawName)
 {
+    std::lock_guard lock(mutex);
     std::string lowerName = rawName;
 
     //Convert to lower case
@@ -285,6 +287,7 @@ std::string AliasManager::getAlias_Tab(const std::string &rawName)
 
 std::string AliasManager::getAlias_Project(const std::string &rawName)
 {
+    std::lock_guard lock(mutex);
     std::string lowerName = rawName;
 
     //Convert to lower case
@@ -345,6 +348,7 @@ std::string AliasManager::getAlias_Project(const std::string &rawName)
 
 std::string AliasManager::getReverseAlias(const std::string &aliasName)
 {
+    std::lock_guard lock(mutex);
     std::string lowerName = aliasName;
 
     //Convert to lower case
@@ -403,6 +407,7 @@ std::string AliasManager::getReverseAlias(const std::string &aliasName)
 
 std::string AliasManager::getReverseAlias_Tab(const std::string &aliasName)
 {
+    std::lock_guard lock(mutex);
     std::string lowerName = aliasName;
 
     //Convert to lower case
@@ -461,6 +466,7 @@ std::string AliasManager::getReverseAlias_Tab(const std::string &aliasName)
 
 std::string AliasManager::getReverseAlias_Project(const std::string &aliasName)
 {
+    std::lock_guard lock(mutex);
     std::string lowerName = aliasName;
 
     //Convert to lower case
