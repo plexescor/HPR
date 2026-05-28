@@ -81,6 +81,9 @@ file(GLOB_RECURSE LUA_SOURCES "external/lua/*.c")
 list(FILTER LUA_SOURCES EXCLUDE REGEX ".*(lua|luac)\\.c$")
 add_library(lua_static STATIC ${LUA_SOURCES})
 target_include_directories(lua_static PUBLIC external/lua/)
+if(LINUX)
+    target_compile_definitions(lua_static PRIVATE LUA_USE_LINUX)
+endif()
 
 # Link to HPR
 target_link_libraries(HPR PRIVATE lua_static)

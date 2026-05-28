@@ -6749,10 +6749,13 @@ namespace sol {
 		/// \group emplace
 		template <class... Args>
 		T& emplace(Args&&... args) noexcept {
-			static_assert(std::is_constructible<T, Args&&...>::value, "T must be constructible with Args");
+			static_assert(std::is_constructible<T, Args&&...>::value,
+						"T must be constructible with Args");
 
 			*this = nullopt;
-			this->construct(std::forward<Args>(args)...);
+
+			m_value = std::addressof((T&)std::forward<Args>(args)...);
+			return *m_value;
 		}
 
 		/// Swaps this optional with the other.
@@ -14538,6 +14541,9 @@ namespace sol { namespace stack {
 
 #if SOL_IS_ON(SOL_COMPILER_GCC)
 #pragma GCC diagnostic push
+#if defined(__clang__)
+#pragma clang diagnostic ignored "-Wunknown-warning-option"
+#endif
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #endif
 
@@ -17291,6 +17297,9 @@ namespace sol {
 
 #if SOL_IS_ON(SOL_COMPILER_GCC)
 #pragma GCC diagnostic push
+#if defined(__clang__)
+#pragma clang diagnostic ignored "-Wunknown-warning-option"
+#endif
 #pragma GCC diagnostic ignored "-Wmaybe-uninitialized"
 #endif
 
