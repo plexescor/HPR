@@ -717,16 +717,7 @@ HPR uses slightly patched versions of `sol2`, `lua`, and `sqlite3` (located in t
 
 ## Adding a New Platform
 
-Platform window detection is fully contained inside `CurrentWindowManager`. The constructor reads `$XDG_CURRENT_DESKTOP` and dispatches to the right backend through `getCurrentWindow()`.
-
-To add a new platform:
-
-1. Declare `getCurrentWindow_YourPlatform()` in `getCurrentWindow.hpp`
-2. Implement it in `getCurrentWindow.cpp`. Return the raw window title as `std::string`. Return an empty string for transitional or unknown states.
-3. Add an `else if (currentPlatform.contains("YourPlatform"))` branch in `getCurrentWindow()`
-4. Add initialization checks in the `CurrentWindowManager` constructor inside the appropriate preprocessor guard
-
-`validateAndUpdateWindow_Cross` runs on every return from the platform getter automatically. New backends inherit all normalization and noise filtering for free.
+[<kbd>Refer to HPR Docs</kbd>](https://hpr-cpp.netlify.app/docs.html)
 
 ---
 
