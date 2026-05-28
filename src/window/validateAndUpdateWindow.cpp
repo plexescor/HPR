@@ -22,6 +22,8 @@ std::string validateAndUpdateWindow_Cross(std::string &windowName)
     //Windows OS checks for windows's specific garbage stuff, dont need guards
     if (windowName == ""
         || windowName.contains("searchhost")
+        || windowName.contains("explorer")
+        || windowName.contains("shellhost")
         || windowName.contains("openwith")
         || windowName.contains("startmenuexperiencehost")
         || windowName.contains("applicationframehost")
