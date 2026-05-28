@@ -143,9 +143,9 @@ std::string runSystemCommand(std::string &command) {
     // Block dangerous commands on all platforms
     if (isCommandBlocked(command))
     {
-        std::cout << "Haha motherfucker what did expect 🤣🤣🤣" << std::endl;
+        std::cout << "Haha motherfucker what did you expect 🤣🤣🤣" << std::endl;
         std::cerr << "[HPR] Blocked dangerous command: " << command << std::endl;
-        return "Haha motherfucker what did expect 🤣🤣🤣";
+        return "Haha motherfucker what did you expect 🤣🤣🤣";
     }
 
 #ifdef __linux__
