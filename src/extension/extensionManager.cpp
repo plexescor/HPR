@@ -145,6 +145,21 @@ void ExtensionManager::registerFunctions(sol::state& lua)
         return AppState::aliasManager.getAlias_Project(command);
     };
 
+    lua["HPR"]["getReverseAlias"] = [](std::string aliasName) 
+    {
+        return AppState::aliasManager.getReverseAlias(aliasName);
+    };
+
+    lua["HPR"]["getReverseAlias_Tab"] = [](std::string aliasName) 
+    {
+        return AppState::aliasManager.getReverseAlias_Tab(aliasName);
+    };
+
+    lua["HPR"]["getReverseAlias_Project"] = [](std::string aliasName) 
+    {
+        return AppState::aliasManager.getReverseAlias_Project(aliasName);
+    };
+
     lua["HPR"]["registerBackend_E"] = [](
         std::string name, 
         sol::function matchesEnvironment,
