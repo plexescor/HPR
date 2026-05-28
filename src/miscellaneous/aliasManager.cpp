@@ -184,33 +184,43 @@ std::string AliasManager::getAlias(const std::string &rawName)
         if (currentModified > lastModified)
         {
             cacheDictionary.clear();
+            reverseCacheDictionary.clear();
             loadAliases();
         }
     }
     
-    // check cache first
+    std::string prettyName;
     auto it = cacheDictionary.find(lowerName);
-
-    // return if found in O(1)
     if (it != cacheDictionary.end())
     {
-        return it->second;
+        prettyName = it->second;
     }
-
-    // else loop through the entire vector
-    for (const auto &[triggerWord, prettyName] : aliasList)
+    else
     {
-        if (lowerName.contains(triggerWord))
+        bool found = false;
+        for (const auto &[triggerWord, pName] : aliasList)
         {
-            // found, save it to map and return
-            cacheDictionary[lowerName] = prettyName;
-            return prettyName;
+            if (lowerName.contains(triggerWord))
+            {
+                cacheDictionary[lowerName] = pName;
+                prettyName = pName;
+                found = true;
+                break;
+            }
+        }
+        if (!found)
+        {
+            cacheDictionary[lowerName] = rawName;
+            prettyName = rawName;
         }
     }
 
-    // if nowhere, then return it as it is and save it in hashmap
-    cacheDictionary[lowerName] = rawName;
-    return rawName;
+    std::string lowerPretty = prettyName;
+    std::transform(lowerPretty.begin(), lowerPretty.end(), lowerPretty.begin(),
+        [](unsigned char c) { return std::tolower(c); });
+    reverseCacheDictionary[lowerPretty] = rawName;
+
+    return prettyName;
 }
 
 std::string AliasManager::getAlias_Tab(const std::string &rawName)
@@ -234,33 +244,43 @@ std::string AliasManager::getAlias_Tab(const std::string &rawName)
         if (currentModified > lastModified_Tab)
         {
             cacheDictionary_Tab.clear();
+            reverseCacheDictionary_Tab.clear();
             loadAliases_Tab();
         }
     }
     
-    // check cache first
+    std::string prettyName;
     auto it = cacheDictionary_Tab.find(lowerName);
-
-    // return if found in O(1)
     if (it != cacheDictionary_Tab.end())
     {
-        return it->second;
+        prettyName = it->second;
     }
-
-    // else loop through the entire vector
-    for (const auto &[triggerWord, prettyName] : aliasList_Tab)
+    else
     {
-        if (lowerName.contains(triggerWord))
+        bool found = false;
+        for (const auto &[triggerWord, pName] : aliasList_Tab)
         {
-            // found, save it to map and return
-            cacheDictionary_Tab[lowerName] = prettyName;
-            return prettyName;
+            if (lowerName.contains(triggerWord))
+            {
+                cacheDictionary_Tab[lowerName] = pName;
+                prettyName = pName;
+                found = true;
+                break;
+            }
+        }
+        if (!found)
+        {
+            cacheDictionary_Tab[lowerName] = rawName;
+            prettyName = rawName;
         }
     }
 
-    // if nowhere, then return it as it is and save it in hashmap
-    cacheDictionary_Tab[lowerName] = rawName;
-    return rawName;
+    std::string lowerPretty = prettyName;
+    std::transform(lowerPretty.begin(), lowerPretty.end(), lowerPretty.begin(),
+        [](unsigned char c) { return std::tolower(c); });
+    reverseCacheDictionary_Tab[lowerPretty] = rawName;
+
+    return prettyName;
 }
 
 std::string AliasManager::getAlias_Project(const std::string &rawName)
@@ -284,33 +304,43 @@ std::string AliasManager::getAlias_Project(const std::string &rawName)
         if (currentModified > lastModified_Project)
         {
             cacheDictionary_Project.clear();
+            reverseCacheDictionary_Project.clear();
             loadAliases_Project();
         }
     }
     
-    // check cache first
+    std::string prettyName;
     auto it = cacheDictionary_Project.find(lowerName);
-
-    // return if found in O(1)
     if (it != cacheDictionary_Project.end())
     {
-        return it->second;
+        prettyName = it->second;
     }
-
-    // else loop through the entire vector
-    for (const auto &[triggerWord, prettyName] : aliasList_Project)
+    else
     {
-        if (lowerName.contains(triggerWord))
+        bool found = false;
+        for (const auto &[triggerWord, pName] : aliasList_Project)
         {
-            // found, save it to map and return
-            cacheDictionary_Project[lowerName] = prettyName;
-            return prettyName;
+            if (lowerName.contains(triggerWord))
+            {
+                cacheDictionary_Project[lowerName] = pName;
+                prettyName = pName;
+                found = true;
+                break;
+            }
+        }
+        if (!found)
+        {
+            cacheDictionary_Project[lowerName] = rawName;
+            prettyName = rawName;
         }
     }
 
-    // if nowhere, then return it as it is and save it in hashmap
-    cacheDictionary_Project[lowerName] = rawName;
-    return rawName;
+    std::string lowerPretty = prettyName;
+    std::transform(lowerPretty.begin(), lowerPretty.end(), lowerPretty.begin(),
+        [](unsigned char c) { return std::tolower(c); });
+    reverseCacheDictionary_Project[lowerPretty] = rawName;
+
+    return prettyName;
 }
 
 std::string AliasManager::getReverseAlias(const std::string &aliasName)
