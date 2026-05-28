@@ -6,10 +6,13 @@
 #include <thread>
 #include <atomic>
 #include <mutex> 
+
 #include "sol.hpp"
 
 #include "appState.hpp"
 #include "extensionManager.hpp"
+#include "window_E.hpp"
+#include "windowUtilities.hpp"
 
 
 ExtensionManager::ExtensionManager() 
@@ -81,7 +84,11 @@ void ExtensionManager::loadExtensions()
 
 void ExtensionManager::runExtension(LoadedExtension& ext)
 {
+    sol::function init = ext.lua["init"];
     sol::function onTick = ext.lua["onTick"];
+
+    if (init.valid()) init();
+    
     while (ext.running)
     {
         try
@@ -108,16 +115,26 @@ void ExtensionManager::registerFunctions(sol::state& lua)
     
     lua["HPR"] = lua.create_table();
     
-    lua["HPR"]["getActiveApp"] = []() 
+    lua["HPR"]["getCurrentWindow_E"] = []() 
     {
-        std::lock_guard lock(AppState::stateMutex);
-        return AppState::state.currentWindow;
+        return getCurrentWindow_E();
     };
-    
-    lua["HPR"]["getTimeForApp"] = [](std::string app) 
+
+    lua["HPR"]["runSystemCommand_E"] = [](std::string command) 
     {
-        std::lock_guard lock(AppState::stateMutex);
-        return AppState::state.timeLog_PerApp[app];
+        return runSystemCommand(command);
+    };
+
+    lua["HPR"]["registerBackend_E"] = [](
+        std::string name, 
+        sol::function matchesEnvironment,
+        sol::function initialize,
+        sol::function isUsable,
+        sol::function getCurrentWindow,
+        sol::function getCurrentTitle
+    ) 
+    {
+        registerBackend_E(name, matchesEnvironment, initialize, isUsable, getCurrentWindow, getCurrentTitle);
     };
 }
 

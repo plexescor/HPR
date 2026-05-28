@@ -16,60 +16,34 @@ if(LINUX)
     pkg_check_modules(DBUS REQUIRED dbus-1)
 endif()
 
-#No console in windows
+
+
+file(GLOB_RECURSE APPSTATE src/appState/*.cpp)
+file(GLOB_RECURSE DATABASE src/database/*.cpp)
+file(GLOB_RECURSE EXTENSION src/extension/*.cpp)
+file(GLOB_RECURSE MISC src/miscellaneous/*.cpp)
+file(GLOB_RECURSE PATTERN src/pattern/*.cpp)
+file(GLOB_RECURSE TRAY src/tray/*.cpp)
+file(GLOB_RECURSE UI src/ui-cpp/*.cpp)
+file(GLOB_RECURSE WINDOW src/window/*.cpp)
+
+set(SOURCES
+    src/main.cpp
+    ${APPSTATE}
+    ${DATABASE}
+    ${EXTENSION}
+    ${MISC}
+    ${PATTERN}
+    ${TRAY}
+    ${UI}
+    ${WINDOW}
+    external/sqLite/sqlite3.c
+)
+
 if(WIN32)
-  add_executable(HPR WIN32
-		src/main.cpp
-        src/tray/trayManager.cpp
-        src/database/databaseManager.cpp
-		src/appState/appState.cpp
-		src/miscellaneous/timeUtils.cpp
-        src/miscellaneous/aliasManager.cpp
-        src/miscellaneous/configManager.cpp
-        src/pattern/patternAnalyzer.cpp
-		src/ui-cpp/HPR.cpp
-        src/ui-cpp/HPRInterpreter.cpp
-        src/ui-cpp/uiEventBridge.cpp
-        src/ui-cpp/uiModelManager.cpp
-        src/window/builtinBackends.cpp
-		src/window/getCurrentWindow.cpp
-		src/window/validateAndUpdateWindow.cpp
-        src/window/windowBackendRegistery.cpp
-    	src/window/windowUtilities.cpp
-        src/extension/extensionManager.cpp
-
-        #sqLite stuff
-        external/sqLite/sqlite3.c
-
-        ${CMAKE_SOURCE_DIR}/assets/app.rc
-  )
-
+    add_executable(HPR WIN32 ${SOURCES})
 elseif(LINUX)
-  add_executable(HPR
-        src/main.cpp
-        src/tray/trayManager.cpp
-        src/database/databaseManager.cpp
-        src/appState/appState.cpp
-        src/miscellaneous/timeUtils.cpp
-        src/miscellaneous/linuxUtilities.cpp
-        src/miscellaneous/aliasManager.cpp
-        src/miscellaneous/configManager.cpp
-        src/pattern/patternAnalyzer.cpp
-        src/ui-cpp/HPR.cpp
-        src/ui-cpp/HPRInterpreter.cpp
-        src/ui-cpp/uiEventBridge.cpp
-        src/ui-cpp/uiModelManager.cpp
-        src/window/builtinBackends.cpp
-        src/window/getCurrentWindow.cpp
-        src/window/validateAndUpdateWindow.cpp
-        src/window/windowBackendRegistery.cpp
-        src/window/windowUtilities.cpp
-        src/extension/extensionManager.cpp
-
-        #sqLite stuff
-        external/sqLite/sqlite3.c
-    )
-
+    add_executable(HPR ${SOURCES})
 endif()
 
 if (MSVC)
