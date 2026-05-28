@@ -19,6 +19,9 @@
 		(void)nShowCmd;
 
 		ConfigManager conf;
+	
+		ExtensionManager ext;
+		ext.run();
 
 		//Check for hardware-acceleration flag
 		if (!conf.getConfig("hardware-acceleration", true))
@@ -38,8 +41,6 @@
 		dbm.run();
 		cwm.run();
 
-		ExtensionManager ext;
-		ext.run();
 		//If not to use interpreter, use inbuilt ui
 		if (!conf.getConfig("use-interpreter", false))
 		{
@@ -93,8 +94,9 @@
 		{
 			setenv("SLINT_BACKEND", "winit-software", 1);
 		}
-
-		//LinuxInitialiser linuxInit; //Just a utility class to create config directory and check for icon
+		ExtensionManager ext;
+		ext.run();
+		LinuxInitialiser linuxInit; //Just a utility class to create config directory and check for icon
 
 		//This call is non blocking, it just starts a new BG thread
 		TrayManager tray;
@@ -106,9 +108,6 @@
 		//This calls are non blocking, they just start a new BG thread
 		dbm.run();
 		cwm.run();
-
-		ExtensionManager ext;
-		ext.run();
 
 		//If not to use interpreter, use inbuilt ui
 		if (!conf.getConfig("use-interpreter", false))
