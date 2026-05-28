@@ -9,6 +9,7 @@
 #include "uiEventBridge.hpp"
 #include "appEvents.hpp"
 #include "patternAnalyzer.hpp"
+#include "uiRegistry.hpp"
 
 #include <thread>
 #include <atomic>
@@ -37,6 +38,9 @@ HPRInterpreter::HPRInterpreter()
 
     instance = definition->create();
     weak_instance = instance.value();
+
+    //give ui registery for what it demands
+    UiRegistry::registerInstance(weak_instance.value());
 
     modelManager.emplace(instance.value());
     #ifdef __linux__

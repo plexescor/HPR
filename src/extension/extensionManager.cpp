@@ -6,14 +6,125 @@
 #include <thread>
 #include <atomic>
 #include <mutex> 
+#include <functional>
+#include <map>
+
+#include <slint-interpreter.h>
 
 #include "sol.hpp"
 
 #include "appState.hpp"
+#include "uiRegistry.hpp"
 #include "extensionManager.hpp"
 #include "window_E.hpp"
 #include "windowUtilities.hpp"
 #include "windowBackendRegistery.hpp"
+
+namespace
+{
+    struct CppValue
+    {
+        enum class Type { Null, String, Double, Bool, Array, Struct };
+        Type type = Type::Null;
+        
+        std::string str_val;
+        double double_val = 0.0;
+        bool bool_val = false;
+        
+        std::vector<CppValue> array_val;
+        std::map<std::string, CppValue> struct_val;
+    };
+
+    CppValue luaToCpp(const sol::object& obj)
+    {
+        CppValue v;
+        if (obj.is<std::string>())
+        {
+            v.type = CppValue::Type::String;
+            v.str_val = obj.as<std::string>();
+        }
+        else if (obj.is<double>())
+        {
+            v.type = CppValue::Type::Double;
+            v.double_val = obj.as<double>();
+        }
+        else if (obj.is<bool>())
+        {
+            v.type = CppValue::Type::Bool;
+            v.bool_val = obj.as<bool>();
+        }
+        else if (obj.is<sol::table>())
+        {
+            sol::table tab = obj.as<sol::table>();
+            bool is_array = false;
+            if (tab[1].valid())
+            {
+                is_array = true;
+            }
+            
+            if (is_array)
+            {
+                v.type = CppValue::Type::Array;
+                for (size_t i = 1; ; ++i)
+                {
+                    sol::object val = tab[i];
+                    if (!val.valid() || val.is<sol::nil_t>())
+                    {
+                        break;
+                    }
+                    v.array_val.push_back(luaToCpp(val));
+                }
+            }
+            else
+            {
+                v.type = CppValue::Type::Struct;
+                tab.for_each([&](sol::object key, sol::object value)
+                {
+                    if (key.is<std::string>())
+                    {
+                        v.struct_val[key.as<std::string>()] = luaToCpp(value);
+                    }
+                });
+            }
+        }
+        return v;
+    }
+
+    slint::interpreter::Value cppToSlint(const CppValue& val)
+    {
+        if (val.type == CppValue::Type::String)
+        {
+            return slint::interpreter::Value(slint::SharedString(val.str_val));
+        }
+        else if (val.type == CppValue::Type::Double)
+        {
+            return slint::interpreter::Value(val.double_val);
+        }
+        else if (val.type == CppValue::Type::Bool)
+        {
+            return slint::interpreter::Value(val.bool_val);
+        }
+        else if (val.type == CppValue::Type::Array)
+        {
+            auto model = std::make_shared<slint::VectorModel<slint::interpreter::Value>>();
+            for (const auto& item : val.array_val)
+            {
+                model->push_back(cppToSlint(item));
+            }
+            return slint::interpreter::Value(std::shared_ptr<slint::Model<slint::interpreter::Value>>(model));
+        }
+        else if (val.type == CppValue::Type::Struct)
+        {
+            slint::interpreter::Struct s;
+            for (const auto& [k, v] : val.struct_val)
+            {
+                s.set_field(k, cppToSlint(v));
+            }
+            return slint::interpreter::Value(s);
+        }
+        return slint::interpreter::Value();
+    }
+}
 
 
 ExtensionManager::ExtensionManager(DatabaseManager& dbm) : dbManager(dbm)
@@ -199,6 +310,54 @@ void ExtensionManager::registerFunctions(sol::state& lua)
     {
         return dbManager.querySQL(sql, params.value_or(std::vector<std::string>{}));
     };
+
+    // Expose HPR.setUiProperty_E("propertyName", value) to Lua
+    lua["HPR"]["setUiProperty_E"] = [](std::string name, sol::object value) 
+    {
+        if (!UiRegistry::isActive())
+        {
+            return; // UI is not active/loaded yet
+        }
+        
+        auto weak = UiRegistry::getInstance();
+        // 1. Safely convert Lua object to standard C++ structure on the Lua execution background thread
+        CppValue cppVal = luaToCpp(value);
+
+        // 2. Dispatch to Slint's main event loop thread to construct and set the Slint values
+        slint::invoke_from_event_loop([weak, name, cppVal]() 
+        {
+            if (auto handle = weak.lock())
+            {
+                slint::interpreter::Value slintVal = cppToSlint(cppVal);
+                (*handle)->set_property(name, slintVal);
+            }
+        });
+    };
+
+    //Expose HPR.registerUiCallback("callbackName", lua_function) to Lua
+    lua["HPR"]["registerUiCallback"] = [](std::string name, sol::function luaCallback) 
+    {
+        if (!UiRegistry::isActive())
+        {
+            return; // UI is not active/loaded yet
+        }
+        
+        auto weak = UiRegistry::getInstance();
+        slint::invoke_from_event_loop([weak, name, luaCallback]() 
+        {
+            if (auto handle = weak.lock())
+            {
+                // Using 'auto args' ensures compiler compatibility with Slint's types
+                (*handle)->set_callback(name, [luaCallback](auto args) -> slint::interpreter::Value 
+                {
+                    // Trigger the lua function when Slint fires the callback
+                    luaCallback();
+                    return slint::interpreter::Value(); // void return
+                });
+            }
+        });
+    };
+
 }
 
 void ExtensionManager::updateExtensionPath()
