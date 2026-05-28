@@ -5,6 +5,7 @@
 #include <vector>
 #include <functional>
 std::string getCurrentWindow_E();
+std::string getCurrentTitle_E();
 void registerBackend_E(std::string name, 
     std::function<bool(const std::string&)> matchesEnvironment,
     std::function<void()> initialize,

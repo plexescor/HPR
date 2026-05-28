@@ -12,6 +12,12 @@ std::string getCurrentWindow_E()
     return AppState::state.currentWindow;
 }
 
+std::string getCurrentTitle_E()
+{
+    std::lock_guard lock(AppState::stateMutex);
+    return AppState::state.currentTitle;
+}
+
 void registerBackend_E(std::string name, 
     std::function<bool(const std::string&)> matchesEnvironment,
     std::function<void()> initialize,

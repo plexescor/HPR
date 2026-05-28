@@ -77,6 +77,11 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 			continue;
 		}
 
+		{
+			std::lock_guard<std::mutex> lock(AppState::stateMutex);
+			AppState::state.currentTitle = getCurrentTitle();
+		}
+		
 		if (lowerWindowName.contains("code") 
 		|| lowerWindowName.contains("vscode")
 		|| lowerWindowName.contains("visual studio code"))

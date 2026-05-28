@@ -24,6 +24,7 @@ namespace AppState {
         
         std::string currentWindow;
         std::string previousWindow;
+        std::string currentTitle;
         
         //Apps
         std::map<std::string, long> timeLog_PerApp; 

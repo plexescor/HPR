@@ -312,3 +312,177 @@ std::string AliasManager::getAlias_Project(const std::string &rawName)
     cacheDictionary_Project[lowerName] = rawName;
     return rawName;
 }
+
+std::string AliasManager::getReverseAlias(const std::string &aliasName)
+{
+    std::string lowerName = aliasName;
+
+    //Convert to lower case
+    std::transform(lowerName.begin(), 
+        lowerName.end(), 
+        lowerName.begin(),
+        [](unsigned char c)
+        { 
+            return std::tolower(c); 
+        });
+
+
+    // hot reload check
+    if (std::filesystem::exists(filePath))
+    {
+        auto currentModified = std::filesystem::last_write_time(filePath);
+        if (currentModified > lastModified)
+        {
+            reverseCacheDictionary.clear();
+            loadAliases();
+        }
+    }
+    
+    // check cache first
+    auto it = reverseCacheDictionary.find(lowerName);
+
+    // return if found in O(1)
+    if (it != reverseCacheDictionary.end())
+    {
+        return it->second;
+    }
+
+    for (const auto &[triggerWord, prettyName] : aliasList)
+    {
+        std::string lowerPretty = prettyName;
+
+        std::transform(lowerPretty.begin(),
+            lowerPretty.end(),
+            lowerPretty.begin(),
+            [](unsigned char c)
+            {
+                return std::tolower(c);
+            });
+
+        if (lowerName.contains(lowerPretty))
+        {
+            reverseCacheDictionary[lowerName] = triggerWord;
+            return triggerWord;
+        }
+    }
+
+    // if nowhere, then return it as it is and save it in hashmap
+    reverseCacheDictionary[lowerName] = aliasName;
+    return aliasName;
+}
+
+std::string AliasManager::getReverseAlias_Tab(const std::string &aliasName)
+{
+    std::string lowerName = aliasName;
+
+    //Convert to lower case
+    std::transform(lowerName.begin(), 
+        lowerName.end(), 
+        lowerName.begin(),
+        [](unsigned char c)
+        { 
+            return std::tolower(c); 
+        });
+
+
+    // hot reload check
+    if (std::filesystem::exists(filePath_Tab))
+    {
+        auto currentModified = std::filesystem::last_write_time(filePath_Tab);
+        if (currentModified > lastModified_Tab)
+        {
+            reverseCacheDictionary_Tab.clear();
+            loadAliases_Tab();
+        }
+    }
+    
+    // check cache first
+    auto it = reverseCacheDictionary_Tab.find(lowerName);
+
+    // return if found in O(1)
+    if (it != reverseCacheDictionary_Tab.end())
+    {
+        return it->second;
+    }
+
+    for (const auto &[triggerWord, prettyName] : aliasList_Tab)
+    {
+        std::string lowerPretty = prettyName;
+
+        std::transform(lowerPretty.begin(),
+            lowerPretty.end(),
+            lowerPretty.begin(),
+            [](unsigned char c)
+            {
+                return std::tolower(c);
+            });
+
+        if (lowerName.contains(lowerPretty))
+        {
+            reverseCacheDictionary_Tab[lowerName] = triggerWord;
+            return triggerWord;
+        }
+    }
+
+    // if nowhere, then return it as it is and save it in hashmap
+    reverseCacheDictionary_Tab[lowerName] = aliasName;
+    return aliasName;
+}
+
+std::string AliasManager::getReverseAlias_Project(const std::string &aliasName)
+{
+    std::string lowerName = aliasName;
+
+    //Convert to lower case
+    std::transform(lowerName.begin(), 
+        lowerName.end(), 
+        lowerName.begin(),
+        [](unsigned char c)
+        { 
+            return std::tolower(c); 
+        });
+
+
+    // hot reload check
+    if (std::filesystem::exists(filePath_Project))
+    {
+        auto currentModified = std::filesystem::last_write_time(filePath_Project);
+        if (currentModified > lastModified_Project)
+        {
+            reverseCacheDictionary_Project.clear();
+            loadAliases_Project();
+        }
+    }
+    
+    // check cache first
+    auto it = reverseCacheDictionary_Project.find(lowerName);
+
+    // return if found in O(1)
+    if (it != reverseCacheDictionary_Project.end())
+    {
+        return it->second;
+    }
+
+    for (const auto &[triggerWord, prettyName] : aliasList_Project)
+    {
+        std::string lowerPretty = prettyName;
+
+        std::transform(lowerPretty.begin(),
+            lowerPretty.end(),
+            lowerPretty.begin(),
+            [](unsigned char c)
+            {
+                return std::tolower(c);
+            });
+
+        if (lowerName.contains(lowerPretty))
+        {
+            reverseCacheDictionary_Project[lowerName] = triggerWord;
+            return triggerWord;
+        }
+    }
+
+    // if nowhere, then return it as it is and save it in hashmap
+    reverseCacheDictionary_Project[lowerName] = aliasName;
+    return aliasName;
+}

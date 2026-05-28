@@ -120,9 +120,29 @@ void ExtensionManager::registerFunctions(sol::state& lua)
         return getCurrentWindow_E();
     };
 
+    lua["HPR"]["getCurrentTitle_E"] = []() 
+    {
+        return getCurrentTitle_E();
+    };
+
     lua["HPR"]["runSystemCommand_E"] = [](std::string command) 
     {
         return runSystemCommand(command);
+    };
+
+    lua["HPR"]["getAlias"] = [](std::string command) 
+    {
+        return AppState::aliasManager.getAlias(command);
+    };
+
+    lua["HPR"]["getAlias_Tab"] = [](std::string command) 
+    {
+        return AppState::aliasManager.getAlias_Tab(command);
+    };
+
+    lua["HPR"]["getAlias_Project"] = [](std::string command) 
+    {
+        return AppState::aliasManager.getAlias_Project(command);
     };
 
     lua["HPR"]["registerBackend_E"] = [](
