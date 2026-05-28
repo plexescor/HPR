@@ -1,5 +1,5 @@
 <p align="center">
-  📢 <strong>Development Update:</strong> The next release of HPR might take a bit longer than usual. I am currently 
+  📢 <strong>Development Update:</strong> The next release of HPR, v0.69 might take a bit longer than usual. I am currently 
   architecting a major extension-like plugin system under the hood to make HPR even more flexible and powerful. Good 
   things take time, so please bear with me and stay tuned!
 </p>
