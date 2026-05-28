@@ -711,7 +711,7 @@ cmake ..
 cmake --build . --parallel 8
 ```
 
-SQLite is the official single-file amalgamation in `external/sqLite/`, compiled into the binary directly. No system SQLite packages needed. CMake copies `aliases.csv`, `config.csv`, `ui/`, `assets/`, and the install scripts next to the output binary automatically. A fresh build is immediately runnable from the build directory.
+HPR uses slightly patched versions of `sol2`, `lua`, and `sqlite3` (located in the `external/` directory) to mitigate compile errors and warnings. If you attempt to swap these out for your own unpatched versions or system-installed libraries, you will likely encounter compilation errors, strict `const`-correctness warnings when compiled as C++23, and linker warnings regarding unsafe POSIX functions like `tmpnam`. Using the bundled dependencies guarantees a clean, warning-free build. SQLite is the official single-file amalgamation, compiled into the binary directly. No system SQLite packages needed. CMake copies `aliases.csv`, `config.csv`, `ui/`, `assets/`, and the install scripts next to the output binary automatically. A fresh build is immediately runnable from the build directory.
 
 ---
 
