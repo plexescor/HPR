@@ -723,19 +723,13 @@ HPR uses slightly patched versions of `sol2`, `lua`, and `sqlite3` (located in t
 
 ## Adding a New Platform
 
-[<kbd>Refer to HPR Docs</kbd>](https://hpr-cpp.netlify.app/docs.html)
+[Refer to HPR Docs](https://hpr-cpp.netlify.app/docs.html)
 
 ---
 
 ## Adding New Tracked Data
 
-The extension points follow a fixed five-step order:
-
-1. **Slint:** Add a new property, struct, or UI element to `app-window.slint`
-2. **State:** Add the field to `AppState::AppState` in `appState.hpp`
-3. **Collection:** Populate it inside `getCurrentWindow_Loop()` within the `lock_guard` block
-4. **Bridge:** Thread the field through `modelManager.update()` (as seen with `timeLog_Tab`) in both `HPR.cpp` and `HPRInterpreter.cpp`. Use `syncModel` for any collection type to prevent resize panics.
-5. **Persistence:** Add the table in `DatabaseManager::initDatabase` and flush it in `writeLoop`
+[Refer to HPR Docs](https://hpr-cpp.netlify.app/docs.html)
 
 ---
 
