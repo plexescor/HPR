@@ -16,7 +16,7 @@
 #include "windowBackendRegistery.hpp"
 
 
-ExtensionManager::ExtensionManager() 
+ExtensionManager::ExtensionManager(DatabaseManager& dbm) : dbManager(dbm)
 {
     loadExtensions();
 }
@@ -129,7 +129,7 @@ void ExtensionManager::runExtension(LoadedExtension& ext)
 void ExtensionManager::registerFunctions(sol::state& lua)
 {
     //Functions exposed to lua
-    lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::table);
+    lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::table, sol::lib::math);
     
     lua["HPR"] = lua.create_table();
     
@@ -188,6 +188,16 @@ void ExtensionManager::registerFunctions(sol::state& lua)
     ) 
     {
         registerBackend_E(name, matchesEnvironment, initialize, isUsable, getCurrentWindow, getCurrentTitle);
+    };
+
+    lua["HPR"]["dbExecute_E"] = [this](std::string sql, sol::optional<std::vector<std::string>> params) 
+    {
+        dbManager.executeSQL(sql, params.value_or(std::vector<std::string>{}));
+    };
+
+    lua["HPR"]["dbQuery_E"] = [this](std::string sql, sol::optional<std::vector<std::string>> params) 
+    {
+        return dbManager.querySQL(sql, params.value_or(std::vector<std::string>{}));
     };
 }
 

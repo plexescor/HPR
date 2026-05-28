@@ -8,7 +8,7 @@
 #include <vector>
 #include <sqlite_modern_cpp.h>
 #include <future>
-
+#include <vector>
 #ifdef _WIN32
     #include <windows.h>
 #endif
@@ -21,6 +21,9 @@ class DatabaseManager
         void initDatabase(bool copyData = true);
         void run();
         bool loadStateFromDB();
+        
+        void executeSQL(const std::string& sql, const std::vector<std::string>& params = {});
+        std::vector<std::map<std::string, std::string>> querySQL(const std::string& sql, const std::vector<std::string>& params = {});
 
     private:
         void writeLoop();
@@ -36,6 +39,7 @@ class DatabaseManager
         std::string fileName;
 
         std::mutex stateMutex;
+        std::mutex dbQueryMutex; // Thread-safety for Lua threads
 
         std::atomic<bool> running{true};
         std::thread writer;

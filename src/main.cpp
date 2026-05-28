@@ -19,8 +19,11 @@
 		(void)nShowCmd;
 
 		ConfigManager conf;
-	
-		ExtensionManager ext;
+		
+		DatabaseManager dbm;
+		dbm.run();
+
+		ExtensionManager ext(dbm);
 		ext.run();
 
 		//Check for hardware-acceleration flag
@@ -33,12 +36,9 @@
 		TrayManager tray;
 		tray.run();
 
-
-		DatabaseManager dbm;
 		CurrentWindowManager cwm;
 		
 		//This calls are non blocking, they just start a new BG thread
-		dbm.run();
 		cwm.run();
 
 		//If not to use interpreter, use inbuilt ui
@@ -94,7 +94,11 @@
 		{
 			setenv("SLINT_BACKEND", "winit-software", 1);
 		}
-		ExtensionManager ext;
+
+		DatabaseManager dbm;
+		dbm.run();
+
+		ExtensionManager ext(dbm);
 		ext.run();
 		LinuxInitialiser linuxInit; //Just a utility class to create config directory and check for icon
 
@@ -102,11 +106,9 @@
 		TrayManager tray;
 		tray.run();
 
-		DatabaseManager dbm;
 		CurrentWindowManager cwm;
 
 		//This calls are non blocking, they just start a new BG thread
-		dbm.run();
 		cwm.run();
 
 		//If not to use interpreter, use inbuilt ui

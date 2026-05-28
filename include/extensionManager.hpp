@@ -4,6 +4,8 @@
 #include <thread>
 #include <atomic>
 #include "sol.hpp"
+#include "databaseManager.hpp"
+
 struct LoadedExtension 
 {
     std::filesystem::path path;
@@ -19,7 +21,7 @@ struct LoadedExtension
 class ExtensionManager 
 {
     public:
-        ExtensionManager();
+        ExtensionManager(DatabaseManager& dbm);
         ~ExtensionManager();
         void run();
         void loadExtensions();
@@ -32,4 +34,5 @@ class ExtensionManager
     private:
         std::vector<std::unique_ptr<LoadedExtension>> extensions;
         std::string extensionPath;
+        DatabaseManager& dbManager;
 };

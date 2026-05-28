@@ -4,6 +4,7 @@
 
 #include "appEvents.hpp"
 
+#include <sqlite3.h>//for extensinos ot execute sql
 #include <sqlite_modern_cpp.h>
 
 #include <chrono>
@@ -203,16 +204,18 @@ void DatabaseManager::writeLoop()
 {
     while (running)
     {
-        *db << "BEGIN;";
-
         {
-            //Copy fresh data
-            std::lock_guard<std::mutex> lock(AppState::stateMutex);
-            timeLog_PerApp_D = AppState::state.timeLog_PerApp;
-            timeLog_PerTab_D = AppState::state.timeLog_PerTab;
-            timeLog_PerProject_D = AppState::state.timeLog_PerProject;
-            switchHistory_D = AppState::state.switchHistory;
-        }
+            std::lock_guard<std::mutex> dbLock(dbQueryMutex); // Lock database access for this write cycle
+            *db << "BEGIN;";
+
+            {
+                //Copy fresh data
+                std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                timeLog_PerApp_D = AppState::state.timeLog_PerApp;
+                timeLog_PerTab_D = AppState::state.timeLog_PerTab;
+                timeLog_PerProject_D = AppState::state.timeLog_PerProject;
+                switchHistory_D = AppState::state.switchHistory;
+            }
 
         for (const auto &[k, v] : timeLog_PerApp_D)
         {
@@ -277,6 +280,7 @@ void DatabaseManager::writeLoop()
             initDatabase(false);
 
         }
+        } // <-- Close the dbLock block so the lock is released during sleep!
 
         //Sleep in 100 chunks of 100ms each so program can exit almost instantly
         for (int i = 0; i < 100 && running; i++)
@@ -372,6 +376,62 @@ void DatabaseManager::loadDb_Singular(std::string requestedDate)
     });
 }
 
+// Runs INSERT, UPDATE, DELETE, CREATE TABLE, etc.
+void DatabaseManager::executeSQL(const std::string& sql, const std::vector<std::string>& params)
+{
+    std::lock_guard<std::mutex> lock(dbQueryMutex);
+    if (!db) return;
+    try
+    {
+        auto binder = *db << sql;
+        for (const auto& param : params)
+        {
+            binder << param;
+        }
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "[DB EXECUTE ERROR] " << e.what() << " | SQL: " << sql << std::endl;
+    }
+}
+
+// Runs SELECT and returns dynamic columns and rows to Lua
+std::vector<std::map<std::string, std::string>> DatabaseManager::querySQL(const std::string& sql, const std::vector<std::string>& params)
+{
+    std::lock_guard<std::mutex> lock(dbQueryMutex);
+    std::vector<std::map<std::string, std::string>> results;
+    if (!db) return results;
+    // Get the raw sqlite3 connection handle from sqlite_modern_cpp
+    sqlite3* rawDb = db->connection().get();
+    sqlite3_stmt* stmt = nullptr;
+    if (sqlite3_prepare_v2(rawDb, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK)
+    {
+        std::cerr << "[DB QUERY PREPARE ERROR] " << sqlite3_errmsg(rawDb) << " | SQL: " << sql << std::endl;
+        return results;
+    }
+
+    // Bind parameters dynamically
+    for (size_t i = 0; i < params.size(); i++)
+    {
+        sqlite3_bind_text(stmt, i + 1, params[i].c_str(), -1, SQLITE_TRANSIENT);
+    }
+
+    int colCount = sqlite3_column_count(stmt);
+    while (sqlite3_step(stmt) == SQLITE_ROW)
+    {
+        std::map<std::string, std::string> row;
+        for (int i = 0; i < colCount; i++)
+        {
+            const char* colName = sqlite3_column_name(stmt, i);
+            const unsigned char* colVal = sqlite3_column_text(stmt, i);
+            
+            row[colName] = colVal ? reinterpret_cast<const char*>(colVal) : "";
+        }
+        results.push_back(row);
+    }
+    sqlite3_finalize(stmt);
+    return results;
+}
 void DatabaseManager::updateFilePath()
 {
     //Now construct the path acc to the date
