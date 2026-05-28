@@ -84,17 +84,27 @@ void ExtensionManager::loadExtensions()
 
 void ExtensionManager::runExtension(LoadedExtension& ext)
 {
+    int sleepTime = 1000; //ms
     sol::function init = ext.lua["init"];
     sol::function onTick = ext.lua["onTick"];
 
-    if (init.valid()) init();
+    if (init.valid()) sleepTime = init();
     
+    auto lastTime = std::chrono::high_resolution_clock::now();
     while (ext.running)
     {
+        auto currentTime = std::chrono::high_resolution_clock::now();
+
+        float delta = std::chrono::duration<float, std::milli>(
+                        currentTime - lastTime
+                    ).count();
+            
+
+        lastTime = currentTime;
+
         try
         {
-            if (onTick.valid())
-                onTick();
+            if (onTick.valid()) onTick(delta);          
         }
         catch (const std::exception& e)
         {
@@ -104,7 +114,7 @@ void ExtensionManager::runExtension(LoadedExtension& ext)
                       << e.what()
                       << '\n';
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(sleepTime));
     }
 }
 
