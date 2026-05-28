@@ -216,6 +216,10 @@ void CurrentWindowManager::detectAndSetBackend()
 		currentPlatform = "Windows";
 	#endif
 
+	#ifdef __APPLE__
+		currentPlatform = "Apple";
+	#endif
+
     std::cout
         << "[HPR] Detected environment: "
         << currentPlatform
