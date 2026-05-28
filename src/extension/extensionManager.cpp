@@ -16,6 +16,7 @@
 #include "appState.hpp"
 #include "uiRegistry.hpp"
 #include "extensionManager.hpp"
+#include "timeUtils.hpp"
 #include "window_E.hpp"
 #include "windowUtilities.hpp"
 #include "windowBackendRegistery.hpp"
@@ -309,6 +310,41 @@ void ExtensionManager::registerFunctions(sol::state& lua)
     lua["HPR"]["dbQuery_E"] = [this](std::string sql, sol::optional<std::vector<std::string>> params) 
     {
         return dbManager.querySQL(sql, params.value_or(std::vector<std::string>{}));
+    };
+
+    lua["HPR"]["convertToDate_DDMMYY_E"] = [](uint64_t ms)
+    {
+        return convertToDate_DDMMYY(ms);
+    };
+
+    lua["HPR"]["convertToDate_MMYY_E"] = [](uint64_t ms)
+    {
+        return convertToDate_MMYY(ms);
+    };
+
+    lua["HPR"]["convertToTime_HHMMSS_12_E"] = [](uint64_t ms)
+    {
+        return convertToTime_HHMMSS_12(ms);
+    };
+
+    lua["HPR"]["formatTime_HHMMSS_E"] = [](int ms)
+    {
+        return formatTime_HHMMSS(ms);
+    };
+
+    lua["HPR"]["parseDate_DDMMYY_E"] = [](std::string dateStr)
+    {
+        return parseDate_DDMMYY(dateStr);
+    };
+
+    lua["HPR"]["parseDate_MMYY_E"] = [](std::string dateStr)
+    {
+        return parseDate_MMYY(dateStr);
+    };
+
+    lua["HPR"]["extractMMYY_from_DDMMYY_E"] = [](std::string dateStr)
+    {
+        return extractMMYY_from_DDMMYY(dateStr);
     };
 
     // Expose HPR.setUiProperty_E("propertyName", value) to Lua
