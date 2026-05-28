@@ -72,11 +72,9 @@ void ExtensionManager::loadExtensions()
                         
             extensions.push_back(std::move(ext));
         }
-        else
+        else if (entry.is_regular_file())
         {
-            std::cerr << "Failed to load extension: "
-                        << entry.path()
-                        << "\nBecause its not a lua file!\n";
+            std::cerr << "Skipping non-lua file: " << entry.path() << '\n';
         }
     }
 }
