@@ -3,7 +3,7 @@
 #include <thread>
 #include <atomic>
 
-
+#include "windowBackendRegistery.hpp"
 class CurrentWindowManager
 {
     public:
@@ -13,23 +13,14 @@ class CurrentWindowManager
     
     private:
         void getCurrentWindow_Loop();
+        void detectAndSetBackend();
 
-        //A singular function to return currently active window. Does platform specific calling and validating automatically
         std::string getCurrentWindow();
-        std::string getCurrentWindow_Hyprland();
-        std::string getCurrentWindow_Windows();
-        std::string getCurrentWindow_Gnome();
-        std::string getCurrentWindow_KDE();
-        std::string getCurrentWindow_Cinnamon();
-
         std::string getCurrentTitle();
-        std::string getCurrentTitle_Hyprland();
-        std::string getCurrentTitle_Windows();
-        std::string getCurrentTitle_Gnome();
-        std::string getCurrentTitle_KDE();
-        std::string getCurrentTitle_Cinnamon();
 
     private:
+        WindowBackend* activeBackend = nullptr;
+
         std::string currentPlatform = "";
         std::string qdbusCmd = "qdbus6";
         std::string window = "";

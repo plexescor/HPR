@@ -5,12 +5,7 @@
 #include "getCurrentWindow.hpp"
 #include "validateAndUpdateWindow.hpp"
 #include "windowUtilities.hpp"
-
-#ifdef _WIN32 // Include windows headers
-#include <windows.h>
-#include <psapi.h>
-#endif
-
+#include "builtinBackends.hpp"
 #include <chrono>
 #include <mutex>
 #include <thread>
@@ -19,79 +14,8 @@
 
 CurrentWindowManager::CurrentWindowManager()
 {
-#ifdef __linux__
-	// Get current desktop environment, linux only
-	std::string currentPlatformCommand = "echo $XDG_CURRENT_DESKTOP";
-	currentPlatform = runSystemCommand(currentPlatformCommand);
-
-	// Trim newline from platform string
-	if (!currentPlatform.empty() && currentPlatform.back() == '\n')
-		currentPlatform.pop_back();
-
-	std::cout << "[HPR] Detected platform: " << currentPlatform << std::endl;
-
-
-	{
-		std::lock_guard<std::mutex> lock(AppState::stateMutex);
-		AppState::state.currentPlatform = currentPlatform;
-	}
-
-	if (currentPlatform.contains("KDE"))
-	{
-		// resolve the correct qdbus binary for this distro
-		// thanks https://github.com/tempodat
-		// arch/most distros use qdbus6, Fedora ships it as qdbus-qt6, some have plain qdbus
-		std::string resolveQdbus = "command -v qdbus6 || command -v qdbus-qt6 || command -v qdbus";
-		qdbusCmd = runSystemCommand(resolveQdbus);
-		if (!qdbusCmd.empty() && qdbusCmd.back() == '\n')
-			qdbusCmd.pop_back();
-		if (qdbusCmd.empty())
-			qdbusCmd = "qdbus6"; // fallback
-		std::cout << "[HPR] Using qdbus binary: " << qdbusCmd << std::endl;
-	}
-	
-	if (currentPlatform.contains("GNOME"))
-	{
-		// Check if extension files already exist on disk
-		std::string extDir = std::string(getenv("HOME")) + 
-			"/.local/share/gnome-shell/extensions/lol-another-window-extension@plexescor";
-		
-		bool filesExist = std::filesystem::exists(extDir);
-
-		// Check if window-calls-extended is working
-		std::string checkCmd =
-			"gdbus call --session --dest org.gnome.Shell --object-path "
-			"/org/gnome/Shell/Extensions/LolAnotherWindowExtension --method "
-			"org.gnome.Shell.Extensions.LolAnotherWindowExtension.FocusClass 2>&1";
-		std::string checkResult = runSystemCommand(checkCmd);
-
-		std::cout << "[HPR] Extension check result: " << checkResult << std::endl;
-
-		if (!checkResult.contains("('"))
-		{
-			if (filesExist)
-			{
-				std::cout << "[HPR] Extension files found, enabling..." << std::endl;
-				std::string cmd = "gnome-extensions enable lol-another-window-extension@plexescor";
-				runSystemCommand(cmd);
-				currentPlatform = "GNOME";
-			}
-			else
-			{
-				currentPlatform = "GNOME_NO_EXTENSION";
-			}
-		}
-
-		else
-		{
-			std::cout << "[HPR] Extension working, proceeding normally" << std::endl;
-		}
-	}
-#endif
-
-#ifdef _WIN32
-	currentPlatform = "Windows";
-#endif
+	registerBuiltinBackends();
+	detectAndSetBackend();
 }
 
 CurrentWindowManager::~CurrentWindowManager()
@@ -254,327 +178,154 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 std::string CurrentWindowManager::getCurrentWindow()
 {
 
-	if (currentPlatform.contains("Hyprland"))
-	{
-		window = getCurrentWindow_Hyprland();
-	}
+	if (!activeBackend)
+        return "No backend";
 
-	else if (currentPlatform.contains("Windows"))
-	{
-		window = getCurrentWindow_Windows();
-	}
-
-	else if (currentPlatform.contains("GNOME_NO_EXTENSION"))
-	{
-		// This means we need to prompt the user to restart
-		// Return immediately
-
-		return "RUN THE \"installWindowCallsExtension.sh\" SCRIPT NEXT TO THE HPR "
-			   "BINARY AND THE RESTART PC";
-	}
-
-	else if (currentPlatform.contains("GNOME")) // Motherfucking GNOME
-	{
-		window = getCurrentWindow_Gnome();
-	}
-
-	else if (currentPlatform.contains("KDE"))
-	{
-		window = getCurrentWindow_KDE();
-	}
-
-	else if (currentPlatform.contains("Cinnamon"))
-	{
-		window = getCurrentWindow_Cinnamon();
-	}
-
-	// Need to explicitly set this because shit happens if cached value is
-	// returned
-	window = validateAndUpdateWindow_Cross(window);
-	return window;
-}
-
-std::string CurrentWindowManager::getCurrentWindow_Hyprland()
-{
-	std::string cmd = "hyprctl activewindow -j";
-    std::string json = runSystemCommand(cmd);
-    
-    // Find "class":"value"
-    const std::string key = "\"class\":";
-    size_t keyPos = json.find(key);
-    if (keyPos == std::string::npos) return "";
-    
-    size_t quoteStart = json.find('"', keyPos + key.size());
-    if (quoteStart == std::string::npos) return "";
-    
-    size_t quoteEnd = json.find('"', quoteStart + 1);
-    if (quoteEnd == std::string::npos) return "";
-    
-    return json.substr(quoteStart + 1, quoteEnd - quoteStart - 1);
-}
-
-std::string CurrentWindowManager::getCurrentWindow_Windows()
-{
-#ifdef _WIN32
-	HWND hwnd = GetForegroundWindow();
-	if (!hwnd)
-		return "";
-
-	DWORD pid = 0;
-	GetWindowThreadProcessId(hwnd, &pid);
-	if (!pid)
-		return "";
-
-	HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
-	if (!hProcess)
-		return "";
-
-	char procName[MAX_PATH] = {};
-	DWORD size = MAX_PATH;
-	QueryFullProcessImageNameA(hProcess, 0, procName, &size);
-	CloseHandle(hProcess);
-
-	// Extract just the filename from full path
-	std::string fullPath(procName);
-	size_t lastSlash = fullPath.find_last_of("\\/");
-	std::string filename = (lastSlash != std::string::npos) ? fullPath.substr(lastSlash + 1) : fullPath;
-
-	// Strip .exe
-	if (filename.size() > 4 && filename.substr(filename.size() - 4) == ".exe")
-		filename = filename.substr(0, filename.size() - 4);
-
-	return filename;
-#endif
-	return "";
-}
-std::string CurrentWindowManager::getCurrentWindow_Gnome()
-{
-	std::string command =
-		"gdbus call --session --dest org.gnome.Shell --object-path "
-		"/org/gnome/Shell/Extensions/LolAnotherWindowExtension --method "
-		"org.gnome.Shell.Extensions.LolAnotherWindowExtension.FocusClass";
-	std::string result = runSystemCommand(command);
-
-	// Parse the fucking dirty output
-	size_t start = result.find('\'');
-	size_t end = result.rfind('\'');
-	if (start != std::string::npos && end != std::string::npos && start != end)
-		return result.substr(start + 1, end - start - 1);
-
-	return "";
-}
-
-std::string CurrentWindowManager::getCurrentWindow_KDE()
-{
-	std::string cmd =
-		"echo 'print(workspace.activeWindow.resourceClass);' > /tmp/kwin_active.js && "
-		"S=$(" + qdbusCmd + " org.kde.KWin /Scripting org.kde.kwin.Scripting.loadScript /tmp/kwin_active.js kwin_tmp_$$) && "
-		"T=$(date '+%Y-%m-%d %H:%M:%S') && "
-		+ qdbusCmd + " org.kde.KWin /Scripting/Script$S org.kde.kwin.Script.run > /dev/null 2>&1 && "
-		"sleep 0.1 && "
-		"journalctl --since \"$T\" -o cat | grep '^js:' | tail -n 1 | sed 's/^js: //' ; "
-		+ qdbusCmd + " org.kde.KWin /Scripting/Script$S org.kde.kwin.Script.stop > /dev/null 2>&1 ; "
-		+ qdbusCmd + " org.kde.KWin /Scripting unloadScript kwin_tmp_$$ > /dev/null 2>&1";
-
-	std::string result = runSystemCommand(cmd);
-
-	// Trim trailing newline/whitespace
-	while (!result.empty() && (result.back() == '\n' || result.back() == '\r' ||
-							   result.back() == ' '))
-		result.pop_back();
-
-	// Strip "js: " prefix that KWin journals print() output with
-	const std::string prefix = "js: ";
-	if (result.starts_with(prefix))
-		result = result.substr(prefix.size());
-
-	return result;
-}
-
-std::string CurrentWindowManager::getCurrentWindow_Cinnamon()
-{
-	std::string cmd = "gdbus call --session --dest org.Cinnamon --object-path /org/Cinnamon --method org.Cinnamon.Eval \"global.display.focus_window.get_wm_class()\"";
-	std::string rawOutput = runSystemCommand(cmd);
-	// Find the positions of the single-quotes wrapping the inner string
-	size_t startQuote = rawOutput.find('\'');
-	size_t endQuote = rawOutput.rfind('\'');
-	
-	if (startQuote == std::string::npos || endQuote == std::string::npos || startQuote >= endQuote) {
-		return ""; // return empty if quotes aren't matched
-	}
-	
-	// Extract everything between the single quotes
-	std::string inner = rawOutput.substr(startQuote + 1, endQuote - startQuote - 1);
-	
-	// strip the literal double-quotes if they exist
-	if (inner.length() >= 2 && inner.front() == '"' && inner.back() == '"') {
-		inner = inner.substr(1, inner.length() - 2);
-	}
-	
-	// trim any trailing newlines or extra whitespaces
-	while (!inner.empty() && (inner.back() == '\n' || inner.back() == '\r' || inner.back() == ' ')) {
-		inner.pop_back();
-	}
-
-	return inner;
+	std::string curr = activeBackend->getCurrentWindow();
+    return validateAndUpdateWindow_Cross(curr);
 }
 
 std::string CurrentWindowManager::getCurrentTitle()
 {
-	std::string title;
+	if (!activeBackend)
+        return "No backend";
 
-	if (currentPlatform.contains("Hyprland"))
-	{
-		title = getCurrentTitle_Hyprland();
-	}
-
-	else if (currentPlatform.contains("Windows"))
-	{
-		title = getCurrentTitle_Windows();
-	}
-
-	else if (currentPlatform.contains("GNOME_NO_EXTENSION"))
-	{
-		// This means we need to prompt the user to restart
-		// Return immediately
-
-		return "RUN THE \"installWindowCallsExtension.sh\" SCRIPT NEXT TO THE HPR "
-			   "BINARY AND THE RESTART PC";
-	}
-
-	else if (currentPlatform.contains("GNOME")) // Motherfucking GNOME
-	{
-		title = getCurrentTitle_Gnome();
-	}
-
-	else if (currentPlatform.contains("KDE"))
-	{
-		title = getCurrentTitle_KDE();
-	}
-
-	else if (currentPlatform.contains("Cinnamon"))
-	{
-		title = getCurrentTitle_Cinnamon();
-	}
-
-	// Need to explicitly set this because shit happens if cached value is
-	// returned
-	// title = validateAndUpdateWindow_Cross(window);
-	// std::cout << title << std::endl;
-	return title;
+	std::string curr = activeBackend->getCurrentTitle();
+    return validateAndUpdateWindow_Cross(curr);
 }
 
-std::string CurrentWindowManager::getCurrentTitle_Hyprland()
+void CurrentWindowManager::detectAndSetBackend()
 {
-	std::string cmd = "hyprctl activewindow -j";
-    std::string json = runSystemCommand(cmd);
-    
-    // Find "title":"value"
-    const std::string key = "\"title\":";
-    size_t keyPos = json.find(key);
-    if (keyPos == std::string::npos) return "";
-    
-    size_t quoteStart = json.find('"', keyPos + key.size());
-    if (quoteStart == std::string::npos) return "";
-    
-    size_t quoteEnd = json.find('"', quoteStart + 1);
-    if (quoteEnd == std::string::npos) return "";
-    
-    return json.substr(quoteStart + 1, quoteEnd - quoteStart - 1);
-}
+	#ifdef __linux__
 
-std::string CurrentWindowManager::getCurrentTitle_Windows()
-{
-	#ifdef _WIN32
-		HWND hwnd = GetForegroundWindow();
-		if (!hwnd)
-			return "";
+		std::string detectDesktopEnvironmentCommand =
+			"echo $XDG_CURRENT_DESKTOP";
 
-		wchar_t title[512] = {};
-		GetWindowTextW(hwnd, title, sizeof(title) / sizeof(wchar_t));
+		currentPlatform =
+			runSystemCommand(detectDesktopEnvironmentCommand);
 
-		std::wstring wstr(title);
-		if (wstr.empty())
-			return "";
+		if (!currentPlatform.empty() &&
+			currentPlatform.back() == '\n')
+		{
+			currentPlatform.pop_back();
+		}
 
-		int size_needed = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), NULL, 0, NULL, NULL);
-		std::string strTo(size_needed, 0);
-		WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), &strTo[0], size_needed, NULL, NULL);
-
-		return strTo;
 	#endif
-		return "";
+
+	#ifdef _WIN32
+		currentPlatform = "Windows";
+	#endif
+
+    std::cout
+        << "[HPR] Detected environment: "
+        << currentPlatform
+        << std::endl;
+
+    for (auto& backend : registeredBackends)
+    {
+        if (!backend.matchesEnvironment(currentPlatform))
+        {
+            continue;
+        }
+
+        std::cout
+            << "[HPR] Initializing backend: "
+            << backend.name
+            << std::endl;
+
+        backend.initialize();
+
+        if (!backend.isUsable())
+        {
+            std::cout
+                << "[HPR] Backend unusable: "
+                << backend.name
+                << std::endl;
+
+            continue;
+        }
+
+        activeBackend = &backend;
+
+        std::cout
+            << "[HPR] Selected backend: "
+            << backend.name
+            << std::endl;
+
+        return;
+    }
+
+    std::cout
+        << "[HPR] Failed to find usable backend"
+        << std::endl;
 }
-std::string CurrentWindowManager::getCurrentTitle_Gnome()
-{
-	std::string command =
-		"gdbus call --session --dest org.gnome.Shell --object-path "
-		"/org/gnome/Shell/Extensions/LolAnotherWindowExtension --method "
-		"org.gnome.Shell.Extensions.LolAnotherWindowExtension.FocusTitle";
-	std::string result = runSystemCommand(command);
 
-	// Parse the fucking dirty output
-	size_t start = result.find('\'');
-	size_t end = result.rfind('\'');
-	if (start != std::string::npos && end != std::string::npos && start != end)
-		return result.substr(start + 1, end - start - 1);
+// #ifdef __linux__
+// 	// Get current desktop environment, linux only
+// 	std::string currentPlatformCommand = "echo $XDG_CURRENT_DESKTOP";
+// 	currentPlatform = runSystemCommand(currentPlatformCommand);
 
-	return "";
-}
+// 	// Trim newline from platform string
+// 	if (!currentPlatform.empty() && currentPlatform.back() == '\n')
+// 		currentPlatform.pop_back();
 
-std::string CurrentWindowManager::getCurrentTitle_KDE()
-{
-	std::string cmd =
-		"echo 'print(workspace.activeWindow.caption);' > /tmp/kwin_active.js && "
-		"S=$(" + qdbusCmd + " org.kde.KWin /Scripting org.kde.kwin.Scripting.loadScript /tmp/kwin_active.js kwin_tmp_$$) && "
-		"T=$(date '+%Y-%m-%d %H:%M:%S') && "
-		+ qdbusCmd + " org.kde.KWin /Scripting/Script$S org.kde.kwin.Script.run > /dev/null 2>&1 && "
-		"sleep 0.1 && "
-		"journalctl --since \"$T\" -o cat | grep '^js:' | tail -n 1 | sed 's/^js: //' ; "
-		+ qdbusCmd + " org.kde.KWin /Scripting/Script$S org.kde.kwin.Script.stop > /dev/null 2>&1 ; "
-		+ qdbusCmd + " org.kde.KWin /Scripting unloadScript kwin_tmp_$$ > /dev/null 2>&1";
+// 	std::cout << "[HPR] Detected platform: " << currentPlatform << std::endl;
 
-	std::string result = runSystemCommand(cmd);
 
-	// Trim trailing newline/whitespace
-	while (!result.empty() && (result.back() == '\n' || result.back() == '\r' ||
-							   result.back() == ' '))
-		result.pop_back();
+// 	{
+// 		std::lock_guard<std::mutex> lock(AppState::stateMutex);
+// 		AppState::state.currentPlatform = currentPlatform;
+// 	}
 
-	// Strip "js: " prefix that KWin journals print() output with
-	const std::string prefix = "js: ";
-	if (result.starts_with(prefix))
-		result = result.substr(prefix.size());
-
-	return result;
-}
-
-std::string CurrentWindowManager::getCurrentTitle_Cinnamon()
-{
-	std::string cmd = "gdbus call --session --dest org.Cinnamon --object-path /org/Cinnamon --method org.Cinnamon.Eval 'global.get_window_actors().filter(a => a.meta_window.has_focus())[0].get_meta_window().get_title()'";
+// 	if (currentPlatform.contains("KDE"))
+// 	{
+// 		// resolve the correct qdbus binary for this distro
+// 		// thanks https://github.com/tempodat
+// 		// arch/most distros use qdbus6, Fedora ships it as qdbus-qt6, some have plain qdbus
+// 		std::string resolveQdbus = "command -v qdbus6 || command -v qdbus-qt6 || command -v qdbus";
+// 		qdbusCmd = runSystemCommand(resolveQdbus);
+// 		if (!qdbusCmd.empty() && qdbusCmd.back() == '\n')
+// 			qdbusCmd.pop_back();
+// 		if (qdbusCmd.empty())
+// 			qdbusCmd = "qdbus6"; // fallback
+// 		std::cout << "[HPR] Using qdbus binary: " << qdbusCmd << std::endl;
+// 	}
 	
-	std::string rawOutput = runSystemCommand(cmd);
+// 	if (currentPlatform.contains("GNOME"))
+// 	{
+// 		// Check if extension files already exist on disk
+// 		std::string extDir = std::string(getenv("HOME")) + 
+// 			"/.local/share/gnome-shell/extensions/lol-another-window-extension@plexescor";
+		
+// 		bool filesExist = std::filesystem::exists(extDir);
 
-	// Find the positions of the single-quotes wrapping the inner string
-    size_t startQuote = rawOutput.find('\'');
-    size_t endQuote = rawOutput.rfind('\'');
-    
-    if (startQuote == std::string::npos || endQuote == std::string::npos || startQuote >= endQuote) {
-        return ""; // return empty if quotes aren't matched
-    }
-    
-    // Extract everything between the single quotes
-    std::string inner = rawOutput.substr(startQuote + 1, endQuote - startQuote - 1);
-    
-    // strip the literal double-quotes if they exist
-    if (inner.length() >= 2 && inner.front() == '"' && inner.back() == '"') {
-        inner = inner.substr(1, inner.length() - 2);
-    }
-    
-    // trim any trailing newlines or extra whitespaces
-    while (!inner.empty() && (inner.back() == '\n' || inner.back() == '\r' || inner.back() == ' ')) {
-        inner.pop_back();
-    }
+// 		// Check if window-calls-extended is working
+// 		std::string checkCmd =
+// 			"gdbus call --session --dest org.gnome.Shell --object-path "
+// 			"/org/gnome/Shell/Extensions/LolAnotherWindowExtension --method "
+// 			"org.gnome.Shell.Extensions.LolAnotherWindowExtension.FocusClass 2>&1";
+// 		std::string checkResult = runSystemCommand(checkCmd);
 
-    return inner;
-}
+// 		std::cout << "[HPR] Extension check result: " << checkResult << std::endl;
+
+// 		if (!checkResult.contains("('"))
+// 		{
+// 			if (filesExist)
+// 			{
+// 				std::cout << "[HPR] Extension files found, enabling..." << std::endl;
+// 				std::string cmd = "gnome-extensions enable lol-another-window-extension@plexescor";
+// 				runSystemCommand(cmd);
+// 				currentPlatform = "GNOME";
+// 			}
+// 			else
+// 			{
+// 				currentPlatform = "GNOME_NO_EXTENSION";
+// 			}
+// 		}
+
+// 		else
+// 		{
+// 			std::cout << "[HPR] Extension working, proceeding normally" << std::endl;
+// 		}
+// 	}
+// #endif

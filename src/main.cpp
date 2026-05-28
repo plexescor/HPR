@@ -7,7 +7,7 @@
 #include "HPRInterpreter.hpp"
 #include "linuxUtilities.hpp"
 #include "extensionManager.hpp"
-#ifdef __linux__
+#ifdef _WIN32
 	#include <windows.h>
 
 	int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
@@ -89,10 +89,10 @@
 		//Its not true, idk why but hyprland counts the memory used by libllvm, livnvidia and stuff
 		//as used by HPR, if you get a actual breakdown of memory used by HPR, HPR will only account for only like ~30mb
 		//still if it bothers you, just turn HA off in config
-		//if (!conf.getConfig("hardware-acceleration", true))
-		//{
-		//	setenv("SLINT_BACKEND", "winit-software", 1);
-		//}
+		if (!conf.getConfig("hardware-acceleration", true))
+		{
+			setenv("SLINT_BACKEND", "winit-software", 1);
+		}
 
 		//LinuxInitialiser linuxInit; //Just a utility class to create config directory and check for icon
 

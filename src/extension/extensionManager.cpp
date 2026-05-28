@@ -72,6 +72,12 @@ void ExtensionManager::loadExtensions()
                         
             extensions.push_back(std::move(ext));
         }
+        else
+        {
+            std::cerr << "Failed to load extension: "
+                        << entry.path()
+                        << "\nBecause its not a lua file!\n";
+        }
     }
 }
 
@@ -121,12 +127,12 @@ void ExtensionManager::updateExtensionPath()
 {
     #ifdef _WIN32
         extensionPath = std::getenv("APPDATA");
-        extensionPath += "/HPR/HPR_Config/Extensions/";
+        extensionPath += "/HPR/HPR_Config/extensions/";
     #else
         const char* home = std::getenv("HOME");
         if (!home) throw std::runtime_error("HOME env var not set");
         extensionPath = home;
-        extensionPath += "/.config/HPR/Extensions/";
+        extensionPath += "/.config/HPR/extensions/";
     #endif
 
     std::filesystem::create_directories(extensionPath);

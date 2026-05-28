@@ -31,13 +31,16 @@ if(WIN32)
         src/ui-cpp/HPRInterpreter.cpp
         src/ui-cpp/uiEventBridge.cpp
         src/ui-cpp/uiModelManager.cpp
+        src/window/builtinBackends.cpp
 		src/window/getCurrentWindow.cpp
 		src/window/validateAndUpdateWindow.cpp
+        src/window/windowBackendRegistery.cpp
     	src/window/windowUtilities.cpp
         src/extension/extensionManager.cpp
 
         #sqLite stuff
         external/sqLite/sqlite3.c
+
         ${CMAKE_SOURCE_DIR}/assets/app.rc
   )
 
@@ -56,8 +59,10 @@ elseif(LINUX)
         src/ui-cpp/HPRInterpreter.cpp
         src/ui-cpp/uiEventBridge.cpp
         src/ui-cpp/uiModelManager.cpp
+        src/window/builtinBackends.cpp
         src/window/getCurrentWindow.cpp
         src/window/validateAndUpdateWindow.cpp
+        src/window/windowBackendRegistery.cpp
         src/window/windowUtilities.cpp
         src/extension/extensionManager.cpp
 
