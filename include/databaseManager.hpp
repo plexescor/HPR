@@ -24,6 +24,7 @@ class DatabaseManager
         
         void executeSQL(const std::string& sql, const std::vector<std::string>& params = {});
         std::vector<std::map<std::string, std::string>> querySQL(const std::string& sql, const std::vector<std::string>& params = {});
+        std::vector<std::map<std::string, std::string>> querySQL_Path(const std::string& dbPath, const std::string& sql, const std::vector<std::string>& params = {});
 
         static std::string getDbPathForDate(const std::string& date);
         std::string getLoadedHistDbPath() const;

@@ -369,6 +369,16 @@ void ExtensionManager::registerFunctions(sol::state& lua)
         return dbManager.getLoadedHistDbPath();
     };
 
+    lua["HPR"]["dbQueryHistorical_E"] = [this](std::string sql, sol::optional<std::vector<std::string>> params) 
+    {
+        std::string histPath = dbManager.getLoadedHistDbPath();
+        if (histPath.empty()) 
+        {
+            return std::vector<std::map<std::string, std::string>>{};
+        }
+        return dbManager.querySQL_Path(histPath, sql, params.value_or(std::vector<std::string>{}));
+    };
+
     lua["HPR"]["convertToDate_DDMMYY_E"] = [](uint64_t ms)
     {
         return convertToDate_DDMMYY(ms);

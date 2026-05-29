@@ -444,6 +444,48 @@ std::vector<std::map<std::string, std::string>> DatabaseManager::querySQL(const 
     sqlite3_finalize(stmt);
     return results;
 }
+
+std::vector<std::map<std::string, std::string>> DatabaseManager::querySQL_Path(const std::string& dbPath, const std::string& sql, const std::vector<std::string>& params)
+{
+    std::vector<std::map<std::string, std::string>> results;
+    try
+    {
+        sqlite::database targetDb(dbPath);
+        sqlite3* rawDb = targetDb.connection().get();
+        sqlite3_stmt* stmt = nullptr;
+        if (sqlite3_prepare_v2(rawDb, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK)
+        {
+            std::cerr << "[DB QUERY PATH ERROR] " << sqlite3_errmsg(rawDb) << " | SQL: " << sql << std::endl;
+            return results;
+        }
+
+        // Bind parameters dynamically
+        for (size_t i = 0; i < params.size(); i++)
+        {
+            sqlite3_bind_text(stmt, i + 1, params[i].c_str(), -1, SQLITE_TRANSIENT);
+        }
+
+        int colCount = sqlite3_column_count(stmt);
+        while (sqlite3_step(stmt) == SQLITE_ROW)
+        {
+            std::map<std::string, std::string> row;
+            for (int i = 0; i < colCount; i++)
+            {
+                const char* colName = sqlite3_column_name(stmt, i);
+                const unsigned char* colVal = sqlite3_column_text(stmt, i);
+                row[colName] = colVal ? reinterpret_cast<const char*>(colVal) : "";
+            }
+            results.push_back(row);
+        }
+        sqlite3_finalize(stmt);
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "[DB QUERY PATH EXCEPTION] " << e.what() << " | SQL: " << sql << std::endl;
+    }
+    return results;
+}
+
 void DatabaseManager::updateFilePath()
 {
     //Now construct the path acc to the date
