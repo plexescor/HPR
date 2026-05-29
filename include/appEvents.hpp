@@ -19,6 +19,12 @@
         std::string date;
     };
 
+    //Data for window change event
+    struct WindowChangedData {
+        std::string fromWindow;
+        std::string toWindow;
+    };
+
     //An Error message
     struct ErrorGui{
         std::string error;
@@ -50,12 +56,13 @@
         HISTORY_LOADED_SINGULAR,
         LOAD_LIVE_DATA,
         APP_ERROR, //ERROR was reserved in msvc thats why
-        MIDNIGHT_ROLLOVER
+        MIDNIGHT_ROLLOVER,
+        WINDOW_CHANGED,
     };
 
 using EventKey = std::variant<Event, std::string>;
 
-using EventData = std::variant<Empty, DatabaseDate_Singular, ErrorGui, CppValue>;
+using EventData = std::variant<Empty, DatabaseDate_Singular, ErrorGui, WindowChangedData, CppValue>;
 
 // Converts type-safe EventData variant into generic CppValue
 inline CppValue toCppValue(const EventData& data)
@@ -105,6 +112,16 @@ inline EventData toEventData(const EventKey& key, const CppValue& val)
             if (val.type == CppValue::Type::Struct && val.struct_val.count("error"))
                 e.error = val.struct_val.at("error").str_val;
             return e;
+        }
+        else if (ev == Event::WINDOW_CHANGED)
+        {
+            WindowChangedData w;
+            if (val.type == CppValue::Type::Struct && val.struct_val.count("fromWindow") && val.struct_val.count("toWindow"))
+            {
+                w.fromWindow = val.struct_val.at("fromWindow").str_val;
+                w.toWindow = val.struct_val.at("toWindow").str_val;
+            }
+            return w;
         }
     }
     return val;

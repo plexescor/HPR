@@ -451,16 +451,9 @@ void ExtensionManager::runExtension(LoadedExtension& ext)
 void ExtensionManager::registerFunctions(sol::state& lua)
 {
     //Functions exposed to lua
-    lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::table, sol::lib::math, sol::lib::package);
+    lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::table, sol::lib::math);
     
     lua["HPR"] = lua.create_table();
-
-    // Set extension search path so users can local-require standard packages
-    std::string extPathStr = extensionPath;
-    lua["HPR"]["extensionPath"] = extPathStr;
-    lua.script(R"(
-        package.path = package.path .. ';' .. HPR.extensionPath .. '/?.lua;' .. HPR.extensionPath .. '/?/init.lua'
-    )");
 
     lua["HPR"]["httpGet_E"] = [](std::string host, std::string path, sol::optional<bool> secure) -> std::tuple<std::string, int>
     {
@@ -664,6 +657,7 @@ void ExtensionManager::registerFunctions(sol::state& lua)
         else if (eventName == "LOAD_LIVE_DATA") eventKey = Event::LOAD_LIVE_DATA;
         else if (eventName == "APP_ERROR") eventKey = Event::APP_ERROR;
         else if (eventName == "MIDNIGHT_ROLLOVER") eventKey = Event::MIDNIGHT_ROLLOVER;
+        else if (eventName == "WINDOW_CHANGED") eventKey = Event::WINDOW_CHANGED;
         else eventKey = eventName; // Custom signal
 
         return EventHub::connect(eventKey, [callback, &lua](EventData data) 
@@ -683,6 +677,7 @@ void ExtensionManager::registerFunctions(sol::state& lua)
         else if (eventName == "LOAD_LIVE_DATA") eventKey = Event::LOAD_LIVE_DATA;
         else if (eventName == "APP_ERROR") eventKey = Event::APP_ERROR;
         else if (eventName == "MIDNIGHT_ROLLOVER") eventKey = Event::MIDNIGHT_ROLLOVER;
+        else if (eventName == "WINDOW_CHANGED") eventKey = Event::WINDOW_CHANGED;
         else eventKey = eventName;
 
         EventHub::disconnect(eventKey, id);
@@ -697,6 +692,7 @@ void ExtensionManager::registerFunctions(sol::state& lua)
         else if (eventName == "LOAD_LIVE_DATA") eventKey = Event::LOAD_LIVE_DATA;
         else if (eventName == "APP_ERROR") eventKey = Event::APP_ERROR;
         else if (eventName == "MIDNIGHT_ROLLOVER") eventKey = Event::MIDNIGHT_ROLLOVER;
+        else if (eventName == "WINDOW_CHANGED") eventKey = Event::WINDOW_CHANGED;
         else eventKey = eventName;
 
         // Convert Lua parameter to generic CppValue, then map to specific C++ EventData structure

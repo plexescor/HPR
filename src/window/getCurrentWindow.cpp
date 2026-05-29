@@ -6,6 +6,7 @@
 #include "validateAndUpdateWindow.hpp"
 #include "windowUtilities.hpp"
 #include "builtinBackends.hpp"
+#include "appEvents.hpp"
 #include <chrono>
 #include <mutex>
 #include <thread>
@@ -117,6 +118,8 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 			{
 				// This means window was changed
 				// FromWindow = previousWindow, ToWindow = window
+
+				EventHub::emit(Event::WINDOW_CHANGED, WindowChangedData{previousWindow, window});
 
 				auto nowSystem = std::chrono::system_clock::now();
 				uint64_t t = std::chrono::duration_cast<std::chrono::milliseconds>(
