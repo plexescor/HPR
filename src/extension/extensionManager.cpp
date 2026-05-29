@@ -22,6 +22,14 @@
 #include "windowBackendRegistery.hpp"
 #include "appEvents.hpp"
 
+#ifdef _WIN32
+    #include <windows.h>
+    std::vector<HMODULE> nativeHandles;
+#else
+    #include <dlfcn.h>
+    std::vector<void*> nativeHandles;
+#endif
+
 namespace
 {
     CppValue luaToCpp(const sol::object& obj)
@@ -163,8 +171,9 @@ namespace
 }
 
 
-ExtensionManager::ExtensionManager(DatabaseManager& dbm) : dbManager(dbm)
+ExtensionManager::ExtensionManager(DatabaseManager& dbm, bool allowDynamicLibraryExtensions) : dbManager(dbm), allowDynamicLibraryExtensionLoading(allowDynamicLibraryExtensions)
 {
+    allowDynamicLibraryExtensionLoading = allowDynamicLibraryExtensions;
     loadExtensions();
 }
 
@@ -182,6 +191,15 @@ ExtensionManager::~ExtensionManager()
             ext->thread.join();
     }
     registeredBackends.clear();
+
+    for (auto handle : nativeHandles)
+    {
+        #ifdef _WIN32
+            FreeLibrary(handle);
+        #else
+            dlclose(handle);
+        #endif
+    }
 }
 
 void ExtensionManager::run()
@@ -199,6 +217,38 @@ void ExtensionManager::run()
 void ExtensionManager::loadExtensions()
 {
     updateExtensionPath();
+
+    if (allowDynamicLibraryExtensionLoading)
+    {
+        for (const auto& entry : std::filesystem::recursive_directory_iterator(extensionPath))
+        {
+            #ifdef _WIN32
+            if (entry.is_regular_file() && entry.path().extension() == ".dll")
+            #else
+            if (entry.is_regular_file() && entry.path().extension() == ".so")
+            #endif
+            {
+                loadNativeExtension(entry.path());
+            }
+        }
+    }
+    else
+    {
+        // check if any exist and warn
+        for (const auto& entry : std::filesystem::recursive_directory_iterator(extensionPath))
+        {
+            #ifdef _WIN32
+            bool isNative = entry.path().extension() == ".dll";
+            #else
+            bool isNative = entry.path().extension() == ".so";
+            #endif
+            if (entry.is_regular_file() && isNative)
+            {
+                std::cerr << "[HPR] Native extension found but allow-dynamic-library-extensions is false. Skipping: "
+                        << entry.path() << '\n';
+            }
+        }
+    }
 
     //load all lua files from this dir recursively
     for (const auto& entry : std::filesystem::recursive_directory_iterator(extensionPath))
@@ -229,6 +279,30 @@ void ExtensionManager::loadExtensions()
             std::cerr << "Skipping non-lua file: " << entry.path() << '\n';
         }
     }
+}
+
+void ExtensionManager::loadNativeExtension(const std::filesystem::path& path)
+{
+    #ifdef _WIN32
+        HMODULE handle = LoadLibraryA(path.string().c_str());
+        if (!handle) {
+            std::cerr << "[HPR] Failed to load native extension: " << path << '\n';
+            return;
+        }
+        auto init_fn = (void(*)())GetProcAddress(handle, "hpr_init");
+    #else
+        void* handle = dlopen(path.string().c_str(), RTLD_LAZY);
+        if (!handle) {
+            std::cerr << "[HPR] Failed to load native extension: " << path << "\n" << dlerror() << '\n';
+            return;
+        }
+        auto init_fn = (void(*)())dlsym(handle, "hpr_init");
+    #endif
+
+    if (init_fn) init_fn();
+    else std::cerr << "[HPR] Native extension has no hpr_init: " << path << '\n';
+
+    nativeHandles.push_back(handle);
 }
 
 void ExtensionManager::runExtension(LoadedExtension& ext)

@@ -23,7 +23,7 @@
 		DatabaseManager dbm;
 		dbm.run();
 
-		ExtensionManager ext(dbm);
+		ExtensionManager ext(dbm, conf.getConfig("allow-dynamic-library-extensions", false));
 		ext.run();
 
 		//Check for hardware-acceleration flag
@@ -98,7 +98,7 @@
 		DatabaseManager dbm;
 		dbm.run();
 
-		ExtensionManager ext(dbm);
+		ExtensionManager ext(dbm, conf.getConfig("allow-dynamic-library-extensions", false));
 		ext.run();
 		LinuxInitialiser linuxInit; //Just a utility class to create config directory and check for icon
 
