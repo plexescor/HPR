@@ -32,9 +32,16 @@ namespace NativeNet
                                          WINHTTP_NO_PROXY_BYPASS, 0);
         if (!hSession) return { "", 0 };
 
-        std::wstring wHost(host.begin(), host.end());
+        std::string hostname = host;
         INTERNET_PORT port = secure ? INTERNET_DEFAULT_HTTPS_PORT : INTERNET_DEFAULT_HTTP_PORT;
-        
+
+        size_t colonPos = host.rfind(':');
+        if (colonPos != std::string::npos) {
+            hostname = host.substr(0, colonPos);
+            port = static_cast<INTERNET_PORT>(std::stoi(host.substr(colonPos + 1)));
+        }
+
+        std::wstring wHost(hostname.begin(), hostname.end());
         HINTERNET hConnect = WinHttpConnect(hSession, wHost.c_str(), port, 0);
         if (!hConnect) {
             WinHttpCloseHandle(hSession);
@@ -118,9 +125,16 @@ namespace NativeNet
                                          WINHTTP_NO_PROXY_BYPASS, 0);
         if (!hSession) return { "", 0 };
 
-        std::wstring wHost(host.begin(), host.end());
+        std::string hostname = host;
         INTERNET_PORT port = secure ? INTERNET_DEFAULT_HTTPS_PORT : INTERNET_DEFAULT_HTTP_PORT;
-        
+
+        size_t colonPos = host.rfind(':');
+        if (colonPos != std::string::npos) {
+            hostname = host.substr(0, colonPos);
+            port = static_cast<INTERNET_PORT>(std::stoi(host.substr(colonPos + 1)));
+        }
+
+        std::wstring wHost(hostname.begin(), hostname.end());
         HINTERNET hConnect = WinHttpConnect(hSession, wHost.c_str(), port, 0);
         if (!hConnect) {
             WinHttpCloseHandle(hSession);
