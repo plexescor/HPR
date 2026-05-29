@@ -184,21 +184,33 @@ ExtensionManager::~ExtensionManager()
     {
         ext->running = false;
     }
+    for (auto& ext : nativeExtensions)
+    {
+        ext->running = false;
+    }
 
     for (auto& ext : extensions)
     {
         if (ext->thread.joinable())
             ext->thread.join();
     }
+    for (auto& ext : nativeExtensions)
+    {
+        if (ext->thread.joinable())
+            ext->thread.join();
+    }
     registeredBackends.clear();
 
-    for (auto handle : nativeHandles)
+    for (auto& ext : nativeExtensions)
     {
-        #ifdef _WIN32
-            FreeLibrary(handle);
-        #else
-            dlclose(handle);
-        #endif
+        if (ext->handle)
+        {
+            #ifdef _WIN32
+                FreeLibrary(ext->handle);
+            #else
+                dlclose(ext->handle);
+            #endif
+        }
     }
 }
 
@@ -208,6 +220,14 @@ void ExtensionManager::run()
     {
         ext->thread = std::thread(
             &ExtensionManager::runExtension,
+            this,
+            std::ref(*ext)
+        );
+    }
+    for (auto& ext : nativeExtensions)
+    {
+        ext->thread = std::thread(
+            &ExtensionManager::runNativeExtension,
             this,
             std::ref(*ext)
         );
@@ -225,7 +245,7 @@ void ExtensionManager::loadExtensions()
             #ifdef _WIN32
             if (entry.is_regular_file() && entry.path().extension() == ".dll")
             #else
-            if (entry.is_regular_file() && entry.path().extension() == ".so")
+            if (entry.is_regular_file() && (entry.path().extension() == ".so" || entry.path().extension() == ".dylib"))
             #endif
             {
                 loadNativeExtension(entry.path());
@@ -240,7 +260,7 @@ void ExtensionManager::loadExtensions()
             #ifdef _WIN32
             bool isNative = entry.path().extension() == ".dll";
             #else
-            bool isNative = entry.path().extension() == ".so";
+            bool isNative = (entry.path().extension() == ".so" || entry.path().extension() == ".dylib");
             #endif
             if (entry.is_regular_file() && isNative)
             {
@@ -283,26 +303,88 @@ void ExtensionManager::loadExtensions()
 
 void ExtensionManager::loadNativeExtension(const std::filesystem::path& path)
 {
+    auto ext = std::make_unique<NativeExtension>();
+    ext->path = path;
+
     #ifdef _WIN32
-        HMODULE handle = LoadLibraryA(path.string().c_str());
-        if (!handle) {
+        ext->handle = LoadLibraryA(path.string().c_str());
+        if (!ext->handle) {
             std::cerr << "[HPR] Failed to load native extension: " << path << '\n';
             return;
         }
-        auto init_fn = (void(*)())GetProcAddress(handle, "hpr_init");
     #else
-        void* handle = dlopen(path.string().c_str(), RTLD_LAZY);
-        if (!handle) {
+        ext->handle = dlopen(path.string().c_str(), RTLD_LAZY);
+        if (!ext->handle) {
             std::cerr << "[HPR] Failed to load native extension: " << path << "\n" << dlerror() << '\n';
             return;
         }
-        auto init_fn = (void(*)())dlsym(handle, "hpr_init");
     #endif
 
-    if (init_fn) init_fn();
-    else std::cerr << "[HPR] Native extension has no hpr_init: " << path << '\n';
+    nativeExtensions.push_back(std::move(ext));
+}
 
-    nativeHandles.push_back(handle);
+void ExtensionManager::runNativeExtension(NativeExtension& ext)
+{
+    int sleepTime = 1000; //ms
+
+    #ifdef _WIN32
+        auto init_fn = (int(*)())GetProcAddress(ext.handle, "init");
+        auto onTick_fn = (void(*)(float))GetProcAddress(ext.handle, "onTick");
+        auto onExit_fn = (void(*)())GetProcAddress(ext.handle, "onExit");
+    #else
+        auto init_fn = (int(*)())dlsym(ext.handle, "init");
+        auto onTick_fn = (void(*)(float))dlsym(ext.handle, "onTick");
+        auto onExit_fn = (void(*)())dlsym(ext.handle, "onExit");
+    #endif
+
+    if (init_fn) 
+    {
+        try {
+            sleepTime = init_fn();
+        } catch (const std::exception& e) {
+            std::cerr << "Extension error in init for " << ext.path << ": " << e.what() << '\n';
+        } catch (...) {
+            std::cerr << "Unknown extension error in init for " << ext.path << '\n';
+        }
+    }
+    
+    auto lastTime = std::chrono::high_resolution_clock::now();
+    while (ext.running)
+    {
+        auto currentTime = std::chrono::high_resolution_clock::now();
+        float delta = std::chrono::duration<float, std::milli>(currentTime - lastTime).count();
+        lastTime = currentTime;
+
+        if (onTick_fn)
+        {
+            try {
+                onTick_fn(delta);
+            } catch (const std::exception& e) {
+                std::cerr << "Extension error in onTick for " << ext.path << ": " << e.what() << '\n';
+            } catch (...) {
+                std::cerr << "Unknown extension error in onTick for " << ext.path << '\n';
+            }
+        }
+
+        int slept = 0;
+        while (ext.running && slept < sleepTime)
+        {
+            int chunk = (sleepTime - slept < 100) ? (sleepTime - slept) : 100;
+            std::this_thread::sleep_for(std::chrono::milliseconds(chunk));
+            slept += chunk;
+        }
+    }
+
+    if (onExit_fn)
+    {
+        try {
+            onExit_fn();
+        } catch (const std::exception& e) {
+            std::cerr << "Extension error in onExit for " << ext.path << ": " << e.what() << '\n';
+        } catch (...) {
+            std::cerr << "Unknown extension error in onExit for " << ext.path << '\n';
+        }
+    }
 }
 
 void ExtensionManager::runExtension(LoadedExtension& ext)

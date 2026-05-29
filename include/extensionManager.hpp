@@ -3,15 +3,15 @@
 #include <vector>
 #include <thread>
 #include <atomic>
+#include <memory>
+#include <filesystem>
 #include "sol.hpp"
 #include "databaseManager.hpp"
 
 #ifdef _WIN32
     #include <windows.h>
-    std::vector<HMODULE> nativeHandles;
 #else
     #include <dlfcn.h>
-    std::vector<void*> nativeHandles;
 #endif
 
 struct LoadedExtension 
@@ -24,6 +24,24 @@ struct LoadedExtension
     LoadedExtension() = default;
     LoadedExtension(const LoadedExtension&) = delete;
     LoadedExtension& operator=(const LoadedExtension&) = delete;
+};
+
+struct NativeExtension 
+{
+    std::filesystem::path path;
+
+#ifdef _WIN32
+    HMODULE handle{nullptr};
+#else
+    void* handle{nullptr};
+#endif
+
+    std::thread thread;
+    std::atomic<bool> running{true};
+
+    NativeExtension() = default;
+    NativeExtension(const NativeExtension&) = delete;
+    NativeExtension& operator=(const NativeExtension&) = delete;
 };
 
 class ExtensionManager 
@@ -39,10 +57,12 @@ class ExtensionManager
         void loadNativeExtension(const std::filesystem::path& path);
         void registerFunctions(sol::state& lua);
         void runExtension(LoadedExtension& ext);
+        void runNativeExtension(NativeExtension& ext);
 
     private:
         bool allowDynamicLibraryExtensionLoading;
         std::vector<std::unique_ptr<LoadedExtension>> extensions;
+        std::vector<std::unique_ptr<NativeExtension>> nativeExtensions;
         std::string extensionPath;
         DatabaseManager& dbManager;
 };
