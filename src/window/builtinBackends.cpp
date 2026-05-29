@@ -7,6 +7,32 @@
     #include <windows.h>
     #include <Psapi.h>
 #endif
+// #include <fstream>
+
+//fuck you kde
+// #ifdef __linux__
+//     #include <dbus/dbus.h>
+//     #include <atomic>
+//     #include <thread>
+//     #include <mutex>
+// #endif
+
+static std::string s_qdbus_bin = "";
+
+std::string getQDBusCommand() 
+{
+    if (!s_qdbus_bin.empty()) return s_qdbus_bin;
+    
+    std::string cmd = "command -v qdbus6 || command -v qdbus-qt6 || command -v qdbus";
+    std::string check = runSystemCommand(cmd);
+    
+    // Trim whitespace/newlines
+    while (!check.empty() && (check.back() == '\n' || check.back() == ' '))
+        check.pop_back();
+        
+    s_qdbus_bin = check.empty() ? "qdbus6" : check;
+    return s_qdbus_bin;
+}
 
 void registerBuiltinBackends()
 {
@@ -123,135 +149,31 @@ void registerBuiltinBackends()
         }
     });
 
-    registerBackend
-    ({
+    registerBackend({
         "KDE",
+        [](const std::string& env) { return env.contains("KDE"); },
 
-        // matchesEnvironment
-        [](const std::string& env)
+        []() {}, 
+
+        []() { return !getQDBusCommand().empty(); }, // isUsable
+
+        []() -> std::string 
         {
-            return env.contains("KDE");
-        },
-
-        // initialize
-        []()
-        {
-            std::string cmd =
-                "command -v qdbus6 || "
-                "command -v qdbus-qt6 || "
-                "command -v qdbus";
-
+            std::string cmd = "kdotool getactivewindow getwindowclassname";
             std::string result = runSystemCommand(cmd);
-
-            if (!result.empty() && result.back() == '\n')
+            
+            while (!result.empty() && (result.back() == '\n' || result.back() == ' '))
                 result.pop_back();
-
-            if (result.empty())
-                result = "qdbus6";
-
-            std::cout
-                << "[HPR] KDE using: "
-                << result
-                << std::endl;
-        },
-
-        // isUsable
-        []()
-        {
-            std::string cmd = "command -v qdbus6 || command -v qdbus-qt6 || command -v qdbus";
-            std::string result =
-                runSystemCommand(cmd);
-
-            return !result.empty();
-        },
-
-        // getCurrentWindow
-        []() -> std::string
-        {
-            static std::string qdbus =
-                []()
-                {
-                    std::string cmd =
-                        "command -v qdbus6 || "
-                        "command -v qdbus-qt6 || "
-                        "command -v qdbus";
-
-                    std::string r = runSystemCommand(cmd);
-
-                    if (!r.empty() && r.back() == '\n')
-                        r.pop_back();
-
-                    if (r.empty())
-                        return std::string("qdbus6");
-
-                    return r;
-                }();
-
-            std::string cmd =
-                "echo 'print(workspace.activeWindow.resourceClass);' > /tmp/kwin_active.js && "
-                "S=$(" + qdbus + " org.kde.KWin /Scripting org.kde.kwin.Scripting.loadScript /tmp/kwin_active.js kwin_tmp_$$) && "
-                "T=$(date '+%Y-%m-%d %H:%M:%S') && "
-                + qdbus + " org.kde.KWin /Scripting/Script$S org.kde.kwin.Script.run > /dev/null 2>&1 && "
-                "sleep 0.1 && "
-                "journalctl --since \"$T\" -o cat | grep '^js:' | tail -n 1 | sed 's/^js: //' ; "
-                + qdbus + " org.kde.KWin /Scripting/Script$S org.kde.kwin.Script.stop > /dev/null 2>&1 ; "
-                + qdbus + " org.kde.KWin /Scripting unloadScript kwin_tmp_$$ > /dev/null 2>&1";
-
-            std::string result = runSystemCommand(cmd);
-
-            while (!result.empty() && (result.back() == '\n' || result.back() == '\r' || result.back() == ' '))
-                result.pop_back();
-
-            const std::string prefix = "js: ";
-            if (result.starts_with(prefix))
-                result = result.substr(prefix.size());
-
+                
             return result;
         },
 
-        // getCurrentTitle
-        []() -> std::string
+        []() -> std::string 
         {
-            static std::string qdbus =
-                []()
-                {
-                    std::string cmd =
-                        "command -v qdbus6 || "
-                        "command -v qdbus-qt6 || "
-                        "command -v qdbus";
-
-                    std::string r = runSystemCommand(cmd);
-
-                    if (!r.empty() && r.back() == '\n')
-                        r.pop_back();
-
-                    if (r.empty())
-                        return std::string("qdbus6");
-
-                    return r;
-                }();
-
-            std::string cmd =
-                "echo 'print(workspace.activeWindow.caption);' > /tmp/kwin_active.js && "
-                "S=$(" + qdbus + " org.kde.KWin /Scripting org.kde.kwin.Scripting.loadScript /tmp/kwin_active.js kwin_tmp_$$) && "
-                "T=$(date '+%Y-%m-%d %H:%M:%S') && "
-                + qdbus + " org.kde.KWin /Scripting/Script$S org.kde.kwin.Script.run > /dev/null 2>&1 && "
-                "sleep 0.1 && "
-                "journalctl --since \"$T\" -o cat | grep '^js:' | tail -n 1 | sed 's/^js: //' ; "
-                + qdbus + " org.kde.KWin /Scripting/Script$S org.kde.kwin.Script.stop > /dev/null 2>&1 ; "
-                + qdbus + " org.kde.KWin /Scripting unloadScript kwin_tmp_$$ > /dev/null 2>&1";
-
-            std::string result = runSystemCommand(cmd);
-
-            while (!result.empty() && (result.back() == '\n' || result.back() == '\r' || result.back() == ' '))
-                result.pop_back();
-
-            const std::string prefix = "js: ";
-            if (result.starts_with(prefix))
-                result = result.substr(prefix.size());
-
-            return result;
+            std::string cmd = "kdotool getactivewindow getwindowname";
+            return runSystemCommand(cmd);
         }
+
     });
 
     registerBackend
@@ -315,6 +237,7 @@ void registerBuiltinBackends()
             
             return json.substr(quoteStart + 1, quoteEnd - quoteStart - 1);
         }
+
     });
 
     registerBackend
@@ -419,6 +342,7 @@ void registerBuiltinBackends()
             #endif
                 return "";
         }
+
     });
 
     registerBackend
