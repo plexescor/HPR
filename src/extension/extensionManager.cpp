@@ -586,12 +586,12 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
     lua["HPR"]["stopTracking_E"] = []()
     {
         CurrentWindowManager::stopTracking();
-    }
+    };
 
     lua["HPR"]["startTracking_E"] = []()
     {
         CurrentWindowManager::startTracking();
-    }
+    };
 
     lua["HPR"]["registerBackend_E"] = [](
         std::string name, 
