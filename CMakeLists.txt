@@ -41,7 +41,7 @@ set(SOURCES
 )
 
 if(WIN32)
-    add_executable(HPR ${SOURCES})
+    add_executable(HPR WIN32 ${SOURCES})
 elseif(LINUX)
     add_executable(HPR ${SOURCES})
 endif()

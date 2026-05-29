@@ -4,31 +4,38 @@
 #include <atomic>
 
 #include "windowBackendRegistery.hpp"
+
 class CurrentWindowManager
 {
-    public:
-        CurrentWindowManager();
-        ~CurrentWindowManager();
-        void run();
-    
-    private:
-        void getCurrentWindow_Loop();
-        void detectAndSetBackend();
+public:
+    CurrentWindowManager();
+    ~CurrentWindowManager();
 
-        std::string getCurrentWindow();
-        std::string getCurrentTitle();
+    void run();
 
-    private:
-        WindowBackend* activeBackend = nullptr;
+    static void stopTracking();
+    static void startTracking();
 
-        std::string currentPlatform = "";
-        std::string qdbusCmd = "qdbus6";
-        std::string window = "";
-        std::string previousWindow = "";
+private:
+    void getCurrentWindow_Loop();
+    void detectAndSetBackend();
 
-        std::string tab = "";
-        std::string project = "";
+    std::string getCurrentWindow();
+    std::string getCurrentTitle();
 
-        std::thread windowPollingThread;
-        std::atomic<bool> running{true};
+private:
+    WindowBackend* activeBackend = nullptr;
+
+    std::string currentPlatform = "";
+    std::string qdbusCmd = "qdbus6";
+    std::string window = "";
+    std::string previousWindow = "";
+
+    std::string tab = "";
+    std::string project = "";
+
+    std::thread windowPollingThread;
+    std::atomic<bool> running{true};
+
+    static CurrentWindowManager* instance;
 };

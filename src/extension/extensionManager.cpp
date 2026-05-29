@@ -15,6 +15,7 @@
 
 #include "appState.hpp"
 #include "uiRegistry.hpp"
+#include "getCurrentWindow.hpp"
 #include "extensionManager.hpp"
 #include "timeUtils.hpp"
 #include "window_E.hpp"
@@ -581,6 +582,16 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
     {
         return AppState::aliasManager.getReverseAlias_Project(aliasName);
     };
+
+    lua["HPR"]["stopTracking_E"] = []()
+    {
+        CurrentWindowManager::stopTracking();
+    }
+
+    lua["HPR"]["startTracking_E"] = []()
+    {
+        CurrentWindowManager::startTracking();
+    }
 
     lua["HPR"]["registerBackend_E"] = [](
         std::string name, 
