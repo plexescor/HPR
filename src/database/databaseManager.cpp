@@ -313,6 +313,12 @@ std::string DatabaseManager::getLoadedHistDbPath() const
 
 void DatabaseManager::loadDb_Singular(std::string requestedDate)
 {
+    // Reset the ready flag BEFORE launching async so waiters block correctly
+    {
+        std::lock_guard<std::mutex> lk(AppState::historyLoadedMutex);
+        AppState::historicalData_State.isLoaded = false;
+    }
+
     //Create async task to load the singular db file
     historyLoadTask_Singular = std::async(std::launch::async, [this, requestedDate]() {
         try {
@@ -379,6 +385,8 @@ void DatabaseManager::loadDb_Singular(std::string requestedDate)
                 AppState::historicalData_State.switchHistory = results_Switch;
                 AppState::historicalData_State.isLoaded = true;
             }
+            // Wake up any thread blocked inside dbQueryHistorical_E
+            AppState::historyLoadedCV.notify_all();
 
             EventHub::emit(Event::HISTORY_LOADED_SINGULAR);
             

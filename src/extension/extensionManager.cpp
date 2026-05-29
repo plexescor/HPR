@@ -558,6 +558,15 @@ void ExtensionManager::registerFunctions(sol::state& lua)
 
     lua["HPR"]["dbQueryHistorical_E"] = [this](std::string sql, sol::optional<std::vector<std::string>> params) 
     {
+        // Block until the async DB load has finished (or 5s timeout to avoid
+        // hanging forever if, e.g., the file wasn't found and load errored out)
+        {
+            std::unique_lock<std::mutex> lk(AppState::historyLoadedMutex);
+            AppState::historyLoadedCV.wait_for(lk, std::chrono::seconds(5), []() {
+                return AppState::historicalData_State.isLoaded;
+            });
+        }
+
         std::string histPath = dbManager.getLoadedHistDbPath();
         if (histPath.empty()) 
         {

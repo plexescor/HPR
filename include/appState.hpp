@@ -4,6 +4,7 @@
 #include <string>
 #include <atomic>
 #include <mutex>
+#include <condition_variable>
 #include <map>
 #include <cstdint>
 #include <vector>
@@ -53,4 +54,6 @@ namespace AppState {
 
     extern std::mutex stateMutex;
     extern std::mutex historyStateMutex;
+    extern std::mutex historyLoadedMutex;
+    extern std::condition_variable historyLoadedCV;
 }

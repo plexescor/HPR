@@ -8,3 +8,5 @@ AliasManager AppState::aliasManager;
 
 std::mutex AppState::stateMutex;
 std::mutex AppState::historyStateMutex;
+std::mutex AppState::historyLoadedMutex;
+std::condition_variable AppState::historyLoadedCV;
