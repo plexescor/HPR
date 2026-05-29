@@ -477,10 +477,10 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         ).count();
     };
 
-    lua["HPR"]["isUiActive_E"] = []() -> bool
-    {
-        return UiRegistry::isActive();
-    };
+    // lua["HPR"]["isUiActive_E"] = []() -> bool
+    // {
+    //     return UiRegistry::isActive();
+    // };
 
     lua["HPR"]["sleep_E"] = [](int ms)
     {
