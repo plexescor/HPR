@@ -368,12 +368,18 @@ The 2.6% L1 data miss rate is entirely inside Slint's font rendering pipeline: f
 No accounts.
 No telemetry.
 No analytics.
-No network communication. Ever.
+100% offline core.
 ```
 
-The only external network call in the entire codebase is a `git clone` inside the GNOME extension install script. That is a shell command you run once manually. HPR itself at runtime touches no network, no DNS, nothing.
+**Let's be completely upfront:** Networking code (utilizing `WinHTTP` on Windows and `libcurl` on Linux) **is compiled directly into the HPR binary**. However, **HPR itself never makes network calls, runs no telemetry, and never phones home.** 
 
-Your data is a folder on your disk. Removing your data means deleting that folder. No server to request deletion from. No account to close. No support ticket to file.
+The networking libraries are bundled **solely** to power the Lua extension engine. By default, HPR runs entirely offline. Only when you explicitly install or write a Lua extension that invokes the native networking API (`HPR.httpGet_E`) will HPR touch the internet. 
+
+Your tracking databases remain entirely local on your disk unless you consciously run an extension designed to sync or upload them.
+
+> [!WARNING]
+> **Extension Security & Networking Warning:**
+> Because user-made extensions have the power to make HTTP requests and also have direct access to query your focus databases (`HPR.dbQuery_E`) or inspect active window titles (`HPR.getCurrentWindow_E`), **you must only install extensions you fully trust.** A malicious script could read your sensitive window history and exfiltrate it over the network to an external server. Always review the Lua scripts inside your `extensions/` directory before running them.
 
 
 ---
