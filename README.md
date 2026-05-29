@@ -270,7 +270,7 @@ Works with Waybar on Hyprland, KDE's system tray, and Cinnamon's panel out of th
 |---|---|---|
 | Hyprland (Wayland) | `hyprctl` IPC | None.  |
 | GNOME (Wayland) | Custom GNOME Shell extension ([lol-another-window-extension](https://github.com/plexescor/lol-another-window-extension)) | One-time only. Run the bundled install script, log out, log back in. |
-| KDE Plasma 6+ (Wayland / X11) | KWin scripting via `qdbus6` / `qdbus-qt6` (auto-detected) | Plasma 5 is not supported. Requires Plasma 6+. |
+| KDE Plasma 6+ (Wayland / X11) | kdotool via `qdbus6` / `qdbus-qt6` (auto-detected) | Just install kdotool |
 | Cinnamon (X11 + Wayland) | `org.Cinnamon.Eval` D-Bus method | None. |
 | Windows 10 / 11 | Win32 API | None. |
 
@@ -744,82 +744,46 @@ HPR uses slightly patched versions of `sol2`, `lua`, and `sqlite3` (located in t
 > [!WARNING]
 > **GNOME without the extension:** If [lol-another-window-extension](https://github.com/plexescor/lol-another-window-extension) is absent, HPR sets its internal platform identifier to `GNOME_NO_EXTENSION` and returns an instruction string from the poll loop rather than a window name. It will not attempt to run the install script autonomously. That is intentional behavior, not a bug.
 
-> [!WARNING]
-> **KDE Plasma 5 is unsupported.**
-> HPR's KDE backend relies on Plasma 6 KWin scripting behavior and may fail completely on Plasma 5 systems using legacy `qdbus`.
-
-> [!WARNING]
-> **KDE backend:** The KDE backend injects a JavaScript payload into KWin via `qdbus6` / `qdbus-qt6` (auto-detected at startup) on every 50ms tick and scrapes the system journal for the output. That means shell forks and disk reads at 20 Hz. Somehow this lands at around 1% CPU, which surprised me as much as it will surprise you. Every other approach I tested did not work. This one does and has been validated across multiple KDE configurations. It is a hack. It is a working hack. I am at peace with it.
+>[!NOTE]
+>KDE backend: HPR utilizes kdotool to bridge window metadata from KWin. Ensure kdotool is installed on your system. HPR auto-detects the necessary D-Bus binaries (qdbus6 / qdbus-qt6) at runtime.
 
 > [!NOTE]
 > **Linux platform detection:** HPR reads `$XDG_CURRENT_DESKTOP` and matches substrings via `std::string::contains`. Non-standard desktop session variables or nested compositor configurations may not resolve correctly.
 
-> [!NOTE]
-> **Cinnamon Wayland:** Cinnamon's Wayland session is still experimental in Linux Mint. The `org.Cinnamon.Eval` D-Bus backend works on both X11 and Wayland sessions, but Wayland-specific stability or behavior changes are dependent on the Cinnamon/Muffin team's ongoing development.
 
 ---
 
 ## Common Issues and Fixes
 
 <details>
-<summary><strong>KDE Plasma 5: HPR does not detect windows / always shows Unknown</strong></summary>
-
-HPR's KDE backend currently depends on Plasma 6 KWin scripting behavior and is not compatible with KDE Plasma 5 systems using legacy `qdbus`.
-
-If you are on Plasma 5, active window tracking may:
-- fail completely
-- return empty values
-- show `Unknown`
-- never update at all
-
-Check your Plasma version:
-```bash
-plasmashell --version
-```
-
-If the output starts with `5.` (for example `5.27.x`), your system is unsupported.
-
-**Fix:** upgrade to KDE Plasma 6.
-
-Most rolling-release distributions already ship Plasma 6. On Ubuntu-based distributions you may need to wait for newer repos or switch distributions/releases.
-
-After upgrading to Plasma 6, restart HPR.
-
-</details>
-
-<details>
 <summary><strong>KDE: HPR is not tracking the active window</strong></summary>
 
-HPR's KDE backend works by injecting a small JavaScript snippet into KWin over D-Bus using `qdbus6` or `qdbus-qt6`. These are Qt6 debugging utilities. They are **not** installed by default on a standard KDE desktop — they ship as part of Qt's developer/tooling packages.
-
-If HPR launches on a KDE session but the active window is never detected (always shows Unknown or empty), install the relevant package for your distribution:
+HPR's KDE backend relies on `kdotool` to interface with KWin for window metadata. If HPR is not detecting the active window, ensure `kdotool` is installed on your system.
 
 **Arch Linux**
 ```bash
-sudo pacman -S qt5-tools
+sudo pacman -S kdotool
 ```
 
 **Ubuntu / Debian / KDE Neon / Linux Mint**
 ```bash
-sudo apt install qdbus-qt5
-# or for Qt6:
-sudo apt install qt6-tools-dev
+sudo apt install kdotool
 ```
 
 **Fedora**
 ```bash
-sudo dnf install qt6-qttools
+sudo dnf install kdotool
 ```
 
 **openSUSE**
 ```bash
-sudo zypper install qt6-tools
+sudo zypper install kdotool
 ```
 
-After installing, restart HPR. It auto-detects the available binary (`qdbus6` → `qdbus-qt6` → `qdbus`) at startup.
+After installing, restart HPR. It will automatically detect the utility and begin tracking.
 
 > [!NOTE]
-> This is a one-time install. The Qt6 tools package is small and has no runtime overhead on HPR itself.
+> kdotool is a lightweight wrapper for KWin; no additional Qt development or debugging tools are required.
 
 </details>
 
