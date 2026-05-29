@@ -14,6 +14,7 @@ namespace AppState {
     enum CurrentView {HISTORICAL_SINGULAR, LIVE};
 
     struct AppState {
+        std::vector<std::pair<std::string, std::string>> loadedExtensions;
 
         CurrentView currentView = CurrentView::LIVE;
 

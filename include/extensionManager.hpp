@@ -20,6 +20,7 @@ struct LoadedExtension
     sol::state lua;
     std::thread thread;
     std::atomic<bool> running{true};
+    std::pair<std::string, std::string> identity;
 
     LoadedExtension() = default;
     LoadedExtension(const LoadedExtension&) = delete;
