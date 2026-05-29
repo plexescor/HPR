@@ -467,6 +467,11 @@ void ExtensionManager::registerFunctions(sol::state& lua)
         return NativeNet::httpGet(host, path, secure.value_or(true));
     };
 
+    lua["HPR"]["httpPost_E"] = [](std::string host, std::string path, std::string body, sol::optional<bool> secure) 
+    {
+        return NativeNet::httpPost(host, path, body, secure.value_or(true));
+    };
+
     lua["HPR"]["parseJSON_E"] = [&lua](std::string jsonStr, sol::optional<std::string> fieldPath) 
     {
         return JsonParser::parseJSON_E(lua, jsonStr, fieldPath);
