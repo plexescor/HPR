@@ -56,7 +56,7 @@ class ExtensionManager
     private:
         void updateExtensionPath();
         void loadNativeExtension(const std::filesystem::path& path);
-        void registerFunctions(sol::state& lua);
+        void registerFunctions(LoadedExtension& ext);
         void runExtension(LoadedExtension& ext);
         void runNativeExtension(NativeExtension& ext);
 

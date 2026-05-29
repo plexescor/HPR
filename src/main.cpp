@@ -10,13 +10,8 @@
 #ifdef _WIN32
 	#include <windows.h>
 
-	int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance,
-					LPSTR lpCmdLine, int nShowCmd)
+	int main()
 	{
-		(void)hInstance;
-		(void)hPrevInstance;
-		(void)lpCmdLine;
-		(void)nShowCmd;
 
 		ConfigManager conf;
 		

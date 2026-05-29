@@ -41,7 +41,7 @@ set(SOURCES
 )
 
 if(WIN32)
-    add_executable(HPR WIN32 ${SOURCES})
+    add_executable(HPR ${SOURCES})
 elseif(LINUX)
     add_executable(HPR ${SOURCES})
 endif()
@@ -68,7 +68,7 @@ target_include_directories(HPR PRIVATE external/sol2/)
 target_link_libraries(HPR PRIVATE Slint::Slint)
 
 if(WIN32)
-    target_link_libraries(HPR PRIVATE winhttp)
+    target_link_libraries(HPR PRIVATE winhttp ws2_32)
 elseif(LINUX)
     find_package(CURL REQUIRED)
     target_link_libraries(HPR PRIVATE ${DBUS_LIBRARIES} CURL::libcurl)

@@ -280,7 +280,7 @@ void ExtensionManager::loadExtensions()
             auto ext = std::make_unique<LoadedExtension>();
             ext->path = entry.path();
             
-            registerFunctions(ext->lua);
+            registerFunctions(*ext);
 
             try
             {
@@ -456,12 +456,64 @@ void ExtensionManager::runExtension(LoadedExtension& ext)
     }
 }
 
-void ExtensionManager::registerFunctions(sol::state& lua)
+void ExtensionManager::registerFunctions(LoadedExtension& ext)
 {
+    sol::state& lua = ext.lua;
     //Functions exposed to lua
     lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::table, sol::lib::math);
     
     lua["HPR"] = lua.create_table();
+
+    lua["HPR"]["startServer_E"] = [&ext](int port, sol::function handler) -> bool
+    {
+        return NativeNet::startHttpServer(port, handler, ext);
+    };
+
+    lua["HPR"]["getTime_MS"] = []() -> uint64_t
+    {
+        return std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()
+        ).count();
+    };
+
+    lua["HPR"]["isUiActive_E"] = []() -> bool
+    {
+        return UiRegistry::isActive();
+    };
+
+    lua["HPR"]["sleep_E"] = [](int ms)
+    {
+        std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+    };
+
+    lua["HPR"]["parseISO8601_E"] = [](std::string str) -> uint64_t
+    {
+        int y = 0, m = 0, d = 0, h = 0, min = 0;
+        float sec_fraction = 0.0f;
+        int parsed = std::sscanf(str.c_str(), "%d-%d-%dT%d:%d:%f", &y, &m, &d, &h, &min, &sec_fraction);
+        if (parsed < 5) return 0;
+        
+        int s = static_cast<int>(sec_fraction);
+        int ms = static_cast<int>((sec_fraction - s) * 1000.0f + 0.5f);
+
+        std::tm t = {};
+        t.tm_year = y - 1900;
+        t.tm_mon = m - 1;
+        t.tm_mday = d;
+        t.tm_hour = h;
+        t.tm_min = min;
+        t.tm_sec = s;
+        t.tm_isdst = -1;
+
+#ifdef _WIN32
+        std::time_t epoch_sec = _mkgmtime(&t);
+#else
+        std::time_t epoch_sec = timegm(&t);
+#endif
+        if (epoch_sec == -1) return 0;
+
+        return static_cast<uint64_t>(epoch_sec) * 1000 + ms;
+    };
 
     lua["HPR"]["httpGet_E"] = [](std::string host, std::string path, sol::optional<bool> secure) -> std::tuple<std::string, int>
     {

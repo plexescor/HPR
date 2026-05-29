@@ -1,12 +1,31 @@
+#ifdef _WIN32
+    #ifndef WIN32_LEAN_AND_MEAN
+        #define WIN32_LEAN_AND_MEAN
+    #endif
+    #include <winsock2.h>
+    #include <ws2tcpip.h>
+#endif
+
 #include "netUtilities.hpp"
+#include "extensionManager.hpp"
 #include <vector>
 #include <iostream>
+#include <map>
+#include <algorithm>
+#include <cctype>
+#include <chrono>
+#include <thread>
 
 #ifdef _WIN32
     #include <windows.h>
     #include <winhttp.h>
     #pragma comment(lib, "winhttp.lib")
+    #pragma comment(lib, "ws2_32.lib")
 #else
+    #include <sys/socket.h>
+    #include <netinet/in.h>
+    #include <unistd.h>
+    #include <fcntl.h>
     #include <curl/curl.h>
 #endif
 
@@ -213,5 +232,320 @@ namespace NativeNet
         }
 #endif
         return { response, statusCode };
+    }
+
+    namespace
+    {
+#ifdef _WIN32
+        typedef int socklen_t;
+        #define CLOSE_SOCKET closesocket
+        #define INVALID_SOCKET_VAL INVALID_SOCKET
+        #define SOCKET_ERROR_VAL SOCKET_ERROR
+#else
+        #define CLOSE_SOCKET ::close
+        #define INVALID_SOCKET_VAL -1
+        #define SOCKET_ERROR_VAL -1
+        typedef int SOCKET;
+#endif
+
+        // Read client request, parse HTTP, invoke Lua handler, and respond
+        void handleClient(SOCKET client_socket, sol::function handler, sol::state& lua)
+        {
+            std::string request_str;
+            char buffer[1024];
+            int bytes_received;
+
+            // 1. Read headers
+            size_t header_end = std::string::npos;
+            while (true)
+            {
+                bytes_received = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
+                if (bytes_received <= 0)
+                {
+                    break;
+                }
+                buffer[bytes_received] = '\0';
+                request_str.append(buffer, bytes_received);
+
+                header_end = request_str.find("\r\n\r\n");
+                if (header_end != std::string::npos)
+                {
+                    break;
+                }
+            }
+
+            if (header_end == std::string::npos)
+            {
+                CLOSE_SOCKET(client_socket);
+                return;
+            }
+
+            std::string headers_part = request_str.substr(0, header_end);
+            std::string body_part = request_str.substr(header_end + 4);
+
+            // 2. Parse request line (e.g. "POST /api/v1/buckets HTTP/1.1")
+            std::string method = "GET";
+            std::string path = "/";
+            size_t first_line_end = headers_part.find("\r\n");
+            std::string request_line = (first_line_end != std::string::npos) ? headers_part.substr(0, first_line_end) : headers_part;
+
+            std::vector<std::string> req_tokens;
+            size_t start = 0;
+            for (size_t i = 0; i <= request_line.length(); ++i)
+            {
+                if (i == request_line.length() || request_line[i] == ' ')
+                {
+                    if (i > start)
+                    {
+                        req_tokens.push_back(request_line.substr(start, i - start));
+                    }
+                    start = i + 1;
+                }
+            }
+
+            if (req_tokens.size() >= 2)
+            {
+                method = req_tokens[0];
+                path = req_tokens[1];
+            }
+
+            // 3. Parse headers
+            std::map<std::string, std::string> headers;
+            size_t pos = (first_line_end != std::string::npos) ? first_line_end + 2 : std::string::npos;
+            size_t content_length = 0;
+
+            while (pos != std::string::npos && pos < headers_part.length())
+            {
+                size_t line_end = headers_part.find("\r\n", pos);
+                std::string line = (line_end != std::string::npos) ? headers_part.substr(pos, line_end - pos) : headers_part.substr(pos);
+
+                size_t colon = line.find(':');
+                if (colon != std::string::npos)
+                {
+                    std::string key = line.substr(0, colon);
+                    std::string value = line.substr(colon + 1);
+
+                    // Trim key and value
+                    while (!key.empty() && std::isspace(static_cast<unsigned char>(key.front()))) key.erase(key.begin());
+                    while (!key.empty() && std::isspace(static_cast<unsigned char>(key.back()))) key.pop_back();
+                    while (!value.empty() && std::isspace(static_cast<unsigned char>(value.front()))) value.erase(value.begin());
+                    while (!value.empty() && std::isspace(static_cast<unsigned char>(value.back()))) value.pop_back();
+
+                    std::string lower_key = key;
+                    std::transform(lower_key.begin(), lower_key.end(), lower_key.begin(), [](unsigned char c) { return std::tolower(c); });
+
+                    headers[lower_key] = value;
+
+                    if (lower_key == "content-length")
+                    {
+                        try
+                        {
+                            content_length = std::stoull(value);
+                        }
+                        catch (...)
+                        {
+                            content_length = 0;
+                        }
+                    }
+                }
+
+                if (line_end == std::string::npos) break;
+                pos = line_end + 2;
+            }
+
+            // 4. Read body if incomplete
+            while (body_part.length() < content_length)
+            {
+                size_t to_read = content_length - body_part.length();
+                size_t chunk_size = (to_read > sizeof(buffer) - 1) ? sizeof(buffer) - 1 : to_read;
+                bytes_received = recv(client_socket, buffer, static_cast<int>(chunk_size), 0);
+                if (bytes_received <= 0)
+                {
+                    break;
+                }
+                buffer[bytes_received] = '\0';
+                body_part.append(buffer, bytes_received);
+            }
+
+            // 5. Invoke Lua handler
+            sol::table req_table = lua.create_table();
+            req_table["method"] = method;
+            req_table["path"] = path;
+            req_table["body"] = body_part;
+
+            sol::table headers_table = lua.create_table();
+            for (const auto& [k, v] : headers)
+            {
+                headers_table[k] = v;
+            }
+            req_table["headers"] = headers_table;
+
+            int status_code = 200;
+            std::string response_body;
+            std::map<std::string, std::string> response_headers;
+
+            sol::protected_function_result result = handler(req_table);
+            if (result.valid())
+            {
+                sol::object res_obj = result;
+                if (res_obj.is<sol::table>())
+                {
+                    sol::table res_table = res_obj.as<sol::table>();
+                    sol::optional<int> status_opt = res_table["status"];
+                    if (status_opt) status_code = *status_opt;
+
+                    sol::optional<std::string> body_opt = res_table["body"];
+                    if (body_opt) response_body = *body_opt;
+
+                    sol::optional<sol::table> headers_opt = res_table["headers"];
+                    if (headers_opt)
+                    {
+                        headers_opt->for_each([&](sol::object k, sol::object v) {
+                            if (k.is<std::string>() && v.is<std::string>())
+                            {
+                                response_headers[k.as<std::string>()] = v.as<std::string>();
+                            }
+                        });
+                    }
+                }
+                else if (res_obj.is<std::string>())
+                {
+                    response_body = res_obj.as<std::string>();
+                }
+            }
+            else
+            {
+                sol::error err = result;
+                std::cerr << "[HPR HTTP Server] Lua Handler Error: " << err.what() << std::endl;
+                status_code = 500;
+                response_body = "Internal Server Error: " + std::string(err.what());
+            }
+
+            // 6. Format and Send response
+            std::string response = "HTTP/1.1 " + std::to_string(status_code) + " OK\r\n";
+            response += "Connection: close\r\n";
+            bool has_content_length = false;
+            for (const auto& [k, v] : response_headers)
+            {
+                std::string lower_k = k;
+                std::transform(lower_k.begin(), lower_k.end(), lower_k.begin(), [](unsigned char c) { return std::tolower(c); });
+                if (lower_k == "content-length") has_content_length = true;
+                response += k + ": " + v + "\r\n";
+            }
+            if (!has_content_length)
+            {
+                response += "Content-Length: " + std::to_string(response_body.length()) + "\r\n";
+            }
+            response += "\r\n";
+            response += response_body;
+
+            send(client_socket, response.c_str(), static_cast<int>(response.length()), 0);
+            CLOSE_SOCKET(client_socket);
+        }
+    }
+
+    bool startHttpServer(int port, sol::function handler, LoadedExtension& ext)
+    {
+#ifdef _WIN32
+        WSADATA wsaData;
+        if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
+        {
+            std::cerr << "[HPR HTTP Server] WSAStartup failed" << std::endl;
+            return false;
+        }
+#endif
+
+        SOCKET server_fd = socket(AF_INET, SOCK_STREAM, 0);
+        if (server_fd == INVALID_SOCKET_VAL)
+        {
+            std::cerr << "[HPR HTTP Server] Failed to create socket" << std::endl;
+#ifdef _WIN32
+            WSACleanup();
+#endif
+            return false;
+        }
+
+        int opt = 1;
+#ifdef _WIN32
+        setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, (const char*)&opt, sizeof(opt));
+#else
+        setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+#endif
+
+        sockaddr_in address;
+        address.sin_family = AF_INET;
+        address.sin_addr.s_addr = htonl(INADDR_LOOPBACK); // Localhost only for safety & simplicity!
+        address.sin_port = htons(port);
+
+        if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) == SOCKET_ERROR_VAL)
+        {
+            std::cerr << "[HPR HTTP Server] Failed to bind to port " << port << std::endl;
+            CLOSE_SOCKET(server_fd);
+#ifdef _WIN32
+            WSACleanup();
+#endif
+            return false;
+        }
+
+        if (listen(server_fd, 10) == SOCKET_ERROR_VAL)
+        {
+            std::cerr << "[HPR HTTP Server] Listen failed" << std::endl;
+            CLOSE_SOCKET(server_fd);
+#ifdef _WIN32
+            WSACleanup();
+#endif
+            return false;
+        }
+
+        std::cout << "[HPR HTTP Server] Server running on 127.0.0.1:" << port << std::endl;
+
+        while (ext.running)
+        {
+            fd_set readfds;
+            FD_ZERO(&readfds);
+            FD_SET(server_fd, &readfds);
+
+            timeval timeout;
+            timeout.tv_sec = 0;
+            timeout.tv_usec = 100000; // 100ms timeout for non-blocking poll
+
+            int activity = select(static_cast<int>(server_fd + 1), &readfds, nullptr, nullptr, &timeout);
+
+            if (activity < 0)
+            {
+#ifdef _WIN32
+                int err = WSAGetLastError();
+                if (err == WSAEINTR) continue;
+#else
+                if (errno == EINTR) continue;
+#endif
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                continue;
+            }
+
+            if (activity == 0)
+            {
+                // Timeout, loop again and check ext.running
+                continue;
+            }
+
+            if (FD_ISSET(server_fd, &readfds))
+            {
+                sockaddr_in client_addr;
+                socklen_t addr_len = sizeof(client_addr);
+                SOCKET client_socket = accept(server_fd, (struct sockaddr*)&client_addr, &addr_len);
+                if (client_socket != INVALID_SOCKET_VAL)
+                {
+                    handleClient(client_socket, handler, ext.lua);
+                }
+            }
+        }
+
+        CLOSE_SOCKET(server_fd);
+#ifdef _WIN32
+        WSACleanup();
+#endif
+        std::cout << "[HPR HTTP Server] Server stopped cleanly" << std::endl;
+        return true;
     }
 }
