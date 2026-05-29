@@ -21,6 +21,8 @@
 #include "windowUtilities.hpp"
 #include "windowBackendRegistery.hpp"
 #include "appEvents.hpp"
+#include "jsonUtilities.hpp"
+#include "netUtilities.hpp"
 
 #ifdef _WIN32
     #include <windows.h>
@@ -449,9 +451,26 @@ void ExtensionManager::runExtension(LoadedExtension& ext)
 void ExtensionManager::registerFunctions(sol::state& lua)
 {
     //Functions exposed to lua
-    lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::table, sol::lib::math);
+    lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::table, sol::lib::math, sol::lib::package);
     
     lua["HPR"] = lua.create_table();
+
+    // Set extension search path so users can local-require standard packages
+    std::string extPathStr = extensionPath;
+    lua["HPR"]["extensionPath"] = extPathStr;
+    lua.script(R"(
+        package.path = package.path .. ';' .. HPR.extensionPath .. '/?.lua;' .. HPR.extensionPath .. '/?/init.lua'
+    )");
+
+    lua["HPR"]["httpGet_E"] = [](std::string host, std::string path, sol::optional<bool> secure) 
+    {
+        return NativeNet::httpGet(host, path, secure.value_or(true));
+    };
+
+    lua["HPR"]["parseJSON_E"] = [&lua](std::string jsonStr, sol::optional<std::string> fieldPath) 
+    {
+        return JsonParser::parseJSON_E(lua, jsonStr, fieldPath);
+    };
     
     lua["HPR"]["getCurrentWindow_E"] = []() 
     {

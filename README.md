@@ -685,7 +685,7 @@ Shutdown is always clean. The database writer finishes its current flush before 
 - CMake 3.21+
 - GCC 13+, Clang 16+, or MSVC 2022+ with C++23 support
 - Slint 1.16.1 (the install script handles this)
-- Linux only: `jq` for Hyprland, `gdbus` for GNOME and Cinnamon, `qdbus6` / `qdbus-qt6` for KDE (HPR auto-detects which is available)
+- Linux only: `jq` for Hyprland, `gdbus` for GNOME and Cinnamon, `qdbus6` / `qdbus-qt6` for KDE (HPR auto-detects which is available), and `libcurl` development library (e.g. `libcurl4-openssl-dev` on Debian/Ubuntu, `libcurl-devel` on Fedora/RHEL) for extension networking support.
 
 
 ```bash

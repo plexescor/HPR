@@ -67,9 +67,12 @@ target_include_directories(HPR PRIVATE external/sol2/)
 
 target_link_libraries(HPR PRIVATE Slint::Slint)
 
-if(LINUX)
+if(WIN32)
+    target_link_libraries(HPR PRIVATE winhttp)
+elseif(LINUX)
+    find_package(CURL REQUIRED)
+    target_link_libraries(HPR PRIVATE ${DBUS_LIBRARIES} CURL::libcurl)
     target_include_directories(HPR PRIVATE ${DBUS_INCLUDE_DIRS})
-    target_link_libraries(HPR PRIVATE ${DBUS_LIBRARIES})
 endif()
 
 slint_target_sources(HPR src/ui/app-window.slint)
