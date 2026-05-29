@@ -20,6 +20,8 @@ UiModelManager::UiModelManager(slint::ComponentHandle<MainWindow> &ui_handle) : 
     timeLogModelTab = std::make_shared<slint::VectorModel<TimeLog_Tab>>();
     timeLogModelProject = std::make_shared<slint::VectorModel<TimeLog_Project>>();
     switchHistoryModel = std::make_shared<slint::VectorModel<SwitchHistory>>();
+    extensionsModel = std::make_shared<slint::VectorModel<LoadedExtension_S>>();
+
 
     slint::ComponentWeakHandle<MainWindow> weak(ui.value());
     slint::invoke_from_event_loop([weak, this]()
@@ -30,6 +32,7 @@ UiModelManager::UiModelManager(slint::ComponentHandle<MainWindow> &ui_handle) : 
             (*handle)->set_timePerTab_S(timeLogModelTab);
             (*handle)->set_timePerProject_S(timeLogModelProject);
             (*handle)->set_switchHistory_S(switchHistoryModel);
+            (*handle)->set_loadedExtensions_S(extensionsModel);
         } 
     });
 }
@@ -41,6 +44,8 @@ UiModelManager::UiModelManager(slint::ComponentHandle<slint::interpreter::Compon
     timeLogModelTab_interp = std::make_shared<slint::VectorModel<slint::interpreter::Value>>();
     timeLogModelProject_interp = std::make_shared<slint::VectorModel<slint::interpreter::Value>>();
     switchHistoryModel_interp = std::make_shared<slint::VectorModel<slint::interpreter::Value>>();
+    extensionsModel_interp = std::make_shared<slint::VectorModel<slint::interpreter::Value>>();
+
 
     slint::ComponentWeakHandle<slint::interpreter::ComponentInstance> weak(ui_interp.value());
     slint::invoke_from_event_loop([weak, this]()
@@ -51,6 +56,7 @@ UiModelManager::UiModelManager(slint::ComponentHandle<slint::interpreter::Compon
             (*handle)->set_property("timePerTab_S",    slint::interpreter::Value(timeLogModelTab_interp));
             (*handle)->set_property("timePerProject_S", slint::interpreter::Value(timeLogModelProject_interp));
             (*handle)->set_property("switchHistory_S", slint::interpreter::Value(switchHistoryModel_interp));
+            (*handle)->set_property("loadedExtensions_S", slint::interpreter::Value(extensionsModel_interp));
         }
     });
 }
@@ -582,6 +588,48 @@ void UiModelManager::showInsights_Interpreted(const std::string &mostUsed,
             (*handle)->set_property("longestFocus_S",   slint::interpreter::Value(slint::SharedString(mostFocusedSession)));
             (*handle)->set_property("peakHour_S",   slint::interpreter::Value(slint::SharedString(mostProductiveHour)));
 
+        }
+    });
+}
+
+void UiModelManager::showExtensions(const std::vector<std::pair<std::string,std::string>>& extensions)
+{
+    if (!ui.has_value()) return;
+    std::vector<LoadedExtension_S> vec;
+    for (const auto& [author, name] : extensions)
+        vec.push_back({ slint::SharedString(author), slint::SharedString(name) });
+
+    slint::ComponentWeakHandle<MainWindow> weak(ui.value());
+    slint::invoke_from_event_loop([weak, vec, this]()
+    {
+        if (auto handle = weak.lock())
+        {
+            extensionsModel->clear();
+            for (const auto& e : vec)
+                extensionsModel->push_back(e);
+        }
+    });
+}
+
+void UiModelManager::showExtensions_Interpreted(const std::vector<std::pair<std::string,std::string>>& extensions)
+{
+    std::vector<slint::interpreter::Value> vec;
+    for (const auto& [author, name] : extensions)
+    {
+        slint::interpreter::Struct entry;
+        entry.set_field("author-name",     slint::interpreter::Value(slint::SharedString(author)));
+        entry.set_field("extension-name",  slint::interpreter::Value(slint::SharedString(name)));
+        vec.push_back(slint::interpreter::Value(entry));
+    }
+
+    slint::ComponentWeakHandle<slint::interpreter::ComponentInstance> weak(ui_interp.value());
+    slint::invoke_from_event_loop([weak, vec, this]()
+    {
+        if (auto handle = weak.lock())
+        {
+            extensionsModel_interp->clear();
+            for (const auto& e : vec)
+                extensionsModel_interp->push_back(e);
         }
     });
 }

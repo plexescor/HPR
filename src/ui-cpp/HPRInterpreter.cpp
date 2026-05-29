@@ -231,6 +231,13 @@ void HPRInterpreter::trackingLoop()
                 lastInsightUpdate = now;
                 firstRun = false;
             }
+
+            std::vector<std::pair<std::string,std::string>> extensionsCopy;
+            {
+                std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                extensionsCopy = AppState::state.loadedExtensions;
+            }
+            modelManager.value().showExtensions_Interpreted(extensionsCopy);
         }
 
         //Chunked sleep

@@ -1,0 +1,90 @@
+import { Card } from "./card.slint";
+import { SectionHeader } from "./section-header.slint";
+
+export struct LoadedExtension_S {
+    author-name: string,
+    extension-name: string,
+}
+
+export component ExtensionsView {
+    in property <[LoadedExtension_S]> loadedExtensions_S;
+
+    VerticalLayout {
+        padding: 12px;
+        padding-top: 0px;
+        spacing: 10px;
+
+        SectionHeader { label: "EXTENSIONS"; }
+
+        Flickable {
+            vertical-stretch: 1;
+            interactive: true;
+            viewport-height: extContent.preferred-height;
+
+            extContent := VerticalLayout {
+                width: 100%;
+                spacing: 8px;
+
+                if loadedExtensions_S.length == 0 : Card {
+                    height: 64px;
+                    HorizontalLayout {
+                        padding: 16px;
+                        alignment: center;
+                        Text {
+                            text: "NO EXTENSIONS LOADED";
+                            font-size: 9px;
+                            font-weight: 700;
+                            letter-spacing: 2.5px;
+                            color: #ffffff40;
+                            vertical-alignment: center;
+                        }
+                    }
+                }
+
+                for ext in loadedExtensions_S : Card {
+                    height: 64px;
+                    HorizontalLayout {
+                        padding: 16px;
+                        alignment: space-between;
+                        VerticalLayout {
+                            alignment: center;
+                            spacing: 4px;
+                            Text {
+                                text: "EXTENSION";
+                                font-size: 9px;
+                                font-weight: 700;
+                                letter-spacing: 2.5px;
+                                color: #ffffff40;
+                            }
+                            Text {
+                                text: ext.extension-name;
+                                font-size: 13px;
+                                font-weight: 600;
+                                color: #a3e635;
+                            }
+                        }
+                        VerticalLayout {
+                            alignment: center;
+                            spacing: 4px;
+                            Text {
+                                text: "AUTHOR";
+                                font-size: 9px;
+                                font-weight: 700;
+                                letter-spacing: 2.5px;
+                                color: #ffffff40;
+                                horizontal-alignment: right;
+                            }
+                            Text {
+                                text: ext.author-name;
+                                font-size: 13px;
+                                font-weight: 600;
+                                color: #c084fc;
+                                horizontal-alignment: right;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

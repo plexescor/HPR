@@ -50,6 +50,9 @@ class UiModelManager
                           const std::string &mostSwitchedTo,
                           const std::string &mostFocusedSession,
                           const std::string &mostProductiveHour);
+
+        void showExtensions(const std::vector<std::pair<std::string,std::string>>& extensions);
+        void showExtensions_Interpreted(const std::vector<std::pair<std::string,std::string>>& extensions);
     
     private: 
         std::optional<slint::ComponentHandle<MainWindow>> ui;
@@ -59,6 +62,7 @@ class UiModelManager
         std::shared_ptr<slint::VectorModel<TimeLog_Tab>> timeLogModelTab;
         std::shared_ptr<slint::VectorModel<TimeLog_Project>> timeLogModelProject;
         std::shared_ptr<slint::VectorModel<SwitchHistory>> switchHistoryModel;
+        std::shared_ptr<slint::VectorModel<LoadedExtension_S>> extensionsModel;
 
         //Middle men
         // std::map<std::string, long> translatedTimeLog;
@@ -70,4 +74,6 @@ class UiModelManager
         std::shared_ptr<slint::VectorModel<slint::interpreter::Value>> timeLogModelTab_interp;
         std::shared_ptr<slint::VectorModel<slint::interpreter::Value>> timeLogModelProject_interp;
         std::shared_ptr<slint::VectorModel<slint::interpreter::Value>> switchHistoryModel_interp;
+        std::shared_ptr<slint::VectorModel<slint::interpreter::Value>> extensionsModel_interp;
+
 };  

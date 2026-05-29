@@ -5,6 +5,7 @@ import { DataView } from "./data-view.slint";
 import { InsightsView } from "./insights-view.slint";
 import { TabView } from "./tab-view.slint";
 import { ProjectView } from "./project-view.slint";
+import { ExtensionsView, LoadedExtension_S } from "./extension-view.slint";
 
 import { TimeLog, SwitchHistory, TimeLog_Tab, TimeLog_Project } from "./types.slint";
 
@@ -29,6 +30,7 @@ export component MainWindow inherits Window {
     in property <[SwitchHistory]> switchHistory_S;
     in property <[TimeLog_Tab]>     timePerTab_S;
     in property <[TimeLog_Project]> timePerProject_S;
+    in property <[LoadedExtension_S]> loadedExtensions_S;
     in property <int>               trackedTime_Project_S;
 
     //Stuff for insights view: 
@@ -192,6 +194,10 @@ export component MainWindow inherits Window {
                 raw-view-clicked => { root.rawViewClicked(); }
                 filter-view-clicked => { root.filterViewClicked(); }
             }
+            if active-view == "EXTENSIONS" : ExtensionsView {
+                vertical-stretch: 1;
+                loadedExtensions_S: root.loadedExtensions_S;
+            }
 
         }
 
@@ -278,6 +284,12 @@ export component MainWindow inherits Window {
                         icon: @image-url("./images/live.svg");
                         tip: "Switch to live view";
                         clicked => { root.loadLiveData(); root.active-view = "DATA" }
+                    }
+
+                    SidebarButton {
+                        icon: @image-url("./images/extensions.svg");
+                        tip: "View loaded extensions";
+                        clicked => { root.active-view = "EXTENSIONS"; }
                     }
 
                     SidebarButton {
