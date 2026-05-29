@@ -275,7 +275,8 @@ void DatabaseManager::writeLoop()
                 AppState::state.timeLog_PerProject.clear();
                 AppState::state.switchHistory.clear();
             }
-
+            //Emit a signal so extensions can also reset their daily data if they want to, and also to trigger the loading of the new db file if needed
+            EventHub::emit(Event::MIDNIGHT_ROLLOVER);
             // so it doesnt copy the data of previous day or whatever
             initDatabase(false);
 
@@ -288,6 +289,26 @@ void DatabaseManager::writeLoop()
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     }
+}
+
+std::string DatabaseManager::getDbPathForDate(const std::string& date)
+{
+    std::string path;
+    #ifdef _WIN32
+        path = std::getenv("APPDATA");
+        path += "/HPR/HPR_DB/" + extractMMYY_from_DDMMYY(date) + "/" + date + ".db";
+    #else
+        const char* home = std::getenv("HOME");
+        if (!home) throw std::runtime_error("HOME env var not set");
+        path = home;
+        path += "/.local/share/HPR/HPR_DB/" + extractMMYY_from_DDMMYY(date) + "/" + date + ".db";
+    #endif
+    return path;
+}
+
+std::string DatabaseManager::getLoadedHistDbPath() const
+{
+    return loadedHistDbPath;
 }
 
 void DatabaseManager::loadDb_Singular(std::string requestedDate)
@@ -303,17 +324,8 @@ void DatabaseManager::loadDb_Singular(std::string requestedDate)
             //and i will not do anything, :)
 
             
-            std::string path;
-
-            #ifdef _WIN32
-                path = std::getenv("APPDATA");
-                path += "/HPR/HPR_DB/" + extractMMYY_from_DDMMYY(requestedDate) + "/" + requestedDate + ".db";
-            #else
-                const char* home = std::getenv("HOME");
-                if (!home) throw std::runtime_error("HOME env var not set");
-                path = home;
-                path += "/.local/share/HPR/HPR_DB/" + extractMMYY_from_DDMMYY(requestedDate) + "/" + requestedDate + ".db";
-            #endif
+            std::string path = getDbPathForDate(requestedDate);
+            loadedHistDbPath = path;
 
             //Check if shit even exists
             if (!std::filesystem::exists(path))

@@ -20,22 +20,10 @@
 #include "window_E.hpp"
 #include "windowUtilities.hpp"
 #include "windowBackendRegistery.hpp"
+#include "appEvents.hpp"
 
 namespace
 {
-    struct CppValue
-    {
-        enum class Type { Null, String, Double, Bool, Array, Struct };
-        Type type = Type::Null;
-        
-        std::string str_val;
-        double double_val = 0.0;
-        bool bool_val = false;
-        
-        std::vector<CppValue> array_val;
-        std::map<std::string, CppValue> struct_val;
-    };
-
     CppValue luaToCpp(const sol::object& obj)
     {
         CppValue v;
@@ -61,6 +49,18 @@ namespace
             if (tab[1].valid())
             {
                 is_array = true;
+            }
+            else
+            {
+                // Default empty tables to Array so they clear list models in Slint
+                bool has_keys = false;
+                tab.for_each([&](sol::object key, sol::object value) {
+                    has_keys = true;
+                });
+                if (!has_keys)
+                {
+                    is_array = true;
+                }
             }
             
             if (is_array)
@@ -124,6 +124,41 @@ namespace
             return slint::interpreter::Value(s);
         }
         return slint::interpreter::Value();
+    }
+
+    sol::object cppToLua(sol::state& lua, const CppValue& val)
+    {
+        if (val.type == CppValue::Type::String)
+        {
+            return sol::make_object(lua, val.str_val);
+        }
+        else if (val.type == CppValue::Type::Double)
+        {
+            return sol::make_object(lua, val.double_val);
+        }
+        else if (val.type == CppValue::Type::Bool)
+        {
+            return sol::make_object(lua, val.bool_val);
+        }
+        else if (val.type == CppValue::Type::Array)
+        {
+            sol::table tab = lua.create_table();
+            for (size_t i = 0; i < val.array_val.size(); ++i)
+            {
+                tab[i + 1] = cppToLua(lua, val.array_val[i]);
+            }
+            return tab;
+        }
+        else if (val.type == CppValue::Type::Struct)
+        {
+            sol::table tab = lua.create_table();
+            for (const auto& [k, v] : val.struct_val)
+            {
+                tab[k] = cppToLua(lua, v);
+            }
+            return tab;
+        }
+        return sol::nil;
     }
 }
 
@@ -201,6 +236,7 @@ void ExtensionManager::runExtension(LoadedExtension& ext)
     int sleepTime = 1000; //ms
     sol::function init = ext.lua["init"];
     sol::function onTick = ext.lua["onTick"];
+    sol::function onExit = ext.lua["onExit"];
 
     if (init.valid()) sleepTime = init();
     
@@ -234,6 +270,22 @@ void ExtensionManager::runExtension(LoadedExtension& ext)
             int chunk = (sleepTime - slept < 100) ? (sleepTime - slept) : 100;
             std::this_thread::sleep_for(std::chrono::milliseconds(chunk));
             slept += chunk;
+        }
+    }
+
+    if (onExit.valid())
+    {
+        try
+        {
+            onExit();
+        }
+        catch (const std::exception& e)
+        {
+            std::cerr << "Extension error in onExit for "
+                      << ext.path
+                      << ": "
+                      << e.what()
+                      << '\n';
         }
     }
 }
@@ -312,6 +364,11 @@ void ExtensionManager::registerFunctions(sol::state& lua)
         return dbManager.querySQL(sql, params.value_or(std::vector<std::string>{}));
     };
 
+    lua["HPR"]["getLoadedHistDbPath_E"] = [this]() 
+    {
+        return dbManager.getLoadedHistDbPath();
+    };
+
     lua["HPR"]["convertToDate_DDMMYY_E"] = [](uint64_t ms)
     {
         return convertToDate_DDMMYY(ms);
@@ -347,7 +404,6 @@ void ExtensionManager::registerFunctions(sol::state& lua)
         return extractMMYY_from_DDMMYY(dateStr);
     };
 
-    // Expose HPR.setUiProperty_E("propertyName", value) to Lua
     lua["HPR"]["setUiProperty_E"] = [](std::string name, sol::object value) 
     {
         if (!UiRegistry::isActive())
@@ -356,10 +412,10 @@ void ExtensionManager::registerFunctions(sol::state& lua)
         }
         
         auto weak = UiRegistry::getInstance();
-        // 1. Safely convert Lua object to standard C++ structure on the Lua execution background thread
+        //Safely convert Lua object to standard C++ structure on the Lua execution background thread
         CppValue cppVal = luaToCpp(value);
 
-        // 2. Dispatch to Slint's main event loop thread to construct and set the Slint values
+        // Dispatch to Slint's main event loop thread to construct and set the Slint values
         slint::invoke_from_event_loop([weak, name, cppVal]() 
         {
             if (auto handle = weak.lock())
@@ -370,12 +426,11 @@ void ExtensionManager::registerFunctions(sol::state& lua)
         });
     };
 
-    //Expose HPR.registerUiCallback("callbackName", lua_function) to Lua
     lua["HPR"]["registerUiCallback"] = [](std::string name, sol::function luaCallback) 
     {
         if (!UiRegistry::isActive())
         {
-            return; // UI is not active/loaded yet
+            return; // no ui
         }
         
         auto weak = UiRegistry::getInstance();
@@ -383,7 +438,7 @@ void ExtensionManager::registerFunctions(sol::state& lua)
         {
             if (auto handle = weak.lock())
             {
-                // Using 'auto args' ensures compiler compatibility with Slint's types
+                // lol auto vro iwill be cooked by code reviewers
                 (*handle)->set_callback(name, [luaCallback](auto args) -> slint::interpreter::Value 
                 {
                     // Trigger the lua function when Slint fires the callback
@@ -392,6 +447,57 @@ void ExtensionManager::registerFunctions(sol::state& lua)
                 });
             }
         });
+    };
+
+    // Connect to system or custom dynamic events
+    lua["HPR"]["connect_E"] = [&lua](std::string eventName, sol::function callback) -> size_t 
+    {
+        EventKey eventKey;
+        if (eventName == "LOAD_DATABASE_SINGULAR") eventKey = Event::LOAD_DATABASE_SINGULAR;
+        else if (eventName == "HISTORY_LOADED_SINGULAR") eventKey = Event::HISTORY_LOADED_SINGULAR;
+        else if (eventName == "LOAD_LIVE_DATA") eventKey = Event::LOAD_LIVE_DATA;
+        else if (eventName == "APP_ERROR") eventKey = Event::APP_ERROR;
+        else if (eventName == "MIDNIGHT_ROLLOVER") eventKey = Event::MIDNIGHT_ROLLOVER;
+        else eventKey = eventName; // Custom signal
+
+        return EventHub::connect(eventKey, [callback, &lua](EventData data) 
+        {
+            // Convert standard EventData to generic CppValue, then convert to native Lua value
+            sol::object luaData = cppToLua(lua, toCppValue(data));
+            callback(luaData);
+        });
+    };
+
+    // Unsubscribe from a registered event
+    lua["HPR"]["disconnect_E"] = [](std::string eventName, size_t id) 
+    {
+        EventKey eventKey;
+        if (eventName == "LOAD_DATABASE_SINGULAR") eventKey = Event::LOAD_DATABASE_SINGULAR;
+        else if (eventName == "HISTORY_LOADED_SINGULAR") eventKey = Event::HISTORY_LOADED_SINGULAR;
+        else if (eventName == "LOAD_LIVE_DATA") eventKey = Event::LOAD_LIVE_DATA;
+        else if (eventName == "APP_ERROR") eventKey = Event::APP_ERROR;
+        else if (eventName == "MIDNIGHT_ROLLOVER") eventKey = Event::MIDNIGHT_ROLLOVER;
+        else eventKey = eventName;
+
+        EventHub::disconnect(eventKey, id);
+    };
+
+    // Emit system or custom dynamic events
+    lua["HPR"]["emit_E"] = [](std::string eventName, sol::optional<sol::object> luaData) 
+    {
+        EventKey eventKey;
+        if (eventName == "LOAD_DATABASE_SINGULAR") eventKey = Event::LOAD_DATABASE_SINGULAR;
+        else if (eventName == "HISTORY_LOADED_SINGULAR") eventKey = Event::HISTORY_LOADED_SINGULAR;
+        else if (eventName == "LOAD_LIVE_DATA") eventKey = Event::LOAD_LIVE_DATA;
+        else if (eventName == "APP_ERROR") eventKey = Event::APP_ERROR;
+        else if (eventName == "MIDNIGHT_ROLLOVER") eventKey = Event::MIDNIGHT_ROLLOVER;
+        else eventKey = eventName;
+
+        // Convert Lua parameter to generic CppValue, then map to specific C++ EventData structure
+        CppValue cppVal = luaData.has_value() ? luaToCpp(luaData.value()) : CppValue();
+        EventData data = toEventData(eventKey, cppVal);
+
+        EventHub::emit(eventKey, data);
     };
 
 }

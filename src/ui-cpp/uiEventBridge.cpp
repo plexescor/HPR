@@ -165,6 +165,7 @@ void UiEventBridge::showHistoricalDataSingular()
 
 void UiEventBridge::showLiveData()
 {
+    EventHub::emit(Event::LOAD_LIVE_DATA); // Tell everyone we need live data, so they can prepare it before we switch the view
     //Make the current app state live
     std::lock_guard<std::mutex> lock(AppState::stateMutex);
     AppState::state.currentView = AppState::CurrentView::LIVE;

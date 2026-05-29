@@ -25,6 +25,9 @@ class DatabaseManager
         void executeSQL(const std::string& sql, const std::vector<std::string>& params = {});
         std::vector<std::map<std::string, std::string>> querySQL(const std::string& sql, const std::vector<std::string>& params = {});
 
+        static std::string getDbPathForDate(const std::string& date);
+        std::string getLoadedHistDbPath() const;
+
     private:
         void writeLoop();
         void updateFilePath();
@@ -37,6 +40,7 @@ class DatabaseManager
 
         std::string filePath;
         std::string fileName;
+        std::string loadedHistDbPath;
 
         std::mutex stateMutex;
         std::mutex dbQueryMutex; // Thread-safety for Lua threads
