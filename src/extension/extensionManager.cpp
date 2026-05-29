@@ -462,19 +462,26 @@ void ExtensionManager::registerFunctions(sol::state& lua)
         package.path = package.path .. ';' .. HPR.extensionPath .. '/?.lua;' .. HPR.extensionPath .. '/?/init.lua'
     )");
 
-    lua["HPR"]["httpGet_E"] = [](std::string host, std::string path, sol::optional<bool> secure) 
+    lua["HPR"]["httpGet_E"] = [](std::string host, std::string path, sol::optional<bool> secure) -> std::tuple<std::string, int>
     {
-        return NativeNet::httpGet(host, path, secure.value_or(true));
+        auto result = NativeNet::httpGet(host, path, secure.value_or(true));
+        return std::make_tuple(result.first, result.second);
     };
 
-    lua["HPR"]["httpPost_E"] = [](std::string host, std::string path, std::string body, sol::optional<bool> secure) 
+    lua["HPR"]["httpPost_E"] = [](std::string host, std::string path, std::string body, sol::optional<bool> secure) -> std::tuple<std::string, int>
     {
-        return NativeNet::httpPost(host, path, body, secure.value_or(true));
+        auto result = NativeNet::httpPost(host, path, body, secure.value_or(true));
+        return std::make_tuple(result.first, result.second);
     };
 
     lua["HPR"]["parseJSON_E"] = [&lua](std::string jsonStr, sol::optional<std::string> fieldPath) 
     {
         return JsonParser::parseJSON_E(lua, jsonStr, fieldPath);
+    };
+
+    lua["HPR"]["toJSON_E"] = [](sol::object luaTable) 
+    {
+        return JsonParser::toJSON_E(luaTable);
     };
     
     lua["HPR"]["getCurrentWindow_E"] = []() 

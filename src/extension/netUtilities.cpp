@@ -20,16 +20,17 @@ namespace NativeNet
     }
 #endif
 
-    std::string httpGet(const std::string& host, const std::string& path, bool secure)
+    std::pair<std::string, int> httpGet(const std::string& host, const std::string& path, bool secure)
     {
         std::string response;
+        int statusCode = 0;
 
 #ifdef _WIN32
         HINTERNET hSession = WinHttpOpen(L"HPR/1.0", 
                                          WINHTTP_ACCESS_TYPE_DEFAULT_PROXY, 
                                          WINHTTP_NO_PROXY_NAME, 
                                          WINHTTP_NO_PROXY_BYPASS, 0);
-        if (!hSession) return "";
+        if (!hSession) return { "", 0 };
 
         std::wstring wHost(host.begin(), host.end());
         INTERNET_PORT port = secure ? INTERNET_DEFAULT_HTTPS_PORT : INTERNET_DEFAULT_HTTP_PORT;
@@ -37,7 +38,7 @@ namespace NativeNet
         HINTERNET hConnect = WinHttpConnect(hSession, wHost.c_str(), port, 0);
         if (!hConnect) {
             WinHttpCloseHandle(hSession);
-            return "";
+            return { "", 0 };
         }
 
         std::wstring wPath(path.begin(), path.end());
@@ -49,23 +50,32 @@ namespace NativeNet
         if (!hRequest) {
             WinHttpCloseHandle(hConnect);
             WinHttpCloseHandle(hSession);
-            return "";
+            return { "", 0 };
         }
 
         if (WinHttpSendRequest(hRequest, WINHTTP_NO_ADDITIONAL_HEADERS, 0, 
                                WINHTTP_NO_REQUEST_DATA, 0, 0, 0) &&
             WinHttpReceiveResponse(hRequest, NULL)) 
         {
-            DWORD dwSize = 0;
+            // Query HTTP Status Code
+            DWORD dwStatusCode = 0;
+            DWORD dwSize = sizeof(dwStatusCode);
+            if (WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
+                                    WINHTTP_HEADER_NAME_BY_INDEX, &dwStatusCode, &dwSize, WINHTTP_NO_HEADER_INDEX)) 
+            {
+                statusCode = static_cast<int>(dwStatusCode);
+            }
+
+            DWORD dwSizeData = 0;
             do {
-                if (WinHttpQueryDataAvailable(hRequest, &dwSize) && dwSize > 0) {
-                    std::vector<char> buffer(dwSize + 1);
+                if (WinHttpQueryDataAvailable(hRequest, &dwSizeData) && dwSizeData > 0) {
+                    std::vector<char> buffer(dwSizeData + 1);
                     DWORD dwDownloaded = 0;
-                    if (WinHttpReadData(hRequest, &buffer[0], dwSize, &dwDownloaded)) {
+                    if (WinHttpReadData(hRequest, &buffer[0], dwSizeData, &dwDownloaded)) {
                         response.append(&buffer[0], dwDownloaded);
                     }
                 }
-            } while (dwSize > 0);
+            } while (dwSizeData > 0);
         }
 
         WinHttpCloseHandle(hRequest);
@@ -83,25 +93,30 @@ namespace NativeNet
             curl_easy_setopt(curl, CURLOPT_USERAGENT, "HPR/1.0");
             
             CURLcode res = curl_easy_perform(curl);
-            if (res != CURLE_OK) {
+            if (res == CURLE_OK) {
+                long responseCode = 0;
+                curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &responseCode);
+                statusCode = static_cast<int>(responseCode);
+            } else {
                 std::cerr << "[HPR] curl failed: " << curl_easy_strerror(res) << "\n";
             }
             curl_easy_cleanup(curl);
         }
 #endif
-        return response;
+        return { response, statusCode };
     }
 
-    std::string httpPost(const std::string& host, const std::string& path, const std::string& body, bool secure)
+    std::pair<std::string, int> httpPost(const std::string& host, const std::string& path, const std::string& body, bool secure)
     {
         std::string response;
+        int statusCode = 0;
 
 #ifdef _WIN32
         HINTERNET hSession = WinHttpOpen(L"HPR/1.0", 
                                          WINHTTP_ACCESS_TYPE_DEFAULT_PROXY, 
                                          WINHTTP_NO_PROXY_NAME, 
                                          WINHTTP_NO_PROXY_BYPASS, 0);
-        if (!hSession) return "";
+        if (!hSession) return { "", 0 };
 
         std::wstring wHost(host.begin(), host.end());
         INTERNET_PORT port = secure ? INTERNET_DEFAULT_HTTPS_PORT : INTERNET_DEFAULT_HTTP_PORT;
@@ -109,7 +124,7 @@ namespace NativeNet
         HINTERNET hConnect = WinHttpConnect(hSession, wHost.c_str(), port, 0);
         if (!hConnect) {
             WinHttpCloseHandle(hSession);
-            return "";
+            return { "", 0 };
         }
 
         std::wstring wPath(path.begin(), path.end());
@@ -121,7 +136,7 @@ namespace NativeNet
         if (!hRequest) {
             WinHttpCloseHandle(hConnect);
             WinHttpCloseHandle(hSession);
-            return "";
+            return { "", 0 };
         }
 
         LPCWSTR additionalHeaders = L"Content-Type: application/json\r\n";
@@ -129,16 +144,25 @@ namespace NativeNet
                                (LPVOID)body.c_str(), body.size(), body.size(), 0) &&
             WinHttpReceiveResponse(hRequest, NULL)) 
         {
-            DWORD dwSize = 0;
+            // Query HTTP Status Code
+            DWORD dwStatusCode = 0;
+            DWORD dwSize = sizeof(dwStatusCode);
+            if (WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
+                                    WINHTTP_HEADER_NAME_BY_INDEX, &dwStatusCode, &dwSize, WINHTTP_NO_HEADER_INDEX)) 
+            {
+                statusCode = static_cast<int>(dwStatusCode);
+            }
+
+            DWORD dwSizeData = 0;
             do {
-                if (WinHttpQueryDataAvailable(hRequest, &dwSize) && dwSize > 0) {
-                    std::vector<char> buffer(dwSize + 1);
+                if (WinHttpQueryDataAvailable(hRequest, &dwSizeData) && dwSizeData > 0) {
+                    std::vector<char> buffer(dwSizeData + 1);
                     DWORD dwDownloaded = 0;
-                    if (WinHttpReadData(hRequest, &buffer[0], dwSize, &dwDownloaded)) {
+                    if (WinHttpReadData(hRequest, &buffer[0], dwSizeData, &dwDownloaded)) {
                         response.append(&buffer[0], dwDownloaded);
                     }
                 }
-            } while (dwSize > 0);
+            } while (dwSizeData > 0);
         }
 
         WinHttpCloseHandle(hRequest);
@@ -163,13 +187,17 @@ namespace NativeNet
             curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
             
             CURLcode res = curl_easy_perform(curl);
-            if (res != CURLE_OK) {
+            if (res == CURLE_OK) {
+                long responseCode = 0;
+                curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &responseCode);
+                statusCode = static_cast<int>(responseCode);
+            } else {
                 std::cerr << "[HPR] curl failed: " << curl_easy_strerror(res) << "\n";
             }
             curl_slist_free_all(headers);
             curl_easy_cleanup(curl);
         }
 #endif
-        return response;
+        return { response, statusCode };
     }
 }
