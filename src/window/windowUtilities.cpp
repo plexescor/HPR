@@ -291,7 +291,7 @@ void showNotification(const std::string &title, const std::string &msg) {
 
         WinToastLib::WinToast::instance()->setAppName(L"HPR");
         WinToastLib::WinToast::instance()->setAppUserModelId(L"HPR.HumanPatternRecorder");
-        WinToastLib::WinToast::instance()->setShortcutPolicy(WinToastLib::WinToast::SHORTCUT_POLICY_IGNORE);
+        WinToastLib::WinToast::instance()->setShortcutPolicy(WinToastLib::WinToast::SHORTCUT_POLICY_REQUIRE_CREATE);
         
         if (WinToastLib::WinToast::instance()->initialize()) {
             initialized = true;
@@ -304,6 +304,13 @@ void showNotification(const std::string &title, const std::string &msg) {
         WinToastLib::WinToastTemplate templ(WinToastLib::WinToastTemplate::ImageAndText02);
         templ.setTextField(wtitle, WinToastLib::WinToastTemplate::FirstLine);
         templ.setTextField(wmsg, WinToastLib::WinToastTemplate::SecondLine);
+        
+        const char* appData = std::getenv("APPDATA");
+        if (appData) {
+            std::string iconPath = std::string(appData) + "/HPR/HPR_Config/assets/logo_256png.png";
+            std::wstring wIconPath(iconPath.begin(), iconPath.end());
+            templ.setImagePath(wIconPath);
+        }
         
         // Heap-allocate DummyWinToastHandler so WinToast's internal std::shared_ptr can safely delete it when done
         WinToastLib::WinToast::instance()->showToast(templ, new DummyWinToastHandler());
