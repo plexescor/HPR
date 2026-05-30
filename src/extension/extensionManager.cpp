@@ -339,6 +339,7 @@ void ExtensionManager::loadExtensions()
 
 void ExtensionManager::loadNativeExtension(const std::filesystem::path& path)
 {
+    
     auto ext = std::make_unique<NativeExtension>();
     ext->path = path;
 
@@ -361,136 +362,160 @@ void ExtensionManager::loadNativeExtension(const std::filesystem::path& path)
 
 void ExtensionManager::runNativeExtension(NativeExtension& ext)
 {
-
-    int sleepTime = 1000; //ms
-
-    #ifdef _WIN32
-        auto init_fn = (int(*)())GetProcAddress(ext.handle, "init");
-        auto onTick_fn = (void(*)(float))GetProcAddress(ext.handle, "onTick");
-        auto onExit_fn = (void(*)())GetProcAddress(ext.handle, "onExit");
-    #else
-        auto init_fn = (int(*)())dlsym(ext.handle, "init");
-        auto onTick_fn = (void(*)(float))dlsym(ext.handle, "onTick");
-        auto onExit_fn = (void(*)())dlsym(ext.handle, "onExit");
-    #endif
-
-    if (init_fn) 
+    try
     {
-        try {
-            sleepTime = init_fn();
-        } catch (const std::exception& e) {
-            std::cerr << "Extension error in init for " << ext.path << ": " << e.what() << '\n';
-        } catch (...) {
-            std::cerr << "Unknown extension error in init for " << ext.path << '\n';
-        }
-    }
-    
-    auto lastTime = std::chrono::high_resolution_clock::now();
-    while (ext.running)
-    {
-        auto currentTime = std::chrono::high_resolution_clock::now();
-        float delta = std::chrono::duration<float, std::milli>(currentTime - lastTime).count();
-        lastTime = currentTime;
+        int sleepTime = 1000; //ms
 
-        if (onTick_fn)
+        #ifdef _WIN32
+            auto init_fn = (int(*)())GetProcAddress(ext.handle, "init");
+            auto onTick_fn = (void(*)(float))GetProcAddress(ext.handle, "onTick");
+            auto onExit_fn = (void(*)())GetProcAddress(ext.handle, "onExit");
+        #else
+            auto init_fn = (int(*)())dlsym(ext.handle, "init");
+            auto onTick_fn = (void(*)(float))dlsym(ext.handle, "onTick");
+            auto onExit_fn = (void(*)())dlsym(ext.handle, "onExit");
+        #endif
+
+        if (init_fn) 
         {
             try {
-                onTick_fn(delta);
+                sleepTime = init_fn();
             } catch (const std::exception& e) {
-                std::cerr << "Extension error in onTick for " << ext.path << ": " << e.what() << '\n';
+                std::cerr << "Extension error in init for " << ext.path << ": " << e.what() << '\n';
             } catch (...) {
-                std::cerr << "Unknown extension error in onTick for " << ext.path << '\n';
+                std::cerr << "Unknown extension error in init for " << ext.path << '\n';
+            }
+        }
+        
+        auto lastTime = std::chrono::high_resolution_clock::now();
+        while (ext.running)
+        {
+            auto currentTime = std::chrono::high_resolution_clock::now();
+            float delta = std::chrono::duration<float, std::milli>(currentTime - lastTime).count();
+            lastTime = currentTime;
+
+            if (onTick_fn)
+            {
+                try {
+                    onTick_fn(delta);
+                } catch (const std::exception& e) {
+                    std::cerr << "Extension error in onTick for " << ext.path << ": " << e.what() << '\n';
+                } catch (...) {
+                    std::cerr << "Unknown extension error in onTick for " << ext.path << '\n';
+                }
+            }
+
+            int slept = 0;
+            while (ext.running && slept < sleepTime)
+            {
+                int chunk = (sleepTime - slept < 100) ? (sleepTime - slept) : 100;
+                std::this_thread::sleep_for(std::chrono::milliseconds(chunk));
+                slept += chunk;
             }
         }
 
-        int slept = 0;
-        while (ext.running && slept < sleepTime)
+        if (onExit_fn)
         {
-            int chunk = (sleepTime - slept < 100) ? (sleepTime - slept) : 100;
-            std::this_thread::sleep_for(std::chrono::milliseconds(chunk));
-            slept += chunk;
+            try {
+                onExit_fn();
+            } catch (const std::exception& e) {
+                std::cerr << "Extension error in onExit for " << ext.path << ": " << e.what() << '\n';
+            } catch (...) {
+                std::cerr << "Unknown extension error in onExit for " << ext.path << '\n';
+            }
         }
-    }
-
-    if (onExit_fn)
+    } catch (const std::exception& e)
     {
-        try {
-            onExit_fn();
-        } catch (const std::exception& e) {
-            std::cerr << "Extension error in onExit for " << ext.path << ": " << e.what() << '\n';
-        } catch (...) {
-            std::cerr << "Unknown extension error in onExit for " << ext.path << '\n';
-        }
+        std::cerr << "Extension error in " << ext.path << ": " << e.what() << '\n';
+    }
+    catch (...)
+    {
+        std::cerr << "Unknown extension error in " << ext.path << '\n';
     }
 }
 
 void ExtensionManager::runExtension(LoadedExtension& ext)
 {
-    std::cout << "Loading done!";
-
-    sol::optional<std::string> authorName = ext.lua["HPR"]["authorName"];
-    sol::optional<std::string> extensionName = ext.lua["HPR"]["extensionName"];
-    if (authorName.has_value() && extensionName.has_value())
+    try
     {
-        ext.identity = { authorName.value(), extensionName.value() };
-        std::lock_guard<std::mutex> lock(AppState::stateMutex);
-        AppState::state.loadedExtensions.push_back(ext.identity);
+
+        sol::optional<std::string> authorName = ext.lua["HPR"]["authorName"];
+        sol::optional<std::string> extensionName = ext.lua["HPR"]["extensionName"];
+        if (authorName.has_value() && extensionName.has_value())
+        {
+            ext.identity = { authorName.value(), extensionName.value() };
+            std::lock_guard<std::mutex> lock(AppState::stateMutex);
+            AppState::state.loadedExtensions.push_back(ext.identity);
+        }
+        
+        int sleepTime = 1000; //ms
+        sol::function init = ext.lua["init"];
+        sol::function onTick = ext.lua["onTick"];
+        sol::function onExit = ext.lua["onExit"];
+
+        if (init.valid()) sleepTime = init();
+        
+        auto lastTime = std::chrono::high_resolution_clock::now();
+        while (ext.running)
+        {
+            auto currentTime = std::chrono::high_resolution_clock::now();
+
+            float delta = std::chrono::duration<float, std::milli>(
+                            currentTime - lastTime
+                        ).count();
+                
+
+            lastTime = currentTime;
+
+            try
+            {
+                if (onTick.valid()) onTick(delta);          
+            }
+            catch (const std::exception& e)
+            {
+                std::cerr << "Extension error in "
+                        << ext.path
+                        << ": "
+                        << e.what()
+                        << '\n';
+            }
+            int slept = 0;
+            while (ext.running && slept < sleepTime)
+            {
+                int chunk = (sleepTime - slept < 100) ? (sleepTime - slept) : 100;
+                std::this_thread::sleep_for(std::chrono::milliseconds(chunk));
+                slept += chunk;
+            }
+        }
+
+        if (onExit.valid())
+        {
+            try
+            {
+                onExit();
+            }
+            catch (const std::exception& e)
+            {
+                std::cerr << "Extension error in onExit for "
+                        << ext.path
+                        << ": "
+                        << e.what()
+                        << '\n';
+            }
+        }
+    } catch (const std::exception& e)
+    {
+        std::cerr << "Extension error in "
+                << ext.path
+                << ": "
+                << e.what()
+                << '\n';
     }
-    
-    int sleepTime = 1000; //ms
-    sol::function init = ext.lua["init"];
-    sol::function onTick = ext.lua["onTick"];
-    sol::function onExit = ext.lua["onExit"];
-
-    if (init.valid()) sleepTime = init();
-    
-    auto lastTime = std::chrono::high_resolution_clock::now();
-    while (ext.running)
+    catch (...)
     {
-        auto currentTime = std::chrono::high_resolution_clock::now();
-
-        float delta = std::chrono::duration<float, std::milli>(
-                        currentTime - lastTime
-                    ).count();
-            
-
-        lastTime = currentTime;
-
-        try
-        {
-            if (onTick.valid()) onTick(delta);          
-        }
-        catch (const std::exception& e)
-        {
-            std::cerr << "Extension error in "
-                      << ext.path
-                      << ": "
-                      << e.what()
-                      << '\n';
-        }
-        int slept = 0;
-        while (ext.running && slept < sleepTime)
-        {
-            int chunk = (sleepTime - slept < 100) ? (sleepTime - slept) : 100;
-            std::this_thread::sleep_for(std::chrono::milliseconds(chunk));
-            slept += chunk;
-        }
-    }
-
-    if (onExit.valid())
-    {
-        try
-        {
-            onExit();
-        }
-        catch (const std::exception& e)
-        {
-            std::cerr << "Extension error in onExit for "
-                      << ext.path
-                      << ": "
-                      << e.what()
-                      << '\n';
-        }
+        std::cerr << "Unknown extension error in "
+                << ext.path
+                << '\n';
     }
 }
 
