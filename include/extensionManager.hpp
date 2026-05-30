@@ -79,3 +79,5 @@ class ExtensionManager
         HPRInterpreter* interpreterApp;
         LinuxInitialiser* linuxInit;
 };
+
+std::filesystem::path resolveAndSecurePath(const std::string& userPath, const std::filesystem::path& baseDir, std::string& errOut);

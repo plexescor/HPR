@@ -9,6 +9,8 @@
 #include <functional>
 #include <map>
 #include <unistd.h>
+#include <sstream>
+
 
 #include <slint-interpreter.h>
 
@@ -846,6 +848,208 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         EventHub::emit(eventKey, data);
     };
 
+    auto trim = [](const std::string& str) -> std::string 
+    {
+        size_t first = str.find_first_not_of(" \t\r\n");
+        if (first == std::string::npos) return "";
+        size_t last = str.find_last_not_of(" \t\r\n");
+        return str.substr(first, last - first + 1);
+    };
+
+    auto parseValue = [trim](const std::string& rawValue, sol::state& luaState) -> sol::object 
+    {
+        std::string trimmed = trim(rawValue);
+        if (trimmed == "true") {
+            return sol::make_object(luaState, true);
+        }
+        if (trimmed == "false") {
+            return sol::make_object(luaState, false);
+        }
+        if (!trimmed.empty()) {
+            char* endptr = nullptr;
+            double d = std::strtod(trimmed.c_str(), &endptr);
+            if (endptr == trimmed.c_str() + trimmed.size()) {
+                return sol::make_object(luaState, d);
+            }
+        }
+        return sol::make_object(luaState, rawValue);
+    };
+
+    lua["HPR"]["readCsv_E"] = [this, &ext, &lua, trim, parseValue](std::string userPath, sol::optional<sol::object> keyOpt, sol::this_state ts) -> sol::variadic_results
+    {
+        sol::variadic_results vr;
+        std::string err;
+        std::filesystem::path securedPath = resolveAndSecurePath(userPath, this->extensionPath, err);
+        if (securedPath.empty())
+        {
+            std::cerr << "[HPR Extension CSV Error] " << err << " (path: " << userPath << ")" << std::endl;
+            vr.push_back(sol::make_object(ts, ""));
+            return vr;
+        }
+
+        std::ifstream file(securedPath);
+        if (!file.is_open())
+        {
+            std::cerr << "[HPR Extension CSV Error] Failed to open file for reading: " << securedPath << std::endl;
+            vr.push_back(sol::make_object(ts, ""));
+            return vr;
+        }
+
+        std::vector<std::string> keys;
+        std::vector<std::string> values;
+        std::string line;
+        while (std::getline(file, line))
+        {
+            if (!line.empty() && line.back() == '\n') line.pop_back();
+            if (!line.empty() && line.back() == '\r') line.pop_back();
+            if (line.empty()) continue;
+
+            size_t commaPos = line.find(',');
+            if (commaPos == std::string::npos)
+            {
+                keys.push_back(line);
+                values.push_back("");
+            }
+            else
+            {
+                keys.push_back(line.substr(0, commaPos));
+                values.push_back(line.substr(commaPos + 1));
+            }
+        }
+        file.close();
+
+        if (keyOpt.has_value() && !keyOpt.value().is<sol::nil_t>())
+        {
+            std::string targetKey;
+            sol::object kObj = keyOpt.value();
+            if (kObj.is<std::string>()) targetKey = kObj.as<std::string>();
+            else if (kObj.is<double>()) {
+                std::ostringstream oss;
+                oss << kObj.as<double>();
+                targetKey = oss.str();
+            }
+            else if (kObj.is<bool>()) targetKey = kObj.as<bool>() ? "true" : "false";
+
+            for (size_t i = 0; i < keys.size(); ++i)
+            {
+                if (keys[i] == targetKey)
+                {
+                    vr.push_back(parseValue(values[i], lua));
+                    return vr;
+                }
+            }
+            vr.push_back(sol::make_object(ts, ""));
+            return vr;
+        }
+        else
+        {
+            sol::table keysTable = lua.create_table();
+            sol::table valuesTable = lua.create_table();
+            for (size_t i = 0; i < keys.size(); ++i)
+            {
+                keysTable[i + 1] = keys[i];
+                valuesTable[i + 1] = parseValue(values[i], lua);
+            }
+            vr.push_back(keysTable);
+            vr.push_back(valuesTable);
+            return vr;
+        }
+    };
+
+    lua["HPR"]["writeCsv_E"] = [this, &ext, &lua](std::string userPath, sol::object key, sol::object value) -> bool
+    {
+        std::string err;
+        std::filesystem::path securedPath = resolveAndSecurePath(userPath, this->extensionPath, err);
+        if (securedPath.empty())
+        {
+            std::cerr << "[HPR Extension CSV Error] " << err << " (path: " << userPath << ")" << std::endl;
+            return false;
+        }
+
+        std::string keyStr;
+        if (key.is<std::string>()) keyStr = key.as<std::string>();
+        else if (key.is<double>()) {
+            std::ostringstream oss;
+            oss << key.as<double>();
+            keyStr = oss.str();
+        }
+        else if (key.is<bool>()) keyStr = key.as<bool>() ? "true" : "false";
+        else return false;
+
+        std::string valStr;
+        if (value.is<std::string>()) valStr = value.as<std::string>();
+        else if (value.is<double>()) {
+            std::ostringstream oss;
+            oss << value.as<double>();
+            valStr = oss.str();
+        }
+        else if (value.is<bool>()) valStr = value.as<bool>() ? "true" : "false";
+        else return false;
+
+        try {
+            std::filesystem::create_directories(securedPath.parent_path());
+        } catch (const std::exception& e) {
+            std::cerr << "[HPR Extension CSV Error] Failed to create directories for: " << securedPath << " (" << e.what() << ")" << std::endl;
+            return false;
+        }
+
+        std::vector<std::pair<std::string, std::string>> entries;
+        bool updated = false;
+
+        std::ifstream inFile(securedPath);
+        if (inFile.is_open())
+        {
+            std::string line;
+            while (std::getline(inFile, line))
+            {
+                if (!line.empty() && line.back() == '\n') line.pop_back();
+                if (!line.empty() && line.back() == '\r') line.pop_back();
+                if (line.empty()) continue;
+
+                size_t commaPos = line.find(',');
+                if (commaPos == std::string::npos)
+                {
+                    entries.push_back({line, ""});
+                }
+                else
+                {
+                    entries.push_back({line.substr(0, commaPos), line.substr(commaPos + 1)});
+                }
+            }
+            inFile.close();
+        }
+
+        for (auto& entry : entries)
+        {
+            if (entry.first == keyStr)
+            {
+                entry.second = valStr;
+                updated = true;
+                break;
+            }
+        }
+
+        if (!updated)
+        {
+            entries.push_back({keyStr, valStr});
+        }
+
+        std::ofstream outFile(securedPath, std::ios::trunc);
+        if (!outFile.is_open())
+        {
+            std::cerr << "[HPR Extension CSV Error] Failed to open file for writing: " << securedPath << std::endl;
+            return false;
+        }
+
+        for (const auto& entry : entries)
+        {
+            outFile << entry.first << "," << entry.second << "\n";
+        }
+        outFile.close();
+
+        return true;
+    };
+
 }
 
 void ExtensionManager::updateExtensionPath()
@@ -861,4 +1065,26 @@ void ExtensionManager::updateExtensionPath()
     #endif
 
     std::filesystem::create_directories(extensionPath);
+}
+
+std::filesystem::path resolveAndSecurePath(const std::string& userPath, const std::filesystem::path& baseDir, std::string& errOut)
+{
+    std::filesystem::path userP(userPath);
+    if (userP.is_absolute() || userPath.rfind("/", 0) == 0 || userPath.rfind("\\", 0) == 0 || (userPath.size() >= 2 && userPath[1] == ':'))
+    {
+        errOut = "Access denied: Absolute paths are not supported.";
+        return {};
+    }
+
+    std::filesystem::path target = baseDir / userP;
+    std::filesystem::path normalTarget = std::filesystem::weakly_canonical(target);
+    std::filesystem::path canonicalBase = std::filesystem::weakly_canonical(baseDir);
+
+    auto relative = std::filesystem::relative(normalTarget, canonicalBase);
+    if (relative.empty() || relative.string() == "." || relative.string().find("..") != std::string::npos)
+    {
+        errOut = "Access denied: Path is outside the extensions directory.";
+        return {};
+    }
+    return normalTarget;
 }
