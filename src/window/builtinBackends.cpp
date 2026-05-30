@@ -191,6 +191,22 @@
     }
 #endif
 
+static std::string s_qdbus_bin = "";
+
+std::string getQDBusCommand() 
+{
+    if (!s_qdbus_bin.empty()) return s_qdbus_bin;
+    
+    std::string cmd = "command -v qdbus6 || command -v qdbus-qt6 || command -v qdbus";
+    std::string check = runSystemCommand(cmd);
+    
+    // Trim whitespace/newlines
+    while (!check.empty() && (check.back() == '\n' || check.back() == ' '))
+        check.pop_back();
+        
+    s_qdbus_bin = check.empty() ? "qdbus6" : check;
+    return s_qdbus_bin;
+}
 
 void registerBuiltinBackends()
 {
