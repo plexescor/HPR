@@ -1176,6 +1176,51 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         std::exit(1);
     };
 
+    lua["HPR"]["getLiveTimeLogPerApp_E"] = [&lua]() -> sol::table
+    {
+        std::map<std::string, long> copy;
+        {
+            std::lock_guard<std::mutex> lock(AppState::stateMutex);
+            copy = AppState::state.timeLog_PerApp;
+        }
+        sol::table result = lua.create_table();
+        for (const auto& [app, ms] : copy)
+        {
+            result[app] = ms;
+        }
+        return result;
+    };
+
+    lua["HPR"]["getLiveTimeLogPerTab_E"] = [&lua]() -> sol::table
+    {
+        std::map<std::string, long> copy;
+        {
+            std::lock_guard<std::mutex> lock(AppState::stateMutex);
+            copy = AppState::state.timeLog_PerTab;
+        }
+        sol::table result = lua.create_table();
+        for (const auto& [tab, ms] : copy)
+        {
+            result[tab] = ms;
+        }
+        return result;
+    };
+
+    lua["HPR"]["getLiveTimeLogPerProject_E"] = [&lua]() -> sol::table
+    {
+        std::map<std::string, long> copy;
+        {
+            std::lock_guard<std::mutex> lock(AppState::stateMutex);
+            copy = AppState::state.timeLog_PerProject;
+        }
+        sol::table result = lua.create_table();
+        for (const auto& [project, ms] : copy)
+        {
+            result[project] = ms;
+        }
+        return result;
+    };
+
 }
 
 void ExtensionManager::updateExtensionPath()
