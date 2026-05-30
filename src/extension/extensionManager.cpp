@@ -549,9 +549,15 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
     //     return UiRegistry::isActive();
     // };
 
-    lua["HPR"]["sleep_E"] = [](int ms)
+    lua["HPR"]["sleep_E"] = [&ext](int ms)
     {
-        std::this_thread::sleep_for(std::chrono::milliseconds(ms));
+        int slept = 0;
+        while (slept < ms && ext.running)
+        {
+            int chunk = (ms - slept < 50) ? (ms - slept) : 50;
+            std::this_thread::sleep_for(std::chrono::milliseconds(chunk));
+            slept += chunk;
+        }
     };
 
     lua["HPR"]["parseISO8601_E"] = [](std::string str) -> uint64_t
