@@ -41,6 +41,7 @@ set(SOURCES
 )
 
 if(WIN32)
+    add_compile_definitions(NOMINMAX)
     list(APPEND SOURCES external/wintoast/wintoastlib.cpp)
 endif()
 

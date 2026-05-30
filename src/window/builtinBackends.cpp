@@ -373,6 +373,7 @@ void registerBuiltinBackends()
         }
     });
 
+#ifdef __linux__
     registerBackend({
         "KDE",
         [](const std::string& env) { return env.contains("KDE"); },
@@ -410,6 +411,7 @@ void registerBuiltinBackends()
         }
 
     });
+#endif
 
     registerBackend
     ({

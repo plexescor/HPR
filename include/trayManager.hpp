@@ -9,6 +9,7 @@
 
 #ifdef _WIN32
     #include <windows.h>
+    #include <shellapi.h>
     #include <psapi.h>
 #endif
 
