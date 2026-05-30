@@ -471,7 +471,7 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         return NativeNet::startHttpServer(port, handler, ext);
     };
 
-    lua["HPR"]["getTime_MS"] = []() -> uint64_t
+    lua["HPR"]["getTime_MS_E"] = []() -> uint64_t
     {
         return std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::system_clock::now().time_since_epoch()
@@ -554,32 +554,32 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         return runSystemCommand(command);
     };
 
-    lua["HPR"]["getAlias"] = [](std::string command) 
+    lua["HPR"]["getAlias_E"] = [](std::string command) 
     {
         return AppState::aliasManager.getAlias(command);
     };
 
-    lua["HPR"]["getAlias_Tab"] = [](std::string command) 
+    lua["HPR"]["getAlias_Tab_E"] = [](std::string command) 
     {
         return AppState::aliasManager.getAlias_Tab(command);
     };
 
-    lua["HPR"]["getAlias_Project"] = [](std::string command) 
+    lua["HPR"]["getAlias_Project_E"] = [](std::string command) 
     {
         return AppState::aliasManager.getAlias_Project(command);
     };
 
-    lua["HPR"]["getReverseAlias"] = [](std::string aliasName) 
+    lua["HPR"]["getReverseAlias_E"] = [](std::string aliasName) 
     {
         return AppState::aliasManager.getReverseAlias(aliasName);
     };
 
-    lua["HPR"]["getReverseAlias_Tab"] = [](std::string aliasName) 
+    lua["HPR"]["getReverseAlias_Tab_E"] = [](std::string aliasName) 
     {
         return AppState::aliasManager.getReverseAlias_Tab(aliasName);
     };
 
-    lua["HPR"]["getReverseAlias_Project"] = [](std::string aliasName) 
+    lua["HPR"]["getReverseAlias_Project_E"] = [](std::string aliasName) 
     {
         return AppState::aliasManager.getReverseAlias_Project(aliasName);
     };
@@ -697,7 +697,7 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         });
     };
 
-    lua["HPR"]["registerUiCallback"] = [](std::string name, sol::function luaCallback) 
+    lua["HPR"]["registerUiCallback_E"] = [](std::string name, sol::function luaCallback) 
     {
         if (!UiRegistry::isActive())
         {
