@@ -270,7 +270,7 @@ Works with Waybar on Hyprland, KDE's system tray, and Cinnamon's panel out of th
 |---|---|---|
 | Hyprland (Wayland) | `hyprctl` IPC | None.  |
 | GNOME (Wayland) | Custom GNOME Shell extension ([lol-another-window-extension](https://github.com/plexescor/lol-another-window-extension)) | One-time only. Run the bundled install script, log out, log back in. |
-| KDE Plasma 6+ (Wayland / X11) | kdotool via `qdbus6` / `qdbus-qt6` (auto-detected) | Just install kdotool |
+| KDE Plasma 6+ (Wayland / X11) | KWin D-Bus scripting (native, no external tools) | None. |
 | Cinnamon (X11 + Wayland) | `org.Cinnamon.Eval` D-Bus method | None. |
 | Windows 10 / 11 | Win32 API | None. |
 
@@ -691,7 +691,7 @@ Shutdown is always clean. The database writer finishes its current flush before 
 - CMake 3.21+
 - GCC 13+, Clang 16+, or MSVC 2022+ with C++23 support
 - Slint 1.16.1 (the install script handles this)
-- Linux only: `jq` for Hyprland, `gdbus` for GNOME and Cinnamon, `qdbus6` / `qdbus-qt6` for KDE (HPR auto-detects which is available), and `libcurl` development library (e.g. `libcurl4-openssl-dev` on Debian/Ubuntu, `libcurl-devel` on Fedora/RHEL) for extension networking support.
+- Linux only: `jq` for Hyprland, `gdbus` for GNOME and Cinnamon, and `libcurl` development library (e.g. `libcurl4-openssl-dev` on Debian/Ubuntu, `libcurl-devel` on Fedora/RHEL) for extension networking support.
 
 
 ```bash
@@ -744,9 +744,6 @@ HPR uses slightly patched versions of `sol2`, `lua`, and `sqlite3` (located in t
 > [!WARNING]
 > **GNOME without the extension:** If [lol-another-window-extension](https://github.com/plexescor/lol-another-window-extension) is absent, HPR sets its internal platform identifier to `GNOME_NO_EXTENSION` and returns an instruction string from the poll loop rather than a window name. It will not attempt to run the install script autonomously. That is intentional behavior, not a bug.
 
->[!NOTE]
->KDE backend: HPR utilizes kdotool to bridge window metadata from KWin. Ensure kdotool is installed on your system. HPR auto-detects the necessary D-Bus binaries (qdbus6 / qdbus-qt6) at runtime.
-
 > [!NOTE]
 > **Linux platform detection:** HPR reads `$XDG_CURRENT_DESKTOP` and matches substrings via `std::string::contains`. Non-standard desktop session variables or nested compositor configurations may not resolve correctly.
 
@@ -755,37 +752,7 @@ HPR uses slightly patched versions of `sol2`, `lua`, and `sqlite3` (located in t
 
 ## Common Issues and Fixes
 
-<details>
-<summary><strong>KDE: HPR is not tracking the active window</strong></summary>
-
-HPR's KDE backend relies on `kdotool` to interface with KWin for window metadata. If HPR is not detecting the active window, ensure `kdotool` is installed on your system.
-
-**Arch Linux**
-```bash
-sudo pacman -S kdotool
-```
-
-**Ubuntu / Debian / KDE Neon / Linux Mint**
-```bash
-sudo apt install kdotool
-```
-
-**Fedora**
-```bash
-sudo dnf install kdotool
-```
-
-**openSUSE**
-```bash
-sudo zypper install kdotool
-```
-
-After installing, restart HPR. It will automatically detect the utility and begin tracking.
-
-> [!NOTE]
-> kdotool is a lightweight wrapper for KWin; no additional Qt development or debugging tools are required.
-
-</details>
+Currently None :)
 
 ---
 
