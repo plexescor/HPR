@@ -72,10 +72,10 @@ class ExtensionManager
 
     public:
         //some shit
-        DatabaseManager& dbManager;
-        TrayManager& trayManager;
-        CurrentWindowManager& currentWindowManager;
-        HPR& app;
-        HPRInterpreter& interpreterApp;
-        LinuxInitialiser& linuxInit;
+        DatabaseManager* dbManager;
+        TrayManager* trayManager;
+        CurrentWindowManager* currentWindowManager;
+        HPR* app;
+        HPRInterpreter* interpreterApp;
+        LinuxInitialiser* linuxInit;
 };

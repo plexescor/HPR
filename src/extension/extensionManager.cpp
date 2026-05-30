@@ -584,14 +584,14 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         return AppState::aliasManager.getReverseAlias_Project(aliasName);
     };
 
-    lua["HPR"]["stopTracking_E"] = []()
+    lua["HPR"]["stopTracking_E"] = [this]()
     {
-        CurrentWindowManager::stopTracking();
+        currentWindowManager->stopTracking();
     };
 
-    lua["HPR"]["startTracking_E"] = []()
+    lua["HPR"]["startTracking_E"] = [this]()
     {
-        CurrentWindowManager::startTracking();
+        currentWindowManager->startTracking();
     };
 
     lua["HPR"]["registerBackend_E"] = [](
@@ -608,17 +608,17 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
 
     lua["HPR"]["dbExecute_E"] = [this](std::string sql, sol::optional<std::vector<std::string>> params) 
     {
-        dbManager.executeSQL(sql, params.value_or(std::vector<std::string>{}));
+        dbManager->executeSQL(sql, params.value_or(std::vector<std::string>{}));
     };
 
     lua["HPR"]["dbQuery_E"] = [this](std::string sql, sol::optional<std::vector<std::string>> params) 
     {
-        return dbManager.querySQL(sql, params.value_or(std::vector<std::string>{}));
+        return dbManager->querySQL(sql, params.value_or(std::vector<std::string>{}));
     };
 
     lua["HPR"]["getLoadedHistDbPath_E"] = [this]() 
     {
-        return dbManager.getLoadedHistDbPath();
+        return dbManager->getLoadedHistDbPath();
     };
 
     lua["HPR"]["dbQueryHistorical_E"] = [this](std::string sql, sol::optional<std::vector<std::string>> params) 
@@ -632,12 +632,12 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
             });
         }
 
-        std::string histPath = dbManager.getLoadedHistDbPath();
+        std::string histPath = dbManager->getLoadedHistDbPath();
         if (histPath.empty()) 
         {
             return std::vector<std::map<std::string, std::string>>{};
         }
-        return dbManager.querySQL_Path(histPath, sql, params.value_or(std::vector<std::string>{}));
+        return dbManager->querySQL_Path(histPath, sql, params.value_or(std::vector<std::string>{}));
     };
 
     lua["HPR"]["convertToDate_DDMMYY_E"] = [](uint64_t ms)

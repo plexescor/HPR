@@ -57,10 +57,10 @@
 			};
 
 			//GIVE EXTENSION MANAGER FULL ACCESS TO EVERY OBJECT PRESENT
-			ext.dbManager = dbm;
-			ext.trayManager = tray;
-			ext.currentWindowManager = cwm;
-			ext.app = app;
+			ext.dbManager = &dbm;
+			ext.trayManager = &tray;
+			ext.currentWindowManager = &cwm;
+			ext.app = &app;
 
 			app.run(); //blocking call, run on main
 		}	
@@ -80,10 +80,10 @@
 			};
 
 			//GIVE EXTENSION MANAGER FULL ACCESS TO EVERY OBJECT PRESENT
-			ext.dbManager = dbm;
-			ext.trayManager = tray;
-			ext.currentWindowManager = cwm;
-			ext.interpreterApp = app;																																																																
+			ext.dbManager = &dbm;
+			ext.trayManager = &tray;
+			ext.currentWindowManager = &cwm;
+			ext.interpreterApp = &app;																																																																
 
 			app.run();//blocking call, run on main
 		}
@@ -138,11 +138,11 @@
 			};
 
 			//GIVE EXTENSION MANAGER FULL ACCESS TO EVERY OBJECT PRESENT
-			ext.dbManager = dbm;
-			ext.trayManager = tray;
-			ext.currentWindowManager = cwm;
-			ext.app = app;																																																																
-			ext.linuxInit = linuxInit;
+			ext.dbManager = &dbm;
+			ext.trayManager = &tray;
+			ext.currentWindowManager = &cwm;
+			ext.app = &app;
+			ext.linuxInit = &linuxInit;
 
 			app.run();//blocking call, run on main
 		}	
@@ -162,11 +162,11 @@
 			};
 
 			//GIVE EXTENSION MANAGER FULL ACCESS TO EVERY OBJECT PRESENT
-			ext.dbManager = dbm;
-			ext.trayManager = tray;
-			ext.currentWindowManager = cwm;
-			ext.interpreterApp = app;																																																																
-			ext.linuxInit = linuxInit;
+			ext.dbManager = &dbm;
+			ext.trayManager = &tray;
+			ext.currentWindowManager = &cwm;
+			ext.interpreterApp = &app;
+			ext.linuxInit = &linuxInit;
 
 			app.run();//blocking call, run on main
 		}
