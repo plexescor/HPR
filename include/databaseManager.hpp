@@ -64,6 +64,13 @@ class DatabaseManager
             int lockFd = -1;
         #endif
 
+        struct PendingQuery {
+            std::string sql;
+            std::vector<std::string> params;
+        };
+        std::vector<PendingQuery> pendingQueries;
+        std::mutex pendingQueriesMutex;
+
         //Async tasks
         std::future<void> historyLoadTask_Singular;
 };

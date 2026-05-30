@@ -217,76 +217,130 @@ void DatabaseManager::writeLoop()
                 switchHistory_D = AppState::state.switchHistory;
             }
 
-        for (const auto &[k, v] : timeLog_PerApp_D)
-        {
-            *db << "insert or replace into app_usage (name,duration) values (?,?);"
-               << k
-               << v;
-        }
-
-        for (const auto &[k, v] : timeLog_PerTab_D)
-        {
-            *db << "insert or replace into tab_usage (name,duration) values (?,?);"
-               << k
-               << v;
-        }
-
-        for (const auto &[k, v] : timeLog_PerProject_D)
-        {
-            *db << "insert or replace into project_usage (name,duration) values (?,?);"
-               << k
-               << v;
-        }
-
-        for (const auto &[k, v] : switchHistory_D)
-        {
-            //k = pair<>, v = vector<>
-            const auto& [from, to] = k;
-
-            for (const auto& timestamp : v)
+            for (const auto &[k, v] : timeLog_PerApp_D)
             {
-                *db << "insert or ignore into switch_history (fromWindow,toWindow,timeStamp) values (?,?,?);"
-                << from
-                << to
-                << static_cast<long long>(timestamp);
+                *db << "insert or replace into app_usage (name,duration) values (?,?);"
+                   << k
+                   << v;
             }
-        }
 
-        *db << "COMMIT;";
-        *db << "PRAGMA wal_checkpoint(PASSIVE);"; //learnt hardway because wal itself can get corrupted during crashes
-        //So that old db is closed and new file is created if date changes
-
-        std::string newName = "";
-        //Get ms sinc epoch
-        auto nowSystem = std::chrono::system_clock::now();
-        uint64_t t = std::chrono::duration_cast<std::chrono::milliseconds>(
-            nowSystem.time_since_epoch()).count();
-
-        newName += convertToDate_DDMMYY(t) + ".db";
-        
-        //Means if date has changed
-        if (newName != fileName)
-        {
-            // Clear appstate in case of new day
+            for (const auto &[k, v] : timeLog_PerTab_D)
             {
-                std::lock_guard<std::mutex> lock(AppState::stateMutex);
-                AppState::state.timeLog_PerApp.clear();
-                AppState::state.timeLog_PerTab.clear();
-                AppState::state.timeLog_PerProject.clear();
-                AppState::state.switchHistory.clear();
+                *db << "insert or replace into tab_usage (name,duration) values (?,?);"
+                   << k
+                   << v;
             }
-            //Emit a signal so extensions can also reset their daily data if they want to, and also to trigger the loading of the new db file if needed
-            EventHub::emit(Event::MIDNIGHT_ROLLOVER);
-            // so it doesnt copy the data of previous day or whatever
-            initDatabase(false);
 
-        }
+            for (const auto &[k, v] : timeLog_PerProject_D)
+            {
+                *db << "insert or replace into project_usage (name,duration) values (?,?);"
+                   << k
+                   << v;
+            }
+
+            for (const auto &[k, v] : switchHistory_D)
+            {
+                //k = pair<>, v = vector<>
+                const auto& [from, to] = k;
+
+                for (const auto& timestamp : v)
+                {
+                    *db << "insert or ignore into switch_history (fromWindow,toWindow,timeStamp) values (?,?,?);"
+                    << from
+                    << to
+                    << static_cast<long long>(timestamp);
+                }
+            }
+
+            // Process any pending extension queries inside the same transaction!
+            std::vector<PendingQuery> queriesToRun;
+            {
+                std::lock_guard<std::mutex> lock(pendingQueriesMutex);
+                queriesToRun = std::move(pendingQueries);
+                pendingQueries.clear();
+            }
+
+            for (const auto& q : queriesToRun)
+            {
+                try
+                {
+                    auto binder = *db << q.sql;
+                    for (const auto& param : q.params)
+                    {
+                        binder << param;
+                    }
+                }
+                catch (const std::exception& e)
+                {
+                    std::cerr << "[DB QUEUED EXECUTE ERROR] " << e.what() << " | SQL: " << q.sql << std::endl;
+                }
+            }
+
+            *db << "COMMIT;";
+            *db << "PRAGMA wal_checkpoint(PASSIVE);"; //learnt hardway because wal itself can get corrupted during crashes
+            //So that old db is closed and new file is created if date changes
+
+            std::string newName = "";
+            //Get ms sinc epoch
+            auto nowSystem = std::chrono::system_clock::now();
+            uint64_t t = std::chrono::duration_cast<std::chrono::milliseconds>(
+                nowSystem.time_since_epoch()).count();
+
+            newName += convertToDate_DDMMYY(t) + ".db";
+            
+            //Means if date has changed
+            if (newName != fileName)
+            {
+                // Clear appstate in case of new day
+                {
+                    std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                    AppState::state.timeLog_PerApp.clear();
+                    AppState::state.timeLog_PerTab.clear();
+                    AppState::state.timeLog_PerProject.clear();
+                    AppState::state.switchHistory.clear();
+                }
+                //Emit a signal so extensions can also reset their daily data if they want to, and also to trigger the loading of the new db file if needed
+                EventHub::emit(Event::MIDNIGHT_ROLLOVER);
+                // so it doesnt copy the data of previous day or whatever
+                initDatabase(false);
+
+            }
         } // <-- Close the dbLock block so the lock is released during sleep!
 
         //Sleep in 100 chunks of 100ms each so program can exit almost instantly
         for (int i = 0; i < 100 && running; i++)
         {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+    }
+
+    // Final flush on shutdown
+    std::vector<PendingQuery> queriesToRun;
+    {
+        std::lock_guard<std::mutex> lock(pendingQueriesMutex);
+        queriesToRun = std::move(pendingQueries);
+        pendingQueries.clear();
+    }
+    if (!queriesToRun.empty())
+    {
+        std::lock_guard<std::mutex> dbLock(dbQueryMutex);
+        try
+        {
+            *db << "BEGIN;";
+            for (const auto& q : queriesToRun)
+            {
+                auto binder = *db << q.sql;
+                for (const auto& param : q.params)
+                {
+                    binder << param;
+                }
+            }
+            *db << "COMMIT;";
+            *db << "PRAGMA wal_checkpoint(PASSIVE);";
+        }
+        catch (const std::exception& e)
+        {
+            std::cerr << "[DB SHUTDOWN EXECUTE ERROR] " << e.what() << std::endl;
         }
     }
 }
@@ -399,20 +453,8 @@ void DatabaseManager::loadDb_Singular(std::string requestedDate)
 // Runs INSERT, UPDATE, DELETE, CREATE TABLE, etc.
 void DatabaseManager::executeSQL(const std::string& sql, const std::vector<std::string>& params)
 {
-    std::lock_guard<std::mutex> lock(dbQueryMutex);
-    if (!db) return;
-    try
-    {
-        auto binder = *db << sql;
-        for (const auto& param : params)
-        {
-            binder << param;
-        }
-    }
-    catch (const std::exception& e)
-    {
-        std::cerr << "[DB EXECUTE ERROR] " << e.what() << " | SQL: " << sql << std::endl;
-    }
+    std::lock_guard<std::mutex> lock(pendingQueriesMutex);
+    pendingQueries.push_back({ sql, params });
 }
 
 // Runs SELECT and returns dynamic columns and rows to Lua
