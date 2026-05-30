@@ -206,6 +206,8 @@ ExtensionManager::~ExtensionManager()
             {
                 std::cerr << "Extension " << ext->path << " timed out, detaching\n";
                 ext->thread.detach(); 
+                std::cerr << "Force exiting to avoid potential hangs\n";
+                _exit(0); // force exit to avoid hanging
             }
         }
     }
@@ -223,7 +225,9 @@ ExtensionManager::~ExtensionManager()
             if (future.wait_for(std::chrono::milliseconds(200)) == std::future_status::timeout)
             {
                 std::cerr << "Extension " << ext->path << " timed out, detaching\n";
-                ext->thread.detach(); 
+                ext->thread.detach();
+                std::cerr << "Force exiting to avoid potential hangs\n";
+                _exit(0); // force exit to avoid hanging 
             }
         }
     
