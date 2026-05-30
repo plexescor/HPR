@@ -89,6 +89,12 @@ inline CppValue toCppValue(const EventData& data)
         {
             result = arg;
         }
+        else if constexpr (std::is_same_v<T, WindowChangedData>) 
+        {
+            result.type = CppValue::Type::Struct;
+            result.struct_val["fromWindow"] = CppValue(CppValue::Type::String, arg.fromWindow);
+            result.struct_val["toWindow"] = CppValue(CppValue::Type::String, arg.toWindow);
+        }
     }, data);
     return result;
 }
