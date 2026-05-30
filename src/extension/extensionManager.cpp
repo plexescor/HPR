@@ -8,6 +8,7 @@
 #include <mutex> 
 #include <functional>
 #include <map>
+#include <unistd.h>
 
 #include <slint-interpreter.h>
 
