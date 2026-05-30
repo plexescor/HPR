@@ -15,10 +15,10 @@ public:
 
     void stopTracking();
     void startTracking();
+	void detectAndSetBackend();
 
 private:
     void getCurrentWindow_Loop();
-    void detectAndSetBackend();
 
     std::string getCurrentWindow();
     std::string getCurrentTitle();

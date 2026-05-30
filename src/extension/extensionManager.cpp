@@ -472,7 +472,11 @@ void ExtensionManager::runExtension(LoadedExtension& ext)
         sol::function onTick = ext.lua["onTick"];
         sol::function onExit = ext.lua["onExit"];
 
-        if (init.valid()) sleepTime = init();
+        if (init.valid()) 
+        {
+            sol::object result = init();
+            if (result.is<int>()) sleepTime = result.as<int>();
+        }
         
         auto lastTime = std::chrono::high_resolution_clock::now();
         while (ext.running)

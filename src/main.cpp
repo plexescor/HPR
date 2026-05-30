@@ -36,9 +36,6 @@
 		tray.run();
 
 		CurrentWindowManager cwm;
-		
-		//This calls are non blocking, they just start a new BG thread
-		cwm.run();
 
 		//If not to use interpreter, use inbuilt ui
 		if (!conf.getConfig("use-interpreter", false))
@@ -64,6 +61,9 @@
 
 			ext.run();
 
+			cwm.detectAndSetBackend();
+			cwm.run();
+
 			app.run(); //blocking call, run on main
 		}	
 		//use custom gui
@@ -88,6 +88,8 @@
 			ext.interpreterApp = &app;			
 			
 			ext.run();
+			cwm.detectAndSetBackend();
+			cwm.run();
 
 			app.run();//blocking call, run on main
 		}
@@ -123,9 +125,6 @@
 
 		CurrentWindowManager cwm;
 
-		//This calls are non blocking, they just start a new BG thread
-		cwm.run();
-
 		//If not to use interpreter, use inbuilt ui
 		if (!conf.getConfig("use-interpreter", false))
 		{
@@ -149,6 +148,9 @@
 			ext.linuxInit = &linuxInit;
 
 			ext.run();
+
+			cwm.detectAndSetBackend();
+			cwm.run();
 
 			app.run();//blocking call, run on main
 		}	
@@ -175,6 +177,9 @@
 			ext.linuxInit = &linuxInit;
 
 			ext.run();
+
+			cwm.detectAndSetBackend();
+			cwm.run();
 
 			app.run();//blocking call, run on main
 		}

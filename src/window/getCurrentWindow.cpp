@@ -17,7 +17,6 @@
 CurrentWindowManager::CurrentWindowManager()
 {
 	registerBuiltinBackends();
-	detectAndSetBackend();
 }
 
 CurrentWindowManager::~CurrentWindowManager()
