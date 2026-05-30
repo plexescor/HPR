@@ -22,7 +22,7 @@
 		DatabaseManager dbm;
 		dbm.run();
 
-		ExtensionManager ext(dbm, conf.getConfig("allow-dynamic-library-extensions", false));
+		ExtensionManager ext(conf.getConfig("allow-dynamic-library-extensions", false));
 		ext.run();
 
 		//Check for hardware-acceleration flag
@@ -56,6 +56,12 @@
 				app.hide();
 			};
 
+			//GIVE EXTENSION MANAGER FULL ACCESS TO EVERY OBJECT PRESENT
+			ext.dbManager = dbm;
+			ext.trayManager = tray;
+			ext.currentWindowManager = cwm;
+			ext.app = app;
+
 			app.run(); //blocking call, run on main
 		}	
 		//use custom gui
@@ -72,6 +78,12 @@
 			tray.onHide = [&]() {
 				app.hide();
 			};
+
+			//GIVE EXTENSION MANAGER FULL ACCESS TO EVERY OBJECT PRESENT
+			ext.dbManager = dbm;
+			ext.trayManager = tray;
+			ext.currentWindowManager = cwm;
+			ext.interpreterApp = app;																																																																
 
 			app.run();//blocking call, run on main
 		}
@@ -97,7 +109,7 @@
 		DatabaseManager dbm;
 		dbm.run();
 
-		ExtensionManager ext(dbm, conf.getConfig("allow-dynamic-library-extensions", false));
+		ExtensionManager ext(conf.getConfig("allow-dynamic-library-extensions", false));
 		ext.run();
 		LinuxInitialiser linuxInit; //Just a utility class to create config directory and check for icon
 
@@ -125,6 +137,13 @@
 				app.hide();
 			};
 
+			//GIVE EXTENSION MANAGER FULL ACCESS TO EVERY OBJECT PRESENT
+			ext.dbManager = dbm;
+			ext.trayManager = tray;
+			ext.currentWindowManager = cwm;
+			ext.app = app;																																																																
+			ext.linuxInit = linuxInit;
+
 			app.run();//blocking call, run on main
 		}	
 		//use custom gui
@@ -141,6 +160,13 @@
 			tray.onHide = [&]() {
 				app.hide();
 			};
+
+			//GIVE EXTENSION MANAGER FULL ACCESS TO EVERY OBJECT PRESENT
+			ext.dbManager = dbm;
+			ext.trayManager = tray;
+			ext.currentWindowManager = cwm;
+			ext.interpreterApp = app;																																																																
+			ext.linuxInit = linuxInit;
 
 			app.run();//blocking call, run on main
 		}

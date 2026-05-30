@@ -37,21 +37,21 @@ class UiModelManager
                             long &totalTrackedTime_Project,
                             AliasManager &aliasManager);
 
-        void showInsights(const std::string &mostUsed,
-                          const std::string &totalTrackedTime,
-                          const std::string &switchCount,
-                          const std::string &mostSwitchedFrom,
-                          const std::string &mostSwitchedTo,
-                          const std::string &mostFocusedSession,
-                          const std::string &mostProductiveHour);
+        void showInsights(const std::string mostUsed,
+                          const std::string totalTrackedTime,
+                          const std::string switchCount,
+                          const std::string mostSwitchedFrom,
+                          const std::string mostSwitchedTo,
+                          const std::string mostFocusedSession,
+                          const std::string mostProductiveHour);
 
-        void showInsights_Interpreted(const std::string &mostUsed,
-                          const std::string &totalTrackedTime,
-                          const std::string &switchCount,
-                          const std::string &mostSwitchedFrom,
-                          const std::string &mostSwitchedTo,
-                          const std::string &mostFocusedSession,
-                          const std::string &mostProductiveHour);
+        void showInsights_Interpreted(const std::string mostUsed,
+                          const std::string totalTrackedTime,
+                          const std::string switchCount,
+                          const std::string mostSwitchedFrom,
+                          const std::string mostSwitchedTo,
+                          const std::string mostFocusedSession,
+                          const std::string mostProductiveHour);
 
         void showExtensions(const std::vector<std::pair<std::string,std::string>>& extensions);
         void showExtensions_Interpreted(const std::vector<std::pair<std::string,std::string>>& extensions);

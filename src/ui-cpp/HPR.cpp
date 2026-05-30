@@ -131,9 +131,6 @@ void HPR::trackingLoop()
     auto lastInsightUpdate = std::chrono::steady_clock::now();
     bool firstRun = true;
 
-    //The object
-    PatternAnalyzer pa;
-
     while (running)
     {
         {
@@ -196,16 +193,18 @@ void HPR::trackingLoop()
             // Update insight every 30 (or on first frame)
             if (firstRun || std::chrono::duration_cast<std::chrono::seconds>(now - lastInsightUpdate).count() >= 30) 
             {
-                pa.generateInsights();
+                std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                
+                AppState::patternAnalyzer.generateInsights();
                 
                 modelManager.showInsights(
-                    pa.getMostUsed(),
-                    pa.getTotalTrackedTime(),
-                    pa.getSwitchCount(),
-                    pa.getMostSwitchedFrom(),
-                    pa.getMostSwitchedTo(),
-                    pa.getMostFocusedSession(),
-                    pa.getMostProductiveHour()
+                    AppState::patternAnalyzer.getMostUsed(),
+                    AppState::patternAnalyzer.getTotalTrackedTime(),
+                    AppState::patternAnalyzer.getSwitchCount(),
+                    AppState::patternAnalyzer.getMostSwitchedFrom(),
+                    AppState::patternAnalyzer.getMostSwitchedTo(),
+                    AppState::patternAnalyzer.getMostFocusedSession(),
+                    AppState::patternAnalyzer.getMostProductiveHour()
                 );
                 lastInsightUpdate = now;
                 firstRun = false;

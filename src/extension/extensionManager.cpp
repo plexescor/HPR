@@ -174,7 +174,7 @@ namespace
 }
 
 
-ExtensionManager::ExtensionManager(DatabaseManager& dbm, bool allowDynamicLibraryExtensions) : dbManager(dbm), allowDynamicLibraryExtensionLoading(allowDynamicLibraryExtensions)
+ExtensionManager::ExtensionManager(bool allowDynamicLibraryExtensions) : allowDynamicLibraryExtensionLoading(allowDynamicLibraryExtensions)
 {
     allowDynamicLibraryExtensionLoading = allowDynamicLibraryExtensions;
     loadExtensions();

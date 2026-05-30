@@ -7,7 +7,11 @@
 #include <filesystem>
 #include "sol.hpp"
 #include "databaseManager.hpp"
-
+#include "trayManager.hpp"
+#include "HPR.hpp"
+#include "HPRInterpreter.hpp"
+#include "linuxUtilities.hpp"
+#include "getCurrentWindow.hpp"
 #ifdef _WIN32
     #include <windows.h>
 #else
@@ -48,7 +52,7 @@ struct NativeExtension
 class ExtensionManager 
 {
     public:
-        ExtensionManager(DatabaseManager& dbm, bool dynamicLibraryExtensionLoading = false);
+        ExtensionManager(bool dynamicLibraryExtensionLoading = false);
         ~ExtensionManager();
         void run();
         void loadExtensions();
@@ -65,5 +69,13 @@ class ExtensionManager
         std::vector<std::unique_ptr<LoadedExtension>> extensions;
         std::vector<std::unique_ptr<NativeExtension>> nativeExtensions;
         std::string extensionPath;
+
+    public:
+        //some shit
         DatabaseManager& dbManager;
+        TrayManager& trayManager;
+        CurrentWindowManager& currentWindowManager;
+        HPR& app;
+        HPRInterpreter& interpreterApp;
+        LinuxInitialiser& linuxInit;
 };

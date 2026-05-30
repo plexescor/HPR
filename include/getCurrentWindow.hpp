@@ -13,8 +13,8 @@ public:
 
     void run();
 
-    static void stopTracking();
-    static void startTracking();
+    void stopTracking();
+    void startTracking();
 
 private:
     void getCurrentWindow_Loop();
@@ -36,6 +36,4 @@ private:
 
     std::thread windowPollingThread;
     std::atomic<bool> running{true};
-
-    static CurrentWindowManager* instance;
 };

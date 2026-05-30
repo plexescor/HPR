@@ -12,10 +12,9 @@
 #include <thread>
 #include <vector>
 #include <filesystem>
-CurrentWindowManager* CurrentWindowManager::instance = nullptr;
+
 CurrentWindowManager::CurrentWindowManager()
 {
-	instance = this;
 	registerBuiltinBackends();
 	detectAndSetBackend();
 }
@@ -33,10 +32,10 @@ void CurrentWindowManager::run()
 	// std::cout << "Running Loop!\n";
 
 	running = true;
-	instance->windowPollingThread =
+	windowPollingThread =
         std::thread(
             &CurrentWindowManager::getCurrentWindow_Loop,
-            instance
+            this
         );
 }
 
@@ -44,22 +43,17 @@ void CurrentWindowManager::stopTracking()
 {
 	std::lock_guard<std::mutex> lock(AppState::stateMutex);
 	AppState::state.currentWindow = "AFK";
-	if (!instance)
-        return;
 
-    instance->running = false;
+    running = false;
 
-    if (instance->windowPollingThread.joinable())
-        instance->windowPollingThread.join();
+    if (windowPollingThread.joinable())
+        windowPollingThread.join();
 
 }
 
 void CurrentWindowManager::startTracking()
 {
-	if (!instance)
-        return;
-
-    instance->run();
+	if (!running) run();
 }
 
 // Responsible for calling getCurrentWindow() and setting the result to AppState

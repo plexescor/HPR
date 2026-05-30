@@ -540,13 +540,13 @@ void UiModelManager::update_Interpreted(const std::map<std::string, long> &rawTi
     });
 }
 
-void UiModelManager::showInsights(const std::string &mostUsed,
-                          const std::string &totalTrackedTime,
-                          const std::string &switchCount,
-                          const std::string &mostSwitchedFrom,
-                          const std::string &mostSwitchedTo,
-                          const std::string &mostFocusedSession,
-                          const std::string &mostProductiveHour)
+void UiModelManager::showInsights(const std::string mostUsed,
+                          const std::string totalTrackedTime,
+                          const std::string switchCount,
+                          const std::string mostSwitchedFrom,
+                          const std::string mostSwitchedTo,
+                          const std::string mostFocusedSession,
+                          const std::string mostProductiveHour)
 {
     if (!ui.has_value()) {
         return; //skip update if ui handle aint ready
@@ -567,13 +567,13 @@ void UiModelManager::showInsights(const std::string &mostUsed,
     });
 }
 
-void UiModelManager::showInsights_Interpreted(const std::string &mostUsed,
-                          const std::string &totalTrackedTime,
-                          const std::string &switchCount,
-                          const std::string &mostSwitchedFrom,
-                          const std::string &mostSwitchedTo,
-                          const std::string &mostFocusedSession,
-                          const std::string &mostProductiveHour)
+void UiModelManager::showInsights_Interpreted(const std::string mostUsed,
+                          const std::string totalTrackedTime,
+                          const std::string switchCount,
+                          const std::string mostSwitchedFrom,
+                          const std::string mostSwitchedTo,
+                          const std::string mostFocusedSession,
+                          const std::string mostProductiveHour)
 {
     slint::ComponentWeakHandle<slint::interpreter::ComponentInstance> weak(ui_interp.value());
     slint::invoke_from_event_loop([weak, mostUsed, totalTrackedTime, switchCount, mostSwitchedFrom, mostSwitchedTo, mostFocusedSession, mostProductiveHour, this]()
