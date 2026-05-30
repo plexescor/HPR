@@ -203,13 +203,14 @@ ExtensionManager::~ExtensionManager()
     {
         if (ext->thread.joinable())
         {
-            // give it 200ms for extensino to exit otherwise
-            // it will block the whole shutdown process, so we detach and let the OS clean it up
+            auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(200);
+            
             auto future = std::async(std::launch::async, [&ext]() 
             {
                 ext->thread.join();
             });
-            if (future.wait_for(std::chrono::milliseconds(200)) == std::future_status::timeout)
+            
+            if (future.wait_until(deadline) == std::future_status::timeout)
             {
                 std::cerr << "Extension " << ext->path << " timed out, detaching\n";
                 ext->thread.detach(); 
@@ -226,17 +227,17 @@ ExtensionManager::~ExtensionManager()
     {
         if (ext->thread.joinable())
         {
-            // give it 200ms for extensino to exit otherwise
-            // it will block the whole shutdown process, so we detach and let the OS clean it
+            auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(200);
+            
             auto future = std::async(std::launch::async, [&ext]() 
             {
                 ext->thread.join();
             });
-
-            if (future.wait_for(std::chrono::milliseconds(200)) == std::future_status::timeout)
+            
+            if (future.wait_until(deadline) == std::future_status::timeout)
             {
                 std::cerr << "Extension " << ext->path << " timed out, detaching\n";
-                ext->thread.detach();
+                ext->thread.detach(); 
                 std::cerr << "Force exiting to avoid potential hangs\n";
                 #ifdef _WIN32
                     TerminateProcess(GetCurrentProcess(), 0);
