@@ -211,12 +211,12 @@ void HPRInterpreter::trackingLoop()
                 AppState::aliasManager
             );
 
+            AppState::patternAnalyzer.generateInsights();
+            
             // Update insight every 30 (or on first frame)
             if (firstRun || std::chrono::duration_cast<std::chrono::seconds>(now - lastInsightUpdate).count() >= 30) 
             {
                 std::lock_guard<std::mutex> lock(AppState::stateMutex);
-                
-                AppState::patternAnalyzer.generateInsights();
                 
                 modelManager.value().showInsights_Interpreted(
                     AppState::patternAnalyzer.getMostUsed(),
