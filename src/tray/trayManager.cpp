@@ -41,9 +41,9 @@ TrayManager::~TrayManager()
     if (trayThread.joinable()) trayThread.join();
 
     #ifdef __linux__
-        // dbus_bus_get returns a shared connection, never call close() on it, only unref
         if (dbusConn)
         {
+            dbus_connection_close(dbusConn);
             dbus_connection_unref(dbusConn);
             dbusConn = nullptr;
         }
@@ -341,7 +341,7 @@ void TrayManager::trayManager_LoopLinux()
     DBusError err;
     dbus_error_init(&err);
 
-    dbusConn = dbus_bus_get(DBUS_BUS_SESSION, &err);
+    dbusConn = dbus_bus_get_private(DBUS_BUS_SESSION, &err);
     if (dbus_error_is_set(&err))
     {
         std::cerr << "[TrayManager] dbus session connect failed: " << err.message << "\n";

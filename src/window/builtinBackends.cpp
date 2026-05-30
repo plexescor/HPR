@@ -32,7 +32,6 @@
 
     namespace MotherfuckingKDE
     {
-        // Generates a unique marker/dbus addr like kdotool does
         std::string generateMarker() 
         {
             std::mt19937 rng(std::chrono::steady_clock::now().time_since_epoch().count());
@@ -40,8 +39,7 @@
             return "kdotool_cpp_" + std::to_string(dist(rng));
         }
 
-        // The JS that gets injected into KWin - mirrors kdotool's SCRIPT_HEADER + steps + SCRIPT_FOOTER
-        std::string buildScript(const std::string& dbusAddr, const std::string& marker, const std::string& action)
+        std::string buildScript(const std::string& dbusAddr, const std::string& action)
         {
             return R"(
                 function output_result(message) {
@@ -63,30 +61,64 @@
             )";
         }
 
-        // Register a temporary D-Bus service to receive results back from KWin script
-        // mirrors kdotool's result collection via its own dbus_addr
-        std::string kwinScriptGetResult(const std::string& dbusAddr, const std::string& marker, const std::string& action)
+        std::string kwinScriptGetResult(const std::string& marker, const std::string& action)
         {
             DBusError err;
             dbus_error_init(&err);
 
-            DBusConnection* conn = dbus_bus_get(DBUS_BUS_SESSION, &err);
-            if (!conn || dbus_error_is_set(&err)) return "";
+            // TWO separate connections like kdotool does:
+            // self_conn = receives callbacks from KWin script
+            // kwin_conn = sends commands to KWin
+            DBusConnection* self_conn = dbus_bus_get_private(DBUS_BUS_SESSION, &err);
+            if (!self_conn || dbus_error_is_set(&err))
+            {
+                // std::cout << "[KDE] Failed to get self_conn: " << (dbus_error_is_set(&err) ? err.message : "null") << std::endl;
+                dbus_error_free(&err);
+                return "";
+            }
 
-            int ret = dbus_bus_request_name(conn, dbusAddr.c_str(), DBUS_NAME_FLAG_REPLACE_EXISTING, &err);
-            if (ret != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) return "";
+            // Use self_conn's unique name as the dbus addr (like kdotool's self_conn.unique_name())
+            const char* uniqueName = dbus_bus_get_unique_name(self_conn);
+            if (!uniqueName)
+            {
+                // std::cout << "[KDE] Failed to get unique name" << std::endl;
+                dbus_connection_close(self_conn);
+                dbus_connection_unref(self_conn);
+                return "";
+            }
+            std::string dbusAddr = uniqueName;
+            // std::cout << "[KDE] self_conn unique name: " << dbusAddr << std::endl;
 
-            std::string script = buildScript(dbusAddr, marker, action);
+            DBusConnection* kwin_conn = dbus_bus_get_private(DBUS_BUS_SESSION, &err);
+            if (!kwin_conn || dbus_error_is_set(&err))
+            {
+                // std::cout << "[KDE] Failed to get kwin_conn: " << (dbus_error_is_set(&err) ? err.message : "null") << std::endl;
+                dbus_error_free(&err);
+                dbus_connection_close(self_conn);
+                dbus_connection_unref(self_conn);
+                return "";
+            }
 
-            // Write to temp file - kdotool does this too
+            // Write script to temp file
+            std::string script = buildScript(dbusAddr, action);
             std::string tmpPath = "/tmp/" + marker + ".js";
             {
                 FILE* f = fopen(tmpPath.c_str(), "w");
-                if (!f) { dbus_bus_release_name(conn, dbusAddr.c_str(), &err); return ""; }
+                if (!f)
+                {
+                    // std::cout << "[KDE] Failed to write temp file" << std::endl;
+                    dbus_connection_close(self_conn);
+                    dbus_connection_unref(self_conn);
+                    dbus_connection_close(kwin_conn);
+                    dbus_connection_unref(kwin_conn);
+                    return "";
+                }
                 fwrite(script.c_str(), 1, script.size(), f);
                 fclose(f);
             }
+            // std::cout << "[KDE] script written to: " << tmpPath << std::endl;
 
+            // loadScript via kwin_conn
             DBusMessage* msg = dbus_message_new_method_call(
                 "org.kde.KWin", "/Scripting", "org.kde.kwin.Scripting", "loadScript"
             );
@@ -97,76 +129,116 @@
                 DBUS_TYPE_STRING, &nameCStr,
                 DBUS_TYPE_INVALID);
 
-            DBusMessage* reply = dbus_connection_send_with_reply_and_block(conn, msg, 5000, &err);
+            DBusMessage* reply = dbus_connection_send_with_reply_and_block(kwin_conn, msg, 5000, &err);
             dbus_message_unref(msg);
-            if (!reply || dbus_error_is_set(&err)) { std::remove(tmpPath.c_str()); return ""; }
+            if (!reply || dbus_error_is_set(&err))
+            {
+                // std::cout << "[KDE] loadScript failed: " << (dbus_error_is_set(&err) ? err.message : "no reply") << std::endl;
+                dbus_error_free(&err);
+                std::remove(tmpPath.c_str());
+                dbus_connection_close(self_conn);
+                dbus_connection_unref(self_conn);
+                dbus_connection_close(kwin_conn);
+                dbus_connection_unref(kwin_conn);
+                return "";
+            }
 
             int scriptId = -1;
             dbus_message_get_args(reply, &err, DBUS_TYPE_INT32, &scriptId, DBUS_TYPE_INVALID);
             dbus_message_unref(reply);
-            if (scriptId < 0) { std::remove(tmpPath.c_str()); return ""; }
+            // std::cout << "[KDE] scriptId: " << scriptId << std::endl;
+
+            if (scriptId < 0)
+            {
+                // std::cout << "[KDE] KWin rejected script (scriptId < 0)" << std::endl;
+                std::remove(tmpPath.c_str());
+                dbus_connection_close(self_conn);
+                dbus_connection_unref(self_conn);
+                dbus_connection_close(kwin_conn);
+                dbus_connection_unref(kwin_conn);
+                return "";
+            }
 
             std::string scriptPath = "/Scripting/Script" + std::to_string(scriptId);
 
-            // run()
+            // run() via kwin_conn
             msg = dbus_message_new_method_call("org.kde.KWin", scriptPath.c_str(), "org.kde.kwin.Script", "run");
-            reply = dbus_connection_send_with_reply_and_block(conn, msg, 5000, &err);
+            reply = dbus_connection_send_with_reply_and_block(kwin_conn, msg, 5000, &err);
+            dbus_message_unref(msg);
+            // if (!reply || dbus_error_is_set(&err))
+                // std::cout << "[KDE] run() failed: " << (dbus_error_is_set(&err) ? err.message : "no reply") << std::endl;
+            if (reply) dbus_message_unref(reply);
+
+            // stop() via kwin_conn
+            msg = dbus_message_new_method_call("org.kde.KWin", scriptPath.c_str(), "org.kde.kwin.Script", "stop");
+            reply = dbus_connection_send_with_reply_and_block(kwin_conn, msg, 5000, &err);
             dbus_message_unref(msg);
             if (reply) dbus_message_unref(reply);
 
-            // Poll for result
+            // Poll for result on self_conn
             std::string result;
             auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
-            while (std::chrono::steady_clock::now() < deadline) {
-                dbus_connection_read_write(conn, 100);
-                DBusMessage* incoming = dbus_connection_pop_message(conn);
+            bool got_result = false;
+            while (std::chrono::steady_clock::now() < deadline)
+            {
+                dbus_connection_read_write(self_conn, 100);
+                DBusMessage* incoming = dbus_connection_pop_message(self_conn);
                 if (!incoming) continue;
 
-                if (dbus_message_is_method_call(incoming, "", "result")) {
+                const char* member = dbus_message_get_member(incoming);
+                const char* iface  = dbus_message_get_interface(incoming);
+                // std::cout << "[KDE] incoming - member: " << (member ? member : "null")
+                        // << " iface: " << (iface ? iface : "null") << std::endl;
+
+                if (member && std::string(member) == "result")
+                {
                     const char* val = nullptr;
                     dbus_message_get_args(incoming, &err, DBUS_TYPE_STRING, &val, DBUS_TYPE_INVALID);
                     if (val) result = val;
+                    // std::cout << "[KDE] got result: " << result << std::endl;
                     DBusMessage* replyMsg = dbus_message_new_method_return(incoming);
-                    dbus_connection_send(conn, replyMsg, nullptr);
+                    dbus_connection_send(self_conn, replyMsg, nullptr);
                     dbus_message_unref(replyMsg);
                     dbus_message_unref(incoming);
+                    got_result = true;
                     break;
                 }
                 dbus_message_unref(incoming);
             }
 
-            // stop()
-            msg = dbus_message_new_method_call("org.kde.KWin", scriptPath.c_str(), "org.kde.kwin.Script", "stop");
-            reply = dbus_connection_send_with_reply_and_block(conn, msg, 5000, &err);
-            dbus_message_unref(msg);
-            if (reply) dbus_message_unref(reply);
+            // if (!got_result)
+                // std::cout << "[KDE] timed out waiting for result" << std::endl;
 
-            // unloadScript by name
+            // unloadScript via kwin_conn
+            std::string unloadName = marker;
+            const char* unloadNameCStr = unloadName.c_str();
             msg = dbus_message_new_method_call("org.kde.KWin", "/Scripting", "org.kde.kwin.Scripting", "unloadScript");
-            dbus_message_append_args(msg, DBUS_TYPE_STRING, &nameCStr, DBUS_TYPE_INVALID);
-            reply = dbus_connection_send_with_reply_and_block(conn, msg, 5000, &err);
+            dbus_message_append_args(msg, DBUS_TYPE_STRING, &unloadNameCStr, DBUS_TYPE_INVALID);
+            reply = dbus_connection_send_with_reply_and_block(kwin_conn, msg, 5000, &err);
             dbus_message_unref(msg);
             if (reply) dbus_message_unref(reply);
 
             std::remove(tmpPath.c_str());
-            dbus_bus_release_name(conn, dbusAddr.c_str(), &err);
+            dbus_connection_close(self_conn);
+            dbus_connection_unref(self_conn);
+            dbus_connection_close(kwin_conn);
+            dbus_connection_unref(kwin_conn);
             return result;
         }
 
         std::string kdeGetActiveWindowClass()
         {
             std::string marker = generateMarker();
-            std::string addr = "org.kde.kdotool_cpp." + marker;
-            return kwinScriptGetResult(addr, marker, "output_result(w.resourceClass);");
+            return kwinScriptGetResult(marker, "output_result(w.resourceClass);");
         }
 
         std::string kdeGetActiveWindowName()
         {
             std::string marker = generateMarker();
-            std::string addr = "org.kde.kdotool_cpp." + marker;
-            return kwinScriptGetResult(addr, marker, "output_result(w.caption);");
+            return kwinScriptGetResult(marker, "output_result(w.caption);");
         }
     }
+
 #endif
 
 static std::string s_qdbus_bin = "";
@@ -307,7 +379,19 @@ void registerBuiltinBackends()
 
         []() {}, 
 
-        []() { return !getQDBusCommand().empty(); }, // isUsable
+        []() -> bool  // isUsable 
+        {
+            DBusError err;
+            dbus_error_init(&err);
+            DBusConnection* conn = dbus_bus_get_private(DBUS_BUS_SESSION, &err);
+            if (!conn || dbus_error_is_set(&err)) { dbus_error_free(&err); return false; }
+            bool exists = dbus_bus_name_has_owner(conn, "org.kde.KWin", &err);
+            dbus_error_free(&err);
+            dbus_connection_close(conn);
+            dbus_connection_unref(conn);
+            return exists;
+
+        },
 
         []() -> std::string 
         {
