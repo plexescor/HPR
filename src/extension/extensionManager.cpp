@@ -1050,6 +1050,86 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         return true;
     };
 
+    lua["HPR"]["generateInsights_E"] = []()
+    {
+        AppState::patternAnalyzer.generateInsights();
+    };
+
+    lua["HPR"]["getMostUsed_E"] = []() -> std::string
+    {
+        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        return AppState::patternAnalyzer.getMostUsed();
+    };
+
+    lua["HPR"]["getTotalTrackedTime_E"] = []() -> std::string
+    {
+        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        return AppState::patternAnalyzer.getTotalTrackedTime();
+    };
+
+    lua["HPR"]["getSwitchCount_E"] = []() -> std::string
+    {
+        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        return AppState::patternAnalyzer.getSwitchCount();
+    };
+
+    lua["HPR"]["getMostSwitchedFrom_E"] = []() -> std::string
+    {
+        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        return AppState::patternAnalyzer.getMostSwitchedFrom();
+    };
+
+    lua["HPR"]["getMostSwitchedTo_E"] = []() -> std::string
+    {
+        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        return AppState::patternAnalyzer.getMostSwitchedTo();
+    };
+
+    lua["HPR"]["getMostFocusedSession_E"] = []() -> std::string
+    {
+        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        return AppState::patternAnalyzer.getMostFocusedSession();
+    };
+
+    lua["HPR"]["getMostProductiveHour_E"] = []() -> std::string
+    {
+        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        return AppState::patternAnalyzer.getMostProductiveHour();
+    };
+
+    lua["HPR"]["showUi_E"] = [this]()
+    {
+        if (app) app->show();
+        else if (interpreterApp) interpreterApp->show();
+    };
+
+    lua["HPR"]["hideUi_E"] = [this]()
+    {
+        if (app) app->hide();
+        else if (interpreterApp) interpreterApp->hide();
+    };
+
+    lua["HPR"]["quitUi_E"] = [this]()
+    {
+        if (app) app->quit();
+        else if (interpreterApp) interpreterApp->quit();
+    };
+
+    lua["HPR"]["crash_E"] = [](sol::optional<std::string> message)
+    {
+        if (message.has_value())
+        {
+            std::cout << "[HPR Extension Crash] " << message.value() << std::endl;
+            std::cerr << "[HPR Extension Crash] " << message.value() << std::endl;
+        }
+        else
+        {
+            std::cout << "[HPR Extension Crash] HPR has been intentionally crashed via HPR.crash_E() by an extension!" << std::endl;
+            std::cerr << "[HPR Extension Crash] HPR has been intentionally crashed via HPR.crash_E() by an extension!" << std::endl;
+        }
+        std::exit(1);
+    };
+
 }
 
 void ExtensionManager::updateExtensionPath()
