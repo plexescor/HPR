@@ -39,7 +39,7 @@ namespace NativeNet
     }
 #endif
 
-    std::pair<std::string, int> httpGet(const std::string& host, const std::string& path, bool secure)
+    std::pair<std::string, int> httpGet(const std::string& host, const std::string& path, bool secure, const std::map<std::string, std::string>& headers)
     {
         std::string response;
         int statusCode = 0;
@@ -77,6 +77,13 @@ namespace NativeNet
             WinHttpCloseHandle(hConnect);
             WinHttpCloseHandle(hSession);
             return { "", 0 };
+        }
+
+        // Add custom headers
+        for (const auto& [k, v] : headers) {
+            std::string headerLine = k + ": " + v + "\r\n";
+            std::wstring wHeaderLine(headerLine.begin(), headerLine.end());
+            WinHttpAddRequestHeaders(hRequest, wHeaderLine.c_str(), -1L, WINHTTP_ADDREQ_FLAG_ADD | WINHTTP_ADDREQ_FLAG_REPLACE);
         }
 
         if (WinHttpSendRequest(hRequest, WINHTTP_NO_ADDITIONAL_HEADERS, 0, 
@@ -118,6 +125,15 @@ namespace NativeNet
             curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
             curl_easy_setopt(curl, CURLOPT_USERAGENT, "HPR/1.0");
             
+            struct curl_slist* curlHeaders = nullptr;
+            for (const auto& [k, v] : headers) {
+                std::string headerStr = k + ": " + v;
+                curlHeaders = curl_slist_append(curlHeaders, headerStr.c_str());
+            }
+            if (curlHeaders) {
+                curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curlHeaders);
+            }
+
             CURLcode res = curl_easy_perform(curl);
             if (res == CURLE_OK) {
                 long responseCode = 0;
@@ -126,13 +142,16 @@ namespace NativeNet
             } else {
                 std::cerr << "[HPR] curl failed: " << curl_easy_strerror(res) << "\n";
             }
+            if (curlHeaders) {
+                curl_slist_free_all(curlHeaders);
+            }
             curl_easy_cleanup(curl);
         }
 #endif
         return { response, statusCode };
     }
 
-    std::pair<std::string, int> httpPost(const std::string& host, const std::string& path, const std::string& body, bool secure)
+    std::pair<std::string, int> httpPost(const std::string& host, const std::string& path, const std::string& body, bool secure, const std::map<std::string, std::string>& headers)
     {
         std::string response;
         int statusCode = 0;
@@ -172,8 +191,22 @@ namespace NativeNet
             return { "", 0 };
         }
 
-        LPCWSTR additionalHeaders = L"Content-Type: application/json\r\n";
-        if (WinHttpSendRequest(hRequest, additionalHeaders, -1L, 
+        // Add custom headers
+        bool hasContentType = false;
+        for (const auto& [k, v] : headers) {
+            std::string lowerK = k;
+            std::transform(lowerK.begin(), lowerK.end(), lowerK.begin(), [](unsigned char c) { return std::tolower(c); });
+            if (lowerK == "content-type") hasContentType = true;
+
+            std::string headerLine = k + ": " + v + "\r\n";
+            std::wstring wHeaderLine(headerLine.begin(), headerLine.end());
+            WinHttpAddRequestHeaders(hRequest, wHeaderLine.c_str(), -1L, WINHTTP_ADDREQ_FLAG_ADD | WINHTTP_ADDREQ_FLAG_REPLACE);
+        }
+        if (!hasContentType) {
+            WinHttpAddRequestHeaders(hRequest, L"Content-Type: application/json\r\n", -1L, WINHTTP_ADDREQ_FLAG_ADD | WINHTTP_ADDREQ_FLAG_REPLACE);
+        }
+
+        if (WinHttpSendRequest(hRequest, WINHTTP_NO_ADDITIONAL_HEADERS, 0, 
                                (LPVOID)body.c_str(), body.size(), body.size(), 0) &&
             WinHttpReceiveResponse(hRequest, NULL)) 
         {
@@ -215,9 +248,20 @@ namespace NativeNet
             curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
             curl_easy_setopt(curl, CURLOPT_USERAGENT, "HPR/1.0");
 
-            struct curl_slist* headers = nullptr;
-            headers = curl_slist_append(headers, "Content-Type: application/json");
-            curl_easy_setopt(curl, CURLOPT_HTTPHEADER, headers);
+            struct curl_slist* curlHeaders = nullptr;
+            bool hasContentType = false;
+            for (const auto& [k, v] : headers) {
+                std::string lowerK = k;
+                std::transform(lowerK.begin(), lowerK.end(), lowerK.begin(), [](unsigned char c) { return std::tolower(c); });
+                if (lowerK == "content-type") hasContentType = true;
+
+                std::string headerStr = k + ": " + v;
+                curlHeaders = curl_slist_append(curlHeaders, headerStr.c_str());
+            }
+            if (!hasContentType) {
+                curlHeaders = curl_slist_append(curlHeaders, "Content-Type: application/json");
+            }
+            curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curlHeaders);
             
             CURLcode res = curl_easy_perform(curl);
             if (res == CURLE_OK) {
@@ -227,7 +271,7 @@ namespace NativeNet
             } else {
                 std::cerr << "[HPR] curl failed: " << curl_easy_strerror(res) << "\n";
             }
-            curl_slist_free_all(headers);
+            curl_slist_free_all(curlHeaders);
             curl_easy_cleanup(curl);
         }
 #endif

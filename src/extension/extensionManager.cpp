@@ -634,15 +634,35 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         return static_cast<uint64_t>(epoch_sec) * 1000 + ms;
     };
 
-    lua["HPR"]["httpGet_E"] = [](std::string host, std::string path, sol::optional<bool> secure) -> std::tuple<std::string, int>
+    lua["HPR"]["httpGet_E"] = [](std::string host, std::string path, sol::optional<bool> secure, sol::optional<sol::table> headers) -> std::tuple<std::string, int>
     {
-        auto result = NativeNet::httpGet(host, path, secure.value_or(true));
+        std::map<std::string, std::string> cppHeaders;
+        if (headers.has_value())
+        {
+            headers->for_each([&](sol::object k, sol::object v) {
+                if (k.is<std::string>() && v.is<std::string>())
+                {
+                    cppHeaders[k.as<std::string>()] = v.as<std::string>();
+                }
+            });
+        }
+        auto result = NativeNet::httpGet(host, path, secure.value_or(true), cppHeaders);
         return std::make_tuple(result.first, result.second);
     };
 
-    lua["HPR"]["httpPost_E"] = [](std::string host, std::string path, std::string body, sol::optional<bool> secure) -> std::tuple<std::string, int>
+    lua["HPR"]["httpPost_E"] = [](std::string host, std::string path, std::string body, sol::optional<bool> secure, sol::optional<sol::table> headers) -> std::tuple<std::string, int>
     {
-        auto result = NativeNet::httpPost(host, path, body, secure.value_or(true));
+        std::map<std::string, std::string> cppHeaders;
+        if (headers.has_value())
+        {
+            headers->for_each([&](sol::object k, sol::object v) {
+                if (k.is<std::string>() && v.is<std::string>())
+                {
+                    cppHeaders[k.as<std::string>()] = v.as<std::string>();
+                }
+            });
+        }
+        auto result = NativeNet::httpPost(host, path, body, secure.value_or(true), cppHeaders);
         return std::make_tuple(result.first, result.second);
     };
 
