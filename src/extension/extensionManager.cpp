@@ -1060,6 +1060,27 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         return true;
     };
 
+    lua["HPR"]["deleteCsv_E"] = [this, &ext](std::string userPath) -> bool
+    {
+        std::string err;
+        std::filesystem::path securedPath = resolveAndSecurePath(userPath, this->extensionPath, err);
+        if (securedPath.empty())
+        {
+            std::cerr << "[HPR Extension CSV Error] " << err << " (path: " << userPath << ")" << std::endl;
+            return false;
+        }
+
+        try {
+            if (std::filesystem::exists(securedPath)) {
+                return std::filesystem::remove(securedPath);
+            }
+            return false;
+        } catch (const std::exception& e) {
+            std::cerr << "[HPR Extension CSV Error] Failed to delete file: " << securedPath << " (" << e.what() << ")" << std::endl;
+            return false;
+        }
+    };
+
     lua["HPR"]["generateInsights_E"] = []()
     {
         AppState::patternAnalyzer.generateInsights();
