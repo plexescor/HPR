@@ -575,6 +575,20 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         ).count();
     };
 
+    lua["HPR"]["getExtensionDir_E"] = [&ext]() -> std::string
+    {
+        std::string dir = ext.path.parent_path().string();
+        if (!dir.empty() && dir.back() != '/' && dir.back() != '\\')
+        {
+            #ifdef _WIN32
+                dir += "\\";
+            #else
+                dir += "/";
+            #endif
+        }
+        return dir;
+    };
+
     // lua["HPR"]["isUiActive_E"] = []() -> bool
     // {
     //     return UiRegistry::isActive();
