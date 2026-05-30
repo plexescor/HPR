@@ -90,12 +90,16 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 
 		if (window.contains("SCRIPT"))
 		{
-			std::lock_guard<std::mutex> lock(AppState::stateMutex);
-			AppState::state.currentWindow = window;
+			{
+				std::lock_guard<std::mutex> lock(AppState::stateMutex);
+				AppState::state.currentWindow = window;
+			}
+			std::this_thread::sleep_for(std::chrono::milliseconds(50));
 			continue;
 		}
 		if (window.contains("Unknown"))
 		{
+			std::this_thread::sleep_for(std::chrono::milliseconds(50));
 			continue;
 		}
 
