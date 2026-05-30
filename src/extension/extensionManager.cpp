@@ -392,12 +392,6 @@ void ExtensionManager::runNativeExtension(NativeExtension& ext)
 
 void ExtensionManager::runExtension(LoadedExtension& ext)
 {
-    int sleepTime = 1000; //ms
-    sol::function init = ext.lua["init"];
-    sol::function onTick = ext.lua["onTick"];
-    sol::function onExit = ext.lua["onExit"];
-
-    if (init.valid()) sleepTime = init();
     sol::optional<std::string> authorName = ext.lua["HPR"]["authorName"];
     sol::optional<std::string> extensionName = ext.lua["HPR"]["extensionName"];
     if (authorName.has_value() && extensionName.has_value())
@@ -406,6 +400,13 @@ void ExtensionManager::runExtension(LoadedExtension& ext)
         std::lock_guard<std::mutex> lock(AppState::stateMutex);
         AppState::state.loadedExtensions.push_back(ext.identity);
     }
+    
+    int sleepTime = 1000; //ms
+    sol::function init = ext.lua["init"];
+    sol::function onTick = ext.lua["onTick"];
+    sol::function onExit = ext.lua["onExit"];
+
+    if (init.valid()) sleepTime = init();
     
     auto lastTime = std::chrono::high_resolution_clock::now();
     while (ext.running)

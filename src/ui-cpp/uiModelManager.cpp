@@ -594,6 +594,9 @@ void UiModelManager::showInsights_Interpreted(const std::string &mostUsed,
 
 void UiModelManager::showExtensions(const std::vector<std::pair<std::string,std::string>>& extensions)
 {
+    if (extensions == lastKnownExtensions) return;
+    lastKnownExtensions = extensions;
+
     if (!ui.has_value()) return;
     std::vector<LoadedExtension_S> vec;
     for (const auto& [author, name] : extensions)
@@ -613,6 +616,9 @@ void UiModelManager::showExtensions(const std::vector<std::pair<std::string,std:
 
 void UiModelManager::showExtensions_Interpreted(const std::vector<std::pair<std::string,std::string>>& extensions)
 {
+    if (extensions == lastKnownExtensions) return;
+    lastKnownExtensions = extensions;
+
     std::vector<slint::interpreter::Value> vec;
     for (const auto& [author, name] : extensions)
     {

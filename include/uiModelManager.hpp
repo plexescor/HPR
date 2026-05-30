@@ -6,6 +6,8 @@
 //Slint stuff
 #include "app-window.h"
 #include <slint.h>
+#include <vector>
+#include <string>
 #include <slint-interpreter.h>
 class UiModelManager
 {
@@ -56,6 +58,7 @@ class UiModelManager
     
     private: 
         std::optional<slint::ComponentHandle<MainWindow>> ui;
+        std::vector<std::pair<std::string,std::string>> lastKnownExtensions;
 
         //Slint models
         std::shared_ptr<slint::VectorModel<TimeLog>> timeLogModel;
