@@ -714,6 +714,16 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         return dbManager->querySQL_Path(histPath, sql, params.value_or(std::vector<std::string>{}));
     };
 
+    lua["HPR"]["getDbPathForDate_E"] = [](std::string date) -> std::string
+    {
+        return DatabaseManager::getDbPathForDate(date);
+    };
+
+    lua["HPR"]["dbQueryPath_E"] = [this](std::string dbPath, std::string sql, sol::optional<std::vector<std::string>> params) 
+    {
+        return dbManager->querySQL_Path(dbPath, sql, params.value_or(std::vector<std::string>{}));
+    };
+
     lua["HPR"]["convertToDate_DDMMYY_E"] = [](uint64_t ms)
     {
         return convertToDate_DDMMYY(ms);
@@ -1119,7 +1129,7 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
     {
         #ifdef _WIN32
             return "Windows";
-        #else if __APPLE__
+        #elif defined(__APPLE__)
             return "Apple";
         #else
             return "Linux";

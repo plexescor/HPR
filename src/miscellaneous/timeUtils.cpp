@@ -137,6 +137,29 @@ std::string extractMMYY_from_DDMMYY(const std::string& dateStr)
         throw std::invalid_argument("extractMMYY_from_DDMMYY: expected DD-MM-YY, got: " + dateStr);
     }
 
+    // Slice out day, month, and year for strict verification
+    int day = std::stoi(dateStr.substr(0, 2));
+    int month = std::stoi(dateStr.substr(3, 2));
+    int year = std::stoi(dateStr.substr(6, 2));
+
+    if (month < 1 || month > 12)
+    {
+        throw std::invalid_argument("extractMMYY_from_DDMMYY: invalid month: " + dateStr);
+    }
+
+    int daysInMonth[] = { 0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };
+    int fullYear = 2000 + year;
+    bool isLeap = (fullYear % 4 == 0 && (fullYear % 100 != 0 || fullYear % 400 == 0));
+    if (isLeap)
+    {
+        daysInMonth[2] = 29;
+    }
+
+    if (day < 1 || day > daysInMonth[month])
+    {
+        throw std::invalid_argument("extractMMYY_from_DDMMYY: invalid day for month: " + dateStr);
+    }
+
     // also validate via get_time so garbage like 99-99-25 gets caught
     std::tm tm = {};
     std::istringstream iss(dateStr);
