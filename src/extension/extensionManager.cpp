@@ -1146,6 +1146,21 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         #endif
     };
 
+    lua["HPR"]["getLoadedExtensions_E"] = [&lua]() -> sol::table
+    {
+        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        sol::table listTable = lua.create_table();
+        int index = 1;
+        for (const auto& identity : AppState::state.loadedExtensions)
+        {
+            sol::table entryTable = lua.create_table();
+            entryTable["authorName"] = identity.first;
+            entryTable["extensionName"] = identity.second;
+            listTable[index++] = entryTable;
+        }
+        return listTable;
+    };
+
     lua["HPR"]["crash_E"] = [](sol::optional<std::string> message)
     {
         if (message.has_value())
