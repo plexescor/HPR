@@ -7,6 +7,8 @@ AppState::HistoricalData AppState::historicalData_State;
 AliasManager AppState::aliasManager;
 PatternAnalyzer AppState::patternAnalyzer;
 
+std::mutex AppState::patternAnalyzerMutex;
+
 std::mutex AppState::stateMutex;
 std::mutex AppState::historyStateMutex;
 std::mutex AppState::historyLoadedMutex;

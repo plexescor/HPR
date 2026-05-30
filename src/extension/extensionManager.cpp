@@ -1096,48 +1096,49 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
 
     lua["HPR"]["generateInsights_E"] = []()
     {
+        std::lock_guard<std::mutex> lock(AppState::patternAnalyzerMutex);
         AppState::patternAnalyzer.generateInsights();
     };
 
     lua["HPR"]["getMostUsed_E"] = []() -> std::string
     {
-        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        std::lock_guard<std::mutex> lock(AppState::patternAnalyzerMutex);
         return AppState::patternAnalyzer.getMostUsed();
     };
 
     lua["HPR"]["getTotalTrackedTime_E"] = []() -> std::string
     {
-        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        std::lock_guard<std::mutex> lock(AppState::patternAnalyzerMutex);
         return AppState::patternAnalyzer.getTotalTrackedTime();
     };
 
     lua["HPR"]["getSwitchCount_E"] = []() -> std::string
     {
-        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        std::lock_guard<std::mutex> lock(AppState::patternAnalyzerMutex);
         return AppState::patternAnalyzer.getSwitchCount();
     };
 
     lua["HPR"]["getMostSwitchedFrom_E"] = []() -> std::string
     {
-        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        std::lock_guard<std::mutex> lock(AppState::patternAnalyzerMutex);
         return AppState::patternAnalyzer.getMostSwitchedFrom();
     };
 
     lua["HPR"]["getMostSwitchedTo_E"] = []() -> std::string
     {
-        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        std::lock_guard<std::mutex> lock(AppState::patternAnalyzerMutex);
         return AppState::patternAnalyzer.getMostSwitchedTo();
     };
 
     lua["HPR"]["getMostFocusedSession_E"] = []() -> std::string
     {
-        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        std::lock_guard<std::mutex> lock(AppState::patternAnalyzerMutex);
         return AppState::patternAnalyzer.getMostFocusedSession();
     };
 
     lua["HPR"]["getMostProductiveHour_E"] = []() -> std::string
     {
-        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        std::lock_guard<std::mutex> lock(AppState::patternAnalyzerMutex);
         return AppState::patternAnalyzer.getMostProductiveHour();
     };
 

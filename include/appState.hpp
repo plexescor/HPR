@@ -54,6 +54,8 @@ namespace AppState {
     extern AliasManager aliasManager;
     extern PatternAnalyzer patternAnalyzer;
 
+    extern std::mutex patternAnalyzerMutex;
+
     extern std::mutex stateMutex;
     extern std::mutex historyStateMutex;
     extern std::mutex historyLoadedMutex;
