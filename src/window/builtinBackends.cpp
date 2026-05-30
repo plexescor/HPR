@@ -63,70 +63,9 @@
             )";
         }
 
-        // Loads and runs a script via KWin D-Bus scripting interface
-        // mirrors what kdotool does: loadScript - start - unloadScript
-        bool kwinRunScript(DBusConnection* conn, const std::string& scriptContent, int& scriptId)
-        {
-            // Call org.kde.kwin.Scripting.loadScript(script_content, script_name)
-            DBusMessage* msg = dbus_message_new_method_call(
-                "org.kde.KWin",
-                "/Scripting",
-                "org.kde.kwin.Scripting",
-                "loadScript"
-            );
-
-            const char* content = scriptContent.c_str();
-            const char* name = "kdotool_cpp_tmp";
-            dbus_message_append_args(msg,
-                DBUS_TYPE_STRING, &content,
-                DBUS_TYPE_STRING, &name,
-                DBUS_TYPE_INVALID);
-
-            DBusError err;
-            dbus_error_init(&err);
-            DBusMessage* reply = dbus_connection_send_with_reply_and_block(conn, msg, 3000, &err);
-            dbus_message_unref(msg);
-
-            if (!reply || dbus_error_is_set(&err)) return false;
-
-            dbus_message_get_args(reply, &err, DBUS_TYPE_INT32, &scriptId, DBUS_TYPE_INVALID);
-            dbus_message_unref(reply);
-
-            // Call start() on the script object
-            std::string scriptPath = "/Scripting/Script" + std::to_string(scriptId);
-            msg = dbus_message_new_method_call(
-                "org.kde.KWin",
-                scriptPath.c_str(),
-                "org.kde.kwin.Script",
-                "run"
-            );
-            reply = dbus_connection_send_with_reply_and_block(conn, msg, 3000, &err);
-            dbus_message_unref(msg);
-            if (reply) dbus_message_unref(reply);
-
-            return true;
-        }
-
-        void kwinUnloadScript(DBusConnection* conn, int scriptId)
-        {
-            DBusMessage* msg = dbus_message_new_method_call(
-                "org.kde.KWin",
-                "/Scripting",
-                "org.kde.kwin.Scripting",
-                "unloadScript"
-            );
-            const char* name = "kdotool_cpp_tmp";
-            dbus_message_append_args(msg, DBUS_TYPE_STRING, &name, DBUS_TYPE_INVALID);
-            DBusError err;
-            dbus_error_init(&err);
-            DBusMessage* reply = dbus_connection_send_with_reply_and_block(conn, msg, 3000, &err);
-            if (reply) dbus_message_unref(reply);
-            dbus_message_unref(msg);
-        }
-
         // Register a temporary D-Bus service to receive results back from KWin script
         // mirrors kdotool's result collection via its own dbus_addr
-        std::string kwinScriptGetResult(const std::string& dbusAddr, const std::string& action)
+        std::string kwinScriptGetResult(const std::string& dbusAddr, const std::string& marker, const std::string& action)
         {
             DBusError err;
             dbus_error_init(&err);
@@ -134,23 +73,50 @@
             DBusConnection* conn = dbus_bus_get(DBUS_BUS_SESSION, &err);
             if (!conn || dbus_error_is_set(&err)) return "";
 
-            // Request our temporary bus name so KWin script can call us back
             int ret = dbus_bus_request_name(conn, dbusAddr.c_str(), DBUS_NAME_FLAG_REPLACE_EXISTING, &err);
             if (ret != DBUS_REQUEST_NAME_REPLY_PRIMARY_OWNER) return "";
 
-            std::string marker = generateMarker();
             std::string script = buildScript(dbusAddr, marker, action);
 
-            int scriptId = -1;
-            if (!kwinRunScript(conn, script, scriptId)) {
-                dbus_bus_release_name(conn, dbusAddr.c_str(), &err);
-                return "";
+            // Write to temp file - kdotool does this too
+            std::string tmpPath = "/tmp/" + marker + ".js";
+            {
+                FILE* f = fopen(tmpPath.c_str(), "w");
+                if (!f) { dbus_bus_release_name(conn, dbusAddr.c_str(), &err); return ""; }
+                fwrite(script.c_str(), 1, script.size(), f);
+                fclose(f);
             }
 
-            // Poll for result message - KWin script calls us back via callDBus
+            DBusMessage* msg = dbus_message_new_method_call(
+                "org.kde.KWin", "/Scripting", "org.kde.kwin.Scripting", "loadScript"
+            );
+            const char* pathCStr = tmpPath.c_str();
+            const char* nameCStr = marker.c_str();
+            dbus_message_append_args(msg,
+                DBUS_TYPE_STRING, &pathCStr,
+                DBUS_TYPE_STRING, &nameCStr,
+                DBUS_TYPE_INVALID);
+
+            DBusMessage* reply = dbus_connection_send_with_reply_and_block(conn, msg, 5000, &err);
+            dbus_message_unref(msg);
+            if (!reply || dbus_error_is_set(&err)) { std::remove(tmpPath.c_str()); return ""; }
+
+            int scriptId = -1;
+            dbus_message_get_args(reply, &err, DBUS_TYPE_INT32, &scriptId, DBUS_TYPE_INVALID);
+            dbus_message_unref(reply);
+            if (scriptId < 0) { std::remove(tmpPath.c_str()); return ""; }
+
+            std::string scriptPath = "/Scripting/Script" + std::to_string(scriptId);
+
+            // run()
+            msg = dbus_message_new_method_call("org.kde.KWin", scriptPath.c_str(), "org.kde.kwin.Script", "run");
+            reply = dbus_connection_send_with_reply_and_block(conn, msg, 5000, &err);
+            dbus_message_unref(msg);
+            if (reply) dbus_message_unref(reply);
+
+            // Poll for result
             std::string result;
             auto deadline = std::chrono::steady_clock::now() + std::chrono::seconds(5);
-
             while (std::chrono::steady_clock::now() < deadline) {
                 dbus_connection_read_write(conn, 100);
                 DBusMessage* incoming = dbus_connection_pop_message(conn);
@@ -160,8 +126,6 @@
                     const char* val = nullptr;
                     dbus_message_get_args(incoming, &err, DBUS_TYPE_STRING, &val, DBUS_TYPE_INVALID);
                     if (val) result = val;
-
-                    // Send empty reply so KWin doesn't hang
                     DBusMessage* replyMsg = dbus_message_new_method_return(incoming);
                     dbus_connection_send(conn, replyMsg, nullptr);
                     dbus_message_unref(replyMsg);
@@ -171,22 +135,36 @@
                 dbus_message_unref(incoming);
             }
 
-            kwinUnloadScript(conn, scriptId);
-            dbus_bus_release_name(conn, dbusAddr.c_str(), &err);
+            // stop()
+            msg = dbus_message_new_method_call("org.kde.KWin", scriptPath.c_str(), "org.kde.kwin.Script", "stop");
+            reply = dbus_connection_send_with_reply_and_block(conn, msg, 5000, &err);
+            dbus_message_unref(msg);
+            if (reply) dbus_message_unref(reply);
 
+            // unloadScript by name
+            msg = dbus_message_new_method_call("org.kde.KWin", "/Scripting", "org.kde.kwin.Scripting", "unloadScript");
+            dbus_message_append_args(msg, DBUS_TYPE_STRING, &nameCStr, DBUS_TYPE_INVALID);
+            reply = dbus_connection_send_with_reply_and_block(conn, msg, 5000, &err);
+            dbus_message_unref(msg);
+            if (reply) dbus_message_unref(reply);
+
+            std::remove(tmpPath.c_str());
+            dbus_bus_release_name(conn, dbusAddr.c_str(), &err);
             return result;
         }
 
         std::string kdeGetActiveWindowClass()
         {
-            std::string addr = "org.kde.kdotool_cpp." + generateMarker();
-            return kwinScriptGetResult(addr, "output_result(w.resourceClass);");
+            std::string marker = generateMarker();
+            std::string addr = "org.kde.kdotool_cpp." + marker;
+            return kwinScriptGetResult(addr, marker, "output_result(w.resourceClass);");
         }
 
         std::string kdeGetActiveWindowName()
         {
-            std::string addr = "org.kde.kdotool_cpp." + generateMarker();
-            return kwinScriptGetResult(addr, "output_result(w.caption);");
+            std::string marker = generateMarker();
+            std::string addr = "org.kde.kdotool_cpp." + marker;
+            return kwinScriptGetResult(addr, marker, "output_result(w.caption);");
         }
     }
 #endif
