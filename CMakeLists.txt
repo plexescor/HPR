@@ -42,7 +42,7 @@ set(SOURCES
 
 if(WIN32)
     add_compile_definitions(NOMINMAX)
-    list(APPEND SOURCES external/wintoast/wintoastlib.cpp)
+    list(APPEND SOURCES external/wintoast/wintoastlib.cpp assets/app.rc)
 endif()
 
 if(WIN32)

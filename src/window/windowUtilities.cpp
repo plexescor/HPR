@@ -3,6 +3,7 @@
 #include <string>
 #include <algorithm>
 #include <vector>
+#include <fstream>
 
 #ifdef __linux__
 #include <sys/wait.h> // WEXITSTATUS
@@ -258,6 +259,17 @@ std::string runSystemCommand_UNSAFE(std::string &command) {
     return "";
 }
 
+#ifdef _WIN32
+class DummyWinToastHandler : public WinToastLib::IWinToastHandler {
+public:
+    void toastActivated() const override {}
+    void toastActivated(int actionIndex) const override {}
+    void toastActivated(std::wstring response) const override {}
+    void toastDismissed(WinToastDismissalReason state) const override {}
+    void toastFailed() const override {}
+};
+#endif
+
 void showNotification(const std::string &title, const std::string &msg) {
 #ifdef __linux__
     std::string escapedTitle = "";
@@ -275,8 +287,12 @@ void showNotification(const std::string &title, const std::string &msg) {
 #elif defined(_WIN32)
     static bool initialized = false;
     if (!initialized) {
+        CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+
         WinToastLib::WinToast::instance()->setAppName(L"HPR");
         WinToastLib::WinToast::instance()->setAppUserModelId(L"HPR.HumanPatternRecorder");
+        WinToastLib::WinToast::instance()->setShortcutPolicy(WinToastLib::WinToast::SHORTCUT_POLICY_IGNORE);
+        
         if (WinToastLib::WinToast::instance()->initialize()) {
             initialized = true;
         }
@@ -289,7 +305,8 @@ void showNotification(const std::string &title, const std::string &msg) {
         templ.setTextField(wtitle, WinToastLib::WinToastTemplate::FirstLine);
         templ.setTextField(wmsg, WinToastLib::WinToastTemplate::SecondLine);
         
-        WinToastLib::WinToast::instance()->showToast(templ, nullptr);
+        // Heap-allocate DummyWinToastHandler so WinToast's internal std::shared_ptr can safely delete it when done
+        WinToastLib::WinToast::instance()->showToast(templ, new DummyWinToastHandler());
     }
 #endif
 }
