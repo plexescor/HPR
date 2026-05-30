@@ -8,7 +8,11 @@
 #include <mutex> 
 #include <functional>
 #include <map>
-#include <unistd.h>
+
+#ifdef __linux__
+    #include <unistd.h>
+#endif
+
 #include <sstream>
 
 
@@ -210,7 +214,11 @@ ExtensionManager::~ExtensionManager()
                 std::cerr << "Extension " << ext->path << " timed out, detaching\n";
                 ext->thread.detach(); 
                 std::cerr << "Force exiting to avoid potential hangs\n";
-                _exit(0); // force exit to avoid hanging
+                #ifdef _WIN32
+                    TerminateProcess(GetCurrentProcess(), 0);
+                #else
+                    _exit(0);
+                #endif
             }
         }
     }
@@ -230,7 +238,11 @@ ExtensionManager::~ExtensionManager()
                 std::cerr << "Extension " << ext->path << " timed out, detaching\n";
                 ext->thread.detach();
                 std::cerr << "Force exiting to avoid potential hangs\n";
-                _exit(0); // force exit to avoid hanging 
+                #ifdef _WIN32
+                    TerminateProcess(GetCurrentProcess(), 0);
+                #else
+                    _exit(0);
+                #endif
             }
         }
     
