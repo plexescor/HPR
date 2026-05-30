@@ -41,6 +41,10 @@ set(SOURCES
 )
 
 if(WIN32)
+    list(APPEND SOURCES external/wintoast/wintoastlib.cpp)
+endif()
+
+if(WIN32)
     add_executable(HPR WIN32 ${SOURCES})
 elseif(LINUX)
     add_executable(HPR ${SOURCES})
@@ -69,6 +73,7 @@ target_link_libraries(HPR PRIVATE Slint::Slint)
 
 if(WIN32)
     target_link_libraries(HPR PRIVATE winhttp ws2_32)
+    target_include_directories(HPR PRIVATE external/wintoast/)
 elseif(LINUX)
     find_package(CURL REQUIRED)
     target_link_libraries(HPR PRIVATE ${DBUS_LIBRARIES} CURL::libcurl)

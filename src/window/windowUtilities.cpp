@@ -6,6 +6,8 @@
 
 #ifdef __linux__
 #include <sys/wait.h> // WEXITSTATUS
+#elif defined(_WIN32)
+#include "wintoastlib.h"
 #endif
 
 #include "windowUtilities.hpp"
@@ -254,4 +256,40 @@ std::string runSystemCommand_UNSAFE(std::string &command) {
 
 #endif
     return "";
+}
+
+void showNotification(const std::string &title, const std::string &msg) {
+#ifdef __linux__
+    std::string escapedTitle = "";
+    for (char c : title) {
+        if (c == '"' || c == '\\' || c == '`' || c == '$') escapedTitle += '\\';
+        escapedTitle += c;
+    }
+    std::string escapedMsg = "";
+    for (char c : msg) {
+        if (c == '"' || c == '\\' || c == '`' || c == '$') escapedMsg += '\\';
+        escapedMsg += c;
+    }
+    std::string command = "notify-send \"" + escapedTitle + "\" \"" + escapedMsg + "\"";
+    runSystemCommand(command);
+#elif defined(_WIN32)
+    static bool initialized = false;
+    if (!initialized) {
+        WinToastLib::WinToast::instance()->setAppName(L"HPR");
+        WinToastLib::WinToast::instance()->setAppUserModelId(L"HPR.HumanPatternRecorder");
+        if (WinToastLib::WinToast::instance()->initialize()) {
+            initialized = true;
+        }
+    }
+    if (initialized) {
+        std::wstring wtitle(title.begin(), title.end());
+        std::wstring wmsg(msg.begin(), msg.end());
+        
+        WinToastLib::WinToastTemplate templ(WinToastLib::WinToastTemplate::ImageAndText02);
+        templ.setTextField(wtitle, WinToastLib::WinToastTemplate::FirstLine);
+        templ.setTextField(wmsg, WinToastLib::WinToastTemplate::SecondLine);
+        
+        WinToastLib::WinToast::instance()->showToast(templ, nullptr);
+    }
+#endif
 }

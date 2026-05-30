@@ -1207,6 +1207,11 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         else if (interpreterApp) interpreterApp->quit();
     };
 
+    lua["HPR"]["showNotification_E"] = [](std::string title, std::string message)
+    {
+        showNotification(title, message);
+    };
+
     lua["HPR"]["getOsName_E"] = []() -> std::string
     {
         #ifdef _WIN32
