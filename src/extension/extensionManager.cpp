@@ -195,12 +195,38 @@ ExtensionManager::~ExtensionManager()
     for (auto& ext : extensions)
     {
         if (ext->thread.joinable())
-            ext->thread.join();
+        {
+            // give it 200ms for extensino to exit otherwise
+            // it will block the whole shutdown process, so we detach and let the OS clean it up
+            auto future = std::async(std::launch::async, [&ext]() 
+            {
+                ext->thread.join();
+            });
+            if (future.wait_for(std::chrono::milliseconds(200)) == std::future_status::timeout)
+            {
+                std::cerr << "Extension " << ext->path << " timed out, detaching\n";
+                ext->thread.detach(); 
+            }
+        }
     }
     for (auto& ext : nativeExtensions)
     {
         if (ext->thread.joinable())
-            ext->thread.join();
+        {
+            // give it 200ms for extensino to exit otherwise
+            // it will block the whole shutdown process, so we detach and let the OS clean it
+            auto future = std::async(std::launch::async, [&ext]() 
+            {
+                ext->thread.join();
+            });
+
+            if (future.wait_for(std::chrono::milliseconds(200)) == std::future_status::timeout)
+            {
+                std::cerr << "Extension " << ext->path << " timed out, detaching\n";
+                ext->thread.detach(); 
+            }
+        }
+    
     }
     registeredBackends.clear();
 
@@ -241,66 +267,73 @@ void ExtensionManager::loadExtensions()
 {
     updateExtensionPath();
 
-    if (allowDynamicLibraryExtensionLoading)
+    try
     {
+
+        if (allowDynamicLibraryExtensionLoading)
+        {
+            for (const auto& entry : std::filesystem::recursive_directory_iterator(extensionPath))
+            {
+                #ifdef _WIN32
+                if (entry.is_regular_file() && entry.path().extension() == ".dll")
+                #else
+                if (entry.is_regular_file() && (entry.path().extension() == ".so" || entry.path().extension() == ".dylib"))
+                #endif
+                {
+                    loadNativeExtension(entry.path());
+                }
+            }
+        }
+        else
+        {
+            // check if any exist and warn
+            for (const auto& entry : std::filesystem::recursive_directory_iterator(extensionPath))
+            {
+                #ifdef _WIN32
+                bool isNative = entry.path().extension() == ".dll";
+                #else
+                bool isNative = (entry.path().extension() == ".so" || entry.path().extension() == ".dylib");
+                #endif
+                if (entry.is_regular_file() && isNative)
+                {
+                    std::cerr << "[HPR] Native extension found but allow-dynamic-library-extensions is false. Skipping: "
+                            << entry.path() << '\n';
+                }
+            }
+        }
+
+        //load all lua files from this dir recursively
         for (const auto& entry : std::filesystem::recursive_directory_iterator(extensionPath))
         {
-            #ifdef _WIN32
-            if (entry.is_regular_file() && entry.path().extension() == ".dll")
-            #else
-            if (entry.is_regular_file() && (entry.path().extension() == ".so" || entry.path().extension() == ".dylib"))
-            #endif
+            if (entry.is_regular_file() && entry.path().extension() == ".lua")
             {
-                loadNativeExtension(entry.path());
-            }
-        }
-    }
-    else
-    {
-        // check if any exist and warn
-        for (const auto& entry : std::filesystem::recursive_directory_iterator(extensionPath))
-        {
-            #ifdef _WIN32
-            bool isNative = entry.path().extension() == ".dll";
-            #else
-            bool isNative = (entry.path().extension() == ".so" || entry.path().extension() == ".dylib");
-            #endif
-            if (entry.is_regular_file() && isNative)
-            {
-                std::cerr << "[HPR] Native extension found but allow-dynamic-library-extensions is false. Skipping: "
-                        << entry.path() << '\n';
-            }
-        }
-    }
+                auto ext = std::make_unique<LoadedExtension>();
+                ext->path = entry.path();
+                
+                registerFunctions(*ext);
 
-    //load all lua files from this dir recursively
-    for (const auto& entry : std::filesystem::recursive_directory_iterator(extensionPath))
+                try
+                {
+                    ext->lua.script_file(entry.path().string());
+                }
+                catch (const std::exception& e)
+                {
+                    std::cerr << "Failed to load extension: "
+                            << entry.path()
+                            << "\nError: " << e.what() << '\n';
+                    continue;
+                }
+                            
+                extensions.push_back(std::move(ext));
+            }
+            else if (entry.is_regular_file())
+            {
+                std::cerr << "Skipping non-lua file: " << entry.path() << '\n';
+            }
+        }
+    } catch (std::exception& e)
     {
-        if (entry.is_regular_file() && entry.path().extension() == ".lua")
-        {
-            auto ext = std::make_unique<LoadedExtension>();
-            ext->path = entry.path();
-            
-            registerFunctions(*ext);
-
-            try
-            {
-                ext->lua.script_file(entry.path().string());
-            }
-            catch (const std::exception& e)
-            {
-                std::cerr << "Failed to load extension: "
-                        << entry.path()
-                        << "\nError: " << e.what() << '\n';
-                continue;
-            }
-                        
-            extensions.push_back(std::move(ext));
-        }
-        else if (entry.is_regular_file())
-        {
-            std::cerr << "Skipping non-lua file: " << entry.path() << '\n';
-        }
+        std::cerr << "Error loading extensions: " << e.what() << '\n';
     }
 }
 
@@ -328,6 +361,7 @@ void ExtensionManager::loadNativeExtension(const std::filesystem::path& path)
 
 void ExtensionManager::runNativeExtension(NativeExtension& ext)
 {
+
     int sleepTime = 1000; //ms
 
     #ifdef _WIN32
@@ -392,6 +426,8 @@ void ExtensionManager::runNativeExtension(NativeExtension& ext)
 
 void ExtensionManager::runExtension(LoadedExtension& ext)
 {
+    std::cout << "Loading done!";
+
     sol::optional<std::string> authorName = ext.lua["HPR"]["authorName"];
     sol::optional<std::string> extensionName = ext.lua["HPR"]["extensionName"];
     if (authorName.has_value() && extensionName.has_value())
