@@ -212,7 +212,7 @@ ExtensionManager::~ExtensionManager()
             auto start = std::chrono::steady_clock::now();
             while (!joined)
             {
-                if (std::chrono::steady_clock::now() - start >= std::chrono::milliseconds(200))
+                if (std::chrono::steady_clock::now() - start >= std::chrono::milliseconds(300))
                 {
                     std::cerr << "Extension " << ext->path << " timed out, detaching\n";
                     ext->thread.detach();
@@ -242,7 +242,7 @@ ExtensionManager::~ExtensionManager()
             auto start = std::chrono::steady_clock::now();
             while (!joined)
             {
-                if (std::chrono::steady_clock::now() - start >= std::chrono::milliseconds(200))
+                if (std::chrono::steady_clock::now() - start >= std::chrono::milliseconds(300))
                 {
                     std::cerr << "Extension " << ext->path << " timed out, detaching\n";
                     ext->thread.detach();
