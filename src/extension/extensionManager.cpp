@@ -1115,6 +1115,27 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         else if (interpreterApp) interpreterApp->quit();
     };
 
+    lua["HPR"]["getOsName_E"] = []() -> std::string
+    {
+        #ifdef _WIN32
+            return "Windows";
+        #else if __APPLE__
+            return "Apple";
+        #else
+            return "Linux";
+        #endif
+    };
+
+    lua["HPR"]["getEnvironmentName_E"] = []() -> std::string
+    {
+        #ifdef _WIN32
+            return "";
+        #else
+            std::lock_guard<std::mutex> lock(AppState::stateMutex);
+            return AppState::state.currentPlatform;
+        #endif
+    };
+
     lua["HPR"]["crash_E"] = [](sol::optional<std::string> message)
     {
         if (message.has_value())
