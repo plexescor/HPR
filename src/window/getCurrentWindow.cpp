@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <ranges>
 
 #include "appState.hpp"
 #include "getCurrentWindow.hpp"
@@ -258,7 +259,7 @@ void CurrentWindowManager::detectAndSetBackend()
         << currentPlatform
         << std::endl;
 
-    for (auto& backend : registeredBackends)
+    for (auto& backend : std::views::reverse(registeredBackends))
     {
         if (!backend.matchesEnvironment(currentPlatform))
         {
