@@ -203,48 +203,60 @@ ExtensionManager::~ExtensionManager()
     {
         if (ext->thread.joinable())
         {
-            auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(200);
-            
-            auto future = std::async(std::launch::async, [&ext]() 
-            {
+            bool joined = false;
+            std::thread joiner([&]() {
                 ext->thread.join();
+                joined = true;
             });
-            
-            if (future.wait_until(deadline) == std::future_status::timeout)
+
+            auto start = std::chrono::steady_clock::now();
+            while (!joined)
             {
-                std::cerr << "Extension " << ext->path << " timed out, detaching\n";
-                ext->thread.detach(); 
-                std::cerr << "Force exiting to avoid potential hangs\n";
-                #ifdef _WIN32
-                    TerminateProcess(GetCurrentProcess(), 0);
-                #else
-                    _exit(0);
-                #endif
+                if (std::chrono::steady_clock::now() - start >= std::chrono::milliseconds(200))
+                {
+                    std::cerr << "Extension " << ext->path << " timed out, detaching\n";
+                    ext->thread.detach();
+                    joiner.detach();
+                    std::cerr << "Force exiting to avoid potential hangs\n";
+                    #ifdef _WIN32
+                        TerminateProcess(GetCurrentProcess(), 0);
+                    #else
+                        _exit(0);
+                    #endif
+                }
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
             }
+            joiner.join();
         }
     }
     for (auto& ext : nativeExtensions)
     {
         if (ext->thread.joinable())
         {
-            auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(200);
-            
-            auto future = std::async(std::launch::async, [&ext]() 
-            {
+            bool joined = false;
+            std::thread joiner([&]() {
                 ext->thread.join();
+                joined = true;
             });
-            
-            if (future.wait_until(deadline) == std::future_status::timeout)
+
+            auto start = std::chrono::steady_clock::now();
+            while (!joined)
             {
-                std::cerr << "Extension " << ext->path << " timed out, detaching\n";
-                ext->thread.detach(); 
-                std::cerr << "Force exiting to avoid potential hangs\n";
-                #ifdef _WIN32
-                    TerminateProcess(GetCurrentProcess(), 0);
-                #else
-                    _exit(0);
-                #endif
+                if (std::chrono::steady_clock::now() - start >= std::chrono::milliseconds(200))
+                {
+                    std::cerr << "Extension " << ext->path << " timed out, detaching\n";
+                    ext->thread.detach();
+                    joiner.detach();
+                    std::cerr << "Force exiting to avoid potential hangs\n";
+                    #ifdef _WIN32
+                        TerminateProcess(GetCurrentProcess(), 0);
+                    #else
+                        _exit(0);
+                    #endif
+                }
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
             }
+            joiner.join();
         }
     
     }
