@@ -13,6 +13,7 @@
 #include <unistd.h>
 #elif defined(_WIN32)
 #include "wintoastlib.h"
+#include <shellapi.h>
 #endif
 
 #include "windowUtilities.hpp"
@@ -321,13 +322,13 @@ void showNotification(const std::string &title, const std::string &msg) {
     dbus_connection_unref(conn);
 
 #elif defined(_WIN32)
-    static bool initialized = false;
+    thread_local static bool initialized = false;
     if (!initialized) {
         CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
 
         WinToastLib::WinToast::instance()->setAppName(L"HPR");
-        WinToastLib::WinToast::instance()->setAppUserModelId(L"HPR.HumanPatternRecorder");
-        WinToastLib::WinToast::instance()->setShortcutPolicy(WinToastLib::WinToast::SHORTCUT_POLICY_REQUIRE_CREATE);
+        WinToastLib::WinToast::instance()->setAppUserModelId(L"HPR - Human Pattern Recorder");
+        WinToastLib::WinToast::instance()->setShortcutPolicy(WinToastLib::WinToast::SHORTCUT_POLICY_IGNORE);
         
         if (WinToastLib::WinToast::instance()->initialize()) {
             initialized = true;

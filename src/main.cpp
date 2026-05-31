@@ -7,6 +7,7 @@
 #include "HPRInterpreter.hpp"
 #include "linuxUtilities.hpp"
 #include "extensionManager.hpp"
+#include "windowUtilities.hpp"
 #ifdef _WIN32
 	#include <windows.h>
 
