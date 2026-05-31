@@ -231,46 +231,15 @@ std::string CurrentWindowManager::getCurrentTitle()
 
 	std::string curr = activeBackend->getCurrentTitle();
     return validateAndUpdateWindow_Cross(curr);
-}
-void CurrentWindowManager::detectAndSetBackend()
+}void CurrentWindowManager::detectAndSetBackend()
 {
-
 #ifdef __linux__
-    if (!getenv("HYPRLAND_INSTANCE_SIGNATURE"))
-    {
-        // Check both locations modern Hyprland uses XDG_RUNTIME_DIR/hypr,
-        // older or some NixOS setups use /tmp/hypr
-        std::vector<std::string> hyprDirs;
 
-        if (const char* xdg = getenv("XDG_RUNTIME_DIR"))
-            hyprDirs.push_back(std::string(xdg) + "/hypr");
-        hyprDirs.push_back("/tmp/hypr");
+	std::string cmd = "echo $XDG_CURRENT_DESKTOP";
 
-        for (const auto& hyprDir : hyprDirs)
-        {
-            if (!std::filesystem::exists(hyprDir)) continue;
-
-            for (auto& entry : std::filesystem::directory_iterator(hyprDir))
-            {
-                std::string sig = entry.path().filename().string();
-                // Skip lockfiles and hidden entries
-                if (sig.empty() || sig[0] == '.' || sig.ends_with(".lock")) continue;
-                if (!std::filesystem::is_directory(entry.path())) continue;
-
-                setenv("HYPRLAND_INSTANCE_SIGNATURE", sig.c_str(), 1);
-                std::cout << "[HPR] Injected HYPRLAND_INSTANCE_SIGNATURE: " << sig << std::endl;
-                goto done;
-            }
-        }
-        done:;
-    }
-
-    if (getenv("HYPRLAND_INSTANCE_SIGNATURE"))
-        currentPlatform = "Hyprland";
-    else if (const char* desktop = getenv("XDG_CURRENT_DESKTOP"))
-        currentPlatform = desktop;
-    else
-        currentPlatform.clear();
+    std::string xdg = runSystemCommand(cmd);
+    
+	currentPlatform = xdg;
 #endif
 
 #ifdef _WIN32
@@ -298,18 +267,7 @@ void CurrentWindowManager::detectAndSetBackend()
     }
 
     std::cout << "[HPR] Failed to find usable backend" << std::endl;
-}
-// #ifdef __linux__
-// 	// Get current desktop environment, linux only
-// 	std::string currentPlatformCommand = "echo $XDG_CURRENT_DESKTOP";
-// 	currentPlatform = runSystemCommand(currentPlatformCommand);
-
-// 	// Trim newline from platform string
-// 	if (!currentPlatform.empty() && currentPlatform.back() == '\n')
-// 		currentPlatform.pop_back();
-
-// 	std::cout << "[HPR] Detected platform: " << currentPlatform << std::endl;
-
+} 
 
 // 	{
 // 		std::lock_guard<std::mutex> lock(AppState::stateMutex);

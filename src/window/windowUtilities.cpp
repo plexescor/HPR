@@ -10,6 +10,7 @@
 
 #ifdef __linux__
 #include <sys/wait.h> // WEXITSTATUS
+#include <unistd.h>
 #elif defined(_WIN32)
 #include "wintoastlib.h"
 #endif
@@ -146,7 +147,6 @@ namespace
 
 std::string runSystemCommand(std::string &command) {
 
-    // Block dangerous commands on all platforms
     if (isCommandBlocked(command))
     {
         std::cout << "Haha motherfucker what did you expect 🤣🤣🤣" << std::endl;
@@ -156,29 +156,35 @@ std::string runSystemCommand(std::string &command) {
 
 #ifdef __linux__
 
-    FILE *pipe = popen(command.c_str(), "r"); // Get only read access
+    int pipefd[2];
+    if (pipe(pipefd) < 0) return "";
 
-    if (!pipe) {
-      std::cerr << "Opening the pipe failed!\n";
-      return "";
+    pid_t pid = fork();
+    if (pid < 0) return "";
+
+    if (pid == 0)
+    {
+        close(pipefd[0]);
+        dup2(pipefd[1], STDOUT_FILENO);
+        close(pipefd[1]);
+        execl("/bin/sh", "sh", "-c", command.c_str(), nullptr);
+        _exit(1);
     }
 
-    std::string output = "";
-    char buffer[256]; // 255 normal + 1 nullterm
+    close(pipefd[1]);
+    std::string output;
+    char buffer[256];
+    ssize_t n;
+    while ((n = read(pipefd[0], buffer, sizeof(buffer))) > 0)
+        output.append(buffer, n);
+    close(pipefd[0]);
 
-    while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
-      output += buffer;
-    }
+    int status;
+    waitpid(pid, &status, 0);
+    if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
+        std::cerr << "Running the command failed! Exit Code: " << WEXITSTATUS(status) << std::endl;
 
-    int exitCode = pclose(pipe);
-
-    if (exitCode != 0) {
-      std::cerr << "Running the command failed! Exit Code: " << WEXITSTATUS(exitCode) << std::endl;
-    }
-
-    // std::cout << "Output; " << output << std::endl;
     return output;
-
 #elif defined(_WIN32)
 
     FILE *pipe = _popen(command.c_str(), "r");
