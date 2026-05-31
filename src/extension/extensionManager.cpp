@@ -45,6 +45,8 @@ TODO:
 #include "appEvents.hpp"
 #include "jsonUtilities.hpp"
 #include "netUtilities.hpp"
+#include "HPR.hpp"
+#include "HPRInterpreter.hpp"
 
 #ifdef _WIN32
     #include <windows.h>
