@@ -428,7 +428,7 @@ void registerBuiltinBackends()
         {
             std::string cmd = "hyprctl monitors -j";
             std::string result = runSystemCommand(cmd);
-            Logger::log("hyprctl monitors result: '" + result + "'");
+            // Logger::log("hyprctl monitors result: '" + result + "'");
             return result.contains("id");
         },
 
