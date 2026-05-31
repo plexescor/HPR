@@ -559,13 +559,14 @@ void ExtensionManager::runExtension(LoadedExtension& ext)
             return result;
         };
 
-    std::string resolvedAuthor = authorName.value_or("anon_" + genRandom());
-    std::string resolvedName = extensionName.value_or("ext_" + genRandom());
+        std::string resolvedAuthor = authorName.value_or("anon_" + genRandom());
+        std::string resolvedName = extensionName.value_or("ext_" + genRandom());
 
-    ext.identity = { resolvedAuthor, resolvedName };
-    std::lock_guard<std::mutex> lock(AppState::stateMutex);
-    AppState::state.loadedExtensions.push_back(ext.identity);
-        
+        ext.identity = { resolvedAuthor, resolvedName };
+        {
+            std::lock_guard<std::mutex> lock(AppState::stateMutex);
+            AppState::state.loadedExtensions.push_back(ext.identity);
+        }        
         int sleepTime = 1000; //ms
         sol::function init = ext.lua["init"];
         sol::function onTick = ext.lua["onTick"];
