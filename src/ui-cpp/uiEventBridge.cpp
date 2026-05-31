@@ -1,7 +1,7 @@
 #include "uiEventBridge.hpp"
 #include "appEvents.hpp"
 #include "appState.hpp"
-
+#include "extensionManager.hpp"
 // Slint stuff
 #include "app-window.h"
 #include <slint.h>
@@ -11,8 +11,10 @@
 #endif
 
 //CONSTRUCTOR FOR **COMPILED** UI
-UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow>& ui)
+UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow>& ui,  ExtensionManager* extMgr)
 {
+    if (extMgr)
+        this->extManager = extMgr;
 
     //Connect to event hub
     init();
@@ -55,6 +57,22 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow>& ui)
         this->filterViewClicked();
     });
 
+    if (extManager)
+    {
+        ui->on_refreshExtensions([this]() 
+        {
+            extManager->refresh();
+        });
+        ui->on_disableExtension([this](slint::SharedString name) 
+        {
+            extManager->unloadExtension(std::string(name));
+        });
+        ui->on_reloadExtension([this](slint::SharedString name) 
+        {
+            extManager->reloadExtension(std::string(name));
+        });
+    }
+
     ui->on_openKofi([this]()
     {
         //Open webbrowser
@@ -68,8 +86,11 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow>& ui)
 
 //CONSTRUCTOR FOR **INTERPRETED** UI
 UiEventBridge::UiEventBridge(
-    slint::ComponentHandle<slint::interpreter::ComponentInstance>& ui)
+    slint::ComponentHandle<slint::interpreter::ComponentInstance>& ui,  ExtensionManager* extMgr)
 {
+    if (extMgr)
+        this->extManager = extMgr;
+
     //Connect to event hub
     init();
 
@@ -129,6 +150,37 @@ UiEventBridge::UiEventBridge(
         this->filterViewClicked();
         return slint::interpreter::Value(); // void return
     });
+
+    if (extManager)
+    {
+        ui->set_callback("refreshExtensions", [this](auto args) -> slint::interpreter::Value
+        {
+            extManager->refresh();
+            return slint::interpreter::Value();
+        });
+
+        ui->set_callback("disableExtension", [this](auto args) -> slint::interpreter::Value
+        {
+            if (args.size() > 0)
+            {
+                auto opt_str = args[0].to_string();
+                if (opt_str.has_value())
+                    extManager->unloadExtension(std::string(opt_str.value()));
+            }
+            return slint::interpreter::Value();
+        });
+
+        ui->set_callback("reloadExtension", [this](auto args) -> slint::interpreter::Value
+        {
+            if (args.size() > 0)
+            {
+                auto opt_str = args[0].to_string();
+                if (opt_str.has_value())
+                    extManager->reloadExtension(std::string(opt_str.value()));
+            }
+            return slint::interpreter::Value();
+        });
+    }
 
     ui->set_callback("openKofi", [this](auto args) -> slint::interpreter::Value
     {

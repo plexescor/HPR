@@ -5,6 +5,7 @@
 #include "uiModelManager.hpp"
 
 //Slint stuff
+#include "extensionManager.hpp"
 #include "app-window.h"
 #include <slint.h>
 
@@ -15,7 +16,7 @@
 
 class HPR {
     public:
-        HPR();
+        HPR(ExtensionManager* extMgr = nullptr);
         ~HPR();
         void show();
         void hide();
@@ -26,6 +27,8 @@ class HPR {
         void trackingLoop(); // runs on separate thread so that it polls shit continously (correct spelling?)
 
     private:
+        ExtensionManager* extManager;
+
         slint::ComponentHandle<MainWindow> ui;
         std::atomic<bool> running{true};
         std::thread tracker;

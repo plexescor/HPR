@@ -10,7 +10,7 @@
 #include "appEvents.hpp"
 #include "patternAnalyzer.hpp"
 #include "uiRegistry.hpp"
-
+#include "extensionManager.hpp"
 #include <thread>
 #include <atomic>
 #include <optional>
@@ -24,8 +24,11 @@
     #include "Windows.h"
 #endif
 
-HPRInterpreter::HPRInterpreter()
+HPRInterpreter::HPRInterpreter(ExtensionManager* extMgr)
 {
+    if (extMgr)
+        this->extManager = extMgr;
+
     if (!initialiseSlintUiPath()) exit(1);
 
     definition = compiler.build_from_path(filePath + fileName);
@@ -270,7 +273,7 @@ void HPRInterpreter::run()
     //For saving my time
     auto &inst = instance.value();
 
-    UiEventBridge uiEventBridge(inst);
+    UiEventBridge uiEventBridge(inst, extManager);
 
     #ifdef _WIN32
         inst->window().on_close_requested([this, inst]() -> slint::CloseRequestResponse {

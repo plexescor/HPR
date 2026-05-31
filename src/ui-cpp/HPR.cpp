@@ -23,8 +23,10 @@
 #include <algorithm>
 #include <chrono>
 
-HPR::HPR() : ui(MainWindow::create()), modelManager(ui)
+HPR::HPR(ExtensionManager* extMgr) : ui(MainWindow::create()), modelManager(ui)
 {
+    if (extMgr)
+        this->extManager = extMgr;
     #ifdef __linux__
         slint::set_xdg_app_id("HPR"); // So it has a class in hyprland
     #endif
@@ -244,7 +246,7 @@ void HPR::trackingLoop()
 
 void HPR::run()
 {
-    UiEventBridge uiEventBridge(ui);
+    UiEventBridge uiEventBridge(ui, extManager);
 
     #ifdef _WIN32
         ui->window().on_close_requested([this]() -> slint::CloseRequestResponse {

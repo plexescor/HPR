@@ -1,15 +1,16 @@
 #pragma once
 #include "app-window.h"
+#include "extensionManager.hpp"
 #include <slint.h>
 #include <slint-interpreter.h>
 class UiEventBridge
 {
     public:
        // Compiled UI Constructor
-        UiEventBridge(slint::ComponentHandle<MainWindow>& ui);
+        UiEventBridge(slint::ComponentHandle<MainWindow>& ui, ExtensionManager* extMgr = nullptr);
 
         // Interpreted UI Constructor
-        UiEventBridge(slint::ComponentHandle<slint::interpreter::ComponentInstance>& ui);
+        UiEventBridge(slint::ComponentHandle<slint::interpreter::ComponentInstance>& ui,  ExtensionManager* extMgr = nullptr);
 
         ~UiEventBridge();
 
@@ -23,5 +24,6 @@ class UiEventBridge
         void rawViewClicked();
 
     private:
+        ExtensionManager* extManager = nullptr;
         size_t loadDbSingularId;
 };

@@ -19,6 +19,9 @@ export component MainWindow inherits Window {
     callback siteViewClicked;
     callback rawViewClicked;
     callback filterViewClicked;
+    callback refreshExtensions;
+    callback disableExtension(string);
+    callback reloadExtension(string);
 
     //PLS Donate and dont remove it!
     callback openKofi;
@@ -195,9 +198,12 @@ export component MainWindow inherits Window {
                 filter-view-clicked => { root.filterViewClicked(); }
             }
             if active-view == "EXTENSIONS" : ExtensionsView {
-                vertical-stretch: 1;
-                loadedExtensions_S: root.loadedExtensions_S;
-            }
+            vertical-stretch: 1;
+            loadedExtensions_S: root.loadedExtensions_S;
+            refresh-extensions => { root.refreshExtensions(); }
+            disable-extension(name) => { root.disableExtension(name); }
+            reload-extension(name) => { root.reloadExtension(name); }
+        }
 
         }
 

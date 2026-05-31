@@ -646,6 +646,148 @@ void ExtensionManager::runExtension(LoadedExtension& ext)
     }
 }
 
+void ExtensionManager::unloadExtension(std::string extensionName)
+{
+    for (auto it = extensions.begin(); it != extensions.end();)
+    {
+        auto& ext = *it;
+
+        if (ext->identity.second == extensionName)
+        {
+            ext->running = false;
+            
+            if (ext->thread.joinable())
+                ext->thread.join();
+            it = extensions.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+}
+
+void ExtensionManager::reloadExtension(std::string extensionName)
+{
+    std::filesystem::path extPath;
+    for (const auto& ext : extensions)
+    {
+        if (ext->identity.second == extensionName)
+        {
+            extPath = ext->path;
+            break;
+        }
+    }
+    if (!extPath.empty())
+    {
+        unloadExtension(extensionName);
+    }
+
+    auto newExt = std::make_unique<LoadedExtension>();
+    newExt->path = extPath;
+    registerFunctions(*newExt);
+    try 
+    {
+        newExt->lua.script_file(extPath.string());
+    } catch (const std::exception& e) {
+        std::cerr << "Failed to reload extension: " << extPath << "\nError: " << e.what() << '\n';
+        return;
+    }
+    newExt->thread = std::thread(&ExtensionManager::runExtension, this, std::ref(*newExt));
+    extensions.push_back(std::move(newExt));
+}
+
+void ExtensionManager::reloadAllExtensions()
+{
+    std::vector<std::filesystem::path> paths;
+    for (const auto& ext : extensions)
+        paths.push_back(ext->path);
+
+    // unload all
+    for (auto& ext : extensions)
+        ext->running = false;
+    for (auto& ext : extensions)
+        if (ext->thread.joinable())
+            ext->thread.join();
+    extensions.clear();
+
+    // reload all
+    for (const auto& path : paths)
+    {
+        auto newExt = std::make_unique<LoadedExtension>();
+        newExt->path = path;
+        registerFunctions(*newExt);
+        try 
+        {
+            newExt->lua.script_file(path.string());
+        } catch (const std::exception& e) {
+            std::cerr << "Failed to reload extension: " << path << "\nError: " << e.what() << '\n';
+            continue;
+        }
+        extensions.push_back(std::move(newExt));
+    }
+
+    // start all threads
+    for (auto& ext : extensions)
+        ext->thread = std::thread(&ExtensionManager::runExtension, this, std::ref(*ext));
+}
+
+void ExtensionManager::refresh()
+{
+    try
+    {
+
+        //load all lua files from this dir recursively
+        for (const auto& entry : std::filesystem::recursive_directory_iterator(extensionPath))
+        {
+            if (entry.is_regular_file() && entry.path().extension() == ".lua")
+            {
+                bool alreadyLoaded = false;
+                for (const auto& ext : extensions)
+                {
+                    if (ext->path == entry.path())
+                    {
+                        alreadyLoaded = true;
+                        break;
+                    }
+                }
+
+                if (alreadyLoaded)
+                {
+                    continue;
+                }
+
+                auto ext = std::make_unique<LoadedExtension>();
+                ext->path = entry.path();
+                
+                registerFunctions(*ext);
+
+                try
+                {
+                    ext->lua.script_file(entry.path().string());
+                }
+                catch (const std::exception& e)
+                {
+                    std::cerr << "Failed to load extension: "
+                            << entry.path()
+                            << "\nError: " << e.what() << '\n';
+                    continue;
+                }
+                            
+                extensions.push_back(std::move(ext));
+                extensions.back()->thread = std::thread(&ExtensionManager::runExtension, this, std::ref(*extensions.back()));
+            }
+            else if (entry.is_regular_file())
+            {
+                std::cerr << "Skipping non-lua file: " << entry.path() << '\n';
+            }
+        }
+    } catch (std::exception& e)
+    {
+        std::cerr << "Error loading extensions: " << e.what() << '\n';
+    }
+}
+
 void ExtensionManager::registerFunctions(LoadedExtension& ext)
 {
     sol::state& lua = ext.lua;

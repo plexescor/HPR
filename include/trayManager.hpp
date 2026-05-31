@@ -14,7 +14,18 @@
 #endif
 
 #ifdef __linux__
-    #include <dbus/dbus.h>
+    /* Prefer including dbus header if available; otherwise forward-declare to
+       avoid includePath errors in environments where libdbus include paths
+       are not configured. */
+#  if defined(__has_include)
+#    if __has_include(<dbus/dbus.h>)
+#      include <dbus/dbus.h>
+#    else
+      struct DBusConnection;
+#    endif
+#  else
+    struct DBusConnection;
+#  endif
 #endif
 
 class TrayManager

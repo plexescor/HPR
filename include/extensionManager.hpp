@@ -65,6 +65,11 @@ class ExtensionManager
         void run();
         void loadExtensions();
 
+        void reloadExtension(std::string extensionName);
+        void unloadExtension(std::string extensionName);
+        void reloadAllExtensions();
+        void refresh();
+
     private:
         void updateExtensionPath();
         void loadNativeExtension(const std::filesystem::path& path);

@@ -9,12 +9,48 @@ export struct LoadedExtension_S {
 export component ExtensionsView {
     in property <[LoadedExtension_S]> loadedExtensions_S;
 
+    callback refresh-extensions();
+    callback disable-extension(string);
+    callback reload-extension(string);
+
     VerticalLayout {
         padding: 12px;
         padding-top: 0px;
         spacing: 10px;
 
-        SectionHeader { label: "EXTENSIONS"; }
+        HorizontalLayout {
+            alignment: space-between;
+            vertical-stretch: 0;
+
+            SectionHeader { label: "EXTENSIONS"; }
+
+            refreshBtn := Rectangle {
+                width: 72px;
+                height: 26px;
+                border-radius: 6px;
+                background: #ffffff0f;
+                border-width: 1px;
+                border-color: #ffffff18;
+
+                animate background { duration: 120ms; }
+
+                ta-refresh := TouchArea {
+                    clicked => { root.refresh-extensions(); }
+                }
+
+                // background: ta-refresh.has-hover ? #ffffff1a : #ffffff0f;
+
+                Text {
+                    text: "REFRESH";
+                    font-size: 8px;
+                    font-weight: 700;
+                    letter-spacing: 2px;
+                    color: #ffffff60;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
+        }
 
         Flickable {
             vertical-stretch: 1;
@@ -42,20 +78,26 @@ export component ExtensionsView {
                 }
 
                 for ext in loadedExtensions_S : Card {
-                    height: 64px;
+                    height: 72px;
+
                     HorizontalLayout {
-                        padding: 16px;
+                        padding: 14px;
+                        spacing: 12px;
                         alignment: space-between;
+
+                        // Left side - author top, extension name bottom
                         VerticalLayout {
-                            alignment: center;
-                            spacing: 4px;
+                            alignment: space-between;
+                            vertical-stretch: 1;
+
                             Text {
-                                text: "EXTENSION";
-                                font-size: 9px;
+                                text: ext.author-name;
+                                font-size: 10px;
                                 font-weight: 700;
-                                letter-spacing: 2.5px;
-                                color: #ffffff40;
+                                letter-spacing: 1.5px;
+                                color: #c084fc;
                             }
+
                             Text {
                                 text: ext.extension-name;
                                 font-size: 13px;
@@ -63,23 +105,64 @@ export component ExtensionsView {
                                 color: #a3e635;
                             }
                         }
-                        VerticalLayout {
+
+                        // Right side - Disable + Reload buttons
+                        HorizontalLayout {
                             alignment: center;
-                            spacing: 4px;
-                            Text {
-                                text: "AUTHOR";
-                                font-size: 9px;
-                                font-weight: 700;
-                                letter-spacing: 2.5px;
-                                color: #ffffff40;
-                                horizontal-alignment: right;
+                            spacing: 6px;
+
+                            disableBtn := Rectangle {
+                                width: 66px;
+                                height: 28px;
+                                border-radius: 6px;
+                                background: #ff605c18;
+                                border-width: 1px;
+                                border-color: #ff605c40;
+
+                                animate background { duration: 120ms; }
+
+                                ta-disable := TouchArea {
+                                    clicked => { root.disable-extension(ext.extension-name); }
+                                }
+
+                                // background: ta-disable.has-hover ? #ff605c28 : #ff605c18;
+
+                                Text {
+                                    text: "DISABLE";
+                                    font-size: 8px;
+                                    font-weight: 700;
+                                    letter-spacing: 1.5px;
+                                    color: #ff605c;
+                                    horizontal-alignment: center;
+                                    vertical-alignment: center;
+                                }
                             }
-                            Text {
-                                text: ext.author-name;
-                                font-size: 13px;
-                                font-weight: 600;
-                                color: #c084fc;
-                                horizontal-alignment: right;
+
+                            reloadBtn := Rectangle {
+                                width: 66px;
+                                height: 28px;
+                                border-radius: 6px;
+                                background: #38bdf818;
+                                border-width: 1px;
+                                border-color: #38bdf840;
+
+                                animate background { duration: 120ms; }
+
+                                ta-reload := TouchArea {
+                                    clicked => { root.reload-extension(ext.extension-name); }
+                                }
+
+                                // background: ta-reload.has-hover ? #38bdf828 : #38bdf818;
+
+                                Text {
+                                    text: "RELOAD";
+                                    font-size: 8px;
+                                    font-weight: 700;
+                                    letter-spacing: 1.5px;
+                                    color: #38bdf8;
+                                    horizontal-alignment: center;
+                                    vertical-alignment: center;
+                                }
                             }
                         }
                     }

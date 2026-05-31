@@ -3,7 +3,7 @@
 
 #include "appState.hpp"
 #include "uiModelManager.hpp"
-
+#include "extensionManager.hpp"
 //Slint stuff
 #include <slint-interpreter.h>
 
@@ -14,7 +14,7 @@
 
 class HPRInterpreter {
     public:
-        HPRInterpreter();
+        HPRInterpreter(ExtensionManager* extMgr = nullptr);
         ~HPRInterpreter();
         void show();
         void hide();
@@ -26,6 +26,8 @@ class HPRInterpreter {
         bool initialiseSlintUiPath();
 
     private:
+        ExtensionManager* extManager;
+
         //Interpreter stuff
         slint::interpreter::ComponentCompiler compiler;
         std::optional<slint::interpreter::ComponentDefinition> definition;
