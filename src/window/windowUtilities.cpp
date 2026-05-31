@@ -321,19 +321,16 @@ void showNotification(const std::string &title, const std::string &msg) {
     dbus_connection_unref(conn);
 
 #elif defined(_WIN32)
-    static bool initialized = false;
-    if (!initialized) {
+    if (!WinToastLib::WinToast::instance()->isInitialized()) {
         CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
 
         WinToastLib::WinToast::instance()->setAppName(L"HPR");
         WinToastLib::WinToast::instance()->setAppUserModelId(L"HPR.HumanPatternRecorder");
-        WinToastLib::WinToast::instance()->setShortcutPolicy(WinToastLib::WinToast::SHORTCUT_POLICY_REQUIRE_CREATE);
+        WinToastLib::WinToast::instance()->setShortcutPolicy(WinToastLib::WinToast::SHORTCUT_POLICY_IGNORE);
         
-        if (WinToastLib::WinToast::instance()->initialize()) {
-            initialized = true;
-        }
+        WinToastLib::WinToast::instance()->initialize();
     }
-    if (initialized) {
+    if (WinToastLib::WinToast::instance()->isInitialized()) {
         std::wstring wtitle(title.begin(), title.end());
         std::wstring wmsg(msg.begin(), msg.end());
         
