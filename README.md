@@ -1,10 +1,4 @@
 <p align="center">
-  📢 <strong>Development Update:</strong> The next release of HPR, v0.69 might take a bit longer than usual. I am currently 
-  architecting a major extension-like plugin system under the hood to make HPR even more flexible and powerful. Good 
-  things take time, so please bear with me and stay tuned!
-</p>
-
-<p align="center">
   <a href="https://ko-fi.com/plexescor">
     <img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support on Ko-fi" />
   </a>
@@ -18,7 +12,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/status-active_development-brightgreen?style=flat-square" />
-  <img src="https://img.shields.io/badge/version-v0.6-blue?style=flat-square" />
+  <img src="https://img.shields.io/badge/version-v0.69-blue?style=flat-square" />
   <img src="https://img.shields.io/badge/language-C%2B%2B23-orange?style=flat-square" />
   <img src="https://img.shields.io/badge/UI-Slint_1.16.1-purple?style=flat-square" />
   <img src="https://img.shields.io/badge/DB-SQLite3_bundled-lightgrey?style=flat-square" />
@@ -34,10 +28,8 @@
 ---
 
 > [!IMPORTANT]
-> **HPR is now fully free and open source.**
-> The premium version (previously closed source) has been merged into the free version. Every feature - current and future - is available to everyone at no cost. If HPR saves you time or you just want to support continued development, a Ko-fi donation goes a long way.
->
-
+> **HPR is fully free and open source.**
+> Every feature — current and future — is available to everyone at no cost. If HPR saves you time or you want to support continued development, a Ko-fi donation goes a long way.
 
 ---
 
@@ -55,14 +47,12 @@
 
 <p align="center">
   <strong>See HPR in action</strong><br/>
-  <sub>Live window tracking, switch history, and the Insights engine - all running locally, zero accounts.</sub>
+  <sub>Live window tracking, switch history, and the Insights engine — all running locally, zero accounts.</sub>
 </p>
 
 <p align="center">
-  
 
 https://github.com/user-attachments/assets/a5fbe1f1-0cdc-41c8-a77b-68f40d96d531
-
 
 </p>
 
@@ -74,6 +64,7 @@ https://github.com/user-attachments/assets/a5fbe1f1-0cdc-41c8-a77b-68f40d96d531
 - [What It Does Not Do](#what-it-does-not-do)
 - [Browser Tab Tracking](#browser-tab-tracking)
 - [VS Code Project Tracking](#vs-code-project-tracking)
+- [Extensions](#extensions)
 - [System Tray](#system-tray)
 - [Data Storage](#data-storage)
 - [Installation](#installation)
@@ -98,7 +89,6 @@ https://github.com/user-attachments/assets/a5fbe1f1-0cdc-41c8-a77b-68f40d96d531
 - [Adding a New Platform](#adding-a-new-platform)
 - [Adding New Tracked Data](#adding-new-tracked-data)
 - [Known Issues and Limitations](#known-issues-and-limitations)
-- [Common Issues and Fixes](#common-issues-and-fixes)
 - [Contributing](#contributing)
 
 ---
@@ -107,7 +97,7 @@ https://github.com/user-attachments/assets/a5fbe1f1-0cdc-41c8-a77b-68f40d96d531
 
 You open your computer. You work. Hours pass. You have no idea where they went.
 
-HPR fixes that. It watches which window is in focus, every 50 milliseconds, all day. It builds a running log of exactly where your time actually went, not where you think it went. Switch from your browser to your editor, it records the transition. Switch back two hours later, it records that too. Every switch. Every minute. Every day.
+HPR fixes that. It watches which window is in focus every 50 milliseconds, all day. It builds a running log of exactly where your time actually went — not where you think it went. Switch from your browser to your editor, it records the transition. Switch back two hours later, it records that too. Every switch. Every minute. Every day.
 
 At any point you get three things live:
 
@@ -134,29 +124,78 @@ That is the whole pitch. A compiled binary that watches one thing and writes it 
 
 ## Browser Tab Tracking
 
-HPR supports tracking browser tabs per site and per tab, without requiring any browser extensions. When the active window is a supported browser (Chrome, Edge, Firefox, or Brave), HPR automatically queries the window's title (which contains the active tab name) alongside the application name. This tab usage time is aggregated and tracked separately, giving you a detailed breakdown of which websites and tabs you spend your time on.
+HPR supports tracking browser tabs per site and per tab without requiring any browser extensions. When the active window is a supported browser (Chrome, Edge, Firefox, or Brave), HPR automatically queries the window title alongside the application name. This tab usage time is aggregated and tracked separately, giving you a detailed breakdown of which websites and tabs you spend time on.
 
-In the UI, you can toggle how this data is displayed by clicking the **Tab View** and **Site View** buttons:
-- **Tab View**: Shows raw, unaliased tab names. This allows you to differentiate between specific pages (for example, tracking time spent across two different YouTube videos).
-- **Site View**: Applies rules from `tabAliases.csv` to group your tabs by website. This view collapses specific pages into their parent domains (e.g., combining all YouTube tabs into a single "YouTube" entry), showing you only the high-level sites you visited.
+In the UI, toggle display mode with the **Tab View** and **Site View** buttons:
+- **Tab View**: Shows raw, unaliased tab names — lets you differentiate between specific pages (e.g. two different YouTube videos).
+- **Site View**: Applies rules from `tabAliases.csv` to group tabs by website, collapsing specific pages into parent domains.
 
 ---
 
 ## VS Code Project Tracking
 
-HPR tracks which VS Code project you are in, not just that VS Code is open. No extension required. No VS Code plugin to install. No marketplace. Nothing.
+HPR tracks which VS Code project you are in, not just that VS Code is open. No extension required. No VS Code plugin to install.
 
-VS Code puts the active project name directly in its window title in the format `filename - project - Visual Studio Code`. HPR reads that title on every poll tick. When it detects the active window is VS Code (matching `code`, `vscode`, or `visual studio code` case-insensitively against the raw title), it calls the platform-specific window title getter a second time to pull the full title string and parse it:
+VS Code puts the active project name directly in its window title in the format `filename - project - Visual Studio Code`. HPR reads that title on every poll tick. When it detects VS Code is active, it parses the full title string:
 
 1. Strip the trailing ` - Visual Studio Code` suffix
 2. Find the last ` - ` separator in what remains
 3. Everything after that separator is the project name
 
-The ` - ` separator (with spaces) is used instead of a bare `-` because project names can contain dashes. Nobody names their project `foo - bar`, so this is a safe split point.
+The result goes into `timeLog_PerProject`, a separate time accumulator running in parallel with the normal per-app log. The UI has a dedicated Project View showing time broken down by project name for the day. Toggle between **Raw View** (unprocessed title substring) and the default parsed view which applies `projectAliases.csv`.
 
-The result goes into `timeLog_PerProject`, a separate time accumulator that runs in parallel with the normal per-app log. In the UI you get a dedicated Project View that shows time broken down by project name for the day. You can toggle between **Raw View** (the unprocessed title substring) and the default parsed view which applies `projectAliases.csv` on top.
+This works on every supported platform — Hyprland, GNOME, KDE, Cinnamon, and Windows — because each backend already has a window title getter and VS Code puts the project name in the title on all of them.
 
-This works on every supported platform - Hyprland, GNOME, KDE, Cinnamon, and Windows - because each backend already has a window title getter and VS Code puts the project name in the title on all of them.
+---
+
+## Extensions
+
+HPR ships with a built-in **Sandboxed Lua 5.4 Extension Engine**. Drop a `.lua` file into your extensions folder and HPR loads it automatically on the next launch — no compilers, no package managers, no restart required after placing the file.
+
+Each extension runs in its own isolated VM on a dedicated background thread, completely decoupled from the main tracking and rendering pipelines. A slow or misbehaving extension cannot block HPR's core loop or freeze the UI.
+
+**What you can do with extensions:**
+- Read the currently active window in real time
+- Run shell commands and query the HPR database directly
+- Register fully custom window detection backends for compositors HPR doesn't natively support
+- Subscribe to HPR's internal event bus and react to state changes
+- Build interactive custom UI panels that render inside HPR via Slint callback bindings
+
+**Where to put your extensions:**
+
+```
+Linux:   ~/.config/HPR/extensions/
+Windows: %APPDATA%\HPR\HPR_Config\extensions\
+```
+
+HPR scans recursively, so subdirectory organization like `extensions/my-backend/sway.lua` works fine.
+
+**A minimal extension** — prints the active app every tick:
+```lua
+function onTick(delta)
+    print(HPR.getCurrentWindow_E())
+end
+```
+
+**Extension lifecycle hooks:**
+
+| Hook | When it runs |
+|---|---|
+| `init()` | Once on load. Return an integer to set tick interval in ms (default 1000). |
+| `onTick(delta)` | Periodically on the extension's thread. `delta` is actual elapsed ms since last tick. |
+| `onExit()` | Once on shutdown. Must complete within **200ms** or HPR force-detaches the thread. |
+
+> [!WARNING]
+> HPR also supports native extensions (`.dll` / `.so`) for advanced C++ developers. Unlike Lua, native extensions run outside the sandbox with full system access. Only load native extensions you have reviewed and trust. See the [Extension Docs](https://hpr-cpp.netlify.app/quickstart.html) for details.
+
+**Documentation:**
+
+| Guide | Link |
+|---|---|
+| QuickStart + Common Mistakes | [hpr-cpp.netlify.app/quickstart.html](https://hpr-cpp.netlify.app/quickstart.html) |
+| Building a Custom Window Backend | [hpr-cpp.netlify.app/custom-app-extension.html](https://hpr-cpp.netlify.app/custom-app-extension.html) |
+| EventHub & Extension Communication | [hpr-cpp.netlify.app/comm-bw-extension.html](https://hpr-cpp.netlify.app/comm-bw-extension.html) |
+| Full API Reference | [hpr-cpp.netlify.app/api.html](https://hpr-cpp.netlify.app/api.html) |
 
 ---
 
@@ -171,7 +210,7 @@ HPR reads exactly one thing from your system:
 
 No keystrokes. No mouse movement. No screen capture. No clipboard. No file scanning. One string, every 50ms, written locally.
 
-HPR is also not an Electron app, not a web server, not a Python daemon, not a subscription service. It is a compiled C++23 binary. It starts in milliseconds. Under 10MB of RAM on Windows. If that sounds refreshing, it should.
+HPR is also not an Electron app, not a web server, not a Python daemon, not a subscription service. It is a compiled C++23 binary. It starts in milliseconds. Under 10MB of RAM on Windows.
 
 ---
 
@@ -187,7 +226,7 @@ HPR is also not an Electron app, not a web server, not a Python daemon, not a su
         ...
 ```
 
-One `.db` file per day. One folder per month. Standard SQLite3 that any viewer on the planet can open. Delete last month by deleting the folder. Inspect a specific Tuesday by opening it in DB Browser for SQLite. No export step. No proprietary format. No account to log into first.
+One `.db` file per day. One folder per month. Standard SQLite3 that any viewer can open. Delete last month by deleting the folder. Inspect a specific Tuesday by opening it in DB Browser for SQLite. No export step. No proprietary format. No account required.
 
 A normal day of use is 30 to 100 KB. A full year sits under 50 MB total.
 
@@ -196,16 +235,13 @@ A normal day of use is 30 to 100 KB. A full year sits under 50 MB total.
 ## Installation
 
 **Arch Linux (AUR)**
-HPR is available on the AUR. You can install it using your preferred helper:
 ```bash
 yay -S hpr
 ```
 
-> [!NOTE]
-> No formal installer for Linux yet. For now it is three commands and you are running.
-
 **Windows**
-Download and run the setup executable. The Inno Setup installer automatically handles placing `aliases.csv`, `tabAliases.csv`, `config.csv`, and the `ui/` folder into your config directory. If you have already customized any of these files, the installer will prompt you before overwriting them, making updates completely safe. It also drops the latest default UI into `ui-REFERENCEONLY/` every time so you always have a clean reference to diff against.
+
+Download and run the setup executable. The Inno Setup installer automatically handles placing `aliases.csv`, `tabAliases.csv`, `config.csv`, and the `ui/` folder into your config directory. If you have already customized any of these files, the installer prompts before overwriting. It also drops the latest default UI into `ui-REFERENCEONLY/` every update so you always have a clean reference to diff against.
 
 **Linux (Manual)**
 ```bash
@@ -214,14 +250,10 @@ chmod +x installHPRConfigAndUi.sh
 ./HPR
 ```
 
-The Linux setup script handles copying the config and UI files and provides the same safe-overwrite prompts as the Windows installer.
-
-On first launch HPR automatically creates a desktop entry at `~/.local/share/applications/hpr.desktop`. This registers HPR with your desktop environment so it appears in your application launcher and the taskbar/dock correctly associates the window with its icon. No manual `.desktop` file setup is required.
-
-The entry is only written when it is missing or stale. On subsequent launches HPR checks whether the `Exec=` and `Icon=` fields inside the existing file already point to the current binary and icon locations. If they match, the file is left completely untouched. If they do not match (for example, the binary was moved or rebuilt to a different path), HPR rewrites the entry to reflect the new location.
+On first launch HPR automatically creates a desktop entry at `~/.local/share/applications/hpr.desktop`. This registers HPR with your desktop environment so it appears in your application launcher correctly. The entry is only written when missing or stale — HPR checks whether the `Exec=` and `Icon=` fields already point to the current binary, and only rewrites if they don't.
 
 > [!NOTE]
-> This only applies when running HPR directly from a build or binary without installing. If you installed via the AUR, the system-wide desktop entry at `/usr/share/applications/hpr.desktop` is already managed by the package — HPR detects this and skips the local entry entirely.
+> If you installed via the AUR, the system-wide desktop entry is already managed by the package. HPR detects this and skips the local entry entirely.
 
 <details>
 <summary>Where does everything go?</summary>
@@ -244,7 +276,7 @@ Windows: %APPDATA%\HPR\HPR_DB\
 
 ## System Tray
 
-HPR lives in your system tray and keeps running when you close the window. The only way to actually quit it is through the tray.
+HPR lives in your system tray and keeps running when you close the window. The only way to quit it is through the tray.
 
 **Windows:**
 - Left click → does nothing
@@ -253,14 +285,13 @@ HPR lives in your system tray and keeps running when you close the window. The o
 
 **Linux (Waybar · KDE · Cinnamon):**
 
-HPR registers as a `org.kde.StatusNotifierItem` on the session D-Bus. This is the same protocol that Discord, Steam, and every other modern app uses for tray icons on Linux. No libraries linked. No GTK. No Qt. Pure D-Bus over `libdbus-1`.
+HPR registers as a `org.kde.StatusNotifierItem` on the session D-Bus — the same protocol Discord, Steam, and every other modern app uses. No libraries linked. No GTK. No Qt. Pure D-Bus over `libdbus-1`.
 
-- Left or right click → open HPR (Waybar routes both clicks to the same D-Bus method, this is a Waybar limitation not an HPR one)
+- Left or right click → open HPR (Waybar routes both to the same D-Bus method; this is a Waybar limitation)
 - Middle click → quit HPR
-- Hover → shows **"HPR - Human Pattern Recorder"** with hint text **"Left/Right click: Open HPR | Middle click: Quit"**
-- Closing the window hides HPR to tray, does not quit
+- Hover → shows tooltip with hint text
 
-Works with Waybar on Hyprland, KDE's system tray, and Cinnamon's panel out of the box with zero configuration.
+Works with Waybar on Hyprland, KDE's system tray, and Cinnamon's panel out of the box.
 
 ---
 
@@ -268,35 +299,23 @@ Works with Waybar on Hyprland, KDE's system tray, and Cinnamon's panel out of th
 
 | Platform | Backend | Extra Setup |
 |---|---|---|
-| Hyprland (Wayland) | `hyprctl` IPC | None.  |
-| GNOME (Wayland) | Custom GNOME Shell extension ([lol-another-window-extension](https://github.com/plexescor/lol-another-window-extension)) | One-time only. Run the bundled install script, log out, log back in. |
-| KDE Plasma 6+ (Wayland / X11) | KWin D-Bus scripting (native, no external tools) | None. |
-| Cinnamon (X11 + Wayland) | `org.Cinnamon.Eval` D-Bus method | None. |
-| Windows 10 / 11 | Win32 API | None. |
+| Hyprland (Wayland) | `hyprctl` IPC | None |
+| GNOME (Wayland) | Custom GNOME Shell extension ([lol-another-window-extension](https://github.com/plexescor/lol-another-window-extension)) | One-time only — run the bundled install script, log out, log back in |
+| KDE Plasma 6+ (Wayland / X11) | KWin D-Bus scripting | None |
+| Cinnamon (X11 + Wayland) | `org.Cinnamon.Eval` D-Bus method | None |
+| Windows 10 / 11 | Win32 API | None |
 
 <details>
 <summary>GNOME setup walkthrough</summary>
 
-On first launch HPR checks whether its GNOME extension is active. If it is not, it tells you directly rather than silently returning garbage. Run the bundled `installWindowCallsExtension.sh`, which clones and installs [lol-another-window-extension](https://github.com/plexescor/lol-another-window-extension) — a custom shell extension built specifically for HPR — and enables it. Because GNOME on Wayland cannot hot-reload shell extensions, you log out and back in once. Every launch after that is fully automatic. It was either do it this way or not support GNOME at all, and I was not leaving GNOME users out.
+On first launch HPR checks whether its GNOME extension is active. If it is not, it tells you directly. Run the bundled `installWindowCallsExtension.sh`, which installs [lol-another-window-extension](https://github.com/plexescor/lol-another-window-extension) — a custom shell extension built specifically for HPR. Because GNOME on Wayland cannot hot-reload shell extensions, you log out and back in once. Every subsequent launch is fully automatic.
 
 </details>
 
 <details>
 <summary>Cinnamon details</summary>
 
-Cinnamon runs on top of its own window manager, **Muffin** (a fork of GNOME's Mutter). Unlike the other Linux backends, Cinnamon exposes a D-Bus method - `org.Cinnamon.Eval` - that evaluates arbitrary JavaScript directly inside the live Cinnamon process. HPR uses this to query the internal `global.display.focus_window` object:
-
-- **Window class** (application name): `global.display.focus_window.get_wm_class()`
-- **Window title** (active tab / document): `global.get_window_actors().filter(a => a.meta_window.has_focus())[0].get_meta_window().get_title()`
-
-Because this goes through Cinnamon's own compositor internals rather than X11 display properties, it works identically on both the **X11 session** (default on Linux Mint) and the **experimental Wayland session** without any code branching. No extra tools or extensions need to be installed.
-
-</details>
-
-<details>
-<summary>Windows details</summary>
-
-Built without a console window so it sits in your tray and stays out of your way. No terminal flashing on launch.
+Cinnamon exposes `org.Cinnamon.Eval` — a D-Bus method that evaluates JavaScript inside the live Cinnamon process. HPR uses this to query `global.display.focus_window` directly. Because this goes through Cinnamon's compositor internals rather than X11 display properties, it works identically on both X11 and the experimental Wayland session without any code branching.
 
 </details>
 
@@ -307,32 +326,32 @@ Built without a console window so it sits in your tray and stays out of your way
 <details>
 <summary><strong>Windows</strong></summary>
 
-Around **8 MB RSS** in real use. That is HPR's own code plus whatever the Windows runtime pulls in. Nothing hidden in that number.
+Around **8 MB RSS** in real use.
 
 </details>
 
 <details>
-<summary><strong>Linux &mdash; read this before opening a memory issue</strong></summary>
+<summary><strong>Linux — read this before opening a memory issue</strong></summary>
 
 BTOP++, htop, and similar tools will report approximately **47 MB**. That number is accurate but it is not the full picture.
 
-HPR's actual private memory, heap plus stack plus all application data, is around **22 MB**. The remaining ~25 MB is shared GPU library pages mapped into HPR's address space by the OS because Slint uses OpenGL for rendering. The chain: Slint initializes OpenGL via EGL, Mesa's Gallium driver loads for your GPU, and Mesa unconditionally loads `libLLVM` because it needs LLVM as a JIT for driver-level shader compilation. This happens even when shaders are cached. `libLLVM` is 60+ MB and its resident pages account for most of what process monitors show above HPR's private footprint.
+HPR's actual private memory is around **22 MB**. The remaining ~25 MB is shared GPU library pages mapped into HPR's address space by the OS because Slint uses OpenGL for rendering. Mesa's Gallium driver loads `libLLVM` as a JIT for shader compilation — this happens even when shaders are cached. `libLLVM` is 60+ MB and its resident pages account for most of the overhead shown in process monitors.
 
-These pages are physically shared across every GPU-accelerated process on your system. Your compositor has them. Your browser has them. The kernel is not loading duplicate copies. The proportional cost to HPR specifically is around **50 MB PSS** (Proportional Set Size), which is the most honest single number the kernel can give you.
+These pages are physically shared across every GPU-accelerated process on your system. Your compositor has them. Your browser has them. The kernel is not loading duplicate copies. The proportional cost to HPR specifically is around **50 MB PSS**.
 
 To verify yourself:
 ```bash
 cat /proc/$(pgrep HPR)/status | grep -E "RssAnon|RssFile|VmRSS"
 ```
 
-`RssAnon` is HPR's actual private footprint. `RssFile` is the shared library mapping. `VmRSS` is the sum that monitors display.
+`RssAnon` is HPR's actual private footprint. `RssFile` is the shared library mapping.
 
-To eliminate the GPU overhead entirely:
+To eliminate GPU overhead entirely:
 ```csv
 hardware-acceleration,false
 ```
 
-This switches Slint to a CPU software renderer. Mesa never loads. `libLLVM` never loads. RSS drops to approximately **22 MB**. The UI is visually identical. The only cost is slightly higher CPU usage during redraws, which for a tracker redrawing every 500ms is genuinely imperceptible.
+This switches Slint to a CPU software renderer. RSS drops to approximately **22 MB**. The UI is visually identical. The only cost is slightly higher CPU usage during redraws — for a tracker redrawing every 500ms, imperceptible.
 
 </details>
 
@@ -347,14 +366,14 @@ Last-level data miss rate:         0.2%
 Overall last-level miss rate:      ~0.0%
 ```
 
-The 2.6% L1 data miss rate is entirely inside Slint's font rendering pipeline: fontconfig resolution, FreeType hinting, parley text shaping. Not a single HPR code path appears in the profile.
+The 2.6% L1 data miss rate is entirely inside Slint's font rendering pipeline. Not a single HPR code path appears in the profile.
 
 </details>
 
 <details>
 <summary><strong>Callgrind (60 second sample)</strong></summary>
 
-4.46 billion instructions executed over 60 seconds. HPR's own C++ backend did not appear in the top 15 hottest functions by instruction count. Everything in that list was Slint, FreeType, fontconfig, or parley doing text work. Background threads poll and sleep. The main thread runs the event loop. That is the design working correctly.
+4.46 billion instructions over 60 seconds. HPR's own C++ backend did not appear in the top 15 hottest functions by instruction count. Everything in that list was Slint, FreeType, fontconfig, or parley doing text work. Background threads poll and sleep. The main thread runs the event loop.
 
 </details>
 
@@ -371,22 +390,17 @@ No analytics.
 100% offline core.
 ```
 
-**Let's be completely upfront:** Networking code (utilizing `WinHTTP` on Windows and `libcurl` on Linux) **is compiled directly into the HPR binary**. However, **HPR itself never makes network calls, runs no telemetry, and never phones home.** 
+**Let's be completely upfront:** Networking code (`WinHTTP` on Windows, `libcurl` on Linux) **is compiled into the HPR binary**. However, **HPR itself never makes network calls and never phones home.**
 
-The networking libraries are bundled **solely** to power the Lua extension engine. By default, HPR runs entirely offline. Only when you explicitly install or write a Lua extension that invokes the native networking API (`HPR.httpGet_E`) will HPR touch the internet. 
-
-Your tracking databases remain entirely local on your disk unless you consciously run an extension designed to sync or upload them.
+The networking libraries are bundled solely to power the Lua extension engine. By default HPR runs entirely offline. Only when you explicitly install or write a Lua extension that invokes `HPR.httpGet_E` will HPR touch the internet.
 
 > [!WARNING]
-> **Extension Security & Networking Warning:**
-> Because user-made extensions have the power to make HTTP requests and also have direct access to query your focus databases (`HPR.dbQuery_E`) or inspect active window titles (`HPR.getCurrentWindow_E`), **you must only install extensions you fully trust.** A malicious script could read your sensitive window history and exfiltrate it over the network to an external server. Always review the Lua scripts inside your `extensions/` directory before running them.
-
+> **Extension Security Warning:**
+> Extensions have access to the networking API (`HPR.httpGet_E`) and can also read your focus databases (`HPR.dbQuery_E`) and active window titles (`HPR.getCurrentWindow_E`). A malicious script could read your window history and exfiltrate it. **Only install extensions you fully trust and have reviewed.**
 
 ---
 
 ## Comparison With Other Trackers
-
-I need users, so I am going to be completely honest about where HPR stands right now:
 
 | Feature | HPR | ActivityWatch | RescueTime | Toggl |
 |---|---|---|---|---|
@@ -398,32 +412,28 @@ I need users, so I am going to be completely honest about where HPR stands right
 | Native Wayland | Yes | Partial | N/A | N/A |
 | System tray | Yes (native, no libs) | Yes | Yes | Yes |
 | VS Code project tracking | Yes (built-in, no extension) | Via plugin | No | No |
+| Lua extension engine | Yes | No | No | No |
 | Embedded web server | No | Yes | No | No |
 | Open source | Yes | Yes | No | No |
 | Launch time | Instant | Several seconds | N/A | N/A |
 | Free | Yes | Yes | Limited | Limited |
 
-ActivityWatch is the most honest comparison. It is a mature, maintained project with a full web dashboard, browser extensions, a plugin ecosystem, and years of production use. HPR has none of that yet. What HPR has that ActivityWatch does not: a fraction of the memory footprint, native Wayland from day one, no Python runtime, no embedded web server running in the background.
+ActivityWatch is the most honest comparison. It is a mature, maintained project with a full web dashboard, browser extensions, a plugin ecosystem, and years of production use. HPR has none of that yet. What HPR has: a fraction of the memory footprint, native Wayland from day one, no Python runtime, no embedded web server, and a scriptable extension engine.
 
 If you need something mature and battle-tested today, use ActivityWatch. If the architecture and footprint appeal to you and you can tolerate being early, HPR is worth following.
-
 
 ---
 
 ## Aliases
 
-Raw window titles from the OS are inconsistent. `Visual Studio Code` on one machine, `code` on another, `code.exe` on Windows. HPR ships with an `aliases.csv` that collapses all of those into one label. For browser tabs, a separate `tabAliases.csv` handles collapsing specific URLs and page titles into generic website names.
+Raw window titles from the OS are inconsistent. `Visual Studio Code` on one machine, `code` on another, `code.exe` on Windows. HPR ships with an `aliases.csv` that collapses all of those into one label. For browser tabs, `tabAliases.csv` handles collapsing page titles into website names.
 
-A few bundled examples:
-- `code` catches `vscode`, `code-oss`, `code.exe`, and similar variants
-- `terminal` catches `kitty`, `alacritty`, `konsole`, `wezterm`, and more
-
-Adding your own is editing one line in a CSV: `raw substring,Display Name`. Lines starting with `#` are comments.
+Adding your own is one line in a CSV: `raw substring,Display Name`. Lines starting with `#` are comments.
 
 > [!TIP]
-> Aliases hot-reload. Save the file, HPR picks it up within the next UI tick. No restart.
+> Aliases hot-reload. Save the file and HPR picks it up within the next UI tick. No restart.
 
-The raw OS string is always preserved untouched in the database. Aliases apply only at display time, which means renaming an alias retroactively updates every historical entry for that application with zero migration work.
+The raw OS string is always preserved in the database. Aliases apply only at display time — renaming an alias retroactively updates every historical entry for that application with zero migration work.
 
 ---
 
@@ -441,16 +451,14 @@ Linux:   ~/.config/HPR/config.csv
 Windows: %APPDATA%\HPR\HPR_Config\config.csv
 ```
 
-That is the full config surface for now. It will grow alongside the feature set.
-
 ---
 
 ## Customizing the UI (Advanced)
 
 > [!IMPORTANT]
-> This section is for people who want to modify HPR's visual design without touching C++ or recompiling. If that is not you, skip it.
+> This section is for people who want to modify HPR's visual design without touching C++ or recompiling.
 
-HPR's UI is written in [Slint](https://slint.dev/). By default it is compiled into the binary at build time. Enabling interpreted mode tells HPR to load your `.slint` files from disk at runtime instead, letting you change colors, layouts, animations, and component structure without rebuilding anything.
+HPR's UI is written in [Slint](https://slint.dev/). By default it is compiled into the binary at build time. Enabling interpreted mode tells HPR to load `.slint` files from disk at runtime instead.
 
 **Enable interpreted mode:**
 ```csv
@@ -463,10 +471,8 @@ Linux:   ~/.config/HPR/ui/app-window.slint
 Windows: %APPDATA%\HPR\HPR_Config\ui\app-window.slint
 ```
 
-The setup script drops the defaults there on first run. Edit freely from that point.
-
 > [!WARNING]
-> **Do not rename structs, properties, or callbacks.** HPR's C++ backend references these by exact name to push data into the UI. Renaming them breaks the connection silently and the UI stops updating. The full interface contract is documented in `READ_ME_BEFORE_MODIFYING_UI.txt` inside your `ui/` folder. Read it before touching anything.
+> **Do not rename structs, properties, or callbacks.** HPR's C++ backend references these by exact name. Renaming them breaks the connection silently and the UI stops updating. Read `READ_ME_BEFORE_MODIFYING_UI.txt` inside your `ui/` folder before touching anything.
 
 `ui-REFERENCEONLY/` in your config directory always holds the unmodified defaults for the current version. If you break something, diff against it.
 
@@ -474,15 +480,9 @@ The setup script drops the defaults there on first run. Edit freely from that po
 
 ## Roadmap
 
-> [!NOTE]
-> The foundational work is mostly done. Local-first tracking, privacy architecture, Insights engine, native Wayland support, lightweight footprint, offline data ownership. These are either shipped or in final approach.
->
-> What comes next is refinement, not new pillars. Polish, stability, quality-of-life improvements, UI work.
+The foundational work is mostly done: local-first tracking, privacy architecture, Insights engine, native Wayland support, extension engine, offline data ownership. What comes next is refinement — polish, stability, quality-of-life improvements, UI work.
 
-**Fully Free and Open Source:**
-HPR is now completely free. The premium version (previously closed source) has been merged into this repo. Full local tracking. Full data ownership. All current features and all future features including LLM-powered pattern analysis, Focus mode with application blocking, and Advanced reporting - all free, forever.
-
-If HPR is useful to you, please consider supporting development:
+HPR is completely free. If it is useful to you, consider supporting development on Ko-fi.
 
 ---
 
@@ -492,7 +492,7 @@ If HPR is useful to you, please consider supporting development:
 
 ## Architecture Overview
 
-HPR is a multi-threaded C++23 application organized around a single shared state struct. Four threads run concurrently with defined responsibilities and defined cadences:
+HPR is a multi-threaded C++23 application organized around a single shared state struct. Four threads run concurrently with defined responsibilities and cadences:
 
 ```
 Main Thread          (Slint event loop)
@@ -505,9 +505,9 @@ Main Thread          (Slint event loop)
 
 **Window poller** lives in `CurrentWindowManager::getCurrentWindow_Loop`. It calls the platform-specific window getter every 50ms, acquires `stateMutex`, and updates the current window name and accumulated time.
 
-**UI bridge** is `HPR::trackingLoop` or `HPRInterpreter::trackingLoop`. It wakes every 500ms, reads application and tab state, and dispatches model updates to the Slint main thread using `UiModelManager` via `slint::invoke_from_event_loop`. User interactions flow back through `UiEventBridge` into `EventHub`.
+**UI bridge** is `HPR::trackingLoop` or `HPRInterpreter::trackingLoop`. It wakes every 500ms, reads application and tab state, and dispatches model updates to the Slint main thread using `UiModelManager` via `slint::invoke_from_event_loop`.
 
-**Database writer** is `DatabaseManager::writeLoop`. It flushes to SQLite every 10 seconds and also responds to `LOAD_DATABASE_SINGULAR` events to load historical data asynchronously without touching the UI thread.
+**Database writer** is `DatabaseManager::writeLoop`. It flushes to SQLite every 10 seconds and also responds to `LOAD_DATABASE_SINGULAR` events to load historical data asynchronously.
 
 ---
 
@@ -529,9 +529,9 @@ namespace AppState {
 }
 ```
 
-Instantiated exactly once in `appState.cpp`. Every thread that touches it acquires `stateMutex` via `std::lock_guard`. The locking strategy is deliberately coarse-grained: lock the whole struct, copy what you need, release immediately, do all work on the copy. Locks are always scoped inside `{}` so the hold duration is obvious in the code.
+Instantiated exactly once in `appState.cpp`. Every thread that touches it acquires `stateMutex` via `std::lock_guard`. The locking strategy is deliberately coarse-grained: lock the whole struct, copy what you need, release immediately, do all work on the copy.
 
-`timeLog_PerApp` and `timeLog_PerTab` accumulate raw millisecond durations per application name and browser tab, respectively. `switchHistory` keys on `std::pair<string, string>` (from, to) and stores a `vector<uint64_t>` of Unix millisecond timestamps for every recorded transition between those two applications.
+`timeLog_PerApp` and `timeLog_PerTab` accumulate raw millisecond durations. `switchHistory` keys on `std::pair<string, string>` (from, to) and stores a `vector<uint64_t>` of Unix millisecond timestamps for every recorded transition.
 
 ---
 
@@ -550,7 +550,7 @@ EventHub::emit(Event::LOAD_DATABASE_SINGULAR, DatabaseDate_Singular{requestedDat
 EventHub::disconnect(Event::HISTORY_LOADED_SINGULAR, id);
 ```
 
-`EventData` is a `std::variant`. Payloads are type-safe at the call site. Subscribers get an integer ID on connection and use it to unsubscribe in their destructor. No dangling listeners.
+`EventData` is a `std::variant`. Payloads are type-safe at the call site. Subscribers get an integer ID on connection and use it to unsubscribe in their destructor.
 
 ---
 
@@ -563,9 +563,9 @@ Two execution modes, one abstraction layer:
 | Compiled | `HPR` | Slint generates C++ from `.slint` at build time. Maximum performance, smallest footprint. |
 | Interpreted | `HPRInterpreter` | Slint loads `.slint` from the config directory at runtime. Modify the UI without rebuilding. |
 
-`UiModelManager` abstracts the difference. It provides `update()` for compiled mode and `update_Interpreted()` for interpreted mode, both populating the same Slint `VectorModel`s from raw C++ data. All writes are dispatched to the main thread via `slint::invoke_from_event_loop` because Slint UI objects are not thread-safe.
+`UiModelManager` abstracts the difference. All writes are dispatched to the main thread via `slint::invoke_from_event_loop` because Slint UI objects are not thread-safe.
 
-Model sync uses a surgical in-place update rather than clearing and repopulating. Clearing the model causes layout panics during resize and maximize. I found that the hard way, and this is the fix that has held since:
+Model sync uses a surgical in-place update rather than clearing and repopulating. Clearing the model causes layout panics during resize and maximize:
 
 ```cpp
 auto syncModel = [](auto model, const auto& vec) {
@@ -591,10 +591,8 @@ auto syncModel = [](auto model, const auto& vec) {
 
 ```
 app_usage      UNIQUE on app name   →  INSERT OR REPLACE   →  one row per app, always current
-switch_history UNIQUE on timestamp  →  INSERT OR IGNORE    →  dump full history every flush, SQLite drops duplicates silently
+switch_history UNIQUE on timestamp  →  INSERT OR IGNORE    →  dump full history every flush, SQLite drops duplicates
 ```
-
-`INSERT OR IGNORE` on switch history means the write loop never needs to diff in-memory state against the database. It dumps everything and lets SQLite handle deduplication. Simple and reliable.
 
 **Every connection opens with:**
 ```sql
@@ -602,7 +600,7 @@ PRAGMA journal_mode=WAL;
 PRAGMA synchronous=NORMAL;
 ```
 
-A passive WAL checkpoint runs after every write cycle. This was added after hitting real WAL corruption on Btrfs with LUKS encryption during development. Not theoretical caution.
+A passive WAL checkpoint runs after every write cycle. This was added after hitting real WAL corruption on Btrfs with LUKS encryption during development.
 
 The writer sleeps in 100 intervals of 100ms rather than one 10-second block. HPR exits within 100ms of shutdown instead of hanging for a sleep to expire.
 
@@ -613,8 +611,6 @@ The writer sleeps in 100 intervals of 100ms rather than one 10-second block. HPR
 | Windows | `CreateFileA` with `FILE_FLAG_DELETE_ON_CLOSE` | Lock file auto-deletes even if HPR crashes hard |
 | Linux | `flock(LOCK_EX \| LOCK_NB)` | Kernel releases the lock automatically on process death |
 
-A second launch detects the lock and exits immediately.
-
 ---
 
 ## Timing Model
@@ -624,31 +620,31 @@ A second launch detects the lock and exits immediately.
 | `std::chrono::steady_clock` | Duration measurement between poll ticks. Monotonic. Immune to NTP corrections, DST transitions, and manual clock changes. |
 | `std::chrono::system_clock` | Recording switch timestamps for display only. Never used in arithmetic. |
 
-Using `system_clock` for duration measurement is a classic bug that corrupts accumulated totals when NTP fires or DST changes mid-session. I specifically designed around this. Measurement and display use different clocks on purpose and that separation is enforced in code.
+Using `system_clock` for duration measurement is a classic bug that corrupts accumulated totals when NTP fires or DST changes mid-session. Measurement and display use different clocks on purpose.
 
 ---
 
 ## Pattern Analysis Engine
 
-`PatternAnalyzer` is the engine behind the Insights view. Every 30 seconds inside `trackingLoop`, it acquires a lock on `stateMutex`, copies the current state, releases immediately, then runs seven analysis passes on the copy.
+`PatternAnalyzer` runs behind the Insights view. Every 30 seconds inside `trackingLoop`, it acquires `stateMutex`, copies the current state, releases immediately, then runs seven analysis passes on the copy.
 
-**Patterns 1 through 5** are direct aggregations over `timeLog_PerApp` and `switchHistory`: most-used application, total tracked time today, top switch pairs, switch frequency distribution.
+**Patterns 1–5** are direct aggregations over `timeLog_PerApp` and `switchHistory`: most-used application, total tracked time, top switch pairs, switch frequency distribution.
 
 **Pattern 6: Longest Focus Session**
 
-Uses a Chronological Event-Matching Algorithm. The raw `switchHistory` map is flattened into a unified event timeline of arrivals and departures for every application, sorted globally by timestamp in O(N log N). One pass through the sorted list pairs each arrival with its next departure. If a session was interrupted by a crash or reboot and never received a departure event, the orphaned arrival is simply overwritten by the next session start for that application. No ghost sessions spanning multiple days. No special crash-recovery logic required.
+Uses a Chronological Event-Matching Algorithm. The raw `switchHistory` map is flattened into a unified event timeline of arrivals and departures, sorted globally by timestamp in O(N log N). One pass pairs each arrival with its next departure. Orphaned arrivals (from crashes or reboots) are overwritten by the next session start — no ghost sessions, no special crash-recovery logic.
 
 **Pattern 7: Peak Productive Hour**
 
-Uses a Sliding Window Heuristic. A window constrained between 60 and 90 minutes slides across the complete timestamp timeline. At every position, it counts the number of application switches inside the window. The position with the fewest switches is reported as Peak Productive Hour. The reasoning: sustained low switch frequency is the strongest observable signal of deep focus without requiring the user to manually mark sessions.
+Uses a Sliding Window Heuristic. A window constrained between 60 and 90 minutes slides across the complete timestamp timeline. The position with the fewest application switches is reported as Peak Productive Hour. Sustained low switch frequency is the strongest observable signal of deep focus without requiring the user to manually mark sessions.
 
-Both patterns filter out HPR itself, the Unknown state, and known system noise before running. Insights reflect actual work.
+Both patterns filter out HPR itself, the Unknown state, and known system noise before running.
 
 ---
 
 ## Window Name Normalization and Aliasing
 
-OS window APIs return raw strings that are inconsistent, noisy, and occasionally nonsensical. `validateAndUpdateWindow_Cross` in `validateAndUpdateWindow.cpp` is the first normalization pass:
+`validateAndUpdateWindow_Cross` in `validateAndUpdateWindow.cpp` is the first normalization pass:
 
 ```cpp
 if (windowName.contains("searchhost")
@@ -660,13 +656,9 @@ if (windowName.contains("searchhost")
     return "Unknown";
 ```
 
-The `js::` filter is specifically for KDE. The KDE backend injects a JavaScript payload into KWin via `qdbus6` (or `qdbus-qt6` on Fedora - auto-detected at startup) on every tick, and during that injection KWin's own JS runtime briefly appears as the active window. Without this filter, strings like `js::kwin_tmp_1234` silently accumulate time in your log every single poll cycle.
+The `js::` filter is specifically for KDE. The KDE backend injects a JavaScript payload into KWin via `qdbus6` (or `qdbus-qt6` on Fedora — auto-detected at startup) on every tick, and during that injection KWin's own JS runtime briefly appears as the active window. Without this filter, strings like `js::kwin_tmp_1234` silently accumulate time in your log every poll cycle.
 
-**Late-binding aliases:**
-
-The database stores raw OS strings exactly as received. Aliases are resolved at display time only, never written. The consequence: renaming an alias in `aliases.csv` retroactively updates every historical entry for that application across every stored day with zero migration, because the raw data was never overwritten.
-
-`AliasManager` runs an O(N) substring scan through alias rules the first time it sees a new window name, caches the result in an `unordered_map` for O(1) on every subsequent lookup. File is hot-reloaded on change. No restart needed.
+`AliasManager` runs an O(N) substring scan through alias rules the first time it sees a new window name, then caches the result in an `unordered_map` for O(1) on every subsequent lookup. File is hot-reloaded on change.
 
 ---
 
@@ -681,7 +673,7 @@ thread body  →  check std::atomic<bool> running each iteration
 destructor   →  set running = false, join() if joinable()
 ```
 
-Shutdown is always clean. The database writer finishes its current flush before the process exits. Force-close HPR and your data is still intact.
+Shutdown is always clean. The database writer finishes its current flush before the process exits.
 
 ---
 
@@ -691,25 +683,24 @@ Shutdown is always clean. The database writer finishes its current flush before 
 - CMake 3.21+
 - GCC 13+, Clang 16+, or MSVC 2022+ with C++23 support
 - Slint 1.16.1 (the install script handles this)
-- Linux only: `jq` for Hyprland, `gdbus` for GNOME and Cinnamon, `libdbus-1` development library (e.g. `libdbus-1-dev` on Debian/Ubuntu, `dbus-devel` on Fedora/RHEL) for native D-Bus notifications and tray integration, and `libcurl` development library (e.g. `libcurl4-openssl-dev` on Debian/Ubuntu, `libcurl-devel` on Fedora/RHEL) for extension networking support.
-- Windows only: The native notification backend uses the bundled `WinToast` library which compiles out-of-the-box (no external Windows dependencies required). On Linux, notifications leverage the session D-Bus directly via `libdbus-1` (no external `notify-send` executable is spawned).
-
+- Linux only: `jq`, `gdbus`, `libdbus-1-dev`, `libcurl4-openssl-dev` (or distro equivalents)
+- Windows only: bundled `WinToast` compiles out-of-the-box, no external deps needed
 
 ```bash
 git clone https://github.com/plexescor/HPR
 cd HPR
 ```
 
-**Linux - install Slint (choose one):**
+**Linux — install Slint (choose one):**
 ```bash
-# System-wide (requires sudo, cmake finds Slint automatically)
+# System-wide (requires sudo)
 sudo ./installDependencies.sh
 
-# User-local (no sudo needed)
+# User-local (no sudo)
 ./installDependencies.sh
 ```
 
-Windows: run `installDependencies.bat`. Pulls Slint 1.16.1, `slint-lsp`, and `slint-viewer` from GitHub releases.
+**Windows:** run `installDependencies.bat`. Pulls Slint 1.16.1, `slint-lsp`, and `slint-viewer` from GitHub releases.
 
 **Build:**
 ```bash
@@ -718,13 +709,13 @@ mkdir build && cd build
 # If you ran the install script without sudo:
 cmake .. -DCMAKE_PREFIX_PATH="$HOME/.local"
 
-# If you ran with sudo (system-wide):
+# If you ran with sudo:
 cmake ..
 
 cmake --build . --parallel 8
 ```
 
-HPR uses slightly patched versions of `sol2`, `lua`, and `sqlite3` (located in the `external/` directory) to mitigate compile errors and warnings. If you attempt to swap these out for your own unpatched versions or system-installed libraries, you will likely encounter compilation errors, strict `const`-correctness warnings when compiled as C++23, and linker warnings regarding unsafe POSIX functions like `tmpnam`. Using the bundled dependencies guarantees a clean, warning-free build. SQLite is the official single-file amalgamation, compiled into the binary directly. No system SQLite packages needed. CMake copies `aliases.csv`, `config.csv`, `ui/`, `assets/`, and the install scripts next to the output binary automatically. A fresh build is immediately runnable from the build directory.
+HPR uses slightly patched versions of `sol2`, `lua`, and `sqlite3` in `external/` to avoid compile errors under C++23 strict mode. Swapping them out for system-installed versions will likely cause warnings and linker issues. Use the bundled ones for a clean build. CMake copies `aliases.csv`, `config.csv`, `ui/`, `assets/`, and the install scripts next to the output binary automatically — a fresh build is immediately runnable from the build directory.
 
 ---
 
@@ -748,13 +739,6 @@ HPR uses slightly patched versions of `sol2`, `lua`, and `sqlite3` (located in t
 > [!NOTE]
 > **Linux platform detection:** HPR reads `$XDG_CURRENT_DESKTOP` and matches substrings via `std::string::contains`. Non-standard desktop session variables or nested compositor configurations may not resolve correctly.
 
-
----
-
-## Common Issues and Fixes
-
-Currently None :)
-
 ---
 
 ## Contributing
@@ -769,7 +753,7 @@ databaseManager.cpp   →  persistence, WAL, lock file, midnight database rollov
 uiModelManager.cpp    →  how C++ state becomes Slint models in both UI modes
 ```
 
-One rule for all new code: anything that touches shared state goes through `AppState::stateMutex`. Lock, copy, release, work on the copy. Every existing access follows this pattern.
+One rule for all new code: anything that touches shared state goes through `AppState::stateMutex`. Lock, copy, release, work on the copy.
 
 No formal process. Open an issue or submit a pull request.
 
@@ -779,8 +763,8 @@ If HPR has been useful to you, a Ko-fi helps keep development going:
 
 <p align="center">
   <sub>
-    Active development &nbsp;|&nbsp; v0.6 &nbsp;|&nbsp;
+    Active development &nbsp;|&nbsp; v0.69 &nbsp;|&nbsp;
     Hyprland · GNOME · KDE Plasma · Cinnamon · Windows 10/11 &nbsp;|&nbsp;
-    C++23 · Slint 1.16.1 · SQLite3 amalgamation · sqlite_modern_cpp
+    C++23 · Slint 1.16.1 · SQLite3 amalgamation · sqlite_modern_cpp · Lua 5.4 · sol2
   </sub>
 </p>
