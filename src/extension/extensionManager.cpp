@@ -1,3 +1,16 @@
+/*
+
+TODO:
+    IMPLEMENT HOT RELOAD
+    ADD UI DEDICATED UI BUTTON TO LOAD AND UNLOAD INDIVIDUAL EXTENSIONS
+    ADD UI BUTTON TO RELOAD ALL ONE SHOT
+
+    IDK WHAT NEXT
+
+
+*/
+
+
 #include <string>
 #include <iostream>
 #include <fstream>
