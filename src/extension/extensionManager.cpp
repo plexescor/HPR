@@ -1,16 +1,3 @@
-/*
-
-TODO:
-    IMPLEMENT HOT RELOAD
-    ADD UI DEDICATED UI BUTTON TO LOAD AND UNLOAD INDIVIDUAL EXTENSIONS
-    ADD UI BUTTON TO RELOAD ALL ONE SHOT
-
-    IDK WHAT NEXT
-
-
-*/
-
-
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -660,6 +647,17 @@ void ExtensionManager::unloadExtension(std::string extensionName)
             
             if (ext->thread.joinable())
                 ext->thread.join();
+
+            {
+                std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                auto& loaded = AppState::state.loadedExtensions;
+                loaded.erase(
+                    std::remove_if(loaded.begin(), loaded.end(),
+                        [&](const auto& e) { return e.second == extensionName; }),
+                    loaded.end()
+                );
+            }
+
             it = extensions.erase(it);
         }
         else

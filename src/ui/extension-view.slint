@@ -15,12 +15,13 @@ export component ExtensionsView {
 
     VerticalLayout {
         padding: 12px;
-        padding-top: 0px;
+        padding-top: 6px;
         spacing: 10px;
 
         HorizontalLayout {
             alignment: space-between;
             vertical-stretch: 0;
+            padding-top: 4px;
 
             SectionHeader { label: "EXTENSIONS"; }
 
@@ -28,26 +29,44 @@ export component ExtensionsView {
                 width: 72px;
                 height: 26px;
                 border-radius: 6px;
-                background: #ffffff0f;
                 border-width: 1px;
                 border-color: #ffffff18;
 
-                animate background { duration: 120ms; }
+                animate background { duration: 100ms; }
 
                 ta-refresh := TouchArea {
+                    mouse-cursor: pointer;
                     clicked => { root.refresh-extensions(); }
                 }
 
-                // background: ta-refresh.has-hover ? #ffffff1a : #ffffff0f;
+                states [
+                    pressed when ta-refresh.pressed: {
+                        background: #ffffff28;
+                        border-color: #ffffff35;
+                    }
+                    hovered when ta-refresh.has-hover: {
+                        background: #ffffff18;
+                        border-color: #ffffff25;
+                    }
+                    normal when !ta-refresh.has-hover: {
+                        background: #ffffff0a;
+                        border-color: #ffffff18;
+                    }
+                ]
 
                 Text {
-                    text: "REFRESH";
+                    //thing is refresh seemed liek refreshing the page
+                    //but its not so i renamed to rescan which is more accurate
+                    //though all the code still treats as "REFRSH" button for refrencing functions
+                    //and i didnt want to do any refactors
+                    text: "RESCAN";
                     font-size: 8px;
                     font-weight: 700;
                     letter-spacing: 2px;
-                    color: #ffffff60;
+                    color: ta-refresh.pressed ? #ffffffcc : ta-refresh.has-hover ? #ffffff99 : #ffffff60;
                     horizontal-alignment: center;
                     vertical-alignment: center;
+                    animate color { duration: 100ms; }
                 }
             }
         }
@@ -85,7 +104,6 @@ export component ExtensionsView {
                         spacing: 12px;
                         alignment: space-between;
 
-                        // Left side - author top, extension name bottom
                         VerticalLayout {
                             alignment: space-between;
                             vertical-stretch: 1;
@@ -106,35 +124,50 @@ export component ExtensionsView {
                             }
                         }
 
-                        // Right side - Disable + Reload buttons
+                        
                         HorizontalLayout {
                             alignment: center;
                             spacing: 6px;
+                            y: (parent.height - self.height) / 1.5;
 
                             disableBtn := Rectangle {
                                 width: 66px;
                                 height: 28px;
                                 border-radius: 6px;
-                                background: #ff605c18;
                                 border-width: 1px;
-                                border-color: #ff605c40;
 
-                                animate background { duration: 120ms; }
+                                animate background { duration: 100ms; }
+                                animate border-color { duration: 100ms; }
 
                                 ta-disable := TouchArea {
+                                    mouse-cursor: pointer;
                                     clicked => { root.disable-extension(ext.extension-name); }
                                 }
 
-                                // background: ta-disable.has-hover ? #ff605c28 : #ff605c18;
+                                states [
+                                    pressed when ta-disable.pressed: {
+                                        background: #ff605c35;
+                                        border-color: #ff605c80;
+                                    }
+                                    hovered when ta-disable.has-hover: {
+                                        background: #ff605c25;
+                                        border-color: #ff605c60;
+                                    }
+                                    normal when !ta-disable.has-hover: {
+                                        background: #ff605c12;
+                                        border-color: #ff605c35;
+                                    }
+                                ]
 
                                 Text {
                                     text: "DISABLE";
                                     font-size: 8px;
                                     font-weight: 700;
                                     letter-spacing: 1.5px;
-                                    color: #ff605c;
+                                    color: ta-disable.pressed ? #ff8582 : ta-disable.has-hover ? #ff7572 : #ff605c;
                                     horizontal-alignment: center;
                                     vertical-alignment: center;
+                                    animate color { duration: 100ms; }
                                 }
                             }
 
@@ -142,26 +175,40 @@ export component ExtensionsView {
                                 width: 66px;
                                 height: 28px;
                                 border-radius: 6px;
-                                background: #38bdf818;
                                 border-width: 1px;
-                                border-color: #38bdf840;
 
-                                animate background { duration: 120ms; }
+                                animate background { duration: 100ms; }
+                                animate border-color { duration: 100ms; }
 
                                 ta-reload := TouchArea {
+                                    mouse-cursor: pointer;
                                     clicked => { root.reload-extension(ext.extension-name); }
                                 }
 
-                                // background: ta-reload.has-hover ? #38bdf828 : #38bdf818;
+                                states [
+                                    pressed when ta-reload.pressed: {
+                                        background: #38bdf835;
+                                        border-color: #38bdf880;
+                                    }
+                                    hovered when ta-reload.has-hover: {
+                                        background: #38bdf825;
+                                        border-color: #38bdf860;
+                                    }
+                                    normal when !ta-reload.has-hover: {
+                                        background: #38bdf812;
+                                        border-color: #38bdf835;
+                                    }
+                                ]
 
                                 Text {
                                     text: "RELOAD";
                                     font-size: 8px;
                                     font-weight: 700;
                                     letter-spacing: 1.5px;
-                                    color: #38bdf8;
+                                    color: ta-reload.pressed ? #7dd8fb : ta-reload.has-hover ? #5dcffa : #38bdf8;
                                     horizontal-alignment: center;
                                     vertical-alignment: center;
+                                    animate color { duration: 100ms; }
                                 }
                             }
                         }
