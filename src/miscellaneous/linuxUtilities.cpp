@@ -114,17 +114,18 @@ LinuxInitialiser::LinuxInitialiser()
             std::ofstream desktop(desktopFile);
             if (desktop.is_open())
             {
-                std::string launcherPath = std::filesystem::canonical("/proc/self/exe").parent_path().string() + "/hpr-launcher";
-                
                 // Write launcher script next to the binary
+                std::string binaryPath = std::filesystem::canonical("/proc/self/exe").string();
+                std::string launcherPath = std::filesystem::canonical("/proc/self/exe").parent_path().string() + "/hpr-launcher";
+
                 std::ofstream launcher(launcherPath);
                 if (launcher.is_open())
                 {
                     launcher << "#!/bin/bash\n"
                              << "export XDG_RUNTIME_DIR=/run/user/$(id -u)\n"
-                             << "export HYPRLAND_INSTANCE_SIGNATURE=$(ls $XDG_RUNTIME_DIR/hypr/ 2>/dev/null | grep -v lock | head -1)\n"
-                             << "export WAYLAND_DISPLAY=wayland-1\n"
-                             << "exec " << std::filesystem::canonical("/proc/self/exe").string() << "\n";
+                             << "export WAYLAND_DISPLAY=$(ls $XDG_RUNTIME_DIR/ 2>/dev/null | grep wayland | head -1)\n"
+                             << "export HYPRLAND_INSTANCE_SIGNATURE=$(ls $XDG_RUNTIME_DIR/hypr/ 2>/dev/null | grep -v '\\.lock' | head -1)\n"
+                             << "exec " << binaryPath << "\n";
                     launcher.close();
                     chmod(launcherPath.c_str(), S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
                 }
@@ -141,7 +142,6 @@ LinuxInitialiser::LinuxInitialiser()
                         << "StartupNotify=true\n"
                         << "StartupWMClass=HPR\n";
                 desktop.close();
-
                 chmod(desktopFile.c_str(), S_IRWXU | S_IRGRP | S_IROTH);
             }
             else
