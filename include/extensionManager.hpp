@@ -18,6 +18,10 @@
     #include <dlfcn.h>
 #endif
 
+#include <mutex>
+
+#include "appEvents.hpp"
+
 struct LoadedExtension 
 {
     std::filesystem::path path;
@@ -25,8 +29,11 @@ struct LoadedExtension
     std::thread thread;
     std::atomic<bool> running{true};
     std::pair<std::string, std::string> identity;
+    std::recursive_mutex luaMutex; // Guards all shared Lua VM operations recursively to prevent multi-threaded race conditions without deadlocking
+    std::vector<std::pair<EventKey, size_t>> registeredConnections; // Tracks registered EventHub connections to clean up on destruction
 
     LoadedExtension() = default;
+    ~LoadedExtension();
     LoadedExtension(const LoadedExtension&) = delete;
     LoadedExtension& operator=(const LoadedExtension&) = delete;
 };

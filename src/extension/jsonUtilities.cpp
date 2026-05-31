@@ -2,6 +2,7 @@
 #include <sstream>
 #include <cctype>
 #include <iostream>
+#include <unordered_set>
 
 namespace JsonParser
 {
@@ -193,7 +194,7 @@ namespace JsonParser
         return out;
     }
 
-    std::string toJSON_E(const sol::object& obj)
+    static std::string toJSON_Internal(const sol::object& obj, std::unordered_set<const void*>& visited)
     {
         if (!obj.valid() || obj.is<sol::nil_t>())
         {
@@ -224,6 +225,17 @@ namespace JsonParser
         else if (obj.is<sol::table>())
         {
             sol::table tab = obj.as<sol::table>();
+            const void* tabPtr = tab.pointer();
+            if (visited.find(tabPtr) != visited.end())
+            {
+                std::string warningMsg = "\n[HPR SECURITY ERROR] An active Lua extension attempted to trigger a stack overflow / crash "
+                                         "by serializing a cyclic self-referential table (circular reference detected at address " + 
+                                         std::to_string(reinterpret_cast<uintptr_t>(tabPtr)) + "). Serializing as null to prevent SegFault.\n";
+                std::cerr << warningMsg;
+                std::cout << warningMsg;
+                return "null";
+            }
+            visited.insert(tabPtr);
 
             // Determine if this is a Lua array (consecutive integer keys starting at 1)
             // or an object (string-keyed table)
@@ -245,22 +257,22 @@ namespace JsonParser
                 }
             }
 
+            std::string result;
             if (isArray)
             {
                 // Serialize as JSON array
-                std::string result = "[";
+                result = "[";
                 for (size_t i = 1; i <= arrayLen; ++i)
                 {
                     if (i > 1) result += ",";
-                    result += toJSON_E(tab[i]);
+                    result += toJSON_Internal(tab[i], visited);
                 }
                 result += "]";
-                return result;
             }
             else
             {
                 // Serialize as JSON object (string-keyed pairs only)
-                std::string result = "{";
+                result = "{";
                 bool first = true;
                 tab.for_each([&](const sol::object& key, const sol::object& val)
                 {
@@ -268,17 +280,24 @@ namespace JsonParser
                     {
                         if (!first) result += ",";
                         result += "\"" + jsonEscapeString(key.as<std::string>()) + "\":";
-                        result += toJSON_E(val);
+                        result += toJSON_Internal(val, visited);
                         first = false;
                     }
                 });
                 result += "}";
-                return result;
             }
+            visited.erase(tabPtr);
+            return result;
         }
 
         // Fallback for unsupported Lua types (functions, userdata, threads)
         return "null";
+    }
+
+    std::string toJSON_E(const sol::object& obj)
+    {
+        std::unordered_set<const void*> visited;
+        return toJSON_Internal(obj, visited);
     }
 }
 

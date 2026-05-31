@@ -8,6 +8,7 @@
 #include <mutex> 
 #include <functional>
 #include <map>
+#include <unordered_set>
 
 #ifdef __linux__
     #include <unistd.h>
@@ -42,7 +43,7 @@
 
 namespace
 {
-    CppValue luaToCpp(const sol::object& obj)
+    CppValue luaToCpp_Internal(const sol::object& obj, std::unordered_set<const void*>& visited)
     {
         CppValue v;
         if (obj.is<std::string>())
@@ -63,6 +64,18 @@ namespace
         else if (obj.is<sol::table>())
         {
             sol::table tab = obj.as<sol::table>();
+            const void* tabPtr = tab.pointer();
+            if (visited.find(tabPtr) != visited.end())
+            {
+                std::string warningMsg = "\n[HPR SECURITY ERROR] An active Lua extension attempted to trigger a stack overflow / crash "
+                                         "by pushing a cyclic self-referential table to the UI (circular reference detected at address " + 
+                                         std::to_string(reinterpret_cast<uintptr_t>(tabPtr)) + "). Returning empty object to prevent SegFault.\n";
+                std::cerr << warningMsg;
+                std::cout << warningMsg;
+                return v;
+            }
+            visited.insert(tabPtr);
+
             bool is_array = false;
             if (tab[1].valid())
             {
@@ -91,7 +104,7 @@ namespace
                     {
                         break;
                     }
-                    v.array_val.push_back(luaToCpp(val));
+                    v.array_val.push_back(luaToCpp_Internal(val, visited));
                 }
             }
             else
@@ -101,12 +114,19 @@ namespace
                 {
                     if (key.is<std::string>())
                     {
-                        v.struct_val[key.as<std::string>()] = luaToCpp(value);
+                        v.struct_val[key.as<std::string>()] = luaToCpp_Internal(value, visited);
                     }
                 });
             }
+            visited.erase(tabPtr);
         }
         return v;
+    }
+
+    CppValue luaToCpp(const sol::object& obj)
+    {
+        std::unordered_set<const void*> visited;
+        return luaToCpp_Internal(obj, visited);
     }
 
     slint::interpreter::Value cppToSlint(const CppValue& val)
@@ -180,6 +200,13 @@ namespace
     }
 }
 
+LoadedExtension::~LoadedExtension()
+{
+    for (const auto& conn : registeredConnections)
+    {
+        EventHub::disconnect(conn.first, conn.second);
+    }
+}
 
 ExtensionManager::ExtensionManager(bool allowDynamicLibraryExtensions) : allowDynamicLibraryExtensionLoading(allowDynamicLibraryExtensions)
 {
@@ -487,6 +514,7 @@ void ExtensionManager::runExtension(LoadedExtension& ext)
 
         if (init.valid()) 
         {
+            std::lock_guard<std::recursive_mutex> luaLock(ext.luaMutex);
             sol::object result = init();
             if (result.is<int>()) sleepTime = result.as<int>();
         }
@@ -505,7 +533,11 @@ void ExtensionManager::runExtension(LoadedExtension& ext)
 
             try
             {
-                if (onTick.valid()) onTick(delta);          
+                if (onTick.valid())
+                {
+                    std::lock_guard<std::recursive_mutex> luaLock(ext.luaMutex);
+                    onTick(delta);          
+                }
             }
             catch (const std::exception& e)
             {
@@ -528,6 +560,7 @@ void ExtensionManager::runExtension(LoadedExtension& ext)
         {
             try
             {
+                std::lock_guard<std::recursive_mutex> luaLock(ext.luaMutex);
                 onExit();
             }
             catch (const std::exception& e)
@@ -751,7 +784,7 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         currentWindowManager->startTracking();
     };
 
-    lua["HPR"]["registerBackend_E"] = [](
+    lua["HPR"]["registerBackend_E"] = [&ext](
         std::string name, 
         sol::function matchesEnvironment,
         sol::function initialize,
@@ -760,7 +793,32 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         sol::function getCurrentTitle
     ) 
     {
-        registerBackend_E(name, matchesEnvironment, initialize, isUsable, getCurrentWindow, getCurrentTitle);
+        auto safeMatches = [&ext, matchesEnvironment](const std::string& env) -> bool {
+            std::lock_guard<std::recursive_mutex> lock(ext.luaMutex);
+            return matchesEnvironment(env);
+        };
+
+        auto safeInitialize = [&ext, initialize]() {
+            std::lock_guard<std::recursive_mutex> lock(ext.luaMutex);
+            initialize();
+        };
+
+        auto safeIsUsable = [&ext, isUsable]() -> bool {
+            std::lock_guard<std::recursive_mutex> lock(ext.luaMutex);
+            return isUsable();
+        };
+
+        auto safeGetCurrentWindow = [&ext, getCurrentWindow]() -> std::string {
+            std::lock_guard<std::recursive_mutex> lock(ext.luaMutex);
+            return getCurrentWindow();
+        };
+
+        auto safeGetCurrentTitle = [&ext, getCurrentTitle]() -> std::string {
+            std::lock_guard<std::recursive_mutex> lock(ext.luaMutex);
+            return getCurrentTitle();
+        };
+
+        registerBackend_E(name, safeMatches, safeInitialize, safeIsUsable, safeGetCurrentWindow, safeGetCurrentTitle);
     };
 
     lua["HPR"]["dbExecute_E"] = [this](std::string sql, sol::optional<std::vector<std::string>> params) 
@@ -864,7 +922,7 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         });
     };
 
-    lua["HPR"]["registerUiCallback_E"] = [](std::string name, sol::function luaCallback) 
+    lua["HPR"]["registerUiCallback_E"] = [&ext](std::string name, sol::function luaCallback) 
     {
         if (!UiRegistry::isActive())
         {
@@ -872,14 +930,15 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         }
         
         auto weak = UiRegistry::getInstance();
-        slint::invoke_from_event_loop([weak, name, luaCallback]() 
+        slint::invoke_from_event_loop([weak, name, luaCallback, &ext]() 
         {
             if (auto handle = weak.lock())
             {
                 // lol auto vro iwill be cooked by code reviewers
-                (*handle)->set_callback(name, [luaCallback](auto args) -> slint::interpreter::Value 
+                (*handle)->set_callback(name, [luaCallback, &ext](auto args) -> slint::interpreter::Value 
                 {
-                    // Trigger the lua function when Slint fires the callback
+                    // Trigger the lua function when Slint fires the callback safely under luaMutex
+                    std::lock_guard<std::recursive_mutex> lock(ext.luaMutex);
                     luaCallback();
                     return slint::interpreter::Value(); // void return
                 });
@@ -888,7 +947,7 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
     };
 
     // Connect to system or custom dynamic events
-    lua["HPR"]["connect_E"] = [&lua](std::string eventName, sol::function callback) -> size_t 
+    lua["HPR"]["connect_E"] = [&lua, &ext](std::string eventName, sol::function callback) -> size_t 
     {
         EventKey eventKey;
         if (eventName == "LOAD_DATABASE_SINGULAR") eventKey = Event::LOAD_DATABASE_SINGULAR;
@@ -900,12 +959,15 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         else if (eventName == "UI_READY") eventKey = Event::UI_READY;
         else eventKey = eventName; // Custom signal
 
-        return EventHub::connect(eventKey, [callback, &lua](EventData data) 
+        size_t id = EventHub::connect(eventKey, [callback, &lua, &ext](EventData data) 
         {
-            // Convert standard EventData to generic CppValue, then convert to native Lua value
+            // Convert standard EventData to generic CppValue, then convert to native Lua value safely under luaMutex
+            std::lock_guard<std::recursive_mutex> lock(ext.luaMutex);
             sol::object luaData = cppToLua(lua, toCppValue(data));
             callback(luaData);
         });
+        ext.registeredConnections.push_back({eventKey, id});
+        return id;
     };
 
     // Unsubscribe from a registered event
