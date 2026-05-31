@@ -8,6 +8,8 @@
 #include "windowUtilities.hpp"
 #include "builtinBackends.hpp"
 #include "appEvents.hpp"
+#include "logger.hpp"
+
 #include <chrono>
 #include <mutex>
 #include <thread>
@@ -240,6 +242,9 @@ std::string CurrentWindowManager::getCurrentTitle()
     std::string xdg = runSystemCommand(cmd);
     
 	currentPlatform = xdg;
+
+	Logger::log("XDG_CURRENT_DESKTOP = '" + xdg + "'");
+    Logger::log("Detected platform = '" + currentPlatform + "'");
 #endif
 
 #ifdef _WIN32
@@ -249,24 +254,25 @@ std::string CurrentWindowManager::getCurrentTitle()
     currentPlatform = "Apple";
 #endif
 
-    std::cout << "[HPR] Detected environment: " << currentPlatform << std::endl;
+    Logger::log("Detected environment: " + currentPlatform);
 
     for (auto& backend : std::views::reverse(registeredBackends))
     {
         if (!backend.matchesEnvironment(currentPlatform)) continue;
-        std::cout << "[HPR] Initializing backend: " << backend.name << std::endl;
+        Logger::log("Trying backend: " + backend.name);
         backend.initialize();
         if (!backend.isUsable())
         {
-            std::cout << "[HPR] Backend unusable: " << backend.name << std::endl;
+            Logger::log("Backend unusable: " + backend.name);
             continue;
         }
         activeBackend = &backend;
-        std::cout << "[HPR] Selected backend: " << backend.name << std::endl;
+        Logger::log("Selected backend: " + backend.name);
         return;
     }
+    Logger::log("Failed to find usable backend");
 
-    std::cout << "[HPR] Failed to find usable backend" << std::endl;
+    Logger::log("Failed to find usable backend");
 } 
 
 // 	{

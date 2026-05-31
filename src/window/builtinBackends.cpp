@@ -2,6 +2,7 @@
 #include "windowUtilities.hpp"
 #include <string>
 #include <iostream>
+#include "logger.hpp"
 #include <filesystem>
 #ifdef _WIN32
     #include <windows.h>
@@ -425,8 +426,10 @@ void registerBuiltinBackends()
 
         []()
         {
-            std::string cmd = "hyprctl -j activewindow";
-            return runSystemCommand(cmd).contains("class");
+            std::string cmd = "hyprctl monitors -j";
+            std::string result = runSystemCommand(cmd);
+            Logger::log("hyprctl monitors result: '" + result + "'");
+            return result.contains("id");
         },
 
         []() -> std::string
