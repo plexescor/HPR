@@ -41,14 +41,20 @@ void CurrentWindowManager::run()
 
 void CurrentWindowManager::stopTracking()
 {
-	std::lock_guard<std::mutex> lock(AppState::stateMutex);
-	AppState::state.currentWindow = "AFK";
+	if (running)
+	{
+		{
+		std::lock_guard<std::mutex> lock(AppState::stateMutex);
+		AppState::state.currentWindow = "AFK";
+		}
 
-    running = false;
+		running = false;
 
-    if (windowPollingThread.joinable())
-        windowPollingThread.join();
+		if (windowPollingThread.joinable())
+			windowPollingThread.join();
 
+	}
+	
 }
 
 void CurrentWindowManager::startTracking()

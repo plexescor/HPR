@@ -897,6 +897,7 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         else if (eventName == "APP_ERROR") eventKey = Event::APP_ERROR;
         else if (eventName == "MIDNIGHT_ROLLOVER") eventKey = Event::MIDNIGHT_ROLLOVER;
         else if (eventName == "WINDOW_CHANGED") eventKey = Event::WINDOW_CHANGED;
+        else if (eventName == "UI_READY") eventKey = Event::UI_READY;
         else eventKey = eventName; // Custom signal
 
         return EventHub::connect(eventKey, [callback, &lua](EventData data) 
@@ -917,6 +918,7 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         else if (eventName == "APP_ERROR") eventKey = Event::APP_ERROR;
         else if (eventName == "MIDNIGHT_ROLLOVER") eventKey = Event::MIDNIGHT_ROLLOVER;
         else if (eventName == "WINDOW_CHANGED") eventKey = Event::WINDOW_CHANGED;
+        else if (eventName == "UI_READY") eventKey = Event::UI_READY;
         else eventKey = eventName;
 
         EventHub::disconnect(eventKey, id);
@@ -932,6 +934,7 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         else if (eventName == "APP_ERROR") eventKey = Event::APP_ERROR;
         else if (eventName == "MIDNIGHT_ROLLOVER") eventKey = Event::MIDNIGHT_ROLLOVER;
         else if (eventName == "WINDOW_CHANGED") eventKey = Event::WINDOW_CHANGED;
+        else if (eventName == "UI_READY") eventKey = Event::UI_READY;
         else eventKey = eventName;
 
         // Convert Lua parameter to generic CppValue, then map to specific C++ EventData structure

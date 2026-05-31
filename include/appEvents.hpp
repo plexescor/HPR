@@ -58,6 +58,7 @@
         APP_ERROR, //ERROR was reserved in msvc thats why
         MIDNIGHT_ROLLOVER,
         WINDOW_CHANGED,
+        UI_READY
     };
 
 using EventKey = std::variant<Event, std::string>;
@@ -153,7 +154,8 @@ class EventHub
         static void disconnect(EventKey event, size_t id)
         {
             std::lock_guard<std::mutex> lock(hubMutex);
-            if (subscribers.count(event)) {
+            if (subscribers.count(event)) 
+            {
                 subscribers[event].erase(id);
             }
         }
@@ -173,7 +175,8 @@ class EventHub
             if (subscribersLocal.count(event)) 
             {
                 //iterate through the map of IDs and Callbacks
-                for (auto const& [id, callback] : subscribersLocal[event]) {
+                for (auto const& [id, callback] : subscribersLocal[event]) 
+                {
                     callback(data);
                 }
             }
