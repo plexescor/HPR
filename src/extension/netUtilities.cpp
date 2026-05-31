@@ -579,7 +579,7 @@ namespace NativeNet
                     SOCKET client_socket = accept(server_fd, (struct sockaddr*)&client_addr, &addr_len);
                     if (client_socket != INVALID_SOCKET_VAL)
                     {
-                        std::lock_guard<std::recursive_mutex> lock(ext.luaMutex);
+                        std::lock_guard<std::recursive_mutex> lock(ext.serverMutex);
                         handleClient(client_socket, handler, ext.lua);
                     }
                 }

@@ -30,6 +30,7 @@ struct LoadedExtension
     std::atomic<bool> running{true};
     std::pair<std::string, std::string> identity;
     std::recursive_mutex luaMutex; // Guards all shared Lua VM operations recursively to prevent multi-threaded race conditions without deadlocking
+    std::recursive_mutex serverMutex;
     std::vector<std::pair<EventKey, size_t>> registeredConnections; // Tracks registered EventHub connections to clean up on destruction
 
     LoadedExtension() = default;
