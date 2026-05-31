@@ -237,17 +237,18 @@ void CurrentWindowManager::detectAndSetBackend()
 {
 	#ifdef __linux__
 
-		std::string detectDesktopEnvironmentCommand =
-			"echo $XDG_CURRENT_DESKTOP";
-
-		currentPlatform =
-			runSystemCommand(detectDesktopEnvironmentCommand);
-
-		if (!currentPlatform.empty() &&
-			currentPlatform.back() == '\n')
-		{
-			currentPlatform.pop_back();
-		}
+	if (getenv("HYPRLAND_INSTANCE_SIGNATURE"))
+	{
+		currentPlatform = "Hyprland";
+	}
+	else if (const char* desktop = getenv("XDG_CURRENT_DESKTOP"))
+	{
+		currentPlatform = desktop;
+	}
+	else
+	{
+		currentPlatform.clear();
+	}
 
 	#endif
 
