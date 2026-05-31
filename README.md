@@ -31,9 +31,6 @@
 > **HPR is fully free and open source.**
 > Every feature — current and future — is available to everyone at no cost. If HPR saves you time or you want to support continued development, a Ko-fi donation goes a long way.
 
-> [!NOTE]
-> **v0.69 is mostly complete.** Working through some edge cases and final bug fixes — compiled binary dropping in a few hours. Can't wait? [Build from source.](#building-from-source) :)
-
 ---
 
 <p align="center">
