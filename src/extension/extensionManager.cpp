@@ -10,6 +10,7 @@
 #include <map>
 #include <unordered_set>
 
+#include "logger.hpp"
 #ifdef __linux__
     #include <unistd.h>
 #endif
@@ -547,12 +548,23 @@ void ExtensionManager::runExtension(LoadedExtension& ext)
 
         sol::optional<std::string> authorName = ext.lua["HPR"]["authorName"];
         sol::optional<std::string> extensionName = ext.lua["HPR"]["extensionName"];
-        if (authorName.has_value() && extensionName.has_value())
+
+        //IF EXTENSION DOESNT HAVE a name or author name then make it random AF
+        auto genRandom = []() -> std::string 
         {
-            ext.identity = { authorName.value(), extensionName.value() };
-            std::lock_guard<std::mutex> lock(AppState::stateMutex);
-            AppState::state.loadedExtensions.push_back(ext.identity);
-        }
+            static const char chars[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            std::string result;
+            for (int i = 0; i < 14; ++i)
+                result += chars[rand() % (sizeof(chars) - 1)];
+            return result;
+        };
+
+    std::string resolvedAuthor = authorName.value_or("anon_" + genRandom());
+    std::string resolvedName = extensionName.value_or("ext_" + genRandom());
+
+    ext.identity = { resolvedAuthor, resolvedName };
+    std::lock_guard<std::mutex> lock(AppState::stateMutex);
+    AppState::state.loadedExtensions.push_back(ext.identity);
         
         int sleepTime = 1000; //ms
         sol::function init = ext.lua["init"];
@@ -646,7 +658,19 @@ void ExtensionManager::unloadExtension(std::string extensionName)
             ext->running = false;
             
             if (ext->thread.joinable())
-                ext->thread.join();
+            {
+                auto future = std::async(std::launch::async, [&]() 
+                {
+                    ext->thread.join();
+                });
+                
+                if (future.wait_for(std::chrono::milliseconds(450)) == std::future_status::timeout)
+                {
+                    std::cerr << "[HPR] Extension [" << ext->identity.second << "] took too long to stop, detaching. It will keep running until HPR exits.\n";
+                    Logger::log("[HPR] Extension [" + ext->identity.second + "] took too long to stop, detaching. It will keep running until HPR exits.");
+                    ext->thread.detach();
+                }
+            }
 
             {
                 std::lock_guard<std::mutex> lock(AppState::stateMutex);
@@ -690,7 +714,8 @@ void ExtensionManager::reloadExtension(std::string extensionName)
     {
         newExt->lua.script_file(extPath.string());
     } catch (const std::exception& e) {
-        std::cerr << "Failed to reload extension: " << extPath << "\nError: " << e.what() << '\n';
+        std::cerr << "Failed to reload extension: " << extPath.string() << "\nError: " << e.what() << '\n';
+        Logger::log("[HPR] Failed to reload extension: " + extPath.string() + "\nError: " + e.what() + "\n");
         return;
     }
     newExt->thread = std::thread(&ExtensionManager::runExtension, this, std::ref(*newExt));
@@ -708,7 +733,19 @@ void ExtensionManager::reloadAllExtensions()
         ext->running = false;
     for (auto& ext : extensions)
         if (ext->thread.joinable())
-            ext->thread.join();
+        {
+            auto future = std::async(std::launch::async, [&]() 
+            {
+                ext->thread.join();
+            });
+            
+            if (future.wait_for(std::chrono::milliseconds(450)) == std::future_status::timeout)
+            {
+                std::cerr << "[HPR] Extension [" << ext->path.string() << "] took too long to stop, detaching. It will keep running until HPR exits.\n";
+                Logger::log("[HPR] Extension [" + ext->path.string() + "] took too long to stop, detaching. It will keep running until HPR exits.");
+                ext->thread.detach();
+            }
+        }
     extensions.clear();
 
     // reload all
@@ -742,11 +779,17 @@ void ExtensionManager::refresh()
         {
             if (entry.is_regular_file() && entry.path().extension() == ".lua")
             {
+                // std::cout << "[REFRESH DEBUG] Found lua file: " << entry.path() << "\n";
+
                 bool alreadyLoaded = false;
                 for (const auto& ext : extensions)
                 {
-                    if (ext->path == entry.path())
+                    // std::cout << "[REFRESH DEBUG] Comparing against loaded: " << ext->path << "\n";
+                    if (std::filesystem::weakly_canonical(ext->path) == 
+                        std::filesystem::weakly_canonical(entry.path()))
                     {
+                        // std::cout <<
+                        //  "[REFRESH DEBUG] Match found, skipping.\n";
                         alreadyLoaded = true;
                         break;
                     }
@@ -754,8 +797,12 @@ void ExtensionManager::refresh()
 
                 if (alreadyLoaded)
                 {
+                    // std::cout << "[REFRESH DEBUG] Skipping (already loaded): " << entry.path() << "\n";
                     continue;
                 }
+
+                // std::cout << "[REFRESH DEBUG] Loading new extension: " << entry.path() << "\n";
+
 
                 auto ext = std::make_unique<LoadedExtension>();
                 ext->path = entry.path();
@@ -776,6 +823,7 @@ void ExtensionManager::refresh()
                             
                 extensions.push_back(std::move(ext));
                 extensions.back()->thread = std::thread(&ExtensionManager::runExtension, this, std::ref(*extensions.back()));
+                // std::cout << "[REFRESH DEBUG] Extension pushed and thread started: " << entry.path() << "\n";
             }
             else if (entry.is_regular_file())
             {

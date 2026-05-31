@@ -44,7 +44,7 @@ std::string Logger::getLogFilePath()
 #endif
 }
 
-void Logger::log(const std::string& message)
+void Logger::log(const std::string message)
 {
     std::lock_guard<std::mutex> lock(s_logMutex);
 
