@@ -8,52 +8,77 @@
     #include <Psapi.h>
 #endif
 #ifdef __linux__
+    #include <sys/socket.h>
+    #include <sys/un.h>
     #include <unistd.h>
-    #include <dirent.h>
-    #include <sys/stat.h>
 #endif
 
-static std::string runHyprctl(const std::string& args) 
-{
-    std::string sig;
-    if (const char* e = getenv("HYPRLAND_INSTANCE_SIGNATURE")) 
-    {
-        sig = e;
-    }
-    else 
-    {
-        std::vector<std::string> dirs;
-        if (const char* xdg = getenv("XDG_RUNTIME_DIR")) 
-            dirs.push_back(std::string(xdg) + "/hypr");
-        dirs.push_back("/tmp/hypr");
 
-        for (const auto& dir : dirs)
+static std::string findHyprlandSocket()
+{
+    std::vector<std::string> dirs;
+    if (const char* xdg = getenv("XDG_RUNTIME_DIR"))
+        dirs.push_back(std::string(xdg) + "/hypr");
+    dirs.push_back("/tmp/hypr");
+
+    for (const auto& dir : dirs)
+    {
+        if (!std::filesystem::exists(dir)) continue;
+        for (auto& entry : std::filesystem::directory_iterator(dir))
         {
-            DIR* d = opendir(dir.c_str());
-            if (!d) continue;
-            dirent* entry;
-            while ((entry = readdir(d)))
-            {
-                std::string name = entry->d_name;
-                if (name.empty() || name[0] == '.') continue;
-                if (name.size() >= 5 && name.substr(name.size() - 5) == ".lock") continue;
-                // make sure it's a directory
-                std::string fullPath = dir + "/" + name;
-                struct stat st;
-                if (stat(fullPath.c_str(), &st) == 0 && S_ISDIR(st.st_mode))
-                {
-                    sig = name;
-                    break;
-                }
-            }
-            closedir(d);
-            if (!sig.empty()) break;
+            std::string name = entry.path().filename().string();
+            if (name.empty() || name[0] == '.') continue;
+            if (name.ends_with(".lock")) continue;
+            if (!std::filesystem::is_directory(entry.path())) continue;
+
+            std::string sock = entry.path().string() + "/.socket.sock";
+            if (std::filesystem::exists(sock))
+                return sock;
         }
     }
+    return "";
+}
 
-    std::string cmd = (sig.empty() ? "" : "HYPRLAND_INSTANCE_SIGNATURE=" + sig + " ")
-                    + "/usr/bin/hyprctl " + args;
-    return runSystemCommand(cmd);
+static std::string hyprlandSocketRequest(const std::string& cmd)
+{
+    std::string socketPath = findHyprlandSocket();
+    if (socketPath.empty()) return "";
+
+    int fd = socket(AF_UNIX, SOCK_STREAM, 0);
+    if (fd < 0) return "";
+
+    sockaddr_un addr{};
+    addr.sun_family = AF_UNIX;
+    strncpy(addr.sun_path, socketPath.c_str(), sizeof(addr.sun_path) - 1);
+
+    if (connect(fd, (sockaddr*)&addr, sizeof(addr)) < 0)
+    {
+        close(fd);
+        return "";
+    }
+
+    // Protocol: "j/activewindow" for JSON
+    send(fd, cmd.c_str(), cmd.size(), 0);
+
+    std::string result;
+    char buf[4096];
+    ssize_t n;
+    while ((n = recv(fd, buf, sizeof(buf), 0)) > 0)
+        result.append(buf, n);
+
+    close(fd);
+    return result;
+}
+
+static std::string runHyprctl(const std::string& args)
+{
+    // "activewindow -j" -> "j/activewindow"
+    // "-j activewindow" -> "j/activewindow"
+    std::string cmd = "j/activewindow";
+    if (args.find("title") != std::string::npos)
+        cmd = "j/activewindow"; // same endpoint, has both class and title
+    
+    return hyprlandSocketRequest(cmd);
 }
 // #include <fstream>
 
