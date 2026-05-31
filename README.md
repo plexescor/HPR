@@ -31,6 +31,9 @@
 > **HPR is fully free and open source.**
 > Every feature — current and future — is available to everyone at no cost. If HPR saves you time or you want to support continued development, a Ko-fi donation goes a long way.
 
+> [!NOTE]
+> **v0.69 is mostly complete.** Working through some edge cases and final bug fixes — compiled binary dropping in a few hours. Can't wait? [Build from source.](#building-from-source) :)
+
 ---
 
 <p align="center">
@@ -352,7 +355,7 @@ To eliminate GPU overhead entirely:
 hardware-acceleration,false
 ```
 
-This switches Slint to a CPU software renderer. RSS drops to approximately **22 MB**. The UI is visually identical. The only cost is slightly higher CPU usage during redraws — for a tracker redrawing every 500ms, imperceptible.
+This switches Slint to a CPU software renderer. RSS drops to approximately **27 MB**. The UI is visually identical. The only cost is slightly higher CPU usage during redraws — for a tracker redrawing every 200, imperceptible.
 
 </details>
 
@@ -405,8 +408,8 @@ The networking libraries are bundled solely to power the Lua extension engine. B
 
 | Feature | HPR | ActivityWatch | RescueTime | Toggl |
 |---|---|---|---|---|
-| Binary size | ~2 MB | 200 MB+ | Cloud app | Cloud app |
-| RAM (real footprint) | ~22 MB private / ~47 MB reported (Linux), ~8 MB (Windows) | 200 MB+ | N/A | N/A |
+| Binary size | ~5 MB | 200 MB+ | Cloud app | Cloud app |
+| RAM (real footprint) | ~27 MB private / ~47 MB reported (Linux), ~13 MB (Windows) | 200 MB+ | N/A | N/A |
 | Account required | No | No | Yes | Yes |
 | Data leaves your machine | Never | Never | Yes | Yes |
 | Automatic tracking | Yes | Yes | Yes | No |
@@ -493,20 +496,23 @@ HPR is completely free. If it is useful to you, consider supporting development 
 
 ## Architecture Overview
 
-HPR is a multi-threaded C++23 application organized around a single shared state struct. Four threads run concurrently with defined responsibilities and cadences:
+HPR is a multi-threaded C++23 application organized around a single shared state struct. 12–14 threads run at any given time with no extensions loaded. 4–7 of those are Slint internals (renderer, event loop, etc.). The remaining are HPR's own threads with defined responsibilities and cadences:
 
 ```
 Main Thread          (Slint event loop)
   Window Poller      [50ms  tick  -  CurrentWindowManager]
-  UI Bridge          [500ms tick  -  HPR / HPRInterpreter + UiModelManager]
+  UI Bridge          [200ms tick  -  HPR / HPRInterpreter + UiModelManager]
   Database Writer    [10s   tick + event-driven  -  DatabaseManager]
+  + additional HPR internal threads
 ```
+
+Each loaded extension adds one dedicated thread on top of this baseline.
 
 **Main thread** is `main.cpp`. It instantiates `ConfigManager`, `DatabaseManager`, and `CurrentWindowManager`, picks either `HPR` or `HPRInterpreter` based on config, then enters the Slint event loop.
 
 **Window poller** lives in `CurrentWindowManager::getCurrentWindow_Loop`. It calls the platform-specific window getter every 50ms, acquires `stateMutex`, and updates the current window name and accumulated time.
 
-**UI bridge** is `HPR::trackingLoop` or `HPRInterpreter::trackingLoop`. It wakes every 500ms, reads application and tab state, and dispatches model updates to the Slint main thread using `UiModelManager` via `slint::invoke_from_event_loop`.
+**UI bridge** is `HPR::trackingLoop` or `HPRInterpreter::trackingLoop`. It wakes every 200ms, reads application and tab state, and dispatches model updates to the Slint main thread using `UiModelManager` via `slint::invoke_from_event_loop`.
 
 **Database writer** is `DatabaseManager::writeLoop`. It flushes to SQLite every 10 seconds and also responds to `LOAD_DATABASE_SINGULAR` events to load historical data asynchronously.
 
