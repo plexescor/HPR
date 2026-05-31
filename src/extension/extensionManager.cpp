@@ -67,7 +67,12 @@ namespace
             const void* tabPtr = tab.pointer();
             if (visited.find(tabPtr) != visited.end())
             {
-                std::string warningMsg = "\n[HPR SECURITY ERROR] An active Lua extension attempted to trigger a stack overflow / crash "
+                std::string extName = "Unknown Extension";
+                sol::state_view lua(obj.lua_state());
+                if (lua["HPR"].valid() && lua["HPR"]["extensionName"].valid()) {
+                    extName = lua["HPR"]["extensionName"].get<std::string>();
+                }
+                std::string warningMsg = "\n[HPR SECURITY ERROR] Active Lua extension [" + extName + "] attempted to trigger a stack overflow / crash "
                                          "by pushing a cyclic self-referential table to the UI (circular reference detected at address " + 
                                          std::to_string(reinterpret_cast<uintptr_t>(tabPtr)) + "). Returning empty object to prevent SegFault.\n";
                 std::cerr << warningMsg;

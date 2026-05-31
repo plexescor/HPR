@@ -14,7 +14,7 @@ namespace JsonParser
             }
         }
 
-        sol::object parseValue(sol::state& lua, const std::string& str, size_t& pos);
+        sol::object parseValue(sol::state& lua, const std::string& str, size_t& pos, int depth);
 
         std::string parseString(const std::string& str, size_t& pos) {
             pos++; // Skip opening double quote
@@ -41,7 +41,7 @@ namespace JsonParser
             return result;
         }
 
-        sol::object parseObject(sol::state& lua, const std::string& str, size_t& pos) {
+        sol::object parseObject(sol::state& lua, const std::string& str, size_t& pos, int depth) {
             pos++; // Skip opening '{'
             sol::table tab = lua.create_table();
             while (pos < str.size()) {
@@ -60,7 +60,7 @@ namespace JsonParser
                     pos++; // Skip colon
                 }
                 skipWhitespace(str, pos);
-                sol::object val = parseValue(lua, str, pos);
+                sol::object val = parseValue(lua, str, pos, depth + 1);
                 tab[key] = val;
                 skipWhitespace(str, pos);
                 if (pos < str.size() && str[pos] == ',') {
@@ -75,7 +75,7 @@ namespace JsonParser
             return tab;
         }
 
-        sol::object parseArray(sol::state& lua, const std::string& str, size_t& pos) {
+        sol::object parseArray(sol::state& lua, const std::string& str, size_t& pos, int depth) {
             pos++; // Skip opening '['
             sol::table tab = lua.create_table();
             size_t index = 1;
@@ -86,7 +86,7 @@ namespace JsonParser
                     pos++;
                     return tab;
                 }
-                sol::object val = parseValue(lua, str, pos);
+                sol::object val = parseValue(lua, str, pos, depth + 1);
                 tab[index++] = val;
                 skipWhitespace(str, pos);
                 if (pos < str.size() && str[pos] == ',') {
@@ -101,7 +101,19 @@ namespace JsonParser
             return tab;
         }
 
-        sol::object parseValue(sol::state& lua, const std::string& str, size_t& pos) {
+        sol::object parseValue(sol::state& lua, const std::string& str, size_t& pos, int depth = 0) {
+            if (depth > 500) {
+                std::string extName = "Unknown Extension";
+                if (lua["HPR"].valid() && lua["HPR"]["extensionName"].valid()) {
+                    extName = lua["HPR"]["extensionName"].get<std::string>();
+                }
+                std::string warningMsg = "\n[HPR SECURITY ERROR] Active Lua extension [" + extName + "] attempted to trigger a stack overflow / crash "
+                                         "by parsing a deeply nested JSON payload (exceeded max recursion depth of 500).\n";
+                std::cerr << warningMsg;
+                std::cout << warningMsg;
+                return sol::nil;
+            }
+
             skipWhitespace(str, pos);
             if (pos >= str.size()) return sol::nil;
 
@@ -109,9 +121,9 @@ namespace JsonParser
             if (c == '"') {
                 return sol::make_object(lua, parseString(str, pos));
             } else if (c == '{') {
-                return parseObject(lua, str, pos);
+                return parseObject(lua, str, pos, depth);
             } else if (c == '[') {
-                return parseArray(lua, str, pos);
+                return parseArray(lua, str, pos, depth);
             } else if (c == 't' && pos + 3 < str.size() && str.substr(pos, 4) == "true") {
                 pos += 4;
                 return sol::make_object(lua, true);
@@ -228,7 +240,12 @@ namespace JsonParser
             const void* tabPtr = tab.pointer();
             if (visited.find(tabPtr) != visited.end())
             {
-                std::string warningMsg = "\n[HPR SECURITY ERROR] An active Lua extension attempted to trigger a stack overflow / crash "
+                std::string extName = "Unknown Extension";
+                sol::state_view lua(obj.lua_state());
+                if (lua["HPR"].valid() && lua["HPR"]["extensionName"].valid()) {
+                    extName = lua["HPR"]["extensionName"].get<std::string>();
+                }
+                std::string warningMsg = "\n[HPR SECURITY ERROR] Active Lua extension [" + extName + "] attempted to trigger a stack overflow / crash "
                                          "by serializing a cyclic self-referential table (circular reference detected at address " + 
                                          std::to_string(reinterpret_cast<uintptr_t>(tabPtr)) + "). Serializing as null to prevent SegFault.\n";
                 std::cerr << warningMsg;
