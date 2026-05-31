@@ -8,8 +8,6 @@
 #include "sol.hpp"
 #include "databaseManager.hpp"
 #include "trayManager.hpp"
-#include "HPR.hpp"
-#include "HPRInterpreter.hpp"
 #include "linuxUtilities.hpp"
 #include "getCurrentWindow.hpp"
 #ifdef _WIN32
@@ -21,6 +19,10 @@
 #include <mutex>
 
 #include "appEvents.hpp"
+
+//FORWARD DECLARE TO AVOID CIRCULAR DEPENDENCIES
+class HPR;
+class HPRInterpreter;
 
 struct LoadedExtension 
 {
