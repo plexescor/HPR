@@ -575,9 +575,26 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         ).count();
     };
 
-    lua["HPR"]["getExtensionDir_E"] = [&ext]() -> std::string
+    auto getExtensionRelativeDir = [this, &ext]() -> std::string
     {
-        std::string dir = ext.path.parent_path().string();
+        std::filesystem::path canonicalBase = std::filesystem::weakly_canonical(this->extensionPath);
+        std::filesystem::path canonicalExt = std::filesystem::weakly_canonical(ext.path);
+        
+        // Security check: ensure the extension path is actually under extensionPath
+        auto relative = std::filesystem::relative(canonicalExt.parent_path(), canonicalBase);
+        
+        // If it escapes the base directory, return empty string for security
+        if (relative.empty() || relative.string().find("..") != std::string::npos)
+        {
+            return "";
+        }
+        
+        std::string dir = relative.string();
+        if (dir == ".")
+        {
+            dir = "";
+        }
+        
         if (!dir.empty() && dir.back() != '/' && dir.back() != '\\')
         {
             #ifdef _WIN32
@@ -588,6 +605,9 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         }
         return dir;
     };
+
+    lua["HPR"]["getExtensionDir_E"] = getExtensionRelativeDir;
+    lua["HPR"]["getExtensionPath_E"] = getExtensionRelativeDir;
 
     // lua["HPR"]["isUiActive_E"] = []() -> bool
     // {
