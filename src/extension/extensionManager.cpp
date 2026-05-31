@@ -258,6 +258,9 @@ ExtensionManager::ExtensionManager(bool allowDynamicLibraryExtensions) : allowDy
 
 ExtensionManager::~ExtensionManager()
 {
+    app = nullptr;           // null BEFORE joining threads
+    interpreterApp = nullptr;
+
     //two passes for "fastness"
     for (auto& ext : extensions)
     {

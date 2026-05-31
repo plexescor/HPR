@@ -541,55 +541,57 @@ namespace NativeNet
             return false;
         }
 
+        
         std::cout << "[HPR HTTP Server] Server running on 127.0.0.1:" << port << std::endl;
 
-        while (ext.running)
+        std::thread([server_fd, handler, &ext]() mutable
         {
-            fd_set readfds;
-            FD_ZERO(&readfds);
-            FD_SET(server_fd, &readfds);
-
-            timeval timeout;
-            timeout.tv_sec = 0;
-            timeout.tv_usec = 100000; // 100ms timeout for non-blocking poll
-
-            int activity = select(static_cast<int>(server_fd + 1), &readfds, nullptr, nullptr, &timeout);
-
-            if (activity < 0)
+            while (ext.running)
             {
-#ifdef _WIN32
-                int err = WSAGetLastError();
-                if (err == WSAEINTR) continue;
-#else
-                if (errno == EINTR) continue;
-#endif
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                continue;
-            }
+                fd_set readfds;
+                FD_ZERO(&readfds);
+                FD_SET(server_fd, &readfds);
 
-            if (activity == 0)
-            {
-                // Timeout, loop again and check ext.running
-                continue;
-            }
+                timeval timeout;
+                timeout.tv_sec = 0;
+                timeout.tv_usec = 100000;
 
-            if (FD_ISSET(server_fd, &readfds))
-            {
-                sockaddr_in client_addr;
-                socklen_t addr_len = sizeof(client_addr);
-                SOCKET client_socket = accept(server_fd, (struct sockaddr*)&client_addr, &addr_len);
-                if (client_socket != INVALID_SOCKET_VAL)
+                int activity = select(static_cast<int>(server_fd + 1), &readfds, nullptr, nullptr, &timeout);
+
+                if (activity < 0)
                 {
-                    handleClient(client_socket, handler, ext.lua);
+                    #ifdef _WIN32
+                        int err = WSAGetLastError();
+                        if (err == WSAEINTR) continue;
+                    #else
+                        if (errno == EINTR) continue;
+                    #endif
+                    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                    continue;
+                }
+
+                if (activity == 0) continue;
+
+                if (FD_ISSET(server_fd, &readfds))
+                {
+                    sockaddr_in client_addr;
+                    socklen_t addr_len = sizeof(client_addr);
+                    SOCKET client_socket = accept(server_fd, (struct sockaddr*)&client_addr, &addr_len);
+                    if (client_socket != INVALID_SOCKET_VAL)
+                    {
+                        std::lock_guard<std::recursive_mutex> lock(ext.luaMutex);
+                        handleClient(client_socket, handler, ext.lua);
+                    }
                 }
             }
-        }
 
-        CLOSE_SOCKET(server_fd);
-#ifdef _WIN32
-        WSACleanup();
-#endif
-        std::cout << "[HPR HTTP Server] Server stopped cleanly" << std::endl;
+            CLOSE_SOCKET(server_fd);
+            #ifdef _WIN32
+                WSACleanup();
+            #endif
+            std::cout << "[HPR HTTP Server] Server stopped cleanly" << std::endl;
+        }).detach();
+
         return true;
     }
 }
