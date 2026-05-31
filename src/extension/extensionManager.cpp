@@ -134,6 +134,43 @@ namespace
         return luaToCpp_Internal(obj, visited);
     }
 
+    CppValue slintToCpp(const slint::interpreter::Value& val)
+    {
+        CppValue v;
+        if (auto s = val.to_string())
+        {
+            v.type = CppValue::Type::String;
+            v.str_val = std::string(*s);
+        }
+        else if (auto n = val.to_number())
+        {
+            v.type = CppValue::Type::Double;
+            v.double_val = *n;
+        }
+        else if (auto b = val.to_bool())
+        {
+            v.type = CppValue::Type::Bool;
+            v.bool_val = *b;
+        }
+        else if (auto arr = val.to_array())
+        {
+            v.type = CppValue::Type::Array;
+            for (size_t i = 0; i < arr->size(); ++i)
+            {
+                v.array_val.push_back(slintToCpp((*arr)[i]));
+            }
+        }
+        else if (auto strct = val.to_struct())
+        {
+            v.type = CppValue::Type::Struct;
+            for (const auto& [name, fieldVal] : *strct)
+            {
+                v.struct_val[std::string(name)] = slintToCpp(fieldVal);
+            }
+        }
+        return v;
+    }
+
     slint::interpreter::Value cppToSlint(const CppValue& val)
     {
         if (val.type == CppValue::Type::String)
@@ -944,7 +981,29 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
                 {
                     // Trigger the lua function when Slint fires the callback safely under luaMutex
                     std::lock_guard<std::recursive_mutex> lock(ext.luaMutex);
-                    luaCallback();
+                    
+                    std::vector<sol::object> luaArgs;
+                    for (size_t i = 0; i < args.size(); ++i)
+                    {
+                        luaArgs.push_back(cppToLua(ext.lua, slintToCpp(args[i])));
+                    }
+
+                    sol::protected_function_result result;
+                    if (luaArgs.empty())
+                    {
+                        result = luaCallback();
+                    }
+                    else
+                    {
+                        result = luaCallback(sol::as_args(luaArgs));
+                    }
+
+                    if (!result.valid())
+                    {
+                        sol::error err = result;
+                        std::cerr << "[UI CALLBACK ERROR] " << err.what() << std::endl;
+                    }
+
                     return slint::interpreter::Value(); // void return
                 });
             }
