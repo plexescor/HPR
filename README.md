@@ -160,6 +160,7 @@ Each extension runs in its own isolated VM on a dedicated background thread, com
 - Register fully custom window detection backends for compositors HPR doesn't natively support
 - Subscribe to HPR's internal event bus and react to state changes
 - Build interactive custom UI panels that render inside HPR via Slint callback bindings
+- AND MUCH MORE INSANE STUFF like impersonating ActivtyWatch client to feed the received data into HPR
 
 **Where to put your extensions:**
 
