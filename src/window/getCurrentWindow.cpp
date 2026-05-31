@@ -232,78 +232,73 @@ std::string CurrentWindowManager::getCurrentTitle()
 	std::string curr = activeBackend->getCurrentTitle();
     return validateAndUpdateWindow_Cross(curr);
 }
-
 void CurrentWindowManager::detectAndSetBackend()
 {
-	#ifdef __linux__
 
-	if (getenv("HYPRLAND_INSTANCE_SIGNATURE"))
-	{
-		currentPlatform = "Hyprland";
-	}
-	else if (const char* desktop = getenv("XDG_CURRENT_DESKTOP"))
-	{
-		currentPlatform = desktop;
-	}
-	else
-	{
-		currentPlatform.clear();
-	}
+#ifdef __linux__
+    if (!getenv("HYPRLAND_INSTANCE_SIGNATURE"))
+    {
+        // Check both locations modern Hyprland uses XDG_RUNTIME_DIR/hypr,
+        // older or some NixOS setups use /tmp/hypr
+        std::vector<std::string> hyprDirs;
 
-	#endif
+        if (const char* xdg = getenv("XDG_RUNTIME_DIR"))
+            hyprDirs.push_back(std::string(xdg) + "/hypr");
+        hyprDirs.push_back("/tmp/hypr");
 
-	#ifdef _WIN32
-		currentPlatform = "Windows";
-	#endif
+        for (const auto& hyprDir : hyprDirs)
+        {
+            if (!std::filesystem::exists(hyprDir)) continue;
 
-	#ifdef __APPLE__
-		currentPlatform = "Apple";
-	#endif
+            for (auto& entry : std::filesystem::directory_iterator(hyprDir))
+            {
+                std::string sig = entry.path().filename().string();
+                // Skip lockfiles and hidden entries
+                if (sig.empty() || sig[0] == '.' || sig.ends_with(".lock")) continue;
+                if (!std::filesystem::is_directory(entry.path())) continue;
 
-    std::cout
-        << "[HPR] Detected environment: "
-        << currentPlatform
-        << std::endl;
+                setenv("HYPRLAND_INSTANCE_SIGNATURE", sig.c_str(), 1);
+                std::cout << "[HPR] Injected HYPRLAND_INSTANCE_SIGNATURE: " << sig << std::endl;
+                goto done;
+            }
+        }
+        done:;
+    }
+
+    if (getenv("HYPRLAND_INSTANCE_SIGNATURE"))
+        currentPlatform = "Hyprland";
+    else if (const char* desktop = getenv("XDG_CURRENT_DESKTOP"))
+        currentPlatform = desktop;
+    else
+        currentPlatform.clear();
+#endif
+
+#ifdef _WIN32
+    currentPlatform = "Windows";
+#endif
+#ifdef __APPLE__
+    currentPlatform = "Apple";
+#endif
+
+    std::cout << "[HPR] Detected environment: " << currentPlatform << std::endl;
 
     for (auto& backend : std::views::reverse(registeredBackends))
     {
-        if (!backend.matchesEnvironment(currentPlatform))
-        {
-            continue;
-        }
-
-        std::cout
-            << "[HPR] Initializing backend: "
-            << backend.name
-            << std::endl;
-
+        if (!backend.matchesEnvironment(currentPlatform)) continue;
+        std::cout << "[HPR] Initializing backend: " << backend.name << std::endl;
         backend.initialize();
-
         if (!backend.isUsable())
         {
-            std::cout
-                << "[HPR] Backend unusable: "
-                << backend.name
-                << std::endl;
-
+            std::cout << "[HPR] Backend unusable: " << backend.name << std::endl;
             continue;
         }
-
         activeBackend = &backend;
-
-        std::cout
-            << "[HPR] Selected backend: "
-            << backend.name
-            << std::endl;
-
+        std::cout << "[HPR] Selected backend: " << backend.name << std::endl;
         return;
     }
 
-    std::cout
-        << "[HPR] Failed to find usable backend"
-        << std::endl;
+    std::cout << "[HPR] Failed to find usable backend" << std::endl;
 }
-
 // #ifdef __linux__
 // 	// Get current desktop environment, linux only
 // 	std::string currentPlatformCommand = "echo $XDG_CURRENT_DESKTOP";

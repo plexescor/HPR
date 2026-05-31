@@ -7,6 +7,54 @@
     #include <windows.h>
     #include <Psapi.h>
 #endif
+#ifdef __linux__
+    #include <unistd.h>
+    #include <dirent.h>
+    #include <sys/stat.h>
+#endif
+
+static std::string runHyprctl(const std::string& args) 
+{
+    std::string sig;
+    if (const char* e = getenv("HYPRLAND_INSTANCE_SIGNATURE")) 
+    {
+        sig = e;
+    }
+    else 
+    {
+        std::vector<std::string> dirs;
+        if (const char* xdg = getenv("XDG_RUNTIME_DIR")) 
+            dirs.push_back(std::string(xdg) + "/hypr");
+        dirs.push_back("/tmp/hypr");
+
+        for (const auto& dir : dirs)
+        {
+            DIR* d = opendir(dir.c_str());
+            if (!d) continue;
+            dirent* entry;
+            while ((entry = readdir(d)))
+            {
+                std::string name = entry->d_name;
+                if (name.empty() || name[0] == '.') continue;
+                if (name.size() >= 5 && name.substr(name.size() - 5) == ".lock") continue;
+                // make sure it's a directory
+                std::string fullPath = dir + "/" + name;
+                struct stat st;
+                if (stat(fullPath.c_str(), &st) == 0 && S_ISDIR(st.st_mode))
+                {
+                    sig = name;
+                    break;
+                }
+            }
+            closedir(d);
+            if (!sig.empty()) break;
+        }
+    }
+
+    std::string cmd = (sig.empty() ? "" : "HYPRLAND_INSTANCE_SIGNATURE=" + sig + " ")
+                    + "/usr/bin/hyprctl " + args;
+    return runSystemCommand(cmd);
+}
 // #include <fstream>
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -417,66 +465,44 @@ void registerBuiltinBackends()
     ({
         "Hyprland",
 
-        // matchesEnvironment
         [](const std::string& env) 
         {
             return env.contains("Hyprland");
         },
 
-        []()
-        {
-            //no shit
-        },
+        []() {},
 
         []()
         {
-            std::string cmd = "hyprctl -j activewindow";
-            std::string result =
-                runSystemCommand(cmd);
-
-            return result.contains("class");
+            return runHyprctl("-j activewindow").contains("class");
         },
 
         []() -> std::string
         {
-            std::string cmd = "hyprctl activewindow -j";
-            std::string json = runSystemCommand(cmd);
-            
-            // Find "class":"value"
+            std::string json = runHyprctl("activewindow -j");
             const std::string key = "\"class\":";
             size_t keyPos = json.find(key);
             if (keyPos == std::string::npos) return "";
-            
             size_t quoteStart = json.find('"', keyPos + key.size());
             if (quoteStart == std::string::npos) return "";
-            
             size_t quoteEnd = json.find('"', quoteStart + 1);
             if (quoteEnd == std::string::npos) return "";
-            
             return json.substr(quoteStart + 1, quoteEnd - quoteStart - 1);
         },
-    
+
         []() -> std::string
         {
-            std::string cmd = "hyprctl activewindow -j";
-            std::string json = runSystemCommand(cmd);
-            
-            // Find "title":"value"
+            std::string json = runHyprctl("activewindow -j");
             const std::string key = "\"title\":";
             size_t keyPos = json.find(key);
             if (keyPos == std::string::npos) return "";
-            
             size_t quoteStart = json.find('"', keyPos + key.size());
             if (quoteStart == std::string::npos) return "";
-            
             size_t quoteEnd = json.find('"', quoteStart + 1);
             if (quoteEnd == std::string::npos) return "";
-            
             return json.substr(quoteStart + 1, quoteEnd - quoteStart - 1);
         }
-
     });
-
     registerBackend
     ({
         "Windows",
