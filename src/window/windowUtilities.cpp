@@ -4,6 +4,9 @@
 #include <algorithm>
 #include <vector>
 #include <fstream>
+#ifdef __linux__
+    #include <dbus/dbus.h>
+#endif
 
 #ifdef __linux__
 #include <sys/wait.h> // WEXITSTATUS
@@ -272,18 +275,45 @@ public:
 
 void showNotification(const std::string &title, const std::string &msg) {
 #ifdef __linux__
-    std::string escapedTitle = "";
-    for (char c : title) {
-        if (c == '"' || c == '\\' || c == '`' || c == '$') escapedTitle += '\\';
-        escapedTitle += c;
-    }
-    std::string escapedMsg = "";
-    for (char c : msg) {
-        if (c == '"' || c == '\\' || c == '`' || c == '$') escapedMsg += '\\';
-        escapedMsg += c;
-    }
-    std::string command = "notify-send \"" + escapedTitle + "\" \"" + escapedMsg + "\"";
-    runSystemCommand(command);
+    DBusConnection* conn = dbus_bus_get(DBUS_BUS_SESSION, nullptr);
+    if (!conn) return;
+
+    DBusMessage* message = dbus_message_new_method_call(
+        "org.freedesktop.Notifications",
+        "/org/freedesktop/Notifications",
+        "org.freedesktop.Notifications",
+        "Notify"
+    );
+    if (!message) { dbus_connection_unref(conn); return; }
+
+    const char* app_name = "HPR";
+    uint32_t replaces_id = 0;
+    const char* app_icon = "";
+    const char* summary = title.c_str();
+    const char* body = msg.c_str();
+    int32_t timeout = 5000;
+
+    DBusMessageIter args, actions_iter, hints_iter;
+    dbus_message_iter_init_append(message, &args);
+    dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &app_name);
+    dbus_message_iter_append_basic(&args, DBUS_TYPE_UINT32, &replaces_id);
+    dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &app_icon);
+    dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &summary);
+    dbus_message_iter_append_basic(&args, DBUS_TYPE_STRING, &body);
+
+    dbus_message_iter_open_container(&args, DBUS_TYPE_ARRAY, "s", &actions_iter);
+    dbus_message_iter_close_container(&args, &actions_iter);
+
+    dbus_message_iter_open_container(&args, DBUS_TYPE_ARRAY, "{sv}", &hints_iter);
+    dbus_message_iter_close_container(&args, &hints_iter);
+
+    dbus_message_iter_append_basic(&args, DBUS_TYPE_INT32, &timeout);
+
+    dbus_connection_send(conn, message, nullptr);
+    dbus_connection_flush(conn);
+    dbus_message_unref(message);
+    dbus_connection_unref(conn);
+
 #elif defined(_WIN32)
     static bool initialized = false;
     if (!initialized) {
@@ -312,7 +342,6 @@ void showNotification(const std::string &title, const std::string &msg) {
             templ.setImagePath(wIconPath);
         }
         
-        // Heap-allocate DummyWinToastHandler so WinToast's internal std::shared_ptr can safely delete it when done
         WinToastLib::WinToast::instance()->showToast(templ, new DummyWinToastHandler());
     }
 #endif
