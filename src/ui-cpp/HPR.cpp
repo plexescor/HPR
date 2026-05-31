@@ -78,8 +78,11 @@ void HPR::quit()
 
 void HPR::hide()
 {
-    slint::invoke_from_event_loop([this]()
-                                  { ui->hide(); });
+    auto weak = slint::ComponentWeakHandle<MainWindow>(ui);
+    slint::invoke_from_event_loop([weak]() {
+        if (auto handle = weak.lock())
+            (*handle)->hide();
+    });
 }
 
 void HPR::trackingLoop()

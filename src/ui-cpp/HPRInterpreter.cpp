@@ -95,10 +95,13 @@ void HPRInterpreter::quit()
 
 void HPRInterpreter::hide()
 {
-    slint::invoke_from_event_loop([this]()
-                                  { instance.value()->hide(); });
+    auto weak = slint::ComponentWeakHandle<slint::interpreter::ComponentInstance>(instance.value());
+    slint::invoke_from_event_loop([weak]()
+    {
+        if (auto handle = weak.lock())
+            (*handle)->hide();
+    });
 }
-
 
 void HPRInterpreter::trackingLoop()
 {
