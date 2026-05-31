@@ -691,8 +691,8 @@ Shutdown is always clean. The database writer finishes its current flush before 
 - CMake 3.21+
 - GCC 13+, Clang 16+, or MSVC 2022+ with C++23 support
 - Slint 1.16.1 (the install script handles this)
-- Linux only: `jq` for Hyprland, `gdbus` for GNOME and Cinnamon, and `libcurl` development library (e.g. `libcurl4-openssl-dev` on Debian/Ubuntu, `libcurl-devel` on Fedora/RHEL) for extension networking support.
-- Windows only: The native notification backend uses the bundled `WinToast` library which compiles out-of-the-box (no external Windows dependencies required).
+- Linux only: `jq` for Hyprland, `gdbus` for GNOME and Cinnamon, `libdbus-1` development library (e.g. `libdbus-1-dev` on Debian/Ubuntu, `dbus-devel` on Fedora/RHEL) for native D-Bus notifications and tray integration, and `libcurl` development library (e.g. `libcurl4-openssl-dev` on Debian/Ubuntu, `libcurl-devel` on Fedora/RHEL) for extension networking support.
+- Windows only: The native notification backend uses the bundled `WinToast` library which compiles out-of-the-box (no external Windows dependencies required). On Linux, notifications leverage the session D-Bus directly via `libdbus-1` (no external `notify-send` executable is spawned).
 
 
 ```bash
