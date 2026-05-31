@@ -482,25 +482,7 @@ void registerBuiltinBackends()
         []()
         {
             #ifdef _WIN32
-                HWND hwnd = GetForegroundWindow();
-
-                DWORD pid = 0;
-                GetWindowThreadProcessId(hwnd, &pid);
-
-                HANDLE hProcess = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, FALSE, pid);
-
-                char procName[MAX_PATH] = {};
-                DWORD size = MAX_PATH;
-                QueryFullProcessImageNameA(hProcess, 0, procName, &size);
-                CloseHandle(hProcess);
-
-                // Extract just the filename from full path
-                std::string fullPath(procName);
-                size_t lastSlash = fullPath.find_last_of("\\/");
-                std::string filename = (lastSlash != std::string::npos) ? fullPath.substr(lastSlash + 1) : fullPath;
-
-                //if it contains .exe, then yes its ready or whateevr
-                return filename.contains(".exe");
+                return true;
             #endif
                 return false;
         },
