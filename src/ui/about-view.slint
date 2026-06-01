@@ -4,6 +4,7 @@ import { SectionHeader } from "./section-header.slint";
 export component AboutView {
     callback open-kofi;
     callback open-releases;
+    callback open-issues;
 
     VerticalLayout {
         padding: 12px;
@@ -304,10 +305,10 @@ export component AboutView {
                 }
 
                 // Open source + contributors
-                VerticalLayout {
-                    spacing: 10px;
+                HorizontalLayout {
+                    spacing: 16px;
                     alignment: center;
-                    width: 160px;
+                    width: 200px;
 
                     // Open source badge
                     Rectangle {
@@ -331,9 +332,17 @@ export component AboutView {
                         }
                     }
 
+                    // Divider
+                    Rectangle {
+                        width: 1px;
+                        height: 16px;
+                        background: #ffffff15;
+                    }
+
+                    // Contributors
                     HorizontalLayout {
-                        spacing: 8px;
-                        alignment: start;
+                        spacing: 6px;
+                        alignment: center;
 
                         Text {
                             text: "CONTRIBUTORS";
@@ -356,28 +365,240 @@ export component AboutView {
             }
         }
 
-        // ── Card 3: Easter egg ────────────────────────────────────────────
+        // ── Card 3: Stats + Bug report + Easter egg ───────────────────────
         Card {
-            HorizontalLayout {
-                padding: 18px;
-                padding-left: 22px;
-                spacing: 12px;
-                alignment: start;
+            VerticalLayout {
+                padding: 20px;
+                spacing: 16px;
 
-                Text {
-                    text: "💨";
-                    font-size: 16px;
-                    vertical-alignment: center;
+                // ── Fun stats ─────────────────────────────────────────────
+                VerticalLayout {
+                    spacing: 8px;
+
+                    Text {
+                        text: "FUN STATS";
+                        font-size: 8px;
+                        font-weight: 700;
+                        letter-spacing: 2.5px;
+                        color: #ffffff30;
+                    }
+
+                    HorizontalLayout {
+                        spacing: 24px;
+                        alignment: start;
+
+                        // Total lines
+                        VerticalLayout {
+                            spacing: 4px;
+
+                            Text {
+                                text: "~9300";
+                                font-size: 22px;
+                                font-weight: 800;
+                                color: #f1f5f9;
+                                letter-spacing: 1px;
+                            }
+
+                            Text {
+                                text: "TOTAL LINES";
+                                font-size: 8px;
+                                font-weight: 700;
+                                letter-spacing: 2px;
+                                color: #ffffff30;
+                            }
+                        }
+
+                        // Divider
+                        Rectangle {
+                            width: 1px;
+                            height: 40px;
+                            background: #ffffff10;
+                        }
+
+                        // Breakdown
+                        VerticalLayout {
+                            spacing: 5px;
+                            alignment: center;
+
+                            HorizontalLayout {
+                                spacing: 8px;
+                                alignment: start;
+                                Text {
+                                    text: "C++";
+                                    font-size: 8px;
+                                    font-weight: 700;
+                                    letter-spacing: 1.5px;
+                                    color: #38bdf870;
+                                    vertical-alignment: center;
+                                    width: 52px;
+                                }
+                                Text {
+                                    text: "6901";
+                                    font-size: 11px;
+                                    font-weight: 600;
+                                    color: #38bdf8;
+                                    vertical-alignment: center;
+                                }
+                            }
+
+                            HorizontalLayout {
+                                spacing: 8px;
+                                alignment: start;
+                                Text {
+                                    text: "SLINT";
+                                    font-size: 8px;
+                                    font-weight: 700;
+                                    letter-spacing: 1.5px;
+                                    color: #c084fc70;
+                                    vertical-alignment: center;
+                                    width: 52px;
+                                }
+                                Text {
+                                    text: "1637";
+                                    font-size: 11px;
+                                    font-weight: 600;
+                                    color: #c084fc;
+                                    vertical-alignment: center;
+                                }
+                            }
+
+                            HorizontalLayout {
+                                spacing: 8px;
+                                alignment: start;
+                                Text {
+                                    text: "HEADERS";
+                                    font-size: 8px;
+                                    font-weight: 700;
+                                    letter-spacing: 1.5px;
+                                    color: #fb923c70;
+                                    vertical-alignment: center;
+                                    width: 52px;
+                                }
+                                Text {
+                                    text: "774";
+                                    font-size: 11px;
+                                    font-weight: 600;
+                                    color: #fb923c;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+
+                        // Divider
+                        Rectangle {
+                            width: 1px;
+                            height: 40px;
+                            background: #ffffff10;
+                        }
+
+                        // Coffee
+                        VerticalLayout {
+                            spacing: 4px;
+
+                            HorizontalLayout {
+                                spacing: 6px;
+                                Text {
+                                    text: "☕";
+                                    font-size: 18px;
+                                    vertical-alignment: center;
+                                }
+                                Text {
+                                    text: "unknown";
+                                    font-size: 22px;
+                                    font-weight: 800;
+                                    color: #f1f5f9;
+                                    letter-spacing: 1px;
+                                    vertical-alignment: center;
+                                }
+                            }
+
+                            Text {
+                                text: "CUPS OF COFFEE";
+                                font-size: 8px;
+                                font-weight: 700;
+                                letter-spacing: 2px;
+                                color: #ffffff30;
+                            }
+                        }
+                    }
                 }
 
-                Text {
-                    text: "If this crashed, must've been the wind ahh";
-                    font-size: 11px;
-                    font-weight: 500;
-                    color: #ffffff25;
-                    letter-spacing: 0.3px;
-                    vertical-alignment: center;
-                    font-italic: true;
+                // ── Divider ───────────────────────────────────────────────
+                Rectangle {
+                    height: 1px;
+                    background: @linear-gradient(90deg, #ffffff00 0%, #ffffff12 40%, #ffffff12 60%, #ffffff00 100%);
+                }
+
+                // ── Bottom row: bug report + easter egg ───────────────────
+                HorizontalLayout {
+                    spacing: 0px;
+                    alignment: space-between;
+
+                    // Report a bug button
+                    bug-btn := Rectangle {
+                        width: bug-lbl.preferred-width + 24px;
+                        height: 26px;
+                        border-radius: 6px;
+                        border-width: 1px;
+
+                        animate background   { duration: 100ms; }
+                        animate border-color { duration: 100ms; }
+
+                        ta-bug := TouchArea {
+                            mouse-cursor: pointer;
+                            clicked => { root.open-issues(); }
+                        }
+
+                        states [
+                            pressed when ta-bug.pressed: {
+                                background: #fb923c35;
+                                border-color: #fb923c80;
+                            }
+                            hovered when ta-bug.has-hover: {
+                                background: #fb923c25;
+                                border-color: #fb923c60;
+                            }
+                            normal when !ta-bug.has-hover: {
+                                background: #fb923c12;
+                                border-color: #fb923c35;
+                            }
+                        ]
+
+                        bug-lbl := Text {
+                            text: "REPORT A BUG";
+                            font-size: 8px;
+                            font-weight: 700;
+                            letter-spacing: 2px;
+                            color: ta-bug.pressed ? #fed7aa : ta-bug.has-hover ? #fdba74 : #fb923c;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                            width: 100%;
+                            height: 100%;
+                            animate color { duration: 100ms; }
+                        }
+                    }
+
+                    // Easter egg
+                    HorizontalLayout {
+                        spacing: 8px;
+                        alignment: end;
+
+                        Text {
+                            text: "💨";
+                            font-size: 14px;
+                            vertical-alignment: center;
+                        }
+
+                        Text {
+                            text: "If this crashed, must've been the wind ahh";
+                            font-size: 11px;
+                            font-weight: 500;
+                            color: #ffffff90;
+                            letter-spacing: 0.3px;
+                            vertical-alignment: center;
+                            font-italic: true;
+                        }
+                    }
                 }
             }
         }

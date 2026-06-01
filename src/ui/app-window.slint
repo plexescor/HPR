@@ -25,6 +25,7 @@ export component MainWindow inherits Window {
     callback reloadExtension(string, string);
     callback reloadUi;
     callback openReleases;
+    callback openIssues;
 
     //PLS Donate and dont remove it!
     callback openKofi;
@@ -209,7 +210,8 @@ export component MainWindow inherits Window {
             }
             if active-view == "ABOUT" : AboutView { 
                 open-kofi => { root.openKofi(); } 
-                open-releases => { root.openReleases() }
+                open-releases => { root.openReleases(); }
+                open-issues => { root.openIssues(); }
             }
 
         }

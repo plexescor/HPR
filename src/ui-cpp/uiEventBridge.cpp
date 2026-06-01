@@ -110,6 +110,16 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow>& ui,  ExtensionM
             int lol = system("xdg-open https://github.com/plexescor/HPR/releases &");
         #endif
     });
+
+    ui->on_openIssues([this]()
+    {
+        //Open webbrowser
+        #ifdef _WIN32
+            ShellExecuteA(nullptr, "open", "https://github.com/plexescor/HPR/issues", nullptr, nullptr, SW_SHOWNORMAL);
+        #else
+            int lol = system("xdg-open https://github.com/plexescor/HPR/issues &");
+        #endif
+    });
 }
 
 //CONSTRUCTOR FOR **INTERPRETED** UI
@@ -245,6 +255,17 @@ UiEventBridge::UiEventBridge(
             ShellExecuteA(nullptr, "open", "https://github.com/plexescor/HPR/releases", nullptr, nullptr, SW_SHOWNORMAL);
         #else
             int idc = system("xdg-open https://github.com/plexescor/HPR/releases &");
+        #endif
+        return slint::interpreter::Value(); // void return
+    });
+
+    ui->set_callback("openIssues", [this](auto args) -> slint::interpreter::Value
+    {
+        //open browser
+        #ifdef _WIN32
+            ShellExecuteA(nullptr, "open", "https://github.com/plexescor/HPR/issues", nullptr, nullptr, SW_SHOWNORMAL);
+        #else
+            int idc = system("xdg-open https://github.com/plexescor/HPR/issues &");
         #endif
         return slint::interpreter::Value(); // void return
     });
