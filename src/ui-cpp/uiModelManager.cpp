@@ -109,7 +109,6 @@ void UiModelManager::update(const std::map<std::string, long> &rawTimeLog,
     {
         for (const auto &[raw, duration] : rawTimeLog_Tab)
         {
-            // std::cout << raw << std::endl;
             translatedTimeLog_Tab[aliasManager.getAlias_Tab(raw)] += duration;
             totalTrackedTime_Tab += duration;
         }

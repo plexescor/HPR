@@ -79,7 +79,7 @@ namespace
                                          "by pushing a cyclic self-referential table to the UI (circular reference detected at address " + 
                                          std::to_string(reinterpret_cast<uintptr_t>(tabPtr)) + "). Returning empty object to prevent SegFault.\n";
                 std::cerr << warningMsg;
-                std::cout << warningMsg;
+                Logger::log(warningMsg);
                 return v;
             }
             visited.insert(tabPtr);
@@ -290,9 +290,11 @@ ExtensionManager::~ExtensionManager()
                 if (std::chrono::steady_clock::now() - start >= std::chrono::milliseconds(300))
                 {
                     std::cerr << "Extension " << ext->path << " timed out, detaching\n";
+                    Logger::log("[HPR] Extension " + ext->path.string() + " timed out during shutdown, detaching thread to prevent hang");
                     ext->thread.detach();
                     joiner.detach();
                     std::cerr << "Force exiting to avoid potential hangs\n";
+                    Logger::log("[HPR] Force exiting due to extension shutdown timeout");
                     #ifdef _WIN32
                         TerminateProcess(GetCurrentProcess(), 0);
                     #else
@@ -320,9 +322,11 @@ ExtensionManager::~ExtensionManager()
                 if (std::chrono::steady_clock::now() - start >= std::chrono::milliseconds(300))
                 {
                     std::cerr << "Extension " << ext->path << " timed out, detaching\n";
+                    Logger::log("[HPR] Native extension " + ext->path.string() + " timed out during shutdown, detaching thread to prevent hang");
                     ext->thread.detach();
                     joiner.detach();
                     std::cerr << "Force exiting to avoid potential hangs\n";
+                    Logger::log("[HPR] Force exiting due to native extension shutdown timeout");
                     #ifdef _WIN32
                         TerminateProcess(GetCurrentProcess(), 0);
                     #else
@@ -405,6 +409,7 @@ void ExtensionManager::loadExtensions()
                 {
                     std::cerr << "[HPR] Native extension found but allow-dynamic-library-extensions is false. Skipping: "
                             << entry.path() << '\n';
+                    Logger::log("[HPR] Native extension found but allow-dynamic-library-extensions is false. Skipping: " + entry.path().string());
                 }
             }
         }
@@ -428,6 +433,7 @@ void ExtensionManager::loadExtensions()
                     std::cerr << "Failed to load extension: "
                             << entry.path()
                             << "\nError: " << e.what() << '\n';
+                    Logger::log("Failed to load extension: " + entry.path().string() + "\nError: " + e.what());
                     continue;
                 }
                             
@@ -436,11 +442,13 @@ void ExtensionManager::loadExtensions()
             else if (entry.is_regular_file())
             {
                 std::cerr << "Skipping non-lua file: " << entry.path() << '\n';
+                Logger::log("Skipping non-lua file: " + entry.path().string());
             }
         }
     } catch (std::exception& e)
     {
         std::cerr << "Error loading extensions: " << e.what() << '\n';
+        Logger::log("Error loading extensions: " + std::string(e.what()));
     }
 }
 
@@ -454,12 +462,14 @@ void ExtensionManager::loadNativeExtension(const std::filesystem::path& path)
         ext->handle = LoadLibraryA(path.string().c_str());
         if (!ext->handle) {
             std::cerr << "[HPR] Failed to load native extension: " << path << '\n';
+            Logger::log("[HPR] Failed to load native extension: " + path.string());
             return;
         }
     #else
         ext->handle = dlopen(path.string().c_str(), RTLD_LAZY);
         if (!ext->handle) {
             std::cerr << "[HPR] Failed to load native extension: " << path << "\n" << dlerror() << '\n';
+            Logger::log("[HPR] Failed to load native extension: " + path.string() + "\n" + dlerror());
             return;
         }
     #endif
@@ -489,8 +499,10 @@ void ExtensionManager::runNativeExtension(NativeExtension& ext)
                 sleepTime = init_fn();
             } catch (const std::exception& e) {
                 std::cerr << "Extension error in init for " << ext.path << ": " << e.what() << '\n';
+                Logger::log("Extension error in init for " + ext.path.string() + ": " + e.what());
             } catch (...) {
                 std::cerr << "Unknown extension error in init for " << ext.path << '\n';
+                Logger::log("Unknown extension error in init for " + ext.path.string());
             }
         }
         
@@ -507,8 +519,10 @@ void ExtensionManager::runNativeExtension(NativeExtension& ext)
                     onTick_fn(delta);
                 } catch (const std::exception& e) {
                     std::cerr << "Extension error in onTick for " << ext.path << ": " << e.what() << '\n';
+                    Logger::log("Extension error in onTick for " + ext.path.string() + ": " + e.what());
                 } catch (...) {
                     std::cerr << "Unknown extension error in onTick for " << ext.path << '\n';
+                    Logger::log("Unknown extension error in onTick for " + ext.path.string());
                 }
             }
 
@@ -527,17 +541,21 @@ void ExtensionManager::runNativeExtension(NativeExtension& ext)
                 onExit_fn();
             } catch (const std::exception& e) {
                 std::cerr << "Extension error in onExit for " << ext.path << ": " << e.what() << '\n';
+                Logger::log("Extension error in onExit for " + ext.path.string() + ": " + e.what());
             } catch (...) {
                 std::cerr << "Unknown extension error in onExit for " << ext.path << '\n';
+                Logger::log("Unknown extension error in onExit for " + ext.path.string());
             }
         }
     } catch (const std::exception& e)
     {
         std::cerr << "Extension error in " << ext.path << ": " << e.what() << '\n';
+        Logger::log("Extension error in " + ext.path.string() + ": " + e.what());
     }
     catch (...)
     {
         std::cerr << "Unknown extension error in " << ext.path << '\n';
+        Logger::log("Unknown extension error in " + ext.path.string());
     }
 }
 
@@ -606,6 +624,8 @@ void ExtensionManager::runExtension(LoadedExtension& ext)
                         << ": "
                         << e.what()
                         << '\n';
+
+                Logger::log("Extension error in " + ext.path.string() + ": " + e.what());
             }
             int slept = 0;
             while (ext.running && slept < sleepTime)
@@ -630,6 +650,7 @@ void ExtensionManager::runExtension(LoadedExtension& ext)
                         << ": "
                         << e.what()
                         << '\n';
+                Logger::log("Extension error in onExit for " + ext.path.string() + ": " + e.what());
             }
         }
     } catch (const std::exception& e)
@@ -639,12 +660,14 @@ void ExtensionManager::runExtension(LoadedExtension& ext)
                 << ": "
                 << e.what()
                 << '\n';
+        Logger::log("Extension error in " + ext.path.string() + ": " + e.what());
     }
     catch (...)
     {
         std::cerr << "Unknown extension error in "
                 << ext.path
                 << '\n';
+        Logger::log("Unknown extension error in " + ext.path.string());
     }
 }
 
@@ -760,6 +783,7 @@ void ExtensionManager::reloadAllExtensions()
             newExt->lua.script_file(path.string());
         } catch (const std::exception& e) {
             std::cerr << "Failed to reload extension: " << path << "\nError: " << e.what() << '\n';
+            Logger::log("[HPR] Failed to reload extension: " + path.string() + "\nError: " + e.what() + "\n");
             continue;
         }
         extensions.push_back(std::move(newExt));
@@ -780,17 +804,13 @@ void ExtensionManager::refresh()
         {
             if (entry.is_regular_file() && entry.path().extension() == ".lua")
             {
-                // std::cout << "[REFRESH DEBUG] Found lua file: " << entry.path() << "\n";
 
                 bool alreadyLoaded = false;
                 for (const auto& ext : extensions)
                 {
-                    // std::cout << "[REFRESH DEBUG] Comparing against loaded: " << ext->path << "\n";
                     if (std::filesystem::weakly_canonical(ext->path) == 
                         std::filesystem::weakly_canonical(entry.path()))
                     {
-                        // std::cout <<
-                        //  "[REFRESH DEBUG] Match found, skipping.\n";
                         alreadyLoaded = true;
                         break;
                     }
@@ -798,11 +818,9 @@ void ExtensionManager::refresh()
 
                 if (alreadyLoaded)
                 {
-                    // std::cout << "[REFRESH DEBUG] Skipping (already loaded): " << entry.path() << "\n";
                     continue;
                 }
 
-                // std::cout << "[REFRESH DEBUG] Loading new extension: " << entry.path() << "\n";
 
 
                 auto ext = std::make_unique<LoadedExtension>();
@@ -819,21 +837,23 @@ void ExtensionManager::refresh()
                     std::cerr << "Failed to load extension: "
                             << entry.path()
                             << "\nError: " << e.what() << '\n';
+                    Logger::log("Failed to load extension: " + entry.path().string() + "\nError: " + e.what());
                     continue;
                 }
                             
                 extensions.push_back(std::move(ext));
                 extensions.back()->thread = std::thread(&ExtensionManager::runExtension, this, std::ref(*extensions.back()));
-                // std::cout << "[REFRESH DEBUG] Extension pushed and thread started: " << entry.path() << "\n";
             }
             else if (entry.is_regular_file())
             {
                 std::cerr << "Skipping non-lua file: " << entry.path() << '\n';
+                Logger::log("Skipping non-lua file: " + entry.path().string());
             }
         }
     } catch (std::exception& e)
     {
         std::cerr << "Error loading extensions: " << e.what() << '\n';
+        Logger::log("Error loading extensions: " + std::string(e.what()));
     }
 }
 
@@ -1214,6 +1234,7 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
                     {
                         sol::error err = result;
                         std::cerr << "[UI CALLBACK ERROR] " << err.what() << std::endl;
+                        Logger::log("[UI CALLBACK ERROR] " + std::string(err.what()));
                     }
 
                     return slint::interpreter::Value(); // void return
@@ -1317,6 +1338,7 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         if (securedPath.empty())
         {
             std::cerr << "[HPR Extension CSV Error] " << err << " (path: " << userPath << ")" << std::endl;
+            Logger::log("[HPR Extension CSV Error] " + err + " (path: " + userPath + ")");
             vr.push_back(sol::make_object(ts, ""));
             return vr;
         }
@@ -1325,6 +1347,7 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         if (!file.is_open())
         {
             std::cerr << "[HPR Extension CSV Error] Failed to open file for reading: " << securedPath << std::endl;
+            Logger::log("[HPR Extension CSV Error] Failed to open file for reading: " + securedPath.string());
             vr.push_back(sol::make_object(ts, ""));
             return vr;
         }
@@ -1394,6 +1417,7 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         if (securedPath.empty())
         {
             std::cerr << "[HPR Extension CSV Error] " << err << " (path: " << userPath << ")" << std::endl;
+            Logger::log("[HPR Extension CSV Error] " + err + " (path: " + userPath + ")");
             return false;
         }
 
@@ -1421,6 +1445,7 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
             std::filesystem::create_directories(securedPath.parent_path());
         } catch (const std::exception& e) {
             std::cerr << "[HPR Extension CSV Error] Failed to create directories for: " << securedPath << " (" << e.what() << ")" << std::endl;
+            Logger::log("[HPR Extension CSV Error] Failed to create directories for: " + securedPath.string() + " (" + e.what() + ")");
             return false;
         }
 
@@ -1469,6 +1494,7 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         if (!outFile.is_open())
         {
             std::cerr << "[HPR Extension CSV Error] Failed to open file for writing: " << securedPath << std::endl;
+            Logger::log("[HPR Extension CSV Error] Failed to open file for writing: " + securedPath.string());
             return false;
         }
 
@@ -1488,6 +1514,7 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         if (securedPath.empty())
         {
             std::cerr << "[HPR Extension CSV Error] " << err << " (path: " << userPath << ")" << std::endl;
+            Logger::log("[HPR Extension CSV Error] " + err + " (path: " + userPath + ")");
             return false;
         }
 
@@ -1498,6 +1525,7 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
             return false;
         } catch (const std::exception& e) {
             std::cerr << "[HPR Extension CSV Error] Failed to delete file: " << securedPath << " (" << e.what() << ")" << std::endl;
+            Logger::log("[HPR Extension CSV Error] Failed to delete file: " + securedPath.string() + " (" + e.what() + ")");
             return false;
         }
     };
@@ -1570,6 +1598,7 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
 
     lua["HPR"]["showNotification_E"] = [](std::string title, std::string message)
     {
+        Logger::log("[HPR Extension Notification] " + title + ": " + message);
         showNotification(title, message);
     };
 
@@ -1613,12 +1642,12 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
     {
         if (message.has_value())
         {
-            std::cout << "[HPR Extension Crash] " << message.value() << std::endl;
+            Logger::log("[HPR Extension Crash] " + message.value());
             std::cerr << "[HPR Extension Crash] " << message.value() << std::endl;
         }
         else
         {
-            std::cout << "[HPR Extension Crash] HPR has been intentionally crashed via HPR.crash_E() by an extension!" << std::endl;
+            Logger::log("[HPR Extension Crash] HPR has been intentionally crashed via HPR.crash_E() by an extension!");
             std::cerr << "[HPR Extension Crash] HPR has been intentionally crashed via HPR.crash_E() by an extension!" << std::endl;
         }
         std::exit(1);

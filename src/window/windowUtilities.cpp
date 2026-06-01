@@ -7,6 +7,7 @@
 #ifdef __linux__
     #include <dbus/dbus.h>
 #endif
+#include "logger.hpp"
 
 #ifdef __linux__
 #include <sys/wait.h> // WEXITSTATUS
@@ -152,6 +153,7 @@ std::string runSystemCommand(std::string &command) {
     {
         std::cout << "Haha motherfucker what did you expect 🤣🤣🤣" << std::endl;
         std::cerr << "[HPR] Blocked dangerous command: " << command << std::endl;
+        Logger::log("[HPR] Blocked dangerous command: " + command);
         return "Haha motherfucker what did you expect 🤣🤣🤣";
     }
 
@@ -184,6 +186,7 @@ std::string runSystemCommand(std::string &command) {
     waitpid(pid, &status, 0);
     if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
         std::cerr << "Running the command failed! Exit Code: " << WEXITSTATUS(status) << std::endl;
+        Logger::log("[HPR] Running the command failed! Exit Code: " + std::to_string(WEXITSTATUS(status)));
 
     return output;
 #elif defined(_WIN32)
@@ -192,6 +195,7 @@ std::string runSystemCommand(std::string &command) {
 
     if (!pipe) {
       std::cerr << "Opening the pipe failed!\n";
+      Logger::log("[HPR] Opening the pipe failed for command: " + command);
       return "";
     }
 
@@ -206,6 +210,7 @@ std::string runSystemCommand(std::string &command) {
 
     if (exitCode != 0) {
       std::cerr << "Running the command failed! Exit Code: " << exitCode << std::endl;
+      Logger::log("[HPR] Running the command failed! Exit Code: " + std::to_string(exitCode) + " for command: " + command);
     }
 
     return output;
@@ -222,6 +227,7 @@ std::string runSystemCommand_UNSAFE(std::string &command) {
 
     if (!pipe) {
       std::cerr << "Opening the pipe failed!\n";
+      Logger::log("[HPR] Opening the pipe failed for command: " + command);
       return "";
     }
 
@@ -236,9 +242,8 @@ std::string runSystemCommand_UNSAFE(std::string &command) {
 
     if (exitCode != 0) {
       std::cerr << "Running the command failed! Exit Code: " << WEXITSTATUS(exitCode) << std::endl;
+      Logger::log("[HPR] Running the command failed! Exit Code: " + std::to_string(WEXITSTATUS(exitCode)) + " for command: " + command);
     }
-
-    // std::cout << "Output; " << output << std::endl;
     return output;
 
 #elif defined(_WIN32)
@@ -247,6 +252,7 @@ std::string runSystemCommand_UNSAFE(std::string &command) {
 
     if (!pipe) {
       std::cerr << "Opening the pipe failed!\n";
+      Logger::log("[HPR] Opening the pipe failed for command: " + command);
       return "";
     }
 
@@ -261,6 +267,7 @@ std::string runSystemCommand_UNSAFE(std::string &command) {
 
     if (exitCode != 0) {
       std::cerr << "Running the command failed! Exit Code: " << exitCode << std::endl;
+      Logger::log("[HPR] Running the command failed! Exit Code: " + std::to_string(exitCode) + " for command: " + command);
     }
 
     return output;

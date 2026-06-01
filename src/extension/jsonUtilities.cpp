@@ -2,6 +2,7 @@
 #include <sstream>
 #include <cctype>
 #include <iostream>
+#include "logger.hpp"
 #include <unordered_set>
 
 namespace JsonParser
@@ -110,7 +111,7 @@ namespace JsonParser
                 std::string warningMsg = "\n[HPR SECURITY ERROR] Active Lua extension [" + extName + "] attempted to trigger a stack overflow / crash "
                                          "by parsing a deeply nested JSON payload (exceeded max recursion depth of 500).\n";
                 std::cerr << warningMsg;
-                std::cout << warningMsg;
+                Logger::log(warningMsg);
                 return sol::nil;
             }
 
@@ -249,7 +250,7 @@ namespace JsonParser
                                          "by serializing a cyclic self-referential table (circular reference detected at address " + 
                                          std::to_string(reinterpret_cast<uintptr_t>(tabPtr)) + "). Serializing as null to prevent SegFault.\n";
                 std::cerr << warningMsg;
-                std::cout << warningMsg;
+                Logger::log(warningMsg);
                 return "null";
             }
             visited.insert(tabPtr);

@@ -5,7 +5,7 @@
 #include <string>
 #include <algorithm>
 #include <unordered_map>
-
+#include "logger.hpp"
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -42,6 +42,7 @@ void AliasManager::loadAliases()
     {
         std::cerr << "Warning: aliases.csv not found at " << filePath
                   << ". Using raw names.\n";
+        Logger::log("Warning: aliases.csv not found at " + filePath + ". Using raw names.");
         return;
     }
 
@@ -90,6 +91,7 @@ void AliasManager::loadAliases_Tab()
     {
         std::cerr << "Warning: tabAliases.csv not found at " << filePath_Tab
                   << ". Using raw names.\n";
+        Logger::log("Warning: tabAliases.csv not found at " + filePath_Tab + ". Using raw names.");
         return;
     }
 
@@ -138,6 +140,7 @@ void AliasManager::loadAliases_Project()
     {
         std::cerr << "Warning: projectAliases.csv not found at " << filePath_Project
                   << ". will use raw but parsed names.\n";
+        Logger::log("Warning: projectAliases.csv not found at " + filePath_Project + ". will use raw but parsed names.");
         return;
     }
 

@@ -3,7 +3,7 @@
 #include "appState.hpp"
 
 #include "appEvents.hpp"
-
+#include "logger.hpp"
 #include <sqlite3.h>//for extensinos ot execute sql
 #include <sqlite_modern_cpp.h>
 
@@ -48,21 +48,27 @@ DatabaseManager::DatabaseManager()
                 if (err == ERROR_SHARING_VIOLATION) 
                 {
                     std::cerr << "[HPR] Already running. Exiting.\n";
+                    Logger::log("[HPR] Already running. Exiting.");
                 } 
                 else 
                 {
                     std::cerr << "[HPR] Could not acquire lock (Error " << err << ").\n";
+                    Logger::log("[HPR] Could not acquire lock (Error " + std::to_string(err) + ").");
                 }
                 exit(1);
             }
     #else
         int fd = open(lockPath.c_str(), O_RDWR | O_CREAT, 0644);
-        if (fd == -1) {
+        if (fd == -1) 
+        {
             std::cerr << "[HPR] Failed to open lock file.\n";
+            Logger::log("[HPR] Failed to open lock file.");
             exit(1);
         }
-        if (flock(fd, LOCK_EX | LOCK_NB) == -1) {
+        if (flock(fd, LOCK_EX | LOCK_NB) == -1) 
+        {
             std::cerr << "[HPR] Already running. Exiting.\n";
+            Logger::log("[HPR] Already running. Exiting.");
             close(fd);
             exit(1);
         }
@@ -71,6 +77,7 @@ DatabaseManager::DatabaseManager()
     if (!loadStateFromDB())
     {
         std::cerr << "Failed to load data from db!\n";
+        Logger::log("Failed to load data from db!");
     }
 
     //Connect to the event manager and get an id
@@ -194,6 +201,7 @@ bool DatabaseManager::loadStateFromDB()
     } catch(const std::exception& e)
     {
         std::cerr << "[ERROR IN DB LOAD FROM DISK] " << e.what() << std::endl;
+        Logger::log("[ERROR IN DB LOAD FROM DISK] " + std::string(e.what()));
         return false;
     }
 
@@ -273,6 +281,7 @@ void DatabaseManager::writeLoop()
                 catch (const std::exception& e)
                 {
                     std::cerr << "[DB QUEUED EXECUTE ERROR] " << e.what() << " | SQL: " << q.sql << std::endl;
+                    Logger::log("[DB QUEUED EXECUTE ERROR] " + std::string(e.what()) + " | SQL: " + q.sql);
                 }
             }
 
@@ -341,6 +350,7 @@ void DatabaseManager::writeLoop()
         catch (const std::exception& e)
         {
             std::cerr << "[DB SHUTDOWN EXECUTE ERROR] " << e.what() << std::endl;
+            Logger::log("[DB SHUTDOWN EXECUTE ERROR] " + std::string(e.what()));
         }
     }
 }
@@ -392,6 +402,7 @@ void DatabaseManager::loadDb_Singular(std::string requestedDate)
             {
                 EventHub::emit(Event::APP_ERROR, ErrorGui{"File not found! " + path});
                 std::cerr << "Historical file not found: " << path << std::endl;
+                Logger::log("[HPR] Historical file not found: " + path);
                 return; 
             }
 
@@ -446,6 +457,7 @@ void DatabaseManager::loadDb_Singular(std::string requestedDate)
             
         } catch (const std::exception& e) {
             std::cerr << "Failed to load history: " << e.what() << std::endl;
+            Logger::log("[HPR] Failed to load history: " + std::string(e.what()));
         }
     });
 }
@@ -469,6 +481,7 @@ std::vector<std::map<std::string, std::string>> DatabaseManager::querySQL(const 
     if (sqlite3_prepare_v2(rawDb, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK)
     {
         std::cerr << "[DB QUERY PREPARE ERROR] " << sqlite3_errmsg(rawDb) << " | SQL: " << sql << std::endl;
+        Logger::log("[DB QUERY PREPARE ERROR] " + std::string(sqlite3_errmsg(rawDb)) + " | SQL: " + sql);
         return results;
     }
 
@@ -506,6 +519,7 @@ std::vector<std::map<std::string, std::string>> DatabaseManager::querySQL_Path(c
         if (sqlite3_prepare_v2(rawDb, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK)
         {
             std::cerr << "[DB QUERY PATH ERROR] " << sqlite3_errmsg(rawDb) << " | SQL: " << sql << std::endl;
+            Logger::log("[DB QUERY PATH ERROR] " + std::string(sqlite3_errmsg(rawDb)) + " | SQL: " + sql);
             return results;
         }
 
@@ -532,6 +546,7 @@ std::vector<std::map<std::string, std::string>> DatabaseManager::querySQL_Path(c
     catch (const std::exception& e)
     {
         std::cerr << "[DB QUERY PATH EXCEPTION] " << e.what() << " | SQL: " << sql << std::endl;
+        Logger::log("[DB QUERY PATH EXCEPTION] " + std::string(e.what()) + " | SQL: " + sql);
     }
     return results;
 }
@@ -558,7 +573,6 @@ void DatabaseManager::updateFilePath()
     
     filePath = tempPath;
     
-    // std::cout << filePath << std::endl;
     std::filesystem::create_directories(filePath);
 }
 
@@ -573,5 +587,4 @@ void DatabaseManager::updateFileName()
     tempName += convertToDate_DDMMYY(t) + ".db";
 
     fileName = tempName;
-    // std::cout << tempName << std::endl;
 }

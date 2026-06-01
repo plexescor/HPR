@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include <string>
 #include <sys/stat.h>
-
+#include "logger.hpp"
 // Static member definition lazy bruv
 std::string LinuxInitialiser::s_iconThemePath;
 
@@ -32,6 +32,7 @@ LinuxInitialiser::LinuxInitialiser()
         {
             std::cerr << "Warning: " << iconName << " not found at " << filePath
                     << ". App will have no icon.\n";
+            Logger::log("Warning: " + iconName + " not found at " + filePath + ". App will have no icon.");
             return;
         }
 
@@ -133,6 +134,7 @@ LinuxInitialiser::LinuxInitialiser()
             else
             {
                 std::cerr << "Warning: could not write .desktop file to " << desktopFile << "\n";
+                Logger::log("Warning: could not write .desktop file to " + desktopFile);
             }
         }
     #endif

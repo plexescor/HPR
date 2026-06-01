@@ -31,8 +31,6 @@ CurrentWindowManager::~CurrentWindowManager()
 
 void CurrentWindowManager::run()
 {
-	// std::cout << "Running Loop!\n";
-
 	running = true;
 	windowPollingThread =
         std::thread(
@@ -129,9 +127,7 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 		|| lowerWindowName.contains("firefox")
 		|| lowerWindowName.contains("brave"))
 		{
-			// std::cout << lowerWindowName << std::endl;
 			tab = getCurrentTitle();
-			// std::cout << title << std::endl;
 		}
 
 		else
@@ -196,7 +192,6 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 
 			if (!tab.empty() && (lowerTabName.contains("chrome") || lowerTabName.contains("edge") || lowerTabName.contains("firefox") || lowerTabName.contains("brave")))
 			{
-				// std::cout << title << std::endl;
 				AppState::state.timeLog_PerTab[tab] +=
 				std::chrono::duration_cast<std::chrono::milliseconds>(elapsed)
 					.count();
@@ -274,61 +269,3 @@ std::string CurrentWindowManager::getCurrentTitle()
 
     Logger::log("Failed to find usable backend");
 } 
-
-// 	{
-// 		std::lock_guard<std::mutex> lock(AppState::stateMutex);
-// 		AppState::state.currentPlatform = currentPlatform;
-// 	}
-
-// 	if (currentPlatform.contains("KDE"))
-// 	{
-// 		// resolve the correct qdbus binary for this distro
-// 		// thanks https://github.com/tempodat
-// 		// arch/most distros use qdbus6, Fedora ships it as qdbus-qt6, some have plain qdbus
-// 		std::string resolveQdbus = "command -v qdbus6 || command -v qdbus-qt6 || command -v qdbus";
-// 		qdbusCmd = runSystemCommand(resolveQdbus);
-// 		if (!qdbusCmd.empty() && qdbusCmd.back() == '\n')
-// 			qdbusCmd.pop_back();
-// 		if (qdbusCmd.empty())
-// 			qdbusCmd = "qdbus6"; // fallback
-// 		std::cout << "[HPR] Using qdbus binary: " << qdbusCmd << std::endl;
-// 	}
-	
-// 	if (currentPlatform.contains("GNOME"))
-// 	{
-// 		// Check if extension files already exist on disk
-// 		std::string extDir = std::string(getenv("HOME")) + 
-// 			"/.local/share/gnome-shell/extensions/lol-another-window-extension@plexescor";
-		
-// 		bool filesExist = std::filesystem::exists(extDir);
-
-// 		// Check if window-calls-extended is working
-// 		std::string checkCmd =
-// 			"gdbus call --session --dest org.gnome.Shell --object-path "
-// 			"/org/gnome/Shell/Extensions/LolAnotherWindowExtension --method "
-// 			"org.gnome.Shell.Extensions.LolAnotherWindowExtension.FocusClass 2>&1";
-// 		std::string checkResult = runSystemCommand(checkCmd);
-
-// 		std::cout << "[HPR] Extension check result: " << checkResult << std::endl;
-
-// 		if (!checkResult.contains("('"))
-// 		{
-// 			if (filesExist)
-// 			{
-// 				std::cout << "[HPR] Extension files found, enabling..." << std::endl;
-// 				std::string cmd = "gnome-extensions enable lol-another-window-extension@plexescor";
-// 				runSystemCommand(cmd);
-// 				currentPlatform = "GNOME";
-// 			}
-// 			else
-// 			{
-// 				currentPlatform = "GNOME_NO_EXTENSION";
-// 			}
-// 		}
-
-// 		else
-// 		{
-// 			std::cout << "[HPR] Extension working, proceeding normally" << std::endl;
-// 		}
-// 	}
-// #endif

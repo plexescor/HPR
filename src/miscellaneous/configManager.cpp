@@ -4,7 +4,7 @@
 #include <sstream>
 #include <string>
 #include <unordered_map>
-
+#include "logger.hpp"
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -35,6 +35,7 @@ void ConfigManager::loadConfig()
     {
         std::cerr << "Warning: config.csv not found at " << filePath
                   << ". App will use default settings.\n";
+        Logger::log("Warning: config.csv not found at " + filePath + ". App will use default settings.");
         return;
     }
 

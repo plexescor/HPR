@@ -5,7 +5,7 @@
     #include <winsock2.h>
     #include <ws2tcpip.h>
 #endif
-
+#include "logger.hpp"
 #include "netUtilities.hpp"
 #include "extensionManager.hpp"
 #include <vector>
@@ -141,6 +141,7 @@ namespace NativeNet
                 statusCode = static_cast<int>(responseCode);
             } else {
                 std::cerr << "[HPR] curl failed: " << curl_easy_strerror(res) << "\n";
+                Logger::log("[HPR] curl failed: " + std::string(curl_easy_strerror(res)));
             }
             if (curlHeaders) {
                 curl_slist_free_all(curlHeaders);
@@ -270,6 +271,7 @@ namespace NativeNet
                 statusCode = static_cast<int>(responseCode);
             } else {
                 std::cerr << "[HPR] curl failed: " << curl_easy_strerror(res) << "\n";
+                Logger::log("[HPR] curl failed: " + std::string(curl_easy_strerror(res)));
             }
             curl_slist_free_all(curlHeaders);
             curl_easy_cleanup(curl);
@@ -461,6 +463,7 @@ namespace NativeNet
             {
                 sol::error err = result;
                 std::cerr << "[HPR HTTP Server] Lua Handler Error: " << err.what() << std::endl;
+                Logger::log("[HPR HTTP Server] Lua Handler Error: " + std::string(err.what()));
                 status_code = 500;
                 response_body = "Internal Server Error: " + std::string(err.what());
             }
@@ -495,6 +498,7 @@ namespace NativeNet
         if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
         {
             std::cerr << "[HPR HTTP Server] WSAStartup failed" << std::endl;
+            Logger::log("[HPR HTTP Server] WSAStartup failed");
             return false;
         }
 #endif
@@ -503,6 +507,7 @@ namespace NativeNet
         if (server_fd == INVALID_SOCKET_VAL)
         {
             std::cerr << "[HPR HTTP Server] Failed to create socket" << std::endl;
+            Logger::log("[HPR HTTP Server] Failed to create socket");
 #ifdef _WIN32
             WSACleanup();
 #endif
@@ -524,6 +529,7 @@ namespace NativeNet
         if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) == SOCKET_ERROR_VAL)
         {
             std::cerr << "[HPR HTTP Server] Failed to bind to port " << port << std::endl;
+            Logger::log("[HPR HTTP Server] Failed to bind to port " + std::to_string(port));
             CLOSE_SOCKET(server_fd);
 #ifdef _WIN32
             WSACleanup();
@@ -534,6 +540,7 @@ namespace NativeNet
         if (listen(server_fd, 10) == SOCKET_ERROR_VAL)
         {
             std::cerr << "[HPR HTTP Server] Listen failed" << std::endl;
+            Logger::log("[HPR HTTP Server] Listen failed");
             CLOSE_SOCKET(server_fd);
 #ifdef _WIN32
             WSACleanup();
@@ -543,6 +550,7 @@ namespace NativeNet
 
         
         std::cout << "[HPR HTTP Server] Server running on 127.0.0.1:" << port << std::endl;
+        Logger::log("[HPR HTTP Server] Server running on 127.0.0.1:" + std::to_string(port));
 
         std::thread([server_fd, handler, &ext]() mutable
         {
@@ -590,6 +598,7 @@ namespace NativeNet
                 WSACleanup();
             #endif
             std::cout << "[HPR HTTP Server] Server stopped cleanly" << std::endl;
+            Logger::log("[HPR HTTP Server] Server stopped cleanly");
         }).detach();
 
         return true;

@@ -280,7 +280,6 @@ void HPR::run()
     #endif
 
     tracker = std::thread(&HPR::trackingLoop, this);
-    // std::cout << "After this cout, Ui is visible\n";
     slint::run_event_loop(slint::EventLoopMode::RunUntilQuit);
     running = false; // safety net
 }

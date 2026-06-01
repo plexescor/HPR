@@ -9,6 +9,7 @@
 #include "uiEventBridge.hpp"
 #include "appEvents.hpp"
 #include "patternAnalyzer.hpp"
+#include "logger.hpp"
 #include "uiRegistry.hpp"
 #include "extensionManager.hpp"
 #include <thread>
@@ -417,6 +418,7 @@ bool HPRInterpreter::initialiseSlintUiPath()
     {
         std::cerr << "Warning: " << fileName << "  not found at " << filePath
                   << ". Closing HPR .\n";
+        Logger::log("Warning: " + fileName + " not found at " + file
         return false;
     }
     return true;

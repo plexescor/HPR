@@ -33,7 +33,6 @@ void PatternAnalyzer::generateInsights()
 
         mostUsed_O = name + " — " + time; //i intentionally used —, no ai
 
-        // std::cout << mostUsed_O << std::endl;
     }
 
     //PATTERN 2: Total tracked time
@@ -58,8 +57,6 @@ void PatternAnalyzer::generateInsights()
             total += vec.size();
         }
         switchCount_O = std::to_string(total);
-
-        // std::cout << switchCount_O << std::endl;
     }
 
     //PATTERN 4: Most Switched-Away From App
