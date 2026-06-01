@@ -20,8 +20,8 @@ export component MainWindow inherits Window {
     callback rawViewClicked;
     callback filterViewClicked;
     callback refreshExtensions;
-    callback disableExtension(string);
-    callback reloadExtension(string);
+    callback disableExtension(string, string);
+    callback reloadExtension(string, string);
     callback reloadUi;
 
     //PLS Donate and dont remove it!
@@ -202,8 +202,8 @@ export component MainWindow inherits Window {
             vertical-stretch: 1;
             loadedExtensions_S: root.loadedExtensions_S;
             refresh-extensions => { root.refreshExtensions(); }
-            disable-extension(name) => { root.disableExtension(name); }
-            reload-extension(name) => { root.reloadExtension(name); }
+            disable-extension(author, name) => { root.disableExtension(author, name); }
+            reload-extension(author, name) => { root.reloadExtension(author, name); }
         }
 
         }

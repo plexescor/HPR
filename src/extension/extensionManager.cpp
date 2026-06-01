@@ -648,13 +648,13 @@ void ExtensionManager::runExtension(LoadedExtension& ext)
     }
 }
 
-void ExtensionManager::unloadExtension(std::string extensionName)
+void ExtensionManager::unloadExtension(std::string authorName, std::string extensionName)
 {
     for (auto it = extensions.begin(); it != extensions.end();)
     {
         auto& ext = *it;
 
-        if (ext->identity.second == extensionName)
+        if (ext->identity.first == authorName && ext->identity.second == extensionName)
         {
             ext->running = false;
             
@@ -678,7 +678,7 @@ void ExtensionManager::unloadExtension(std::string extensionName)
                 auto& loaded = AppState::state.loadedExtensions;
                 loaded.erase(
                     std::remove_if(loaded.begin(), loaded.end(),
-                        [&](const auto& e) { return e.second == extensionName; }),
+                        [&](const auto& e) { return e.first == authorName && e.second == extensionName; }),
                     loaded.end()
                 );
             }
@@ -692,12 +692,12 @@ void ExtensionManager::unloadExtension(std::string extensionName)
     }
 }
 
-void ExtensionManager::reloadExtension(std::string extensionName)
+void ExtensionManager::reloadExtension(std::string authorName, std::string extensionName)
 {
     std::filesystem::path extPath;
     for (const auto& ext : extensions)
     {
-        if (ext->identity.second == extensionName)
+        if (ext->identity.first == authorName && ext->identity.second == extensionName)
         {
             extPath = ext->path;
             break;
@@ -705,7 +705,7 @@ void ExtensionManager::reloadExtension(std::string extensionName)
     }
     if (!extPath.empty())
     {
-        unloadExtension(extensionName);
+        unloadExtension(authorName, extensionName);
     }
 
     auto newExt = std::make_unique<LoadedExtension>();

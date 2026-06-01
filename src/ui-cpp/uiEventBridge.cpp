@@ -68,13 +68,13 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow>& ui,  ExtensionM
         {
             extManager->refresh();
         });
-        ui->on_disableExtension([this](slint::SharedString name) 
+        ui->on_disableExtension([this](slint::SharedString author, slint::SharedString name) 
         {
-            extManager->unloadExtension(std::string(name));
+            extManager->unloadExtension(std::string(author), std::string(name));
         });
-        ui->on_reloadExtension([this](slint::SharedString name) 
+        ui->on_reloadExtension([this](slint::SharedString author, slint::SharedString name) 
         {
-            extManager->reloadExtension(std::string(name));
+            extManager->reloadExtension(std::string(author), std::string(name));
         });
     }
 
@@ -194,22 +194,24 @@ UiEventBridge::UiEventBridge(
 
         ui->set_callback("disableExtension", [this](auto args) -> slint::interpreter::Value
         {
-            if (args.size() > 0)
+            if (args.size() > 1)
             {
-                auto opt_str = args[0].to_string();
-                if (opt_str.has_value())
-                    extManager->unloadExtension(std::string(opt_str.value()));
+                auto opt_author = args[0].to_string();
+                auto opt_name = args[1].to_string();
+                if (opt_author.has_value() && opt_name.has_value())
+                    extManager->unloadExtension(std::string(opt_author.value()), std::string(opt_name.value()));
             }
             return slint::interpreter::Value();
         });
 
         ui->set_callback("reloadExtension", [this](auto args) -> slint::interpreter::Value
         {
-            if (args.size() > 0)
+            if (args.size() > 1)
             {
-                auto opt_str = args[0].to_string();
-                if (opt_str.has_value())
-                    extManager->reloadExtension(std::string(opt_str.value()));
+                auto opt_author = args[0].to_string();
+                auto opt_name = args[1].to_string();
+                if (opt_author.has_value() && opt_name.has_value())
+                    extManager->reloadExtension(std::string(opt_author.value()), std::string(opt_name.value()));
             }
             return slint::interpreter::Value();
         });

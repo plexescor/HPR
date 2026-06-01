@@ -10,8 +10,8 @@ export component ExtensionsView {
     in property <[LoadedExtension_S]> loadedExtensions_S;
 
     callback refresh-extensions();
-    callback disable-extension(string);
-    callback reload-extension(string);
+    callback disable-extension(string, string);
+    callback reload-extension(string, string);
 
     VerticalLayout {
         padding: 12px;
@@ -141,7 +141,7 @@ export component ExtensionsView {
 
                                 ta-disable := TouchArea {
                                     mouse-cursor: pointer;
-                                    clicked => { root.disable-extension(ext.extension-name); }
+                                    clicked => { root.disable-extension(ext.author-name, ext.extension-name); }
                                 }
 
                                 states [
@@ -182,7 +182,7 @@ export component ExtensionsView {
 
                                 ta-reload := TouchArea {
                                     mouse-cursor: pointer;
-                                    clicked => { root.reload-extension(ext.extension-name); }
+                                    clicked => { root.reload-extension(ext.author-name, ext.extension-name); }
                                 }
 
                                 states [
