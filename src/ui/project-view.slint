@@ -91,28 +91,55 @@ component ProjectRow inherits Rectangle {
 
 component ViewToggleButton inherits Rectangle {
     in property <string> label;
+    in property <color> base-color;
+    in property <color> hover-color;
+    in property <color> pressed-color;
+    
+    in property <color> normal-bg-color;
+    in property <color> hover-bg-color;
+    in property <color> pressed-bg-color;
+    
+    in property <color> normal-border-color;
+    in property <color> hover-border-color;
+    in property <color> pressed-border-color;
+
     callback clicked;
 
     width: 60px;
     height: 24px;
     border-radius: 5px;
-    background: ta.has-hover ? #ffffff1a : #ffffff10;
     border-width: 1px;
-    border-color: ta.has-hover ? #ffffff28 : #ffffff18;
-    animate background { duration: 100ms; easing: ease-out; }
+
+    animate background { duration: 100ms; }
     animate border-color { duration: 100ms; }
+
+    states [
+        pressed when ta.pressed: {
+            background: pressed-bg-color;
+            border-color: pressed-border-color;
+        }
+        hovered when ta.has-hover: {
+            background: hover-bg-color;
+            border-color: hover-border-color;
+        }
+        normal when !ta.has-hover: {
+            background: normal-bg-color;
+            border-color: normal-border-color;
+        }
+    ]
 
     Text {
         text: label;
         font-size: 10px;
         font-weight: 600;
-        color: ta.has-hover ? #e2e8f0 : #94a3b8;
+        color: ta.pressed ? pressed-color : ta.has-hover ? hover-color : base-color;
         horizontal-alignment: center;
         vertical-alignment: center;
         animate color { duration: 100ms; }
     }
 
     ta := TouchArea {
+        mouse-cursor: pointer;
         clicked => { root.clicked(); }
     }
 }
@@ -142,11 +169,29 @@ export component ProjectView {
 
                 ViewToggleButton {
                     label: "Raw";
+                    base-color: #fb923c;
+                    hover-color: #fdba74;
+                    pressed-color: #fed7aa;
+                    normal-bg-color: #fb923c12;
+                    hover-bg-color: #fb923c25;
+                    pressed-bg-color: #fb923c35;
+                    normal-border-color: #fb923c35;
+                    hover-border-color: #fb923c60;
+                    pressed-border-color: #fb923c80;
                     clicked => { root.raw-view-clicked(); }
                 }
 
                 ViewToggleButton {
                     label: "Filtered";
+                    base-color: #22d3ee;
+                    hover-color: #67e8f9;
+                    pressed-color: #99f6e4;
+                    normal-bg-color: #22d3ee12;
+                    hover-bg-color: #22d3ee25;
+                    pressed-bg-color: #22d3ee35;
+                    normal-border-color: #22d3ee35;
+                    hover-border-color: #22d3ee60;
+                    pressed-border-color: #22d3ee80;
                     clicked => { root.filter-view-clicked(); }
                 }
             }

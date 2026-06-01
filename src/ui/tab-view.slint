@@ -91,28 +91,55 @@ component TabRow inherits Rectangle {
 
 component ViewToggleButton inherits Rectangle {
     in property <string> label;
+    in property <color> base-color;
+    in property <color> hover-color;
+    in property <color> pressed-color;
+    
+    in property <color> normal-bg-color;
+    in property <color> hover-bg-color;
+    in property <color> pressed-bg-color;
+    
+    in property <color> normal-border-color;
+    in property <color> hover-border-color;
+    in property <color> pressed-border-color;
+
     callback clicked;
 
     width: 60px;
     height: 24px;
     border-radius: 5px;
-    background: ta.has-hover ? #ffffff1a : #ffffff10;
     border-width: 1px;
-    border-color: ta.has-hover ? #ffffff28 : #ffffff18;
-    animate background { duration: 100ms; easing: ease-out; }
+
+    animate background { duration: 100ms; }
     animate border-color { duration: 100ms; }
+
+    states [
+        pressed when ta.pressed: {
+            background: pressed-bg-color;
+            border-color: pressed-border-color;
+        }
+        hovered when ta.has-hover: {
+            background: hover-bg-color;
+            border-color: hover-border-color;
+        }
+        normal when !ta.has-hover: {
+            background: normal-bg-color;
+            border-color: normal-border-color;
+        }
+    ]
 
     Text {
         text: label;
         font-size: 10px;
         font-weight: 600;
-        color: ta.has-hover ? #e2e8f0 : #94a3b8;
+        color: ta.pressed ? pressed-color : ta.has-hover ? hover-color : base-color;
         horizontal-alignment: center;
         vertical-alignment: center;
         animate color { duration: 100ms; }
     }
 
     ta := TouchArea {
+        mouse-cursor: pointer;
         clicked => { root.clicked(); }
     }
 }
@@ -142,11 +169,29 @@ export component TabView {
 
                 ViewToggleButton {
                     label: "Per-Tab";
+                    base-color: #c084fc;
+                    hover-color: #d8b4fe;
+                    pressed-color: #e9d5ff;
+                    normal-bg-color: #c084fc12;
+                    hover-bg-color: #c084fc25;
+                    pressed-bg-color: #c084fc35;
+                    normal-border-color: #c084fc35;
+                    hover-border-color: #c084fc60;
+                    pressed-border-color: #c084fc80;
                     clicked => { root.per-tab-clicked(); }
                 }
 
                 ViewToggleButton {
                     label: "Per-Site";
+                    base-color: #a3e635;
+                    hover-color: #bef264;
+                    pressed-color: #d9f99d;
+                    normal-bg-color: #a3e63512;
+                    hover-bg-color: #a3e63525;
+                    pressed-bg-color: #a3e63535;
+                    normal-border-color: #a3e63535;
+                    hover-border-color: #a3e63560;
+                    pressed-border-color: #a3e63580;
                     clicked => { root.per-site-clicked(); }
                 }
             }

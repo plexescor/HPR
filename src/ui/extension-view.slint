@@ -30,9 +30,9 @@ export component ExtensionsView {
                 height: 26px;
                 border-radius: 6px;
                 border-width: 1px;
-                border-color: #ffffff18;
 
                 animate background { duration: 100ms; }
+                animate border-color { duration: 100ms; }
 
                 ta-refresh := TouchArea {
                     mouse-cursor: pointer;
@@ -41,16 +41,16 @@ export component ExtensionsView {
 
                 states [
                     pressed when ta-refresh.pressed: {
-                        background: #ffffff28;
-                        border-color: #ffffff35;
+                        background: #34d39935;
+                        border-color: #34d39980;
                     }
                     hovered when ta-refresh.has-hover: {
-                        background: #ffffff18;
-                        border-color: #ffffff25;
+                        background: #34d39925;
+                        border-color: #34d39960;
                     }
                     normal when !ta-refresh.has-hover: {
-                        background: #ffffff0a;
-                        border-color: #ffffff18;
+                        background: #34d39912;
+                        border-color: #34d39935;
                     }
                 ]
 
@@ -63,7 +63,7 @@ export component ExtensionsView {
                     font-size: 8px;
                     font-weight: 700;
                     letter-spacing: 2px;
-                    color: ta-refresh.pressed ? #ffffffcc : ta-refresh.has-hover ? #ffffff99 : #ffffff60;
+                    color: ta-refresh.pressed ? #a7f3d0 : ta-refresh.has-hover ? #6ee7b7 : #34d399;
                     horizontal-alignment: center;
                     vertical-alignment: center;
                     animate color { duration: 100ms; }
