@@ -1,0 +1,230 @@
+import { Card } from "./card.slint";
+import { SectionHeader } from "./section-header.slint";
+
+export component AboutView {
+    callback open-kofi();
+
+    VerticalLayout {
+        padding: 12px;
+        padding-top: 6px;
+        spacing: 10px;
+
+        HorizontalLayout {
+            alignment: start;
+            vertical-stretch: 0;
+            padding-top: 4px;
+
+            SectionHeader { label: "ABOUT"; }
+        }
+
+        // ── Main Card ─────────────────────────────────────────────────────
+        Card {
+            vertical-stretch: 1;
+
+            HorizontalLayout {
+                padding: 28px;
+                spacing: 32px;
+                alignment: start;
+
+                // ── Avatar ────────────────────────────────────────────────
+                Rectangle {
+                    width: 110px;
+                    height: 110px;
+                    border-radius: 55px;
+                    background: @linear-gradient(135deg, #c084fc18 0%, #38bdf818 100%);
+                    border-width: 1.5px;
+                    border-color: #c084fc30;
+                    y: (parent.height - self.height) / 2;
+
+                    Image {
+                        source: @image-url("./images/sonic.png");
+                        width: 94px;
+                        height: 94px;
+                        x: (parent.width  - self.width)  / 2;
+                        y: (parent.height - self.height) / 2;
+                        image-fit: contain;
+                    }
+                }
+
+                // ── Info ──────────────────────────────────────────────────
+                VerticalLayout {
+                    alignment: center;
+                    spacing: 18px;
+                    vertical-stretch: 1;
+                    y: (parent.height - self.height) / 2;
+
+                    // Name + tagline
+                    VerticalLayout {
+                        spacing: 6px;
+
+                        Text {
+                            text: "PLEXESCOR";
+                            font-size: 20px;
+                            font-weight: 800;
+                            letter-spacing: 4px;
+                            color: #f1f5f9;
+                        }
+
+                        Text {
+                            text: "The one you have to thank for being provided with HPR";
+                            font-size: 11px;
+                            font-weight: 400;
+                            color: #ffffff50;
+                            letter-spacing: 0.2px;
+                            wrap: word-wrap;
+                        }
+                    }
+
+                    // ── Meta rows ─────────────────────────────────────────
+                    VerticalLayout {
+                        spacing: 8px;
+
+                        // Email
+                        HorizontalLayout {
+                            spacing: 10px;
+                            alignment: start;
+
+                            Text {
+                                text: "EMAIL";
+                                font-size: 8px;
+                                font-weight: 700;
+                                letter-spacing: 2px;
+                                color: #c084fc80;
+                                vertical-alignment: center;
+                                width: 58px;
+                            }
+
+                            Text {
+                                text: "saraswal2010@gmail.com";
+                                font-size: 11px;
+                                font-weight: 500;
+                                color: #c084fc;
+                                vertical-alignment: center;
+                            }
+                        }
+
+                        // GitHub
+                        HorizontalLayout {
+                            spacing: 10px;
+                            alignment: start;
+
+                            Text {
+                                text: "GITHUB";
+                                font-size: 8px;
+                                font-weight: 700;
+                                letter-spacing: 2px;
+                                color: #a3e63580;
+                                vertical-alignment: center;
+                                width: 58px;
+                            }
+
+                            Text {
+                                text: "github.com/plexescor";
+                                font-size: 11px;
+                                font-weight: 500;
+                                color: #a3e635;
+                                vertical-alignment: center;
+                            }
+                        }
+
+                        // Website
+                        HorizontalLayout {
+                            spacing: 10px;
+                            alignment: start;
+
+                            Text {
+                                text: "WEBSITE";
+                                font-size: 8px;
+                                font-weight: 700;
+                                letter-spacing: 2px;
+                                color: #38bdf880;
+                                vertical-alignment: center;
+                                width: 58px;
+                            }
+
+                            Text {
+                                text: "hpr-cpp.netlify.app";
+                                font-size: 11px;
+                                font-weight: 500;
+                                color: #38bdf8;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+
+                    // ── Bottom row: version + ko-fi ───────────────────────
+                    HorizontalLayout {
+                        spacing: 10px;
+                        alignment: start;
+
+                        // Version pill
+                        Rectangle {
+                            width: version-lbl.preferred-width + 20px;
+                            height: 26px;
+                            border-radius: 6px;
+                            background: #ffffff07;
+                            border-width: 1px;
+                            border-color: #ffffff12;
+
+                            version-lbl := Text {
+                                text: "v0.69";
+                                font-size: 9px;
+                                font-weight: 700;
+                                letter-spacing: 2px;
+                                color: #ffffff40;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                                width: 100%;
+                                height: 100%;
+                            }
+                        }
+
+                        // Ko-fi button
+                        kofi-btn := Rectangle {
+                            width: kofi-lbl.preferred-width + 24px;
+                            height: 26px;
+                            border-radius: 6px;
+                            border-width: 1px;
+
+                            animate background   { duration: 100ms; }
+                            animate border-color { duration: 100ms; }
+
+                            ta-kofi := TouchArea {
+                                mouse-cursor: pointer;
+                                clicked => { root.open-kofi(); }
+                            }
+
+                            states [
+                                pressed when ta-kofi.pressed: {
+                                    background: #ff5e5b35;
+                                    border-color: #ff5e5b80;
+                                }
+                                hovered when ta-kofi.has-hover: {
+                                    background: #ff5e5b25;
+                                    border-color: #ff5e5b60;
+                                }
+                                normal when !ta-kofi.has-hover: {
+                                    background: #ff5e5b12;
+                                    border-color: #ff5e5b35;
+                                }
+                            ]
+
+                            kofi-lbl := Text {
+                                text: "KO-FI";
+                                font-size: 8px;
+                                font-weight: 700;
+                                letter-spacing: 2px;
+                                color: ta-kofi.pressed ? #ff9997 : ta-kofi.has-hover ? #ff7572 : #ff5e5b;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                                width: 100%;
+                                height: 100%;
+                                animate color { duration: 100ms; }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

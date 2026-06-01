@@ -418,7 +418,7 @@ bool HPRInterpreter::initialiseSlintUiPath()
     {
         std::cerr << "Warning: " << fileName << "  not found at " << filePath
                   << ". Closing HPR .\n";
-        Logger::log("Warning: " + fileName + " not found at " + file
+        Logger::log("Warning: " + fileName + " not found at " + filePath + ". Closing HPR.");
         return false;
     }
     return true;

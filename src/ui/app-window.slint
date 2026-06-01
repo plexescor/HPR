@@ -6,6 +6,7 @@ import { InsightsView } from "./insights-view.slint";
 import { TabView } from "./tab-view.slint";
 import { ProjectView } from "./project-view.slint";
 import { ExtensionsView, LoadedExtension_S } from "./extension-view.slint";
+import { AboutView } from "./about-view.slint";
 
 import { TimeLog, SwitchHistory, TimeLog_Tab, TimeLog_Project } from "./types.slint";
 
@@ -199,12 +200,15 @@ export component MainWindow inherits Window {
                 filter-view-clicked => { root.filterViewClicked(); }
             }
             if active-view == "EXTENSIONS" : ExtensionsView {
-            vertical-stretch: 1;
-            loadedExtensions_S: root.loadedExtensions_S;
-            refresh-extensions => { root.refreshExtensions(); }
-            disable-extension(author, name) => { root.disableExtension(author, name); }
-            reload-extension(author, name) => { root.reloadExtension(author, name); }
-        }
+                vertical-stretch: 1;
+                loadedExtensions_S: root.loadedExtensions_S;
+                refresh-extensions => { root.refreshExtensions(); }
+                disable-extension(author, name) => { root.disableExtension(author, name); }
+                reload-extension(author, name) => { root.reloadExtension(author, name); }
+            }
+            if active-view == "ABOUT" : AboutView { 
+                open-kofi => { root.openKofi(); } 
+            }
 
         }
 
@@ -309,6 +313,12 @@ export component MainWindow inherits Window {
                         icon: @image-url("./images/ko-fi.svg");
                         tip: "Support on Ko-fi";
                         clicked => { root.openKofi(); }
+                    }
+
+                    SidebarButton {
+                        icon: @image-url("./images/about.svg");
+                        tip: "About";
+                        clicked => { root.active-view = "ABOUT"; }
                     }
                 }
             }
