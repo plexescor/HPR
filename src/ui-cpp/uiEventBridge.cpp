@@ -2,6 +2,7 @@
 #include "appEvents.hpp"
 #include "appState.hpp"
 #include "extensionManager.hpp"
+#include "HPRInterpreter.hpp"
 // Slint stuff
 #include "app-window.h"
 #include <slint.h>
@@ -11,10 +12,14 @@
 #endif
 
 //CONSTRUCTOR FOR **COMPILED** UI
-UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow>& ui,  ExtensionManager* extMgr)
+UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow>& ui,  ExtensionManager* extMgr, HPRInterpreter* interpreter)
 {
     if (extMgr)
         this->extManager = extMgr;
+
+    if (interpreter)
+        this->interpreter = interpreter;
+
 
     //Connect to event hub
     init();
@@ -73,6 +78,19 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow>& ui,  ExtensionM
         });
     }
 
+    //no need to do shit in compiled mode
+
+    // if (interpreter)
+    // {
+    //     ui->on_reloadUi([this]()
+    //     {   
+    //         slint::invoke_from_event_loop([this]() 
+    //         {
+    //             this->interpreter->reload();
+    //         });
+    //     });
+    // }
+
     ui->on_openKofi([this]()
     {
         //Open webbrowser
@@ -86,10 +104,13 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow>& ui,  ExtensionM
 
 //CONSTRUCTOR FOR **INTERPRETED** UI
 UiEventBridge::UiEventBridge(
-    slint::ComponentHandle<slint::interpreter::ComponentInstance>& ui,  ExtensionManager* extMgr)
+    slint::ComponentHandle<slint::interpreter::ComponentInstance>& ui,  ExtensionManager* extMgr, HPRInterpreter* interpreter)
 {
     if (extMgr)
         this->extManager = extMgr;
+
+    if (interpreter)
+        this->interpreter = interpreter;
 
     //Connect to event hub
     init();
@@ -150,6 +171,18 @@ UiEventBridge::UiEventBridge(
         this->filterViewClicked();
         return slint::interpreter::Value(); // void return
     });
+
+    if (interpreter)
+    {
+        ui->set_callback("reloadUi", [this](auto args) -> slint::interpreter::Value
+        {   
+            slint::invoke_from_event_loop([this]() 
+            {
+                this->interpreter->reload();
+            });
+            return slint::interpreter::Value(); // void return
+        });
+    }
 
     if (extManager)
     {

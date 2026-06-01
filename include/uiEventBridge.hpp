@@ -7,10 +7,10 @@ class UiEventBridge
 {
     public:
        // Compiled UI Constructor
-        UiEventBridge(slint::ComponentHandle<MainWindow>& ui, ExtensionManager* extMgr = nullptr);
+        UiEventBridge(slint::ComponentHandle<MainWindow>& ui, ExtensionManager* extMgr = nullptr, HPRInterpreter* interpreter = nullptr);
 
         // Interpreted UI Constructor
-        UiEventBridge(slint::ComponentHandle<slint::interpreter::ComponentInstance>& ui,  ExtensionManager* extMgr = nullptr);
+        UiEventBridge(slint::ComponentHandle<slint::interpreter::ComponentInstance>& ui,  ExtensionManager* extMgr = nullptr, HPRInterpreter* interpreter = nullptr);
 
         ~UiEventBridge();
 
@@ -25,5 +25,6 @@ class UiEventBridge
 
     private:
         ExtensionManager* extManager = nullptr;
+        HPRInterpreter* interpreter = nullptr;
         size_t loadDbSingularId;
 };

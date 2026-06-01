@@ -22,6 +22,7 @@ export component MainWindow inherits Window {
     callback refreshExtensions;
     callback disableExtension(string);
     callback reloadExtension(string);
+    callback reloadUi;
 
     //PLS Donate and dont remove it!
     callback openKofi;
@@ -261,6 +262,12 @@ export component MainWindow inherits Window {
                     alignment: center;
                     width: 75%;
                     height: 100%;
+
+                    SidebarButton {
+                        icon: @image-url("./images/reload.svg");
+                        tip: "Reload UI";
+                        clicked => { root.reloadUi(); }
+                    }
 
                     SidebarButton {
                         icon: @image-url("./images/calendar.svg");

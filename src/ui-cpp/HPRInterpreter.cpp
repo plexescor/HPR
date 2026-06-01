@@ -18,6 +18,7 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include "logger.hpp"
 #include <chrono>
 
 #ifdef _WIN32
@@ -31,11 +32,16 @@ HPRInterpreter::HPRInterpreter(ExtensionManager* extMgr)
 
     if (!initialiseSlintUiPath()) exit(1);
 
-    definition = compiler.build_from_path(filePath + fileName);
+    compiler = std::make_unique<slint::interpreter::ComponentCompiler>();
+    definition = compiler->build_from_path(filePath + fileName);
 
-    if (!definition.has_value()) {
-        for (auto& diag : compiler.diagnostics())
+    if (!definition.has_value()) 
+    {
+        for (auto& diag : compiler->diagnostics())
+        {
             fprintf(stderr, "  → %s\n", diag.message.data());
+            Logger::log(diag.message.data());
+        }   
         exit(1);
     }
 
@@ -58,6 +64,78 @@ HPRInterpreter::~HPRInterpreter()
         tracker.join(); // Speaks for itself
 
     EventHub::disconnect(Event::APP_ERROR, errorId);
+}
+
+void HPRInterpreter::reload()
+{
+    // local compiler, no need to store it — just swap definition + instance
+    slint::interpreter::ComponentCompiler newCompiler;
+    auto newDef = newCompiler.build_from_path(filePath + fileName);
+
+    if (!newDef.has_value())
+    {
+        EventHub::emit(Event::APP_ERROR, ErrorGui{"Hot reload failed: compile error"});
+        for (auto& diag : newCompiler.diagnostics())
+            fprintf(stderr, "[HotReload] → %s\n", diag.message.data());
+        return;
+    }
+
+    // ComponentHandle is NOT optional, create() returns it directly
+    auto newInst = newDef->create();
+
+    // grab old geometry before touching anything
+    auto oldPos  = instance.value()->window().position();
+    auto oldSize = instance.value()->window().size();
+
+    // lock so trackingLoop doesn't touch modelManager mid-swap
+    {
+        std::lock_guard<std::mutex> lock(reloadMutex);
+        UiRegistry::registerInstance(newInst);
+        modelManager.emplace(newInst);
+    }
+
+    // re-wire UI event callbacks on new instance
+    uiEventBridge.emplace(newInst, extManager, this);
+
+    // restore geometry
+    //this shit already runs on event thread
+    //so this is fine
+    const_cast<slint::Window&>(newInst->window()).set_position(oldPos);
+    const_cast<slint::Window&>(newInst->window()).set_size(oldSize);
+
+    // show new BEFORE hiding oldanti-flicker
+    newInst->show();
+    instance.value()->hide();
+
+    // swap
+    {
+        std::lock_guard<std::mutex> lock(reloadMutex);
+        definition    = std::move(newDef);
+        instance      = newInst;
+        weak_instance = newInst;
+    }
+
+    // re-wire close handler
+    #ifdef _WIN32
+        instance.value()->window().on_close_requested([this]() -> slint::CloseRequestResponse {
+            instance.value()->hide();
+            return slint::CloseRequestResponse::KeepWindowShown;
+        });
+        slint::invoke_from_event_loop([]() {
+            HWND hwnd = FindWindowW(nullptr, L"HPR");
+            if (hwnd) {
+                HICON big   = (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(1), IMAGE_ICON, 32, 32, LR_SHARED);
+                HICON small = (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(1), IMAGE_ICON, 16, 16, LR_SHARED);
+                if (big)   SendMessage(hwnd, WM_SETICON, ICON_BIG,   (LPARAM)big);
+                if (small) SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)small);
+            }
+        });
+    #else
+        instance.value()->window().on_close_requested([this]() -> slint::CloseRequestResponse {
+            this->hide();
+            return slint::CloseRequestResponse::KeepWindowShown;
+        });
+    #endif
 }
 
 void HPRInterpreter::show()
@@ -207,47 +285,53 @@ void HPRInterpreter::trackingLoop()
                 }
             }
 
-            modelManager.value().update_Interpreted(
-                timeLog,
-                timeLog_Tab,
-                timeLog_Project,
-                switchHistory,
-                window,
-                totalTrackedTime, 
-                totalTrackedTime_Tab,
-                totalTrackedTime_Project,
-                AppState::aliasManager
-            );
-
+            //Scoped mutex for hot reloading
             {
-                std::lock_guard<std::mutex> lock(AppState::patternAnalyzerMutex);
-                AppState::patternAnalyzer.generateInsights();
-            }
-            
-            // Update insight every 30 (or on first frame)
-            if (firstRun || std::chrono::duration_cast<std::chrono::seconds>(now - lastInsightUpdate).count() >= 30) 
-            {
-                std::lock_guard<std::mutex> lock(AppState::stateMutex);
-                
-                modelManager.value().showInsights_Interpreted(
-                    AppState::patternAnalyzer.getMostUsed(),
-                    AppState::patternAnalyzer.getTotalTrackedTime(),
-                    AppState::patternAnalyzer.getSwitchCount(),
-                    AppState::patternAnalyzer.getMostSwitchedFrom(),
-                    AppState::patternAnalyzer.getMostSwitchedTo(),
-                    AppState::patternAnalyzer.getMostFocusedSession(),
-                    AppState::patternAnalyzer.getMostProductiveHour()
+                std::lock_guard<std::mutex> lock(reloadMutex);
+                modelManager.value().update_Interpreted(
+                    timeLog,
+                    timeLog_Tab,
+                    timeLog_Project,
+                    switchHistory,
+                    window,
+                    totalTrackedTime, 
+                    totalTrackedTime_Tab,
+                    totalTrackedTime_Project,
+                    AppState::aliasManager
                 );
-                lastInsightUpdate = now;
-                firstRun = false;
+
+                {
+                    std::lock_guard<std::mutex> lock(AppState::patternAnalyzerMutex);
+                    AppState::patternAnalyzer.generateInsights();
+                }
+            
+                // Update insight every 30 (or on first frame)
+                if (firstRun || std::chrono::duration_cast<std::chrono::seconds>(now - lastInsightUpdate).count() >= 30) 
+                {
+                    std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                    
+                    modelManager.value().showInsights_Interpreted(
+                        AppState::patternAnalyzer.getMostUsed(),
+                        AppState::patternAnalyzer.getTotalTrackedTime(),
+                        AppState::patternAnalyzer.getSwitchCount(),
+                        AppState::patternAnalyzer.getMostSwitchedFrom(),
+                        AppState::patternAnalyzer.getMostSwitchedTo(),
+                        AppState::patternAnalyzer.getMostFocusedSession(),
+                        AppState::patternAnalyzer.getMostProductiveHour()
+                    );
+                    lastInsightUpdate = now;
+                    firstRun = false;
+                }
+
+                std::vector<std::pair<std::string,std::string>> extensionsCopy;
+                {
+                    std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                    extensionsCopy = AppState::state.loadedExtensions;
+                }
+                modelManager.value().showExtensions_Interpreted(extensionsCopy);
+
             }
 
-            std::vector<std::pair<std::string,std::string>> extensionsCopy;
-            {
-                std::lock_guard<std::mutex> lock(AppState::stateMutex);
-                extensionsCopy = AppState::state.loadedExtensions;
-            }
-            modelManager.value().showExtensions_Interpreted(extensionsCopy);
         }
 
         if (!uiReady)
@@ -273,7 +357,7 @@ void HPRInterpreter::run()
     //For saving my time
     auto &inst = instance.value();
 
-    UiEventBridge uiEventBridge(inst, extManager);
+    uiEventBridge.emplace(inst, extManager, this);
 
     #ifdef _WIN32
         inst->window().on_close_requested([this, inst]() -> slint::CloseRequestResponse {
