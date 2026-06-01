@@ -850,6 +850,11 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         return NativeNet::startHttpServer(port, handler, ext);
     };
 
+    lua["HPR"]["log_E"] = [](std::string name, std::string msg)
+    {
+        Logger::log("[" + name + "] " + msg);
+    };
+
     lua["HPR"]["getTime_MS_E"] = []() -> uint64_t
     {
         return std::chrono::duration_cast<std::chrono::milliseconds>(
