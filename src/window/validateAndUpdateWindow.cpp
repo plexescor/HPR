@@ -3,11 +3,21 @@
 #include <cctype>
 
 #include "validateAndUpdateWindow.hpp"
+#include "appState.hpp"
+#include "extensionManager.hpp"
 
 //A cross platform beefy function to modify the currently active window name for readibility and fucking trash out
 std::string validateAndUpdateWindow_Cross(std::string &windowName)
 {
     stripTrailing(windowName);
+    if (AppState::extManager)
+    {
+        auto res = AppState::extManager->dispatchOverride("validateAndUpdateWindow_Cross", { CppValue(CppValue::Type::String, windowName) });
+        if (res.has_value() && res->type == CppValue::Type::String)
+        {
+            return res->str_val;
+        }
+    }
     std::string unModifiedWindowName = windowName;
 
     //Convert windowName to lowercase

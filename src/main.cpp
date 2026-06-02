@@ -8,6 +8,7 @@
 #include "linuxUtilities.hpp"
 #include "extensionManager.hpp"
 #include "windowUtilities.hpp"
+#include "appState.hpp"
 #ifdef _WIN32
 	#include <windows.h>
 
@@ -24,6 +25,7 @@
 		dbm.run();
 
 		ExtensionManager ext;
+		AppState::extManager = &ext;
 		
 
 		//Check for hardware-acceleration flag
@@ -117,6 +119,7 @@
 		dbm.run();
 
 		ExtensionManager ext;
+		AppState::extManager = &ext;
 	
 		LinuxInitialiser linuxInit; //Just a utility class to create config directory and check for icon
 

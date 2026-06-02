@@ -7,6 +7,8 @@ AppState::HistoricalData AppState::historicalData_State;
 AliasManager AppState::aliasManager;
 PatternAnalyzer AppState::patternAnalyzer;
 
+ExtensionManager* AppState::extManager = nullptr;
+
 std::mutex AppState::patternAnalyzerMutex;
 
 std::mutex AppState::stateMutex;

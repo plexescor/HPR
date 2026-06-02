@@ -1,11 +1,14 @@
 #pragma once
 #include <string>
 #include <mutex>
-#include <string>
 #include <vector>
 #include <functional>
+#include <map>
 std::string getCurrentWindow_E();
 std::string getCurrentTitle_E();
+std::map<std::string, long> getLiveTimeLogPerApp_E();
+std::map<std::string, long> getLiveTimeLogPerTab_E();
+std::map<std::string, long> getLiveTimeLogPerProject_E();
 void registerBackend_E(std::string name, 
     std::function<bool(const std::string&)> matchesEnvironment,
     std::function<void()> initialize,

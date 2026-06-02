@@ -1,6 +1,7 @@
 #include "databaseManager.hpp"
 #include "timeUtils.hpp"
 #include "appState.hpp"
+#include "extensionManager.hpp"
 
 #include "appEvents.hpp"
 #include "logger.hpp"
@@ -357,6 +358,14 @@ void DatabaseManager::writeLoop()
 
 std::string DatabaseManager::getDbPathForDate(const std::string& date)
 {
+    if (AppState::extManager)
+    {
+        auto res = AppState::extManager->dispatchOverride("getDbPathForDate", { CppValue(CppValue::Type::String, date) });
+        if (res.has_value() && res->type == CppValue::Type::String)
+        {
+            return res->str_val;
+        }
+    }
     std::string path;
     #ifdef _WIN32
         path = std::getenv("APPDATA");
@@ -372,6 +381,14 @@ std::string DatabaseManager::getDbPathForDate(const std::string& date)
 
 std::string DatabaseManager::getLoadedHistDbPath() const
 {
+    if (AppState::extManager)
+    {
+        auto res = AppState::extManager->dispatchOverride("getLoadedHistDbPath", {});
+        if (res.has_value() && res->type == CppValue::Type::String)
+        {
+            return res->str_val;
+        }
+    }
     return loadedHistDbPath;
 }
 
@@ -465,6 +482,22 @@ void DatabaseManager::loadDb_Singular(std::string requestedDate)
 // Runs INSERT, UPDATE, DELETE, CREATE TABLE, etc.
 void DatabaseManager::executeSQL(const std::string& sql, const std::vector<std::string>& params)
 {
+    if (AppState::extManager)
+    {
+        std::vector<CppValue> cppParams;
+        for (const auto& p : params)
+        {
+            cppParams.push_back(CppValue(CppValue::Type::String, p));
+        }
+        CppValue paramsVal(CppValue::Type::Array);
+        paramsVal.array_val = cppParams;
+
+        auto res = AppState::extManager->dispatchOverride("dbExecute", { CppValue(CppValue::Type::String, sql), paramsVal });
+        if (res.has_value())
+        {
+            return;
+        }
+    }
     std::lock_guard<std::mutex> lock(pendingQueriesMutex);
     pendingQueries.push_back({ sql, params });
 }
@@ -472,6 +505,49 @@ void DatabaseManager::executeSQL(const std::string& sql, const std::vector<std::
 // Runs SELECT and returns dynamic columns and rows to Lua
 std::vector<std::map<std::string, std::string>> DatabaseManager::querySQL(const std::string& sql, const std::vector<std::string>& params)
 {
+    if (AppState::extManager)
+    {
+        std::vector<CppValue> cppParams;
+        for (const auto& p : params)
+        {
+            cppParams.push_back(CppValue(CppValue::Type::String, p));
+        }
+        CppValue paramsVal(CppValue::Type::Array);
+        paramsVal.array_val = cppParams;
+
+        auto res = AppState::extManager->dispatchOverride("dbQuery", { CppValue(CppValue::Type::String, sql), paramsVal });
+        if (res.has_value())
+        {
+            std::vector<std::map<std::string, std::string>> results;
+            if (res->type == CppValue::Type::Array)
+            {
+                for (const auto& rowVal : res->array_val)
+                {
+                    if (rowVal.type == CppValue::Type::Struct)
+                    {
+                        std::map<std::string, std::string> row;
+                        for (const auto& [k, v] : rowVal.struct_val)
+                        {
+                            if (v.type == CppValue::Type::String)
+                            {
+                                row[k] = v.str_val;
+                            }
+                            else if (v.type == CppValue::Type::Double)
+                            {
+                                row[k] = std::to_string(v.double_val);
+                            }
+                            else if (v.type == CppValue::Type::Bool)
+                            {
+                                row[k] = v.bool_val ? "true" : "false";
+                            }
+                        }
+                        results.push_back(row);
+                    }
+                }
+            }
+            return results;
+        }
+    }
     std::lock_guard<std::mutex> lock(dbQueryMutex);
     std::vector<std::map<std::string, std::string>> results;
     if (!db) return results;
@@ -510,6 +586,49 @@ std::vector<std::map<std::string, std::string>> DatabaseManager::querySQL(const 
 
 std::vector<std::map<std::string, std::string>> DatabaseManager::querySQL_Path(const std::string& dbPath, const std::string& sql, const std::vector<std::string>& params)
 {
+    if (AppState::extManager)
+    {
+        std::vector<CppValue> cppParams;
+        for (const auto& p : params)
+        {
+            cppParams.push_back(CppValue(CppValue::Type::String, p));
+        }
+        CppValue paramsVal(CppValue::Type::Array);
+        paramsVal.array_val = cppParams;
+
+        auto res = AppState::extManager->dispatchOverride("dbQueryPath", { CppValue(CppValue::Type::String, dbPath), CppValue(CppValue::Type::String, sql), paramsVal });
+        if (res.has_value())
+        {
+            std::vector<std::map<std::string, std::string>> results;
+            if (res->type == CppValue::Type::Array)
+            {
+                for (const auto& rowVal : res->array_val)
+                {
+                    if (rowVal.type == CppValue::Type::Struct)
+                    {
+                        std::map<std::string, std::string> row;
+                        for (const auto& [k, v] : rowVal.struct_val)
+                        {
+                            if (v.type == CppValue::Type::String)
+                            {
+                                row[k] = v.str_val;
+                            }
+                            else if (v.type == CppValue::Type::Double)
+                            {
+                                row[k] = std::to_string(v.double_val);
+                            }
+                            else if (v.type == CppValue::Type::Bool)
+                            {
+                                row[k] = v.bool_val ? "true" : "false";
+                            }
+                        }
+                        results.push_back(row);
+                    }
+                }
+            }
+            return results;
+        }
+    }
     std::vector<std::map<std::string, std::string>> results;
     try
     {

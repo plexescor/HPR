@@ -9,6 +9,8 @@
 #include <cstdint>
 #include <vector>
 
+class ExtensionManager;
+
 namespace AppState {
     
     enum CurrentView {HISTORICAL_SINGULAR, LIVE};
@@ -53,6 +55,8 @@ namespace AppState {
 
     extern AliasManager aliasManager;
     extern PatternAnalyzer patternAnalyzer;
+
+    extern ExtensionManager* extManager;
 
     extern std::mutex patternAnalyzerMutex;
 

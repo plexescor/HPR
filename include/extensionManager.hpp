@@ -17,6 +17,7 @@
 #endif
 
 #include <mutex>
+#include <optional>
 
 #include "appEvents.hpp"
 
@@ -53,6 +54,8 @@ class ExtensionManager
         void unloadExtension(std::string authorName, std::string extensionName);
         void reloadAllExtensions();
         void refresh();
+
+        std::optional<CppValue> dispatchOverride(const std::string& overrideName, const std::vector<CppValue>& args);
 
     private:
         void updateExtensionPath();

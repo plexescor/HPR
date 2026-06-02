@@ -11,6 +11,8 @@
 #endif
 
 #include "aliasManager.hpp"
+#include "appState.hpp"
+#include "extensionManager.hpp"
 
 AliasManager::AliasManager() 
 { 
@@ -168,6 +170,14 @@ void AliasManager::loadAliases_Project()
 
 std::string AliasManager::getAlias(const std::string &rawName)
 {
+    if (AppState::extManager)
+    {
+        auto res = AppState::extManager->dispatchOverride("getAlias", { CppValue(CppValue::Type::String, rawName) });
+        if (res.has_value() && res->type == CppValue::Type::String)
+        {
+            return res->str_val;
+        }
+    }
     std::lock_guard lock(mutex);
     std::string lowerName = rawName;
 
@@ -229,6 +239,14 @@ std::string AliasManager::getAlias(const std::string &rawName)
 
 std::string AliasManager::getAlias_Tab(const std::string &rawName)
 {
+    if (AppState::extManager)
+    {
+        auto res = AppState::extManager->dispatchOverride("getAlias_Tab", { CppValue(CppValue::Type::String, rawName) });
+        if (res.has_value() && res->type == CppValue::Type::String)
+        {
+            return res->str_val;
+        }
+    }
     std::lock_guard lock(mutex);
     std::string lowerName = rawName;
 
@@ -290,6 +308,14 @@ std::string AliasManager::getAlias_Tab(const std::string &rawName)
 
 std::string AliasManager::getAlias_Project(const std::string &rawName)
 {
+    if (AppState::extManager)
+    {
+        auto res = AppState::extManager->dispatchOverride("getAlias_Project", { CppValue(CppValue::Type::String, rawName) });
+        if (res.has_value() && res->type == CppValue::Type::String)
+        {
+            return res->str_val;
+        }
+    }
     std::lock_guard lock(mutex);
     std::string lowerName = rawName;
 
@@ -351,6 +377,14 @@ std::string AliasManager::getAlias_Project(const std::string &rawName)
 
 std::string AliasManager::getReverseAlias(const std::string &aliasName)
 {
+    if (AppState::extManager)
+    {
+        auto res = AppState::extManager->dispatchOverride("getReverseAlias", { CppValue(CppValue::Type::String, aliasName) });
+        if (res.has_value() && res->type == CppValue::Type::String)
+        {
+            return res->str_val;
+        }
+    }
     std::lock_guard lock(mutex);
     std::string lowerName = aliasName;
 
@@ -410,6 +444,14 @@ std::string AliasManager::getReverseAlias(const std::string &aliasName)
 
 std::string AliasManager::getReverseAlias_Tab(const std::string &aliasName)
 {
+    if (AppState::extManager)
+    {
+        auto res = AppState::extManager->dispatchOverride("getReverseAlias_Tab", { CppValue(CppValue::Type::String, aliasName) });
+        if (res.has_value() && res->type == CppValue::Type::String)
+        {
+            return res->str_val;
+        }
+    }
     std::lock_guard lock(mutex);
     std::string lowerName = aliasName;
 
@@ -469,6 +511,14 @@ std::string AliasManager::getReverseAlias_Tab(const std::string &aliasName)
 
 std::string AliasManager::getReverseAlias_Project(const std::string &aliasName)
 {
+    if (AppState::extManager)
+    {
+        auto res = AppState::extManager->dispatchOverride("getReverseAlias_Project", { CppValue(CppValue::Type::String, aliasName) });
+        if (res.has_value() && res->type == CppValue::Type::String)
+        {
+            return res->str_val;
+        }
+    }
     std::lock_guard lock(mutex);
     std::string lowerName = aliasName;
 

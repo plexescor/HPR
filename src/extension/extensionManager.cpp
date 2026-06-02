@@ -662,6 +662,14 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
 
     lua["HPR"]["getTime_MS_E"] = []() -> uint64_t
     {
+        if (AppState::extManager)
+        {
+            auto res = AppState::extManager->dispatchOverride("getTime_MS", {});
+            if (res.has_value() && res->type == CppValue::Type::Double)
+            {
+                return static_cast<uint64_t>(res->double_val);
+            }
+        }
         return std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::system_clock::now().time_since_epoch()
         ).count();
@@ -748,6 +756,35 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
 
     lua["HPR"]["httpGet_E"] = [](std::string host, std::string path, sol::optional<bool> secure, sol::optional<sol::table> headers) -> std::tuple<std::string, int>
     {
+        if (AppState::extManager)
+        {
+            CppValue headersVal(CppValue::Type::Struct);
+            if (headers.has_value())
+            {
+                headers->for_each([&](sol::object k, sol::object v) {
+                    if (k.is<std::string>() && v.is<std::string>())
+                    {
+                        headersVal.struct_val[k.as<std::string>()] = CppValue(CppValue::Type::String, v.as<std::string>());
+                    }
+                });
+            }
+            auto res = AppState::extManager->dispatchOverride("httpGet", {
+                CppValue(CppValue::Type::String, host),
+                CppValue(CppValue::Type::String, path),
+                CppValue(CppValue::Type::Bool, secure.value_or(true)),
+                headersVal
+            });
+            if (res.has_value() && res->type == CppValue::Type::Struct)
+            {
+                std::string body = "";
+                int status = 200;
+                if (res->struct_val.count("body") && res->struct_val.at("body").type == CppValue::Type::String)
+                    body = res->struct_val.at("body").str_val;
+                if (res->struct_val.count("status") && res->struct_val.at("status").type == CppValue::Type::Double)
+                    status = static_cast<int>(res->struct_val.at("status").double_val);
+                return std::make_tuple(body, status);
+            }
+        }
         std::map<std::string, std::string> cppHeaders;
         if (headers.has_value())
         {
@@ -764,6 +801,36 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
 
     lua["HPR"]["httpPost_E"] = [](std::string host, std::string path, std::string body, sol::optional<bool> secure, sol::optional<sol::table> headers) -> std::tuple<std::string, int>
     {
+        if (AppState::extManager)
+        {
+            CppValue headersVal(CppValue::Type::Struct);
+            if (headers.has_value())
+            {
+                headers->for_each([&](sol::object k, sol::object v) {
+                    if (k.is<std::string>() && v.is<std::string>())
+                    {
+                        headersVal.struct_val[k.as<std::string>()] = CppValue(CppValue::Type::String, v.as<std::string>());
+                    }
+                });
+            }
+            auto res = AppState::extManager->dispatchOverride("httpPost", {
+                CppValue(CppValue::Type::String, host),
+                CppValue(CppValue::Type::String, path),
+                CppValue(CppValue::Type::String, body),
+                CppValue(CppValue::Type::Bool, secure.value_or(true)),
+                headersVal
+            });
+            if (res.has_value() && res->type == CppValue::Type::Struct)
+            {
+                std::string resBody = "";
+                int status = 200;
+                if (res->struct_val.count("body") && res->struct_val.at("body").type == CppValue::Type::String)
+                    resBody = res->struct_val.at("body").str_val;
+                if (res->struct_val.count("status") && res->struct_val.at("status").type == CppValue::Type::Double)
+                    status = static_cast<int>(res->struct_val.at("status").double_val);
+                return std::make_tuple(resBody, status);
+            }
+        }
         std::map<std::string, std::string> cppHeaders;
         if (headers.has_value())
         {
@@ -835,11 +902,27 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
 
     lua["HPR"]["stopTracking_E"] = [this]()
     {
+        if (AppState::extManager)
+        {
+            auto res = AppState::extManager->dispatchOverride("stopTracking", {});
+            if (res.has_value())
+            {
+                return;
+            }
+        }
         currentWindowManager->stopTracking();
     };
 
     lua["HPR"]["startTracking_E"] = [this]()
     {
+        if (AppState::extManager)
+        {
+            auto res = AppState::extManager->dispatchOverride("startTracking", {});
+            if (res.has_value())
+            {
+                return;
+            }
+        }
         currentWindowManager->startTracking();
     };
 
@@ -897,6 +980,53 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
 
     lua["HPR"]["dbQueryHistorical_E"] = [this](std::string sql, sol::optional<std::vector<std::string>> params) 
     {
+        if (AppState::extManager)
+        {
+            std::vector<CppValue> cppParams;
+            if (params.has_value())
+            {
+                for (const auto& p : *params)
+                {
+                    cppParams.push_back(CppValue(CppValue::Type::String, p));
+                }
+            }
+            CppValue paramsVal(CppValue::Type::Array);
+            paramsVal.array_val = cppParams;
+
+            auto res = AppState::extManager->dispatchOverride("dbQueryHistorical", { CppValue(CppValue::Type::String, sql), paramsVal });
+            if (res.has_value())
+            {
+                std::vector<std::map<std::string, std::string>> results;
+                if (res->type == CppValue::Type::Array)
+                {
+                    for (const auto& rowVal : res->array_val)
+                    {
+                        if (rowVal.type == CppValue::Type::Struct)
+                        {
+                            std::map<std::string, std::string> row;
+                            for (const auto& [k, v] : rowVal.struct_val)
+                            {
+                                if (v.type == CppValue::Type::String)
+                                {
+                                    row[k] = v.str_val;
+                                }
+                                else if (v.type == CppValue::Type::Double)
+                                {
+                                    row[k] = std::to_string(v.double_val);
+                                }
+                                else if (v.type == CppValue::Type::Bool)
+                                {
+                                    row[k] = v.bool_val ? "true" : "false";
+                                }
+                            }
+                            results.push_back(row);
+                        }
+                    }
+                }
+                return results;
+            }
+        }
+
         // Block until the async DB load has finished (or 5s timeout to avoid
         // hanging forever if, e.g., the file wasn't found and load errored out)
         {
@@ -961,6 +1091,15 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
 
     lua["HPR"]["setUiProperty_E"] = [](std::string name, sol::object value) 
     {
+        if (AppState::extManager)
+        {
+            CppValue cppVal = luaToCpp(value);
+            auto res = AppState::extManager->dispatchOverride("setUiProperty", { CppValue(CppValue::Type::String, name), cppVal });
+            if (res.has_value())
+            {
+                return;
+            }
+        }
         if (!UiRegistry::isActive())
         {
             return; // UI is not active/loaded yet
@@ -983,6 +1122,14 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
 
     lua["HPR"]["registerUiCallback_E"] = [&ext](std::string name, sol::function luaCallback) 
     {
+        if (AppState::extManager)
+        {
+            auto res = AppState::extManager->dispatchOverride("registerUiCallback", { CppValue(CppValue::Type::String, name) });
+            if (res.has_value())
+            {
+                return;
+            }
+        }
         if (!UiRegistry::isActive())
         {
             return; // no ui
@@ -1440,11 +1587,7 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
 
     lua["HPR"]["getLiveTimeLogPerApp_E"] = [&lua]() -> sol::table
     {
-        std::map<std::string, long> copy;
-        {
-            std::lock_guard<std::mutex> lock(AppState::stateMutex);
-            copy = AppState::state.timeLog_PerApp;
-        }
+        std::map<std::string, long> copy = getLiveTimeLogPerApp_E();
         sol::table result = lua.create_table();
         for (const auto& [app, ms] : copy)
         {
@@ -1455,11 +1598,7 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
 
     lua["HPR"]["getLiveTimeLogPerTab_E"] = [&lua]() -> sol::table
     {
-        std::map<std::string, long> copy;
-        {
-            std::lock_guard<std::mutex> lock(AppState::stateMutex);
-            copy = AppState::state.timeLog_PerTab;
-        }
+        std::map<std::string, long> copy = getLiveTimeLogPerTab_E();
         sol::table result = lua.create_table();
         for (const auto& [tab, ms] : copy)
         {
@@ -1470,11 +1609,7 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
 
     lua["HPR"]["getLiveTimeLogPerProject_E"] = [&lua]() -> sol::table
     {
-        std::map<std::string, long> copy;
-        {
-            std::lock_guard<std::mutex> lock(AppState::stateMutex);
-            copy = AppState::state.timeLog_PerProject;
-        }
+        std::map<std::string, long> copy = getLiveTimeLogPerProject_E();
         sol::table result = lua.create_table();
         for (const auto& [project, ms] : copy)
         {
@@ -1482,7 +1617,6 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         }
         return result;
     };
-
 }
 
 void ExtensionManager::updateExtensionPath()
@@ -1520,4 +1654,53 @@ std::filesystem::path resolveAndSecurePath(const std::string& userPath, const st
         return {};
     }
     return normalTarget;
+}
+
+std::optional<CppValue> ExtensionManager::dispatchOverride(const std::string& overrideName, const std::vector<CppValue>& args)
+{
+    for (auto& ext : extensions)
+    {
+        std::lock_guard<std::recursive_mutex> luaLock(ext->luaMutex);
+        
+        sol::table hpr = ext->lua["HPR"];
+        if (!hpr.valid()) continue;
+        
+        sol::table overrides = hpr["overrides"];
+        if (!overrides.valid()) continue;
+
+        sol::optional<sol::protected_function> overrideFunc = overrides[overrideName];
+        if (overrideFunc.has_value() && overrideFunc.value().valid())
+        {
+            try {
+                std::vector<sol::object> luaArgs;
+                for (const auto& arg : args)
+                {
+                    luaArgs.push_back(cppToLua(ext->lua, arg));
+                }
+
+                sol::protected_function_result result = overrideFunc.value()(sol::as_args(luaArgs));
+                
+                if (result.valid())
+                {
+                    if (result.return_count() == 0)
+                    {
+                        continue;
+                    }
+                    sol::object returnedObject = result;
+                    if (returnedObject.is<sol::nil_t>())
+                    {
+                        continue;
+                    }
+                    return luaToCpp(returnedObject);
+                }
+            }
+            catch (const std::exception& e)
+            {
+                std::cerr << "[HPR Override Error] Error executing override '" << overrideName 
+                          << "' in extension '" << ext->identity.second << "': " << e.what() << std::endl;
+                Logger::log("[HPR Override Error] " + std::string(e.what()));
+            }
+        }
+    }
+    return std::nullopt;
 }

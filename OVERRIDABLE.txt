@@ -1,0 +1,131 @@
+The following functions in HPR are currently overridable by Lua extensions via the `HPR.overrides` table:
+
+1. validateAndUpdateWindow_Cross
+   - Description: Normalizes and filters window titles before they are processed by the engine or stored in the database.
+   - C++ Call Site: src/window/validateAndUpdateWindow.cpp
+   - Lua Override Key: HPR.overrides.validateAndUpdateWindow_Cross
+
+2. showNotification
+   - Description: Handles drawing system desktop notifications via DBus (Linux) or WinToast (Windows).
+   - C++ Call Site: src/window/windowUtilities.cpp
+   - Lua Override Key: HPR.overrides.showNotification
+
+3. getAlias
+   - Description: Retrieves the alias for a given application's raw name.
+   - C++ Call Site: src/miscellaneous/aliasManager.cpp
+   - Lua Override Key: HPR.overrides.getAlias
+
+4. getAlias_Tab
+   - Description: Retrieves the alias for a given browser tab's raw title.
+   - C++ Call Site: src/miscellaneous/aliasManager.cpp
+   - Lua Override Key: HPR.overrides.getAlias_Tab
+
+5. getAlias_Project
+   - Description: Retrieves the alias for a given project directory's raw name.
+   - C++ Call Site: src/miscellaneous/aliasManager.cpp
+   - Lua Override Key: HPR.overrides.getAlias_Project
+
+6. dbQuery
+   - Description: Runs a SQL SELECT query with dynamic string parameters. Intercepts database queries.
+   - C++ Call Site: src/database/databaseManager.cpp
+   - Lua Override Key: HPR.overrides.dbQuery
+
+7. dbExecute
+   - Description: Runs write SQL commands (INSERT, UPDATE, DELETE, etc.) with dynamic string parameters. Intercepts database writes.
+   - C++ Call Site: src/database/databaseManager.cpp
+   - Lua Override Key: HPR.overrides.dbExecute
+
+8. getCurrentWindow_E
+   - Description: Returns the name/app of the active window. Allows spoofing active app state.
+   - C++ Call Site: src/extension/window_E.cpp
+   - Lua Override Key: HPR.overrides.getCurrentWindow_E
+
+9. getCurrentTitle_E
+   - Description: Returns the title of the active window. Allows spoofing active tab/title state.
+   - C++ Call Site: src/extension/window_E.cpp
+   - Lua Override Key: HPR.overrides.getCurrentTitle_E
+
+10. getReverseAlias
+    - Description: Resolves an alias back to its raw application name.
+    - C++ Call Site: src/miscellaneous/aliasManager.cpp
+    - Lua Override Key: HPR.overrides.getReverseAlias
+
+11. getReverseAlias_Tab
+    - Description: Resolves a tab alias back to its raw tab title.
+    - C++ Call Site: src/miscellaneous/aliasManager.cpp
+    - Lua Override Key: HPR.overrides.getReverseAlias_Tab
+
+12. getReverseAlias_Project
+    - Description: Resolves a project alias back to its raw project folder path/name.
+    - C++ Call Site: src/miscellaneous/aliasManager.cpp
+    - Lua Override Key: HPR.overrides.getReverseAlias_Project
+
+13. getLiveTimeLogPerApp_E
+    - Description: Returns a table of applications mapped to their active tracked duration (ms). Allows overriding the active app time log.
+    - C++ Call Site: src/extension/window_E.cpp
+    - Lua Override Key: HPR.overrides.getLiveTimeLogPerApp_E
+
+14. getLiveTimeLogPerTab_E
+    - Description: Returns a table of browser tabs mapped to their active tracked duration (ms). Allows overriding the active tab time log.
+    - C++ Call Site: src/extension/window_E.cpp
+    - Lua Override Key: HPR.overrides.getLiveTimeLogPerTab_E
+
+15. getLiveTimeLogPerProject_E
+    - Description: Returns a table of project directories mapped to their active tracked duration (ms). Allows overriding the active project time log.
+    - C++ Call Site: src/extension/window_E.cpp
+    - Lua Override Key: HPR.overrides.getLiveTimeLogPerProject_E
+
+16. dbQueryPath
+    - Description: Runs a SQL SELECT query against a specific database file path. Intercepts custom database path queries.
+    - C++ Call Site: src/database/databaseManager.cpp
+    - Lua Override Key: HPR.overrides.dbQueryPath
+
+17. dbQueryHistorical
+    - Description: Runs a SQL SELECT query against the currently loaded historical database. Intercepts historical database queries.
+    - C++ Call Site: src/extension/extensionManager.cpp
+    - Lua Override Key: HPR.overrides.dbQueryHistorical
+
+18. httpGet
+    - Description: Performs an HTTP GET request. Intercepts outgoing GET requests and allows custom spoofed responses.
+    - C++ Call Site: src/extension/extensionManager.cpp
+    - Lua Override Key: HPR.overrides.httpGet
+
+19. httpPost
+    - Description: Performs an HTTP POST request. Intercepts outgoing POST requests and allows custom spoofed responses.
+    - C++ Call Site: src/extension/extensionManager.cpp
+    - Lua Override Key: HPR.overrides.httpPost
+
+20. stopTracking
+    - Description: Stops tracking the active window state. Allows overriding or preventing the tracking pause.
+    - C++ Call Site: src/extension/extensionManager.cpp
+    - Lua Override Key: HPR.overrides.stopTracking
+
+21. startTracking
+    - Description: Starts tracking the active window state. Allows overriding or preventing the tracking resume.
+    - C++ Call Site: src/extension/extensionManager.cpp
+    - Lua Override Key: HPR.overrides.startTracking
+
+22. getLoadedHistDbPath
+    - Description: Retrieves the file path of the currently loaded historical database. Allows spoofing historical database path lookup.
+    - C++ Call Site: src/database/databaseManager.cpp
+    - Lua Override Key: HPR.overrides.getLoadedHistDbPath
+
+23. getDbPathForDate
+    - Description: Resolves the database path for a given date. Allows customizing where database files are read/written for specific dates.
+    - C++ Call Site: src/database/databaseManager.cpp
+    - Lua Override Key: HPR.overrides.getDbPathForDate
+
+24. getTime_MS
+    - Description: Returns the system time in milliseconds. Allows mocking/spoofing active time tracking timestamps.
+    - C++ Call Site: src/extension/extensionManager.cpp
+    - Lua Override Key: HPR.overrides.getTime_MS
+
+25. setUiProperty
+    - Description: Updates a property in the Slint UI. Allows filtering, overriding, or blocking UI updates.
+    - C++ Call Site: src/extension/extensionManager.cpp
+    - Lua Override Key: HPR.overrides.setUiProperty
+
+26. registerUiCallback
+    - Description: Binds a callback to a Slint UI action. Allows intercepting or overriding UI action registration.
+    - C++ Call Site: src/extension/extensionManager.cpp
+    - Lua Override Key: HPR.overrides.registerUiCallback

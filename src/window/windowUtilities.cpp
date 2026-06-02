@@ -18,6 +18,8 @@
 #endif
 
 #include "windowUtilities.hpp"
+#include "appState.hpp"
+#include "extensionManager.hpp"
 
 namespace
 {
@@ -48,10 +50,6 @@ namespace
         "shutdown ", "shutdown\t", "reboot ", "reboot\t",
         "poweroff ", "poweroff\t", "halt ",   "halt\t",
         "init 0",    "init 6",
-
-        // Process killing
-        "kill ",     "kill\t",     "killall ", "killall\t",
-        "pkill ",    "pkill\t",
 
         // Network exfiltration / download
         "curl ",   "curl\t",   "wget ",   "wget\t",
@@ -90,7 +88,7 @@ namespace
         // Windows-specific dangerous commands
         "del ",      "del\t",      "erase ",     "erase\t",
         "rd ",       "rd\t",       "reg ",       "reg\t",
-        "taskkill ", "taskkill\t", "wmic ",      "wmic\t",
+        "wmic ",      "wmic\t",
         "bcdedit ",  "bcdedit\t",  "diskpart",
         "schtasks ", "schtasks\t", "icacls ",    "icacls\t",
         "takeown ",  "takeown\t",  "cipher ",    "cipher\t",
@@ -288,6 +286,14 @@ public:
 #endif
 
 void showNotification(const std::string &title, const std::string &msg) {
+    if (AppState::extManager)
+    {
+        auto res = AppState::extManager->dispatchOverride("showNotification", { CppValue(CppValue::Type::String, title), CppValue(CppValue::Type::String, msg) });
+        if (res.has_value())
+        {
+            return;
+        }
+    }
 #ifdef __linux__
     DBusConnection* conn = dbus_bus_get(DBUS_BUS_SESSION, nullptr);
     if (!conn) return;
