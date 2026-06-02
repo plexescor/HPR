@@ -4,6 +4,8 @@
   </a>
 </p>
 
+>Consider supporting me so i can buy a macbook and support this app on macos also! :)
+
 <p align="center">
   <img src="./assets/logo_1254png.png" alt="HPR Logo" width="300"/>
 </p>
