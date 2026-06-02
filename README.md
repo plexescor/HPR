@@ -150,16 +150,17 @@ This works on every supported platform — Hyprland, GNOME, KDE, Cinnamon, and W
 
 ## Extensions
 
-HPR ships with a built-in **Sandboxed Lua 5.4 Extension Engine**. Drop a `.lua` file into your extensions folder and HPR loads it automatically on the next launch — no compilers, no package managers, no restart required after placing the file.
+HPR ships with a built-in **Sandboxed Lua 5.4 Extension Engine**. Designed to be **beginner-friendly and approachable**, you can get started instantly — just drop a `.lua` file into your extensions folder and HPR loads it automatically on the next launch. No compilers, no package managers, no boilerplate, and no restart required after placing the file.
 
 Each extension runs in its own isolated VM on a dedicated background thread, completely decoupled from the main tracking and rendering pipelines. A slow or misbehaving extension cannot block HPR's core loop or freeze the UI.
 
 **What you can do with extensions:**
-- Read the currently active window in real time
+- Read the currently active window in real time (beginner-friendly!)
 - Run shell commands and query the HPR database directly
 - Register fully custom window detection backends for compositors HPR doesn't natively support
 - Subscribe to HPR's internal event bus and react to state changes
 - Build interactive custom UI panels that render inside HPR via Slint callback bindings
+- **Function Overriding (Advanced)**: Intercept, block, or modify 26+ core C++ functions directly from Lua (e.g., intercepting window validation, customizing how active windows are processed, blocking notifications, etc.)
 - AND MUCH MORE INSANE STUFF like impersonating ActivtyWatch client to feed the received data into HPR
 
 **Where to put your extensions:**
@@ -191,6 +192,7 @@ end
 | Guide | Link |
 |---|---|
 | QuickStart + Common Mistakes | [hpr-cpp.netlify.app/quickstart.html](https://hpr-cpp.netlify.app/quickstart.html) |
+| Function Overriding API | [hpr-cpp.netlify.app/overrides.html](https://hpr-cpp.netlify.app/overrides.html) |
 | Building a Custom Window Backend | [hpr-cpp.netlify.app/custom-app-extension.html](https://hpr-cpp.netlify.app/custom-app-extension.html) |
 | EventHub & Extension Communication | [hpr-cpp.netlify.app/comm-bw-extension.html](https://hpr-cpp.netlify.app/comm-bw-extension.html) |
 | Full API Reference | [hpr-cpp.netlify.app/api.html](https://hpr-cpp.netlify.app/api.html) |
