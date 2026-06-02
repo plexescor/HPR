@@ -21,6 +21,7 @@ endif()
 file(GLOB_RECURSE APPSTATE src/appState/*.cpp)
 file(GLOB_RECURSE DATABASE src/database/*.cpp)
 file(GLOB_RECURSE EXTENSION src/extension/*.cpp)
+file(GLOB_RECURSE LIMITS src/limits/*.cpp)
 file(GLOB_RECURSE MISC src/miscellaneous/*.cpp)
 file(GLOB_RECURSE PATTERN src/pattern/*.cpp)
 file(GLOB_RECURSE TRAY src/tray/*.cpp)
@@ -32,6 +33,7 @@ set(SOURCES
     ${APPSTATE}
     ${DATABASE}
     ${EXTENSION}
+    ${LIMITS}
     ${MISC}
     ${PATTERN}
     ${TRAY}

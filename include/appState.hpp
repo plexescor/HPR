@@ -39,6 +39,15 @@ namespace AppState {
 
         //Projects
         std::map<std::string, long> timeLog_PerProject;
+
+        // Limits & Goals
+        std::map<std::string, int> appLimits;
+        std::map<std::string, int> appGoals;
+        std::map<std::string, long> limitTimeBase;
+        std::map<std::string, long> goalTimeBase;
+
+        //misc stuff
+        std::map<std::string, std::string> appNamePid;
     };
 
     //Intended to hold data for max 1 whole day

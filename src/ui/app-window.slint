@@ -7,8 +7,10 @@ import { TabView } from "./tab-view.slint";
 import { ProjectView } from "./project-view.slint";
 import { ExtensionsView, LoadedExtension_S } from "./extension-view.slint";
 import { AboutView } from "./about-view.slint";
+import { GoalsView } from "./goals-view.slint";
 
-import { TimeLog, SwitchHistory, TimeLog_Tab, TimeLog_Project } from "./types.slint";
+
+import { TimeLog, SwitchHistory, TimeLog_Tab, TimeLog_Project, AppGoalData } from "./types.slint";
 
 
 // ── Main Window ──────────────────────────────────────────────────────────────
@@ -30,6 +32,10 @@ export component MainWindow inherits Window {
     //PLS Donate and dont remove it!
     callback openKofi;
 
+    callback setLimit(string, int);
+    callback setGoal(string, int);
+
+
     in property <int>             trackedTime_S;
     in property <int>             trackedTime_Tab_S;
     in property <string>          windowName_S;
@@ -39,6 +45,9 @@ export component MainWindow inherits Window {
     in property <[TimeLog_Project]> timePerProject_S;
     in property <[LoadedExtension_S]> loadedExtensions_S;
     in property <int>               trackedTime_Project_S;
+    in property <[AppGoalData]>          rawApps_S;
+
+
 
     //Stuff for insights view: 
     in property <string>          mostUsedApp_S;
@@ -213,6 +222,12 @@ export component MainWindow inherits Window {
                 disable-extension(author, name) => { root.disableExtension(author, name); }
                 reload-extension(author, name) => { root.reloadExtension(author, name); }
             }
+            if active-view == "LIMITS" : GoalsView {
+                vertical-stretch: 1;
+                raw-apps: root.rawApps_S;
+                set-limit(name, mins) => { root.setLimit(name, mins); }
+                set-goal(name, mins) => { root.setGoal(name, mins); }
+            }
             if active-view == "ABOUT" : AboutView { 
                 cpu-usage: root.cpuUsage;
                 ram-usage: root.ramUsage;
@@ -321,6 +336,13 @@ export component MainWindow inherits Window {
                         tip: "View loaded extensions";
                         clicked => { root.active-view = "EXTENSIONS"; }
                     }
+
+                    SidebarButton {
+                        icon: @image-url("./images/goals.svg");
+                        tip: "Manage per app limits and goals";
+                        clicked => { root.active-view = "LIMITS"; }
+                    }
+
 
                     SidebarButton {
                         icon: @image-url("./images/ko-fi.svg");

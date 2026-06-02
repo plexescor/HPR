@@ -203,6 +203,8 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 				std::chrono::duration_cast<std::chrono::milliseconds>(elapsed)
 					.count();
 			}
+
+			AppState::state.appNamePid[window] = getCurrentPid();
 		}
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
@@ -219,6 +221,16 @@ std::string CurrentWindowManager::getCurrentWindow()
 
 	std::string curr = activeBackend->getCurrentWindow();
     return validateAndUpdateWindow_Cross(curr);
+}
+
+std::string CurrentWindowManager::getCurrentPid()
+{
+
+	if (!activeBackend)
+        return "No backend";
+
+	std::string curr = activeBackend->getCurrentPid();
+	return curr;
 }
 
 std::string CurrentWindowManager::getCurrentTitle()

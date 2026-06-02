@@ -9,6 +9,8 @@
 #include "extensionManager.hpp"
 #include "windowUtilities.hpp"
 #include "appState.hpp"
+#include "limitsManager.hpp"
+
 #ifdef _WIN32
 	#include <windows.h>
 
@@ -23,6 +25,10 @@
 		
 		DatabaseManager dbm;
 		dbm.run();
+
+		LimitsManager lim;
+		lim.run();
+
 
 		ExtensionManager ext;
 		AppState::extManager = &ext;
@@ -117,6 +123,10 @@
 
 		DatabaseManager dbm;
 		dbm.run();
+
+		LimitsManager lim;
+		lim.run();
+
 
 		ExtensionManager ext;
 		AppState::extManager = &ext;

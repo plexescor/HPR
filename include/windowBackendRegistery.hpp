@@ -15,6 +15,7 @@ struct WindowBackend
 
     std::function<std::string()> getCurrentWindow;
     std::function<std::string()> getCurrentTitle;
+    std::function<std::string()> getCurrentPid;
 };
 
 extern std::vector<WindowBackend> registeredBackends;

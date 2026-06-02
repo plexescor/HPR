@@ -2,6 +2,8 @@
 #include "aliasManager.hpp"
 #include "timeUtils.hpp"
 #include "appState.hpp"
+#include "limitsManager.hpp"
+
 
 #include <map>
 #include <cstdint>
@@ -21,6 +23,8 @@ UiModelManager::UiModelManager(slint::ComponentHandle<MainWindow> &ui_handle) : 
     timeLogModelProject = std::make_shared<slint::VectorModel<TimeLog_Project>>();
     switchHistoryModel = std::make_shared<slint::VectorModel<SwitchHistory>>();
     extensionsModel = std::make_shared<slint::VectorModel<LoadedExtension_S>>();
+    rawAppsModel = std::make_shared<slint::VectorModel<AppGoalData>>();
+
 
 
     slint::ComponentWeakHandle<MainWindow> weak(ui.value());
@@ -33,8 +37,10 @@ UiModelManager::UiModelManager(slint::ComponentHandle<MainWindow> &ui_handle) : 
             (*handle)->set_timePerProject_S(timeLogModelProject);
             (*handle)->set_switchHistory_S(switchHistoryModel);
             (*handle)->set_loadedExtensions_S(extensionsModel);
+            (*handle)->set_rawApps_S(rawAppsModel);
         } 
     });
+
 }
 
 // second constructor for interpreter mode
@@ -45,6 +51,7 @@ UiModelManager::UiModelManager(slint::ComponentHandle<slint::interpreter::Compon
     timeLogModelProject_interp = std::make_shared<slint::VectorModel<slint::interpreter::Value>>();
     switchHistoryModel_interp = std::make_shared<slint::VectorModel<slint::interpreter::Value>>();
     extensionsModel_interp = std::make_shared<slint::VectorModel<slint::interpreter::Value>>();
+    rawAppsModel_interp = std::make_shared<slint::VectorModel<slint::interpreter::Value>>();
 
 
     slint::ComponentWeakHandle<slint::interpreter::ComponentInstance> weak(ui_interp.value());
@@ -57,8 +64,10 @@ UiModelManager::UiModelManager(slint::ComponentHandle<slint::interpreter::Compon
             (*handle)->set_property("timePerProject_S", slint::interpreter::Value(timeLogModelProject_interp));
             (*handle)->set_property("switchHistory_S", slint::interpreter::Value(switchHistoryModel_interp));
             (*handle)->set_property("loadedExtensions_S", slint::interpreter::Value(extensionsModel_interp));
+            (*handle)->set_property("rawApps_S", slint::interpreter::Value(rawAppsModel_interp));
         }
     });
+
 }
 
 UiModelManager::~UiModelManager()
@@ -200,6 +209,48 @@ void UiModelManager::update(const std::map<std::string, long> &rawTimeLog,
     std::sort(slintVec_TimeLog_Project.begin(), slintVec_TimeLog_Project.end(), [](const TimeLog_Project &a, const TimeLog_Project &b)
               { return a.duration_i > b.duration_i; });
 
+    // Raw Apps extraction from rawTimeLog with Limits & Goals from AppState
+    std::vector<AppGoalData> slintVec_RawApps;
+    {
+        std::map<std::string,int> limits;
+        std::map<std::string,int> goals;
+
+        {
+            std::lock_guard<std::mutex> lock(AppState::stateMutex);
+
+            limits = AppState::state.appLimits;
+            goals = AppState::state.appGoals;
+        }
+        for (const auto &[raw, duration] : rawTimeLog)
+        {
+            int limit = 0;
+            int goal = 0;
+
+            if (limits.count(raw))
+                limit = limits.at(raw);
+
+            if (goals.count(raw))
+                goal = goals.at(raw);
+
+            std::string limit_rem =
+                LimitsManager::getLimitRemaining(raw, duration, limit);
+
+            std::string goal_rem =
+                LimitsManager::getGoalRemaining(raw, duration, goal);
+
+            slintVec_RawApps.push_back({
+                slint::SharedString(raw),
+                limit,
+                goal,
+                slint::SharedString(limit_rem),
+                slint::SharedString(goal_rem)
+            });
+        }
+    }
+
+
+
+
     //----------------------------------SWITCH HISTORY---------------------------------------
 
     // Middle man
@@ -249,8 +300,9 @@ void UiModelManager::update(const std::map<std::string, long> &rawTimeLog,
         return; //skip update if ui handle aint ready
     }
     slint::ComponentWeakHandle<MainWindow> weak(ui.value());
-    slint::invoke_from_event_loop([weak, slintVec_TimeLog, slintVec_TimeLog_Tab, slintVec_TimeLog_Project, slintVec_SwitchHistory, totalTrackedTime, totalTrackedTime_Tab, totalTrackedTime_Project, currentWindowName, this]()
+    slint::invoke_from_event_loop([weak, slintVec_TimeLog, slintVec_TimeLog_Tab, slintVec_TimeLog_Project, slintVec_SwitchHistory, slintVec_RawApps, totalTrackedTime, totalTrackedTime_Tab, totalTrackedTime_Project, currentWindowName, this]()
     {
+
         if (auto handle = weak.lock()) {
                 (*handle)->set_windowName_S(slint::SharedString(currentWindowName));
 
@@ -287,8 +339,33 @@ void UiModelManager::update(const std::map<std::string, long> &rawTimeLog,
                 syncModel(timeLogModelTab, slintVec_TimeLog_Tab);
                 syncModel(timeLogModelProject, slintVec_TimeLog_Project);
                 syncModel(switchHistoryModel, slintVec_SwitchHistory);
+
+                // Sync rawAppsModel
+                auto syncModelRaw = [](auto model, const auto& vec) 
+                {
+                    size_t existing_count = model->row_count();
+                    size_t new_count = vec.size();
+                    size_t min_count = (std::min)(existing_count, new_count);
+
+                    for (size_t i = 0; i < min_count; ++i) 
+                    {
+                        model->set_row_data(i, vec[i]);
+                    }
+
+                    while (model->row_count() > new_count) 
+                    {
+                        model->erase(model->row_count() - 1);
+                    }
+
+                    for (size_t i = existing_count; i < new_count; ++i) 
+                    {
+                        model->push_back(vec[i]);
+                    }
+                };
+                syncModelRaw(rawAppsModel, slintVec_RawApps);
             }
     });
+
 }
 
 void UiModelManager::update_Interpreted(const std::map<std::string, long> &rawTimeLog,
@@ -467,6 +544,33 @@ void UiModelManager::update_Interpreted(const std::map<std::string, long> &rawTi
         }
         return false;
     });
+
+    // Raw Apps extraction for interpreted mode with Limits & Goals from AppState
+    std::vector<slint::interpreter::Value> slintVec_RawApps;
+    {
+        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        for (const auto &[raw, duration] : rawTimeLog)
+        {
+            int limit = 0;
+            int goal = 0;
+            if (AppState::state.appLimits.count(raw)) limit = AppState::state.appLimits.at(raw);
+            if (AppState::state.appGoals.count(raw)) goal = AppState::state.appGoals.at(raw);
+
+            std::string limit_rem = LimitsManager::getLimitRemaining(raw, duration, limit);
+            std::string goal_rem = LimitsManager::getGoalRemaining(raw, duration, goal);
+
+            slint::interpreter::Struct entry;
+            entry.set_field("name", slint::interpreter::Value(slint::SharedString(raw)));
+            entry.set_field("limit_mins", slint::interpreter::Value((double)limit));
+            entry.set_field("goal_mins", slint::interpreter::Value((double)goal));
+            entry.set_field("limit_remaining", slint::interpreter::Value(slint::SharedString(limit_rem)));
+            entry.set_field("goal_remaining", slint::interpreter::Value(slint::SharedString(goal_rem)));
+            slintVec_RawApps.push_back(slint::interpreter::Value(entry));
+        }
+    }
+
+
+
     //----------------------------------SWITCH HISTORY---------------------------------------
 
     struct TempSwitchHistory
@@ -503,15 +607,43 @@ void UiModelManager::update_Interpreted(const std::map<std::string, long> &rawTi
 
     //-----------------Actually pushing changes to slint for rendering-----------------------
 
+    if (!ui_interp.has_value()) 
+    {
+        return;
+    }
+
+
     slint::ComponentWeakHandle<slint::interpreter::ComponentInstance> weak(ui_interp.value());
-    slint::invoke_from_event_loop([weak, slintVec_TimeLog, slintVec_TimeLog_Tab, slintVec_TimeLog_Project, slintVec_SwitchHistory, totalTrackedTime, totalTrackedTime_Tab, totalTrackedTime_Project, currentWindowName, this]()
+    slint::invoke_from_event_loop(
+        [weak,
+        slintVec_TimeLog,
+        slintVec_TimeLog_Tab,
+        slintVec_TimeLog_Project,
+        slintVec_SwitchHistory,
+        slintVec_RawApps,
+        totalTrackedTime,
+        totalTrackedTime_Tab,
+        totalTrackedTime_Project,
+        currentWindowName,
+        this]()
     {
         if (auto handle = weak.lock())
         {
-            (*handle)->set_property("windowName_S",   slint::interpreter::Value(slint::SharedString(currentWindowName)));
-            (*handle)->set_property("trackedTime_S",  slint::interpreter::Value((double)totalTrackedTime));
-            (*handle)->set_property("trackedTime_Tab_S",  slint::interpreter::Value((double)totalTrackedTime_Tab));
-            (*handle)->set_property("trackedTime_Project_S",  slint::interpreter::Value((double)totalTrackedTime_Project));
+            (*handle)->set_property(
+                "windowName_S",
+                slint::interpreter::Value(slint::SharedString(currentWindowName)));
+
+            (*handle)->set_property(
+                "trackedTime_S",
+                slint::interpreter::Value((double)totalTrackedTime));
+
+            (*handle)->set_property(
+                "trackedTime_Tab_S",
+                slint::interpreter::Value((double)totalTrackedTime_Tab));
+
+            (*handle)->set_property(
+                "trackedTime_Project_S",
+                slint::interpreter::Value((double)totalTrackedTime_Project));
 
             auto syncModel = [](
                 std::shared_ptr<slint::VectorModel<slint::interpreter::Value>> model,
@@ -521,22 +653,33 @@ void UiModelManager::update_Interpreted(const std::map<std::string, long> &rawTi
                 size_t new_count = vec.size();
                 size_t min_count = (std::min)(existing_count, new_count);
 
+                // Update existing rows
                 for (size_t i = 0; i < min_count; ++i)
+                {
                     model->set_row_data(i, vec[i]);
+                }
 
+                // Remove excess rows
                 while (model->row_count() > new_count)
+                {
                     model->erase(model->row_count() - 1);
+                }
 
+                // Add new rows
                 for (size_t i = existing_count; i < new_count; ++i)
+                {
                     model->push_back(vec[i]);
+                }
             };
 
-            syncModel(timeLogModel_interp, slintVec_TimeLog);
-            syncModel(timeLogModelTab_interp, slintVec_TimeLog_Tab);
+            syncModel(timeLogModel_interp,        slintVec_TimeLog);
+            syncModel(timeLogModelTab_interp,     slintVec_TimeLog_Tab);
             syncModel(timeLogModelProject_interp, slintVec_TimeLog_Project);
-            syncModel(switchHistoryModel_interp, slintVec_SwitchHistory);
+            syncModel(switchHistoryModel_interp,  slintVec_SwitchHistory);
+            syncModel(rawAppsModel_interp,        slintVec_RawApps);
         }
     });
+
 }
 
 void UiModelManager::showInsights(const std::string mostUsed,

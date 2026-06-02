@@ -130,8 +130,11 @@ void DatabaseManager::initDatabase(bool copyData)
             timeLog_PerTab_D = AppState::state.timeLog_PerTab;
             timeLog_PerProject_D = AppState::state.timeLog_PerProject;
             switchHistory_D = AppState::state.switchHistory;
+            appLimits_D = AppState::state.appLimits;
+            appGoals_D = AppState::state.appGoals;
         }
     }
+
 
     db.emplace(filePath + fileName);
 
@@ -158,11 +161,33 @@ void DatabaseManager::initDatabase(bool copyData)
         ");";
 
     *db <<
-         "create table if not exists switch_history ("
-         "   fromWindow text,"
-         "   toWindow text,"
-         "   timeStamp int unique"
+          "create table if not exists switch_history ("
+          "   fromWindow text,"
+          "   toWindow text,"
+          "   timeStamp int unique"
+          ");";
+
+    *db <<
+         "create table if not exists app_limits ("
+         "   name text unique,"
+         "   minutes int"
          ");";
+
+    *db <<
+         "create table if not exists app_goals ("
+         "   name text unique,"
+         "   minutes int"
+         ");";
+
+    *db << "create table if not exists limit_bases ("
+     "   name text unique,"
+     "   base_ms int"
+     ");";
+
+    *db << "create table if not exists goal_bases ("
+        "   name text unique,"
+        "   base_ms int"
+        ");";
 }
 
 void DatabaseManager::run()
@@ -199,6 +224,28 @@ bool DatabaseManager::loadStateFromDB()
             AppState::state.switchHistory[{from, to}].push_back((uint64_t)ts);
         };
 
+        // Load app_limits & app_goals into AppState
+        *db << "select name, minutes from app_limits;"
+        >> [](std::string name, int minutes) {
+            AppState::state.appLimits[name] = minutes;
+        };
+
+        *db << "select name, minutes from app_goals;"
+        >> [](std::string name, int minutes) {
+            AppState::state.appGoals[name] = minutes;
+        };
+
+        *db << "select name, base_ms from limit_bases;"
+        >> [](std::string name, long base) {
+            AppState::state.limitTimeBase[name] = base;
+        };
+
+        *db << "select name, base_ms from goal_bases;"
+        >> [](std::string name, long base) {
+            AppState::state.goalTimeBase[name] = base;
+        };
+
+
     } catch(const std::exception& e)
     {
         std::cerr << "[ERROR IN DB LOAD FROM DISK] " << e.what() << std::endl;
@@ -213,71 +260,73 @@ void DatabaseManager::writeLoop()
 {
     while (running)
     {
+        bool needsRollover = false;
+        std::string newName = "";
+
         {
-            std::lock_guard<std::mutex> dbLock(dbQueryMutex); // Lock database access for this write cycle
+            std::lock_guard<std::mutex> dbLock(dbQueryMutex);
             *db << "BEGIN;";
 
             {
-                //Copy fresh data
                 std::lock_guard<std::mutex> lock(AppState::stateMutex);
                 timeLog_PerApp_D = AppState::state.timeLog_PerApp;
                 timeLog_PerTab_D = AppState::state.timeLog_PerTab;
                 timeLog_PerProject_D = AppState::state.timeLog_PerProject;
                 switchHistory_D = AppState::state.switchHistory;
+                appLimits_D = AppState::state.appLimits;
+                appGoals_D = AppState::state.appGoals;
+                limitTimeBase_D = AppState::state.limitTimeBase;
+                goalTimeBase_D = AppState::state.goalTimeBase;
             }
 
             for (const auto &[k, v] : timeLog_PerApp_D)
-            {
-                *db << "insert or replace into app_usage (name,duration) values (?,?);"
-                   << k
-                   << v;
-            }
+                *db << "insert or replace into app_usage (name,duration) values (?,?);" << k << v;
 
             for (const auto &[k, v] : timeLog_PerTab_D)
-            {
-                *db << "insert or replace into tab_usage (name,duration) values (?,?);"
-                   << k
-                   << v;
-            }
+                *db << "insert or replace into tab_usage (name,duration) values (?,?);" << k << v;
 
             for (const auto &[k, v] : timeLog_PerProject_D)
-            {
-                *db << "insert or replace into project_usage (name,duration) values (?,?);"
-                   << k
-                   << v;
-            }
+                *db << "insert or replace into project_usage (name,duration) values (?,?);" << k << v;
 
             for (const auto &[k, v] : switchHistory_D)
             {
-                //k = pair<>, v = vector<>
                 const auto& [from, to] = k;
-
                 for (const auto& timestamp : v)
-                {
                     *db << "insert or ignore into switch_history (fromWindow,toWindow,timeStamp) values (?,?,?);"
-                    << from
-                    << to
-                    << static_cast<long long>(timestamp);
-                }
+                        << from << to << static_cast<long long>(timestamp);
             }
 
-            // Process any pending extension queries inside the same transaction!
+            *db << "delete from app_limits;";
+            for (const auto &[k, v] : appLimits_D)
+                if (v > 0)
+                    *db << "insert or replace into app_limits (name,minutes) values (?,?);" << k << v;
+
+            *db << "delete from app_goals;";
+            for (const auto &[k, v] : appGoals_D)
+                if (v > 0)
+                    *db << "insert or replace into app_goals (name,minutes) values (?,?);" << k << v;
+
+            *db << "delete from limit_bases;";
+            for (const auto& [k, v] : limitTimeBase_D)
+                *db << "insert or replace into limit_bases (name,base_ms) values (?,?);" << k << v;
+
+            *db << "delete from goal_bases;";
+            for (const auto& [k, v] : goalTimeBase_D)
+                *db << "insert or replace into goal_bases (name,base_ms) values (?,?);" << k << v;
+
             std::vector<PendingQuery> queriesToRun;
             {
                 std::lock_guard<std::mutex> lock(pendingQueriesMutex);
                 queriesToRun = std::move(pendingQueries);
                 pendingQueries.clear();
             }
-
             for (const auto& q : queriesToRun)
             {
                 try
                 {
                     auto binder = *db << q.sql;
                     for (const auto& param : q.params)
-                    {
                         binder << param;
-                    }
                 }
                 catch (const std::exception& e)
                 {
@@ -287,41 +336,33 @@ void DatabaseManager::writeLoop()
             }
 
             *db << "COMMIT;";
-            *db << "PRAGMA wal_checkpoint(PASSIVE);"; //learnt hardway because wal itself can get corrupted during crashes
-            //So that old db is closed and new file is created if date changes
+            *db << "PRAGMA wal_checkpoint(PASSIVE);";
 
-            std::string newName = "";
-            //Get ms sinc epoch
-            auto nowSystem = std::chrono::system_clock::now();
-            uint64_t t = std::chrono::duration_cast<std::chrono::milliseconds>(
-                nowSystem.time_since_epoch()).count();
-
-            newName += convertToDate_DDMMYY(t) + ".db";
             
-            //Means if date has changed
-            if (newName != fileName)
-            {
-                // Clear appstate in case of new day
-                {
-                    std::lock_guard<std::mutex> lock(AppState::stateMutex);
-                    AppState::state.timeLog_PerApp.clear();
-                    AppState::state.timeLog_PerTab.clear();
-                    AppState::state.timeLog_PerProject.clear();
-                    AppState::state.switchHistory.clear();
-                }
-                //Emit a signal so extensions can also reset their daily data if they want to, and also to trigger the loading of the new db file if needed
-                EventHub::emit(Event::MIDNIGHT_ROLLOVER);
-                // so it doesnt copy the data of previous day or whatever
-                initDatabase(false);
+            auto nowSystem = std::chrono::system_clock::now();
+            uint64_t t = std::chrono::duration_cast<std::chrono::milliseconds>(nowSystem.time_since_epoch()).count();
+            newName = convertToDate_DDMMYY(t) + ".db";
+            needsRollover = (newName != fileName);
+        } 
 
-            }
-        } // <-- Close the dbLock block so the lock is released during sleep!
-
-        //Sleep in 100 chunks of 100ms each so program can exit almost instantly
-        for (int i = 0; i < 100 && running; i++)
+        if (needsRollover)
         {
-            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            {
+                std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                AppState::state.timeLog_PerApp.clear();
+                AppState::state.timeLog_PerTab.clear();
+                AppState::state.timeLog_PerProject.clear();
+                AppState::state.switchHistory.clear();
+                AppState::state.limitTimeBase.clear();
+                AppState::state.goalTimeBase.clear();
+            }
+            EventHub::emit(Event::MIDNIGHT_ROLLOVER);
+            std::lock_guard<std::mutex> dbLock(dbQueryMutex);
+            initDatabase(false);
         }
+
+        for (int i = 0; i < 100 && running; i++)
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
     // Final flush on shutdown

@@ -3,6 +3,8 @@
 #include "appState.hpp"
 #include "extensionManager.hpp"
 #include "HPRInterpreter.hpp"
+#include "limitsManager.hpp"
+
 // Slint stuff
 #include "app-window.h"
 #include <slint.h>
@@ -91,7 +93,19 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow>& ui,  ExtensionM
     //     });
     // }
 
+    ui->on_setLimit([](slint::SharedString appName, int minutes) 
+    {
+        LimitsManager::setLimit(std::string(appName), minutes);
+    });
+
+    ui->on_setGoal([](slint::SharedString appName, int minutes) 
+    {
+        LimitsManager::setGoal(std::string(appName), minutes);
+    });
+
+
     ui->on_openKofi([this]()
+
     {
         //Open webbrowser
         #ifdef _WIN32
@@ -237,7 +251,37 @@ UiEventBridge::UiEventBridge(
         });
     }
 
+    ui->set_callback("setLimit", [](auto args) -> slint::interpreter::Value 
+    {
+        if (args.size() > 1) 
+        {
+            auto opt_name = args[0].to_string();
+            auto opt_mins = args[1].to_number();
+            if (opt_name.has_value() && opt_mins.has_value()) 
+            {
+                LimitsManager::setLimit(std::string(opt_name.value()), (int)opt_mins.value());
+            }
+        }
+        return slint::interpreter::Value();
+    });
+
+    ui->set_callback("setGoal", [](auto args) -> slint::interpreter::Value 
+    {
+        if (args.size() > 1) 
+        {
+            auto opt_name = args[0].to_string();
+            auto opt_mins = args[1].to_number();
+            if (opt_name.has_value() && opt_mins.has_value()) 
+            {
+                LimitsManager::setGoal(std::string(opt_name.value()), (int)opt_mins.value());
+            }
+        }
+        return slint::interpreter::Value();
+    });
+
+
     ui->set_callback("openKofi", [this](auto args) -> slint::interpreter::Value
+
     {
         //open browser
         #ifdef _WIN32

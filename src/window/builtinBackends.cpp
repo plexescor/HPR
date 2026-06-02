@@ -220,6 +220,12 @@
             std::string marker = generateMarker();
             return kwinScriptGetResult(marker, "output_result(w.caption);");
         }
+
+        std::string kdeGetActiveWindowPid()
+        {
+            std::string marker = generateMarker();
+            return kwinScriptGetResult(marker, "output_result(w.pid);");
+        }
     }
 
 #endif
@@ -348,6 +354,28 @@ void registerBuiltinBackends()
             }
 
             return "";
+        },
+
+        []() -> std::string
+        {
+            std::string command =
+                "gdbus call --session --dest org.gnome.Shell --object-path "
+                "/org/gnome/Shell/Extensions/LolAnotherWindowExtension --method "
+                "org.gnome.Shell.Extensions.LolAnotherWindowExtension.FocusAppId";
+
+            std::string result = runSystemCommand(command);
+
+            size_t start = result.find('\'');
+            size_t end = result.rfind('\'');
+
+            if (start != std::string::npos &&
+                end != std::string::npos &&
+                start != end)
+            {
+                return result.substr(start + 1, end - start - 1);
+            }
+
+            return "";
         }
     });
 
@@ -386,6 +414,11 @@ void registerBuiltinBackends()
             while (!result.empty() && (result.back() == '\n' || result.back() == ' '))
                 result.pop_back();
             return result;
+        },
+
+        []() -> std::string
+        {
+            return MotherfuckingKDE::kdeGetActiveWindowPid();
         }
 
     });
@@ -436,6 +469,19 @@ void registerBuiltinBackends()
             size_t quoteEnd = json.find('"', quoteStart + 1);
             if (quoteEnd == std::string::npos) return "";
             return json.substr(quoteStart + 1, quoteEnd - quoteStart - 1);
+        },
+
+        []() -> std::string
+        {
+            std::string cmd = "hyprctl activewindow -j";
+            std::string json = runSystemCommand(cmd);
+            const std::string key = "\"pid\":";
+            size_t keyPos = json.find(key);
+            if (keyPos == std::string::npos) return "";
+            size_t numStart = json.find_first_not_of(" \t", keyPos + key.size());
+            if (numStart == std::string::npos) return "";
+            size_t numEnd = json.find_first_of(",}\n", numStart);
+            return json.substr(numStart, numEnd - numStart);
         }
     });
 
@@ -522,6 +568,18 @@ void registerBuiltinBackends()
                 return strTo;
             #endif
                 return "";
+        },
+
+        []() -> std::string
+        {
+        #ifdef _WIN32
+            HWND hwnd = GetForegroundWindow();
+            if (!hwnd) return "";
+            DWORD pid = 0;
+            GetWindowThreadProcessId(hwnd, &pid);
+            return pid ? std::to_string(pid) : "";
+        #endif
+            return "";
         }
 
     });
@@ -606,6 +664,18 @@ void registerBuiltinBackends()
             }
 
             return inner;
+        },
+        
+        []() -> std::string
+        {
+            std::string cmd = "gdbus call --session --dest org.Cinnamon --object-path /org/Cinnamon --method org.Cinnamon.Eval \"global.display.focus_window.get_pid()\"";
+            std::string rawOutput = runSystemCommand(cmd);
+            size_t start = rawOutput.find('(');
+            size_t end = rawOutput.find(',', start);
+            if (start == std::string::npos || end == std::string::npos) return "";
+            std::string pid = rawOutput.substr(start + 1, end - start - 1);
+            while (!pid.empty() && (pid.front() == ' ')) pid = pid.substr(1);
+            return pid;
         }
     });
 }

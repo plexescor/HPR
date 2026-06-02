@@ -22,6 +22,7 @@ private:
 
     std::string getCurrentWindow();
     std::string getCurrentTitle();
+    std::string getCurrentPid();
 
 private:
     WindowBackend* activeBackend = nullptr;

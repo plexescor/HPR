@@ -53,6 +53,10 @@ class DatabaseManager
         std::map<std::string, long> timeLog_PerTab_D; 
         std::map<std::string, long> timeLog_PerProject_D;
         std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> switchHistory_D;
+        std::map<std::string, int> appLimits_D;
+        std::map<std::string, int> appGoals_D;
+        std::map<std::string, long> limitTimeBase_D;
+        std::map<std::string, long> goalTimeBase_D;
 
         //Ids for event listener
         size_t singular_DbLoadEventId;

@@ -149,6 +149,7 @@ void HPR::trackingLoop()
             totalTrackedTime_Project = 0;
             // Scoped mutex to hold it for as little time as possible
             {
+                std::lock_guard<std::mutex> lock(AppState::stateMutex);
                     
                 //If live view, show today's data
                 if (AppState::state.currentView == AppState::CurrentView::LIVE)
@@ -161,7 +162,7 @@ void HPR::trackingLoop()
                 }
                 else if (AppState::state.currentView == AppState::CurrentView::HISTORICAL_SINGULAR)
                 {
-                    std::lock_guard<std::mutex> lock(AppState::historyStateMutex);
+                    std::lock_guard<std::mutex> histLock(AppState::historyStateMutex);
                     window = AppState::state.currentWindow;
                     timeLog = AppState::historicalData_State.timeLog_PerApp;
                     timeLog_Tab = AppState::historicalData_State.timeLog_PerTab;
