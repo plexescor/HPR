@@ -36,13 +36,7 @@
 #include "HPR.hpp"
 #include "HPRInterpreter.hpp"
 
-#ifdef _WIN32
-    #include <windows.h>
-    std::vector<HMODULE> nativeHandles;
-#else
-    #include <dlfcn.h>
-    std::vector<void*> nativeHandles;
-#endif
+
 
 namespace
 {
@@ -253,9 +247,8 @@ LoadedExtension::~LoadedExtension()
     }
 }
 
-ExtensionManager::ExtensionManager(bool allowDynamicLibraryExtensions) : allowDynamicLibraryExtensionLoading(allowDynamicLibraryExtensions)
+ExtensionManager::ExtensionManager()
 {
-    allowDynamicLibraryExtensionLoading = allowDynamicLibraryExtensions;
     loadExtensions();
 }
 
@@ -266,10 +259,6 @@ ExtensionManager::~ExtensionManager()
 
     //two passes for "fastness"
     for (auto& ext : extensions)
-    {
-        ext->running = false;
-    }
-    for (auto& ext : nativeExtensions)
     {
         ext->running = false;
     }
@@ -306,52 +295,7 @@ ExtensionManager::~ExtensionManager()
             joiner.join();
         }
     }
-    for (auto& ext : nativeExtensions)
-    {
-        if (ext->thread.joinable())
-        {
-            bool joined = false;
-            std::thread joiner([&]() {
-                ext->thread.join();
-                joined = true;
-            });
-
-            auto start = std::chrono::steady_clock::now();
-            while (!joined)
-            {
-                if (std::chrono::steady_clock::now() - start >= std::chrono::milliseconds(300))
-                {
-                    std::cerr << "Extension " << ext->path << " timed out, detaching\n";
-                    Logger::log("[HPR] Native extension " + ext->path.string() + " timed out during shutdown, detaching thread to prevent hang");
-                    ext->thread.detach();
-                    joiner.detach();
-                    std::cerr << "Force exiting to avoid potential hangs\n";
-                    Logger::log("[HPR] Force exiting due to native extension shutdown timeout");
-                    #ifdef _WIN32
-                        TerminateProcess(GetCurrentProcess(), 0);
-                    #else
-                        _exit(0);
-                    #endif
-                }
-                std::this_thread::sleep_for(std::chrono::milliseconds(1));
-            }
-            joiner.join();
-        }
-    
-    }
     registeredBackends.clear();
-
-    for (auto& ext : nativeExtensions)
-    {
-        if (ext->handle)
-        {
-            #ifdef _WIN32
-                FreeLibrary(ext->handle);
-            #else
-                dlclose(ext->handle);
-            #endif
-        }
-    }
 }
 
 void ExtensionManager::run()
@@ -364,14 +308,6 @@ void ExtensionManager::run()
             ext
         );
     }
-    for (auto& ext : nativeExtensions)
-    {
-        ext->thread = std::thread(
-            &ExtensionManager::runNativeExtension,
-            this,
-            std::ref(*ext)
-        );
-    }
 }
 
 void ExtensionManager::loadExtensions()
@@ -380,40 +316,6 @@ void ExtensionManager::loadExtensions()
 
     try
     {
-
-        if (allowDynamicLibraryExtensionLoading)
-        {
-            for (const auto& entry : std::filesystem::recursive_directory_iterator(extensionPath))
-            {
-                #ifdef _WIN32
-                if (entry.is_regular_file() && entry.path().extension() == ".dll")
-                #else
-                if (entry.is_regular_file() && (entry.path().extension() == ".so" || entry.path().extension() == ".dylib"))
-                #endif
-                {
-                    loadNativeExtension(entry.path());
-                }
-            }
-        }
-        else
-        {
-            // check if any exist and warn
-            for (const auto& entry : std::filesystem::recursive_directory_iterator(extensionPath))
-            {
-                #ifdef _WIN32
-                bool isNative = entry.path().extension() == ".dll";
-                #else
-                bool isNative = (entry.path().extension() == ".so" || entry.path().extension() == ".dylib");
-                #endif
-                if (entry.is_regular_file() && isNative)
-                {
-                    std::cerr << "[HPR] Native extension found but allow-dynamic-library-extensions is false. Skipping: "
-                            << entry.path() << '\n';
-                    Logger::log("[HPR] Native extension found but allow-dynamic-library-extensions is false. Skipping: " + entry.path().string());
-                }
-            }
-        }
-
         //load all lua files from this dir recursively
         for (const auto& entry : std::filesystem::recursive_directory_iterator(extensionPath))
         {
@@ -449,113 +351,6 @@ void ExtensionManager::loadExtensions()
     {
         std::cerr << "Error loading extensions: " << e.what() << '\n';
         Logger::log("Error loading extensions: " + std::string(e.what()));
-    }
-}
-
-void ExtensionManager::loadNativeExtension(const std::filesystem::path& path)
-{
-    
-    auto ext = std::make_unique<NativeExtension>();
-    ext->path = path;
-
-    #ifdef _WIN32
-        ext->handle = LoadLibraryA(path.string().c_str());
-        if (!ext->handle) {
-            std::cerr << "[HPR] Failed to load native extension: " << path << '\n';
-            Logger::log("[HPR] Failed to load native extension: " + path.string());
-            return;
-        }
-    #else
-        ext->handle = dlopen(path.string().c_str(), RTLD_LAZY);
-        if (!ext->handle) {
-            std::cerr << "[HPR] Failed to load native extension: " << path << "\n" << dlerror() << '\n';
-            Logger::log("[HPR] Failed to load native extension: " + path.string() + "\n" + dlerror());
-            return;
-        }
-    #endif
-
-    nativeExtensions.push_back(std::move(ext));
-}
-
-void ExtensionManager::runNativeExtension(NativeExtension& ext)
-{
-    try
-    {
-        int sleepTime = 1000; //ms
-
-        #ifdef _WIN32
-            auto init_fn = (int(*)())GetProcAddress(ext.handle, "init");
-            auto onTick_fn = (void(*)(float))GetProcAddress(ext.handle, "onTick");
-            auto onExit_fn = (void(*)())GetProcAddress(ext.handle, "onExit");
-        #else
-            auto init_fn = (int(*)())dlsym(ext.handle, "init");
-            auto onTick_fn = (void(*)(float))dlsym(ext.handle, "onTick");
-            auto onExit_fn = (void(*)())dlsym(ext.handle, "onExit");
-        #endif
-
-        if (init_fn) 
-        {
-            try {
-                sleepTime = init_fn();
-            } catch (const std::exception& e) {
-                std::cerr << "Extension error in init for " << ext.path << ": " << e.what() << '\n';
-                Logger::log("Extension error in init for " + ext.path.string() + ": " + e.what());
-            } catch (...) {
-                std::cerr << "Unknown extension error in init for " << ext.path << '\n';
-                Logger::log("Unknown extension error in init for " + ext.path.string());
-            }
-        }
-        
-        auto lastTime = std::chrono::high_resolution_clock::now();
-        while (ext.running)
-        {
-            auto currentTime = std::chrono::high_resolution_clock::now();
-            float delta = std::chrono::duration<float, std::milli>(currentTime - lastTime).count();
-            lastTime = currentTime;
-
-            if (onTick_fn)
-            {
-                try {
-                    onTick_fn(delta);
-                } catch (const std::exception& e) {
-                    std::cerr << "Extension error in onTick for " << ext.path << ": " << e.what() << '\n';
-                    Logger::log("Extension error in onTick for " + ext.path.string() + ": " + e.what());
-                } catch (...) {
-                    std::cerr << "Unknown extension error in onTick for " << ext.path << '\n';
-                    Logger::log("Unknown extension error in onTick for " + ext.path.string());
-                }
-            }
-
-            int slept = 0;
-            while (ext.running && slept < sleepTime)
-            {
-                int chunk = (sleepTime - slept < 100) ? (sleepTime - slept) : 100;
-                std::this_thread::sleep_for(std::chrono::milliseconds(chunk));
-                slept += chunk;
-            }
-        }
-
-        if (onExit_fn)
-        {
-            try {
-                onExit_fn();
-            } catch (const std::exception& e) {
-                std::cerr << "Extension error in onExit for " << ext.path << ": " << e.what() << '\n';
-                Logger::log("Extension error in onExit for " + ext.path.string() + ": " + e.what());
-            } catch (...) {
-                std::cerr << "Unknown extension error in onExit for " << ext.path << '\n';
-                Logger::log("Unknown extension error in onExit for " + ext.path.string());
-            }
-        }
-    } catch (const std::exception& e)
-    {
-        std::cerr << "Extension error in " << ext.path << ": " << e.what() << '\n';
-        Logger::log("Extension error in " + ext.path.string() + ": " + e.what());
-    }
-    catch (...)
-    {
-        std::cerr << "Unknown extension error in " << ext.path << '\n';
-        Logger::log("Unknown extension error in " + ext.path.string());
     }
 }
 

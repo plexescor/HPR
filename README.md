@@ -186,9 +186,6 @@ end
 | `onTick(delta)` | Periodically on the extension's thread. `delta` is actual elapsed ms since last tick. |
 | `onExit()` | Once on shutdown. Must complete within **200ms** or HPR force-detaches the thread. |
 
-> [!WARNING]
-> HPR also supports native extensions (`.dll` / `.so`) for advanced C++ developers. Unlike Lua, native extensions run outside the sandbox with full system access. Only load native extensions you have reviewed and trust. See the [Extension Docs](https://hpr-cpp.netlify.app/quickstart.html) for details.
-
 **Documentation:**
 
 | Guide | Link |

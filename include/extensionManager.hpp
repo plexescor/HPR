@@ -41,28 +41,10 @@ struct LoadedExtension
     LoadedExtension& operator=(const LoadedExtension&) = delete;
 };
 
-struct NativeExtension 
-{
-    std::filesystem::path path;
-
-#ifdef _WIN32
-    HMODULE handle{nullptr};
-#else
-    void* handle{nullptr};
-#endif
-
-    std::thread thread;
-    std::atomic<bool> running{true};
-
-    NativeExtension() = default;
-    NativeExtension(const NativeExtension&) = delete;
-    NativeExtension& operator=(const NativeExtension&) = delete;
-};
-
 class ExtensionManager 
 {
     public:
-        ExtensionManager(bool dynamicLibraryExtensionLoading = false);
+        ExtensionManager();
         ~ExtensionManager();
         void run();
         void loadExtensions();
@@ -74,15 +56,11 @@ class ExtensionManager
 
     private:
         void updateExtensionPath();
-        void loadNativeExtension(const std::filesystem::path& path);
         void registerFunctions(LoadedExtension& ext);
         void runExtension(std::shared_ptr<LoadedExtension> ext);
-        void runNativeExtension(NativeExtension& ext);
 
     private:
-        bool allowDynamicLibraryExtensionLoading;
         std::vector<std::shared_ptr<LoadedExtension>> extensions;
-        std::vector<std::unique_ptr<NativeExtension>> nativeExtensions;
         std::string extensionPath;
 
     public:

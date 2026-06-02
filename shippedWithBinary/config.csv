@@ -2,8 +2,3 @@
 #without recompilation -> slint files in: $HPR_CONFIG_DIR/ui/
 use-interpreter,false
 hardware-acceleration,true
-
-# Native (.so/.dll) extensions bypass ALL Lua sandboxing, dangerous command filtering,
-# and VM isolation. Only enable if you fully trust every native extension you load.
-# Default: false
-allow-dynamic-library-extensions,false
