@@ -232,15 +232,16 @@ std::string runSystemCommand_UNSAFE(std::string &command) {
     std::string output = "";
     char buffer[256]; // 255 normal + 1 nullterm
 
-    while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
+    while (fgets(buffer, sizeof(buffer), pipe) != nullptr) 
+    {
       output += buffer;
     }
 
     int exitCode = pclose(pipe);
 
     if (exitCode != 0) {
-      std::cerr << "Running the command failed! Exit Code: " << WEXITSTATUS(exitCode) << std::endl;
-      Logger::log("[HPR] Running the command failed! Exit Code: " + std::to_string(WEXITSTATUS(exitCode)) + " for command: " + command);
+    //   std::cerr << "Running the command failed! Exit Code: " << WEXITSTATUS(exitCode) << std::endl;
+    //   Logger::log("[HPR] Running the command failed! Exit Code: " + std::to_string(WEXITSTATUS(exitCode)) + " for command: " + command);
     }
     return output;
 
@@ -264,8 +265,8 @@ std::string runSystemCommand_UNSAFE(std::string &command) {
     int exitCode = _pclose(pipe);
 
     if (exitCode != 0) {
-      std::cerr << "Running the command failed! Exit Code: " << exitCode << std::endl;
-      Logger::log("[HPR] Running the command failed! Exit Code: " + std::to_string(exitCode) + " for command: " + command);
+    //   std::cerr << "Running the command failed! Exit Code: " << exitCode << std::endl;
+    //   Logger::log("[HPR] Running the command failed! Exit Code: " + std::to_string(exitCode) + " for command: " + command);
     }
 
     return output;
@@ -285,7 +286,14 @@ public:
 };
 #endif
 
-void showNotification(const std::string &title, const std::string &msg) {
+void showNotification(const std::string &title, const std::string &msg) 
+{
+
+    static auto startTime = std::chrono::steady_clock::now();
+    if (std::chrono::duration_cast<std::chrono::seconds>(
+            std::chrono::steady_clock::now() - startTime).count() < 10)
+        return;
+
     if (AppState::extManager)
     {
         auto res = AppState::extManager->dispatchOverride("showNotification", { CppValue(CppValue::Type::String, title), CppValue(CppValue::Type::String, msg) });

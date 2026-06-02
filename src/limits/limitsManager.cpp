@@ -185,7 +185,7 @@ void LimitsManager::checkLoop()
                         #ifdef _WIN32
                             cmd = "taskkill /F /PID " + pid;
                         #else
-                            cmd = "kill -9 " + pid;
+                            cmd = "kill -9 " + pid + " 2>/dev/null";
                         #endif
                     }
                     else
@@ -198,6 +198,35 @@ void LimitsManager::checkLoop()
                     }
                     runSystemCommand_UNSAFE(cmd);
                 }
+
+                if (killSent[appName])
+                {
+                    std::string pid;
+                    {
+                        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                        if (AppState::state.appNamePid.count(appName))
+                            pid = AppState::state.appNamePid.at(appName);
+                    }
+                    std::string cmd;
+                    if (!pid.empty())
+                    {
+                        #ifdef _WIN32
+                            cmd = "taskkill /F /PID " + pid;
+                        #else
+                            cmd = "kill -9 " + pid + " 2>/dev/null";
+                        #endif
+                    }
+                    else
+                    {
+                        #ifdef _WIN32
+                            cmd = "taskkill /F /IM " + appName + " /IM " + appName + ".exe";
+                        #else
+                            cmd = "pkill -f \"" + appName + "\" || killall \"" + appName + "\"";
+                        #endif
+                    }
+                    runSystemCommand_UNSAFE(cmd);
+                }
+
                 if (sendWarning)
                     showNotification("HPR Warning", "You have used 90% of your daily limit for " + appName + "!");
             }

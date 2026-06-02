@@ -48,6 +48,7 @@ namespace AppState {
 
         //misc stuff
         std::map<std::string, std::string> appNamePid;
+        std::map<std::string, std::string> pidAppName;
     };
 
     //Intended to hold data for max 1 whole day
