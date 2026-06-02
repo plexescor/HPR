@@ -1617,6 +1617,23 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         }
         return result;
     };
+
+    lua["HPR"]["getPid_E"] = [](std::string rawName) -> std::string
+    {
+        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        return AppState::state.appNamePid[rawName];
+    };
+
+    lua["HPR"]["killPid_E"] = [](std::string pid) 
+    {
+        #ifdef _WIN32
+            std::string cmd = "taskkill /F /PID " + pid;
+            runSystemCommand_UNSAFE(cmd);
+        #else
+            std::string cmd = "kill -9 " + pid + " 2>/dev/null";
+            runSystemCommand_UNSAFE(cmd);
+        #endif
+    };
 }
 
 void ExtensionManager::updateExtensionPath()
