@@ -8,6 +8,7 @@
 #include "uiEventBridge.hpp"
 #include "appEvents.hpp"
 #include "patternAnalyzer.hpp"
+#include "windowUtilities.hpp"
 
 // Slint stuff
 #include <slint.h>
@@ -226,6 +227,12 @@ void HPR::trackingLoop()
                 extensionsCopy = AppState::state.loadedExtensions;
             }
             modelManager.showExtensions(extensionsCopy);
+            modelManager.showFunStats(
+                getCpuUsage(),
+                getRamUsage(),
+                std::to_string(extensionsCopy.size()),
+                getThreadCount()
+            );
         }
         if (!uiReady)
         {

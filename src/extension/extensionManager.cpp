@@ -1665,8 +1665,10 @@ std::optional<CppValue> ExtensionManager::dispatchOverride(const std::string& ov
         sol::table hpr = ext->lua["HPR"];
         if (!hpr.valid()) continue;
         
-        sol::table overrides = hpr["overrides"];
-        if (!overrides.valid()) continue;
+        sol::object overridesObj = hpr["overrides"];
+        if (!overridesObj.valid() || !overridesObj.is<sol::table>()) continue;
+        
+        sol::table overrides = overridesObj.as<sol::table>();
 
         sol::optional<sol::protected_function> overrideFunc = overrides[overrideName];
         if (overrideFunc.has_value() && overrideFunc.value().valid())

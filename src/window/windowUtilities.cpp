@@ -363,6 +363,237 @@ void showNotification(const std::string &title, const std::string &msg) {
         }
         
         WinToastLib::WinToast::instance()->showToast(templ, new DummyWinToastHandler());
+     }
+#endif
+}
+
+#include <chrono>
+
+#include <sstream>
+
+#ifdef _WIN32
+    #include <psapi.h>
+    #include <tlhelp32.h>
+#elif defined(__APPLE__)
+    #include <mach/mach.h>
+    #include <sys/sysctl.h>
+#endif
+
+std::string getCpuUsage() {
+#ifdef __linux__
+    static auto lastTime = std::chrono::steady_clock::now();
+    static long lastUtime = 0;
+    static long lastStime = 0;
+
+    std::ifstream statFile("/proc/self/stat");
+    if (!statFile.is_open()) return "0.00%";
+
+    std::string line;
+    if (!std::getline(statFile, line)) return "0.00%";
+
+    size_t lastCloseParen = line.rfind(')');
+    if (lastCloseParen == std::string::npos || lastCloseParen + 2 >= line.size()) return "0.00%";
+
+    std::string rest = line.substr(lastCloseParen + 2);
+    std::istringstream iss(rest);
+
+    std::string state;
+    long ppid, pgrp, session, tty_nr, tpgid;
+    unsigned long flags, minflt, cminflt, majflt, cmajflt;
+    unsigned long utime = 0, stime = 0;
+
+    if (!(iss >> state >> ppid >> pgrp >> session >> tty_nr >> tpgid >> flags >> minflt >> cminflt >> majflt >> cmajflt >> utime >> stime)) {
+        return "0.00%";
     }
+
+    auto now = std::chrono::steady_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now - lastTime).count();
+    
+    long dUtime = utime - lastUtime;
+    long dStime = stime - lastStime;
+
+    lastTime = now;
+    lastUtime = utime;
+    lastStime = stime;
+
+    long clockTicks = sysconf(_SC_CLK_TCK);
+    long numCores = sysconf(_SC_NPROCESSORS_ONLN);
+    if (elapsed == 0 || clockTicks <= 0 || numCores <= 0) return "0.00%";
+
+    double usage = (double(dUtime + dStime) / double(clockTicks)) / (double(elapsed) / 1000000.0) * 100.0;
+    usage = usage / double(numCores);
+    if (usage < 0.0) usage = 0.0;
+
+    char buf[32];
+    snprintf(buf, sizeof(buf), "%.2f%%", usage);
+    return std::string(buf);
+#elif defined(_WIN32)
+    static ULONGLONG lastTime = 0;
+    static ULONGLONG lastSystemTime = 0;
+
+    FILETIME ftCreation, ftExit, ftKernel, ftUser;
+    if (!GetProcessTimes(GetCurrentProcess(), &ftCreation, &ftExit, &ftKernel, &ftUser)) {
+        return "0.00%";
+    }
+
+    ULARGE_INTEGER kernel, user;
+    kernel.LowPart = ftKernel.dwLowDateTime;
+    kernel.HighPart = ftKernel.dwHighDateTime;
+    user.LowPart = ftUser.dwLowDateTime;
+    user.HighPart = ftUser.dwHighDateTime;
+
+    ULONGLONG nowTime = GetTickCount64();
+    ULONGLONG systemTime = kernel.QuadPart + user.QuadPart;
+
+    if (lastTime == 0) {
+        lastTime = nowTime;
+        lastSystemTime = systemTime;
+        return "0.00%";
+    }
+
+    ULONGLONG elapsed = nowTime - lastTime;
+    ULONGLONG elapsedSystem = systemTime - lastSystemTime;
+
+    lastTime = nowTime;
+    lastSystemTime = systemTime;
+
+    SYSTEM_INFO sysInfo;
+    GetSystemInfo(&sysInfo);
+    DWORD numCores = sysInfo.dwNumberOfProcessors;
+
+    if (elapsed == 0 || numCores == 0) return "0.00%";
+
+    double usage = (double(elapsedSystem) / 10000.0) / double(elapsed) * 100.0;
+    usage = usage / double(numCores);
+    if (usage < 0.0) usage = 0.0;
+
+    char buf[32];
+    snprintf(buf, sizeof(buf), "%.2f%%", usage);
+    return std::string(buf);
+#elif defined(__APPLE__)
+    static auto lastTime = std::chrono::steady_clock::now();
+    static double lastCpuTime = 0.0;
+
+    task_thread_times_info_data_t threadTimes;
+    mach_msg_type_number_t threadTimesCount = TASK_THREAD_TIMES_INFO_COUNT;
+    kern_return_t kr = task_info(mach_task_self(), TASK_THREAD_TIMES_INFO, (task_info_t)&threadTimes, &threadTimesCount);
+    if (kr != KERN_SUCCESS) return "0.00%";
+
+    double cpuTime = double(threadTimes.user_time.seconds) + double(threadTimes.user_time.microseconds) / 1000000.0 +
+                     double(threadTimes.system_time.seconds) + double(threadTimes.system_time.microseconds) / 1000000.0;
+
+    auto now = std::chrono::steady_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::microseconds>(now - lastTime).count();
+
+    double dCpuTime = cpuTime - lastCpuTime;
+
+    lastTime = now;
+    lastCpuTime = cpuTime;
+
+    int mib[2] = {CTL_HW, HW_NCPU};
+    int numCores = 0;
+    size_t len = sizeof(numCores);
+    sysctl(mib, 2, &numCores, &len, NULL, 0);
+
+    if (elapsed == 0 || numCores <= 0) return "0.00%";
+
+    double usage = (dCpuTime / (double(elapsed) / 1000000.0)) * 100.0;
+    usage = usage / double(numCores);
+    if (usage < 0.0) usage = 0.0;
+
+    char buf[32];
+    snprintf(buf, sizeof(buf), "%.2f%%", usage);
+    return std::string(buf);
+#else
+    return "0.00%";
+#endif
+}
+
+std::string getRamUsage() {
+#ifdef __linux__
+    std::ifstream statusFile("/proc/self/status");
+    if (!statusFile.is_open()) return "0.0 MB";
+
+    std::string line;
+    while (std::getline(statusFile, line)) {
+        if (line.rfind("RssAnon:", 0) == 0) {
+            long kb = 0;
+            sscanf(line.c_str(), "RssAnon: %ld", &kb);
+            double mb = double(kb) / 1024.0;
+            char buf[32];
+            snprintf(buf, sizeof(buf), "%.1f MB", mb);
+            return std::string(buf);
+        }
+    }
+    return "0.0 MB";
+#elif defined(_WIN32)
+    PROCESS_MEMORY_COUNTERS pmc;
+    if (GetProcessMemoryInfo(GetCurrentProcess(), &pmc, sizeof(pmc))) {
+        double mb = double(pmc.PagefileUsage) / (1024.0 * 1024.0);
+        char buf[32];
+        snprintf(buf, sizeof(buf), "%.1f MB", mb);
+        return std::string(buf);
+    }
+    return "0.0 MB";
+#elif defined(__APPLE__)
+    task_vm_info_data_t vmInfo;
+    mach_msg_type_number_t infoCount = TASK_VM_INFO_COUNT;
+    kern_return_t kr = task_info(mach_task_self(), TASK_VM_INFO, (task_info_t)&vmInfo, &infoCount);
+    if (kr != KERN_SUCCESS) return "0.0 MB";
+
+    double mb = double(vmInfo.phys_footprint) / (1024.0 * 1024.0);
+    char buf[32];
+    snprintf(buf, sizeof(buf), "%.1f MB", mb);
+    return std::string(buf);
+#else
+    return "0.0 MB";
+#endif
+}
+
+std::string getThreadCount() {
+#ifdef __linux__
+    std::ifstream statusFile("/proc/self/status");
+    if (!statusFile.is_open()) return "0";
+
+    std::string line;
+    while (std::getline(statusFile, line)) {
+        if (line.rfind("Threads:", 0) == 0) {
+            long threads = 0;
+            sscanf(line.c_str(), "Threads: %ld", &threads);
+            return std::to_string(threads);
+        }
+    }
+    return "0";
+#elif defined(_WIN32)
+    DWORD pid = GetCurrentProcessId();
+    HANDLE h = CreateToolhelp32Snapshot(TH32CS_SNAPALL, 0);
+    if (h == INVALID_HANDLE_VALUE) return "0";
+
+    PROCESSENTRY32 pe;
+    pe.dwSize = sizeof(pe);
+    if (Process32First(h, &pe)) {
+        do {
+            if (pe.th32ProcessID == pid) {
+                CloseHandle(h);
+                return std::to_string(pe.cntThreads);
+            }
+        } while (Process32Next(h, &pe));
+    }
+    CloseHandle(h);
+    return "0";
+#elif defined(__APPLE__)
+    thread_act_array_t threadList;
+    mach_msg_type_number_t threadCount = 0;
+    kern_return_t kr = task_threads(mach_task_self(), &threadList, &threadCount);
+    if (kr != KERN_SUCCESS) return "0";
+
+    for (mach_msg_type_number_t i = 0; i < threadCount; ++i) {
+        mach_port_deallocate(mach_task_self(), threadList[i]);
+    }
+    vm_deallocate(mach_task_self(), (vm_address_t)threadList, sizeof(thread_t) * threadCount);
+
+    return std::to_string(threadCount);
+#else
+    return "0";
 #endif
 }

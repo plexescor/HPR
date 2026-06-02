@@ -49,6 +49,11 @@ export component MainWindow inherits Window {
     in property <string>          longestFocus_S;
     in property <string>          peakHour_S;
 
+    in property <string>          cpuUsage;
+    in property <string>          ramUsage;
+    in property <string>          loadedExtensions;
+    in property <string>          activeThreads;
+
     //As "LIVE" isnt accurate cz main view can also show historical data
     //so i renamed to it "DATA"
     property <string> active-view: "DATA";
@@ -209,6 +214,10 @@ export component MainWindow inherits Window {
                 reload-extension(author, name) => { root.reloadExtension(author, name); }
             }
             if active-view == "ABOUT" : AboutView { 
+                cpu-usage: root.cpuUsage;
+                ram-usage: root.ramUsage;
+                loaded-extensions: root.loadedExtensions;
+                active-threads: root.activeThreads;
                 open-kofi => { root.openKofi(); } 
                 open-releases => { root.openReleases(); }
                 open-issues => { root.openIssues(); }

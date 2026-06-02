@@ -12,6 +12,7 @@
 #include "logger.hpp"
 #include "uiRegistry.hpp"
 #include "extensionManager.hpp"
+#include "windowUtilities.hpp"
 #include <thread>
 #include <atomic>
 #include <optional>
@@ -330,7 +331,12 @@ void HPRInterpreter::trackingLoop()
                     extensionsCopy = AppState::state.loadedExtensions;
                 }
                 modelManager.value().showExtensions_Interpreted(extensionsCopy);
-
+                modelManager.value().showFunStats_Interpreted(
+                    getCpuUsage(),
+                    getRamUsage(),
+                    std::to_string(extensionsCopy.size()),
+                    getThreadCount()
+                );
             }
 
         }

@@ -6,432 +6,301 @@ export component AboutView {
     callback open-releases;
     callback open-issues;
 
-    VerticalLayout {
-        padding: 12px;
-        padding-top: 6px;
-        spacing: 10px;
+    in property <string> cpu-usage;
+    in property <string> ram-usage;
+    in property <string> loaded-extensions;
+    in property <string> active-threads;
 
-        HorizontalLayout {
-            alignment: start;
-            vertical-stretch: 0;
-            padding-top: 4px;
+    Flickable {
+        viewport-height: aboutContent.preferred-height;
 
-            SectionHeader { label: "ABOUT"; }
-        }
+        aboutContent := VerticalLayout {
+            padding: 12px;
+            padding-top: 6px;
+            spacing: 10px;
 
-        // ── Card 1: Author ────────────────────────────────────────────────
-        Card {
             HorizontalLayout {
-                padding: 28px;
-                spacing: 32px;
                 alignment: start;
+                vertical-stretch: 0;
+                padding-top: 4px;
 
-                // ── Avatar ────────────────────────────────────────────────
-                Rectangle {
-                    width: 240px;
-                    height: 240px;
-                    border-radius: 120px;
-                    clip: true;
-                    background: @linear-gradient(135deg, #c084fc18 0%, #38bdf818 100%);
-                    border-width: 1.5px;
-                    border-color: #c084fc30;
-                    y: (parent.height - self.height) / 2;
-
-                    Image {
-                        source: @image-url("./images/sonic.png");
-                        width: 240px;
-                        height: 240px;
-                        x: 0px;
-                        y: 0px;
-                        image-fit: cover;
-                    }
-                }
-
-                // ── Info ──────────────────────────────────────────────────
-                VerticalLayout {
-                    alignment: center;
-                    spacing: 20px;
-                    vertical-stretch: 1;
-                    y: (parent.height - self.height) / 2;
-
-                    // Name + tagline
-                    VerticalLayout {
-                        spacing: 8px;
-
-                        Text {
-                            text: "PLEXESCOR";
-                            font-size: 24px;
-                            font-weight: 800;
-                            letter-spacing: 5px;
-                            color: #f1f5f9;
-                        }
-
-                        Text {
-                            text: "The one you have to thank for being provided with HPR";
-                            font-size: 13px;
-                            font-weight: 400;
-                            color: #ffffff50;
-                            letter-spacing: 0.2px;
-                            wrap: word-wrap;
-                        }
-                    }
-
-                    // ── Meta rows ─────────────────────────────────────────
-                    VerticalLayout {
-                        spacing: 10px;
-
-                        // Email
-                        HorizontalLayout {
-                            spacing: 10px;
-                            alignment: start;
-
-                            Text {
-                                text: "EMAIL";
-                                font-size: 9px;
-                                font-weight: 700;
-                                letter-spacing: 2px;
-                                color: #c084fc80;
-                                vertical-alignment: center;
-                                width: 64px;
-                            }
-
-                            Text {
-                                text: "saraswal2010@gmail.com";
-                                font-size: 13px;
-                                font-weight: 500;
-                                color: #c084fc;
-                                vertical-alignment: center;
-                            }
-                        }
-
-                        // GitHub
-                        HorizontalLayout {
-                            spacing: 10px;
-                            alignment: start;
-
-                            Text {
-                                text: "GITHUB";
-                                font-size: 9px;
-                                font-weight: 700;
-                                letter-spacing: 2px;
-                                color: #a3e63580;
-                                vertical-alignment: center;
-                                width: 64px;
-                            }
-
-                            Text {
-                                text: "github.com/plexescor";
-                                font-size: 13px;
-                                font-weight: 500;
-                                color: #a3e635;
-                                vertical-alignment: center;
-                            }
-                        }
-
-                        // Website
-                        HorizontalLayout {
-                            spacing: 10px;
-                            alignment: start;
-
-                            Text {
-                                text: "WEBSITE";
-                                font-size: 9px;
-                                font-weight: 700;
-                                letter-spacing: 2px;
-                                color: #38bdf880;
-                                vertical-alignment: center;
-                                width: 64px;
-                            }
-
-                            Text {
-                                text: "hpr-cpp.netlify.app";
-                                font-size: 13px;
-                                font-weight: 500;
-                                color: #38bdf8;
-                                vertical-alignment: center;
-                            }
-                        }
-                    }
-
-                    // ── Bottom row: version + ko-fi ───────────────────────
-                    HorizontalLayout {
-                        spacing: 10px;
-                        alignment: start;
-
-                        // Version pill
-                        version-btn := Rectangle {
-                            width: version-lbl.preferred-width + 20px;
-                            height: 28px;
-                            border-radius: 6px;
-                            border-width: 1px;
-
-                            animate background   { duration: 100ms; }
-                            animate border-color { duration: 100ms; }
-
-                            ta-version := TouchArea {
-                                mouse-cursor: pointer;
-                                clicked => { root.open-releases(); }
-                            }
-
-                            states [
-                                pressed when ta-version.pressed: {
-                                    background: #a3e63535;
-                                    border-color: #a3e63580;
-                                }
-                                hovered when ta-version.has-hover: {
-                                    background: #a3e63525;
-                                    border-color: #a3e63560;
-                                }
-                                normal when !ta-version.has-hover: {
-                                    background: #a3e63512;
-                                    border-color: #a3e63535;
-                                }
-                            ]
-
-                            version-lbl := Text {
-                                text: "v0.7";
-                                font-size: 9px;
-                                font-weight: 700;
-                                letter-spacing: 2px;
-                                color: ta-version.pressed ? #d9f99d : ta-version.has-hover ? #bef264 : #a3e635;
-                                horizontal-alignment: center;
-                                vertical-alignment: center;
-                                width: 100%;
-                                height: 100%;
-                                animate color { duration: 100ms; }
-                            }
-                        }
-
-                        // Ko-fi button
-                        kofi-btn := Rectangle {
-                            width: kofi-lbl.preferred-width + 24px;
-                            height: 28px;
-                            border-radius: 6px;
-                            border-width: 1px;
-
-                            animate background   { duration: 100ms; }
-                            animate border-color { duration: 100ms; }
-
-                            ta-kofi := TouchArea {
-                                mouse-cursor: pointer;
-                                clicked => { root.open-kofi(); }
-                            }
-
-                            states [
-                                pressed when ta-kofi.pressed: {
-                                    background: #ff5e5b35;
-                                    border-color: #ff5e5b80;
-                                }
-                                hovered when ta-kofi.has-hover: {
-                                    background: #ff5e5b25;
-                                    border-color: #ff5e5b60;
-                                }
-                                normal when !ta-kofi.has-hover: {
-                                    background: #ff5e5b12;
-                                    border-color: #ff5e5b35;
-                                }
-                            ]
-
-                            kofi-lbl := Text {
-                                text: "KO-FI";
-                                font-size: 9px;
-                                font-weight: 700;
-                                letter-spacing: 2px;
-                                color: ta-kofi.pressed ? #ff9997 : ta-kofi.has-hover ? #ff7572 : #ff5e5b;
-                                horizontal-alignment: center;
-                                vertical-alignment: center;
-                                width: 100%;
-                                height: 100%;
-                                animate color { duration: 100ms; }
-                            }
-                        }
-                    }
-                }
+                SectionHeader { label: "ABOUT"; }
             }
-        }
 
-        // ── Card 2: Stack + Open Source ───────────────────────────────────
-        Card {
-            HorizontalLayout {
-                padding: 20px;
-                spacing: 32px;
-                alignment: start;
-
-                // Built with
-                VerticalLayout {
-                    spacing: 10px;
-                    horizontal-stretch: 1;
-
-                    Text {
-                        text: "BUILT WITH";
-                        font-size: 8px;
-                        font-weight: 700;
-                        letter-spacing: 2.5px;
-                        color: #ffffff30;
-                    }
-
-                    HorizontalLayout {
-                        spacing: 6px;
-                        alignment: start;
-
-                        for tech in ["C++23", "Slint 1.16.1", "SQLite3", "WinToast", "sol2", "Lua"] : Rectangle {
-                            width: tech-lbl.preferred-width + 16px;
-                            height: 24px;
-                            border-radius: 5px;
-                            background: #38bdf810;
-                            border-width: 1px;
-                            border-color: #38bdf825;
-
-                            tech-lbl := Text {
-                                text: tech;
-                                font-size: 9px;
-                                font-weight: 600;
-                                letter-spacing: 0.5px;
-                                color: #38bdf8;
-                                horizontal-alignment: center;
-                                vertical-alignment: center;
-                                width: 100%;
-                                height: 100%;
-                            }
-                        }
-                    }
-                }
-
-                // Divider
-                Rectangle {
-                    width: 1px;
-                    background: #ffffff10;
-                    // no fixed height — stretches to parent height naturally
-                }
-
-                // Open source + contributors — all on same row, centered
+            // ── Card 1: Author ────────────────────────────────────────────────
+            Card {
                 HorizontalLayout {
-                    spacing: 16px;
-                    alignment: center;
-                    width: 200px;
-
-                    // Open source badge
-                    Rectangle {
-                        width: oss-lbl.preferred-width + 24px;
-                        height: 26px;
-                        border-radius: 6px;
-                        background: #a3e63512;
-                        border-width: 1px;
-                        border-color: #a3e63535;
-                        y: (parent.height - self.height) / 2;
-
-                        oss-lbl := Text {
-                            text: "OPEN SOURCE";
-                            font-size: 8px;
-                            font-weight: 700;
-                            letter-spacing: 2px;
-                            color: #a3e635;
-                            horizontal-alignment: center;
-                            vertical-alignment: center;
-                            width: 100%;
-                            height: 100%;
-                        }
-                    }
-
-                    // Divider
-                    Rectangle {
-                        width: 1px;
-                        height: 16px;
-                        background: #ffffff15;
-                        y: (parent.height - self.height) / 2;
-                    }
-
-                    // Contributors
-                    HorizontalLayout {
-                        spacing: 6px;
-                        alignment: center;
-
-                        Text {
-                            text: "CONTRIBUTORS";
-                            font-size: 8px;
-                            font-weight: 700;
-                            letter-spacing: 2px;
-                            color: #ffffff30;
-                            vertical-alignment: center;
-                        }
-
-                        Text {
-                            text: "1";
-                            font-size: 13px;
-                            font-weight: 700;
-                            color: #f1f5f9;
-                            vertical-alignment: center;
-                        }
-                    }
-                }
-            }
-        }
-
-        // ── Card 3: Stats + Bug report + Easter egg ───────────────────────
-        Card {
-            VerticalLayout {
-                padding: 20px;
-                spacing: 14px;
-
-                // ── Header ────────────────────────────────────────────────
-                Text {
-                    text: "FUN STATS";
-                    font-size: 8px;
-                    font-weight: 700;
-                    letter-spacing: 2.5px;
-                    color: #ffffff30;
-                }
-
-                // ── Stats row: left (LOC) | divider | right (coffee) ─────
-                HorizontalLayout {
-                    spacing: 24px;
+                    padding: 28px;
+                    spacing: 32px;
                     alignment: start;
 
-                    // Left: total lines + per-lang breakdown
-                    VerticalLayout {
-                        spacing: 10px;
-                        width: 160px;
+                    // ── Avatar ────────────────────────────────────────────────
+                    Rectangle {
+                        width: 180px;
+                        height: 180px;
+                        border-radius: 90px;
+                        clip: true;
+                        background: @linear-gradient(135deg, #c084fc18 0%, #38bdf818 100%);
+                        border-width: 1.5px;
+                        border-color: #c084fc30;
+                        y: (parent.height - self.height) / 2;
 
-                        // Total
+                        Image {
+                            source: @image-url("./images/sonic.png");
+                            width: 180px;
+                            height: 180px;
+                            x: 0px;
+                            y: 0px;
+                            image-fit: cover;
+                        }
+                    }
+
+                    // ── Info ──────────────────────────────────────────────────
+                    VerticalLayout {
+                        alignment: center;
+                        spacing: 20px;
+                        vertical-stretch: 1;
+                        y: (parent.height - self.height) / 2;
+
+                        // Name + tagline
                         VerticalLayout {
-                            spacing: 3px;
+                            spacing: 8px;
+
                             Text {
-                                text: "~9300";
-                                font-size: 22px;
+                                text: "PLEXESCOR";
+                                font-size: 24px;
                                 font-weight: 800;
+                                letter-spacing: 5px;
                                 color: #f1f5f9;
-                                letter-spacing: 1px;
                             }
+
                             Text {
-                                text: "TOTAL LINES";
-                                font-size: 8px;
-                                font-weight: 700;
-                                letter-spacing: 2px;
-                                color: #ffffff30;
+                                text: "The one you have to thank for being provided with HPR";
+                                font-size: 13px;
+                                font-weight: 400;
+                                color: #ffffff50;
+                                letter-spacing: 0.2px;
+                                wrap: word-wrap;
                             }
                         }
 
-                        // Per-lang
+                        // ── Meta rows ─────────────────────────────────────────
                         VerticalLayout {
-                            spacing: 5px;
+                            spacing: 10px;
 
+                            // Email
                             HorizontalLayout {
-                                spacing: 8px;
+                                spacing: 10px;
                                 alignment: start;
-                                Text { text: "C++"; font-size: 8px; font-weight: 700; letter-spacing: 1.5px; color: #38bdf870; vertical-alignment: center; width: 52px; }
-                                Text { text: "6901"; font-size: 11px; font-weight: 600; color: #38bdf8; vertical-alignment: center; }
+
+                                Text {
+                                    text: "EMAIL";
+                                    font-size: 9px;
+                                    font-weight: 700;
+                                    letter-spacing: 2px;
+                                    color: #c084fc80;
+                                    vertical-alignment: center;
+                                    width: 64px;
+                                }
+
+                                Text {
+                                    text: "saraswal2010@gmail.com";
+                                    font-size: 13px;
+                                    font-weight: 500;
+                                    color: #c084fc;
+                                    vertical-alignment: center;
+                                }
                             }
+
+                            // GitHub
                             HorizontalLayout {
-                                spacing: 8px;
+                                spacing: 10px;
                                 alignment: start;
-                                Text { text: "SLINT"; font-size: 8px; font-weight: 700; letter-spacing: 1.5px; color: #c084fc70; vertical-alignment: center; width: 52px; }
-                                Text { text: "1637"; font-size: 11px; font-weight: 600; color: #c084fc; vertical-alignment: center; }
+
+                                Text {
+                                    text: "GITHUB";
+                                    font-size: 9px;
+                                    font-weight: 700;
+                                    letter-spacing: 2px;
+                                    color: #a3e63580;
+                                    vertical-alignment: center;
+                                    width: 64px;
+                                }
+
+                                Text {
+                                    text: "github.com/plexescor";
+                                    font-size: 13px;
+                                    font-weight: 500;
+                                    color: #a3e635;
+                                    vertical-alignment: center;
+                                }
                             }
+
+                            // Website
                             HorizontalLayout {
-                                spacing: 8px;
+                                spacing: 10px;
                                 alignment: start;
-                                Text { text: "HEADERS"; font-size: 8px; font-weight: 700; letter-spacing: 1.5px; color: #fb923c70; vertical-alignment: center; width: 52px; }
-                                Text { text: "774"; font-size: 11px; font-weight: 600; color: #fb923c; vertical-alignment: center; }
+
+                                Text {
+                                    text: "WEBSITE";
+                                    font-size: 9px;
+                                    font-weight: 700;
+                                    letter-spacing: 2px;
+                                    color: #38bdf880;
+                                    vertical-alignment: center;
+                                    width: 64px;
+                                }
+
+                                Text {
+                                    text: "hpr-cpp.netlify.app";
+                                    font-size: 13px;
+                                    font-weight: 500;
+                                    color: #38bdf8;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+
+                        // ── Bottom row: version + ko-fi ───────────────────────
+                        HorizontalLayout {
+                            spacing: 10px;
+                            alignment: start;
+
+                            // Version pill
+                            version-btn := Rectangle {
+                                width: version-lbl.preferred-width + 20px;
+                                height: 28px;
+                                border-radius: 6px;
+                                border-width: 1px;
+
+                                animate background   { duration: 100ms; }
+                                animate border-color { duration: 100ms; }
+
+                                ta-version := TouchArea {
+                                    mouse-cursor: pointer;
+                                    clicked => { root.open-releases(); }
+                                }
+
+                                states [
+                                    pressed when ta-version.pressed: {
+                                        background: #a3e63535;
+                                        border-color: #a3e63580;
+                                    }
+                                    hovered when ta-version.has-hover: {
+                                        background: #a3e63525;
+                                        border-color: #a3e63560;
+                                    }
+                                    normal when !ta-version.has-hover: {
+                                        background: #a3e63512;
+                                        border-color: #a3e63535;
+                                    }
+                                ]
+
+                                version-lbl := Text {
+                                    text: "v0.7";
+                                    font-size: 9px;
+                                    font-weight: 700;
+                                    letter-spacing: 2px;
+                                    color: ta-version.pressed ? #d9f99d : ta-version.has-hover ? #bef264 : #a3e635;
+                                    horizontal-alignment: center;
+                                    vertical-alignment: center;
+                                    width: 100%;
+                                    height: 100%;
+                                    animate color { duration: 100ms; }
+                                }
+                            }
+
+                            // Ko-fi button
+                            kofi-btn := Rectangle {
+                                width: kofi-lbl.preferred-width + 24px;
+                                height: 28px;
+                                border-radius: 6px;
+                                border-width: 1px;
+
+                                animate background   { duration: 100ms; }
+                                animate border-color { duration: 100ms; }
+
+                                ta-kofi := TouchArea {
+                                    mouse-cursor: pointer;
+                                    clicked => { root.open-kofi(); }
+                                }
+
+                                states [
+                                    pressed when ta-kofi.pressed: {
+                                        background: #ff5e5b35;
+                                        border-color: #ff5e5b80;
+                                    }
+                                    hovered when ta-kofi.has-hover: {
+                                        background: #ff5e5b25;
+                                        border-color: #ff5e5b60;
+                                    }
+                                    normal when !ta-kofi.has-hover: {
+                                        background: #ff5e5b12;
+                                        border-color: #ff5e5b35;
+                                    }
+                                ]
+
+                                kofi-lbl := Text {
+                                    text: "KO-FI";
+                                    font-size: 9px;
+                                    font-weight: 700;
+                                    letter-spacing: 2px;
+                                    color: ta-kofi.pressed ? #ff9997 : ta-kofi.has-hover ? #ff7572 : #ff5e5b;
+                                    horizontal-alignment: center;
+                                    vertical-alignment: center;
+                                    width: 100%;
+                                    height: 100%;
+                                    animate color { duration: 100ms; }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ── Card 2: Stack + Open Source ───────────────────────────────────
+            Card {
+                HorizontalLayout {
+                    padding: 20px;
+                    spacing: 32px;
+                    alignment: start;
+
+                    // Built with
+                    VerticalLayout {
+                        spacing: 10px;
+                        horizontal-stretch: 1;
+
+                        Text {
+                            text: "BUILT WITH";
+                            font-size: 8px;
+                            font-weight: 700;
+                            letter-spacing: 2.5px;
+                            color: #ffffff30;
+                        }
+
+                        HorizontalLayout {
+                            spacing: 6px;
+                            alignment: start;
+
+                            for tech in ["C++23", "Slint 1.16.1", "SQLite3", "WinToast", "sol2", "Lua"] : Rectangle {
+                                width: tech-lbl.preferred-width + 16px;
+                                height: 24px;
+                                border-radius: 5px;
+                                background: #38bdf810;
+                                border-width: 1px;
+                                border-color: #38bdf825;
+
+                                tech-lbl := Text {
+                                    text: tech;
+                                    font-size: 9px;
+                                    font-weight: 600;
+                                    letter-spacing: 0.5px;
+                                    color: #38bdf8;
+                                    horizontal-alignment: center;
+                                    vertical-alignment: center;
+                                    width: 100%;
+                                    height: 100%;
+                                }
                             }
                         }
                     }
@@ -440,95 +309,319 @@ export component AboutView {
                     Rectangle {
                         width: 1px;
                         background: #ffffff10;
-                        horizontal-stretch: 0;
+                        // no fixed height — stretches to parent height naturally
                     }
 
-                    // Right: coffee
-                    VerticalLayout {
-                        spacing: 3px;
-                        width: 160px;
-                        padding-left: 24px;
+                    // Open source + contributors — all on same row, centered
+                    HorizontalLayout {
+                        spacing: 16px;
+                        alignment: center;
+                        width: 200px;
 
+                        // Open source badge
+                        Rectangle {
+                            width: oss-lbl.preferred-width + 24px;
+                            height: 26px;
+                            border-radius: 6px;
+                            background: #a3e63512;
+                            border-width: 1px;
+                            border-color: #a3e63535;
+                            y: (parent.height - self.height) / 2;
+
+                            oss-lbl := Text {
+                                text: "OPEN SOURCE";
+                                font-size: 8px;
+                                font-weight: 700;
+                                letter-spacing: 2px;
+                                color: #a3e635;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                                width: 100%;
+                                height: 100%;
+                            }
+                        }
+
+                        // Divider
+                        Rectangle {
+                            width: 1px;
+                            height: 16px;
+                            background: #ffffff15;
+                            y: (parent.height - self.height) / 2;
+                        }
+
+                        // Contributors
                         HorizontalLayout {
                             spacing: 6px;
-                            alignment: start;
-                            Text { text: "☕"; font-size: 18px; vertical-alignment: center; }
+                            alignment: center;
+
                             Text {
-                                text: "0";
-                                font-size: 22px;
-                                font-weight: 800;
+                                text: "CONTRIBUTORS";
+                                font-size: 8px;
+                                font-weight: 700;
+                                letter-spacing: 2px;
+                                color: #ffffff30;
+                                vertical-alignment: center;
+                            }
+
+                            Text {
+                                text: "1";
+                                font-size: 13px;
+                                font-weight: 700;
                                 color: #f1f5f9;
-                                letter-spacing: 1px;
                                 vertical-alignment: center;
                             }
                         }
-                        Text {
-                            text: "CUPS OF COFFEE";
-                            font-size: 8px;
-                            font-weight: 700;
-                            letter-spacing: 2px;
-                            color: #ffffff30;
-                        }
                     }
                 }
+            }
 
-                // ── Divider ───────────────────────────────────────────────
-                Rectangle {
-                    height: 1px;
-                    background: @linear-gradient(90deg, #ffffff00 0%, #ffffff12 40%, #ffffff12 60%, #ffffff00 100%);
-                }
+            // ── Card 3: Stats + Bug report + Easter egg ───────────────────────
+            Card {
+                VerticalLayout {
+                    padding: 20px;
+                    spacing: 14px;
 
-                // ── Bottom row: bug report + easter egg ───────────────────
-                HorizontalLayout {
-                    spacing: 0px;
-                    alignment: space-between;
-
-                    bug-btn := Rectangle {
-                        width: bug-lbl.preferred-width + 24px;
-                        height: 26px;
-                        border-radius: 6px;
-                        border-width: 1px;
-
-                        animate background   { duration: 100ms; }
-                        animate border-color { duration: 100ms; }
-
-                        ta-bug := TouchArea {
-                            mouse-cursor: pointer;
-                            clicked => { root.open-issues(); }
-                        }
-
-                        states [
-                            pressed when ta-bug.pressed: { background: #fb923c35; border-color: #fb923c80; }
-                            hovered when ta-bug.has-hover: { background: #fb923c25; border-color: #fb923c60; }
-                            normal when !ta-bug.has-hover: { background: #fb923c12; border-color: #fb923c35; }
-                        ]
-
-                        bug-lbl := Text {
-                            text: "REPORT A BUG";
-                            font-size: 8px;
-                            font-weight: 700;
-                            letter-spacing: 2px;
-                            color: ta-bug.pressed ? #fed7aa : ta-bug.has-hover ? #fdba74 : #fb923c;
-                            horizontal-alignment: center;
-                            vertical-alignment: center;
-                            width: 100%;
-                            height: 100%;
-                            animate color { duration: 100ms; }
-                        }
+                    // ── Header ────────────────────────────────────────────────
+                    Text {
+                        text: "FUN STATS";
+                        font-size: 8px;
+                        font-weight: 700;
+                        letter-spacing: 2.5px;
+                        color: #ffffff30;
                     }
 
+                    // ── HPR Runtime Stats (Placeholders) ──────────────────────
                     HorizontalLayout {
-                        spacing: 8px;
-                        alignment: end;
-                        Text { text: "💨"; font-size: 14px; vertical-alignment: center; }
-                        Text {
-                            text: "If this crashed, must've been the wind ahh";
-                            font-size: 11px;
-                            font-weight: 500;
-                            color: #ffffff90;
-                            letter-spacing: 0.3px;
-                            vertical-alignment: center;
-                            font-italic: true;
+                        spacing: 16px;
+                        alignment: space-between;
+
+                        // CPU
+                        VerticalLayout {
+                            spacing: 4px;
+                            Text {
+                                text: root.cpu-usage;
+                                font-size: 18px;
+                                font-weight: 800;
+                                color: #38bdf8;
+                            }
+                            Text {
+                                text: "CPU USAGE";
+                                font-size: 8px;
+                                font-weight: 700;
+                                letter-spacing: 1.5px;
+                                color: #ffffff30;
+                            }
+                        }
+
+                        // RAM
+                        VerticalLayout {
+                            spacing: 4px;
+                            Text {
+                                text: root.ram-usage;
+                                font-size: 18px;
+                                font-weight: 800;
+                                color: #c084fc;
+                            }
+                            Text {
+                                text: "RAM";
+                                font-size: 8px;
+                                font-weight: 700;
+                                letter-spacing: 1.5px;
+                                color: #ffffff30;
+                            }
+                        }
+
+                        // Extensions
+                        VerticalLayout {
+                            spacing: 4px;
+                            Text {
+                                text: root.loaded-extensions;
+                                font-size: 18px;
+                                font-weight: 800;
+                                color: #a3e635;
+                            }
+                            Text {
+                                text: "EXTENSIONS";
+                                font-size: 8px;
+                                font-weight: 700;
+                                letter-spacing: 1.5px;
+                                color: #ffffff30;
+                            }
+                        }
+
+                        // Threads
+                        VerticalLayout {
+                            spacing: 4px;
+                            Text {
+                                text: root.active-threads;
+                                font-size: 18px;
+                                font-weight: 800;
+                                color: #fb923c;
+                            }
+                            Text {
+                                text: "THREADS";
+                                font-size: 8px;
+                                font-weight: 700;
+                                letter-spacing: 1.5px;
+                                color: #ffffff30;
+                            }
+                        }
+                    }
+
+                    // ── Small spacer/divider ──
+                    Rectangle {
+                        height: 1px;
+                        background: #ffffff10;
+                    }
+
+                    // ── Stats row: left (LOC) | divider | right (coffee) ─────
+                    HorizontalLayout {
+                        spacing: 24px;
+                        alignment: start;
+
+                        // Left: total lines + per-lang breakdown
+                        VerticalLayout {
+                            spacing: 10px;
+                            width: 160px;
+
+                            // Total
+                            VerticalLayout {
+                                spacing: 3px;
+                                Text {
+                                    text: "~9300";
+                                    font-size: 22px;
+                                    font-weight: 800;
+                                    color: #f1f5f9;
+                                    letter-spacing: 1px;
+                                }
+                                Text {
+                                    text: "TOTAL LINES";
+                                    font-size: 8px;
+                                    font-weight: 700;
+                                    letter-spacing: 2px;
+                                    color: #ffffff30;
+                                }
+                            }
+
+                            // Per-lang
+                            VerticalLayout {
+                                spacing: 5px;
+
+                                HorizontalLayout {
+                                    spacing: 8px;
+                                    alignment: start;
+                                    Text { text: "C++"; font-size: 8px; font-weight: 700; letter-spacing: 1.5px; color: #38bdf870; vertical-alignment: center; width: 52px; }
+                                    Text { text: "6901"; font-size: 11px; font-weight: 600; color: #38bdf8; vertical-alignment: center; }
+                                }
+                                HorizontalLayout {
+                                    spacing: 8px;
+                                    alignment: start;
+                                    Text { text: "SLINT"; font-size: 8px; font-weight: 700; letter-spacing: 1.5px; color: #c084fc70; vertical-alignment: center; width: 52px; }
+                                    Text { text: "1637"; font-size: 11px; font-weight: 600; color: #c084fc; vertical-alignment: center; }
+                                }
+                                HorizontalLayout {
+                                    spacing: 8px;
+                                    alignment: start;
+                                    Text { text: "HEADERS"; font-size: 8px; font-weight: 700; letter-spacing: 1.5px; color: #fb923c70; vertical-alignment: center; width: 52px; }
+                                    Text { text: "774"; font-size: 11px; font-weight: 600; color: #fb923c; vertical-alignment: center; }
+                                }
+                            }
+                        }
+
+                        // Divider
+                        Rectangle {
+                            width: 1px;
+                            background: #ffffff10;
+                            horizontal-stretch: 0;
+                        }
+
+                        // Right: coffee
+                        VerticalLayout {
+                            spacing: 3px;
+                            width: 160px;
+                            padding-left: 24px;
+
+                            HorizontalLayout {
+                                spacing: 6px;
+                                alignment: start;
+                                Text { text: "☕"; font-size: 18px; vertical-alignment: center; }
+                                Text {
+                                    text: "0";
+                                    font-size: 22px;
+                                    font-weight: 800;
+                                    color: #f1f5f9;
+                                    letter-spacing: 1px;
+                                    vertical-alignment: center;
+                                }
+                            }
+                            Text {
+                                text: "CUPS OF COFFEE";
+                                font-size: 8px;
+                                font-weight: 700;
+                                letter-spacing: 2px;
+                                color: #ffffff30;
+                            }
+                        }
+                    }
+
+                    // ── Divider ───────────────────────────────────────────────
+                    Rectangle {
+                        height: 1px;
+                        background: @linear-gradient(90deg, #ffffff00 0%, #ffffff12 40%, #ffffff12 60%, #ffffff00 100%);
+                    }
+
+                    // ── Bottom row: bug report + easter egg ───────────────────
+                    HorizontalLayout {
+                        spacing: 0px;
+                        alignment: space-between;
+
+                        bug-btn := Rectangle {
+                            width: bug-lbl.preferred-width + 24px;
+                            height: 26px;
+                            border-radius: 6px;
+                            border-width: 1px;
+
+                            animate background   { duration: 100ms; }
+                            animate border-color { duration: 100ms; }
+
+                            ta-bug := TouchArea {
+                                mouse-cursor: pointer;
+                                clicked => { root.open-issues(); }
+                            }
+
+                            states [
+                                pressed when ta-bug.pressed: { background: #fb923c35; border-color: #fb923c80; }
+                                hovered when ta-bug.has-hover: { background: #fb923c25; border-color: #fb923c60; }
+                                normal when !ta-bug.has-hover: { background: #fb923c12; border-color: #fb923c35; }
+                            ]
+
+                            bug-lbl := Text {
+                                text: "REPORT A BUG";
+                                font-size: 8px;
+                                font-weight: 700;
+                                letter-spacing: 2px;
+                                color: ta-bug.pressed ? #fed7aa : ta-bug.has-hover ? #fdba74 : #fb923c;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                                width: 100%;
+                                height: 100%;
+                                animate color { duration: 100ms; }
+                            }
+                        }
+
+                        HorizontalLayout {
+                            spacing: 8px;
+                            alignment: end;
+                            Text { text: "💨"; font-size: 14px; vertical-alignment: center; }
+                            Text {
+                                text: "If this crashed, must've been the wind ahh";
+                                font-size: 11px;
+                                font-weight: 500;
+                                color: #ffffff90;
+                                letter-spacing: 0.3px;
+                                vertical-alignment: center;
+                                font-italic: true;
+                            }
                         }
                     }
                 }

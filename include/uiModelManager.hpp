@@ -55,6 +55,9 @@ class UiModelManager
 
         void showExtensions(const std::vector<std::pair<std::string,std::string>>& extensions);
         void showExtensions_Interpreted(const std::vector<std::pair<std::string,std::string>>& extensions);
+        
+        void showFunStats(const std::string& cpu, const std::string& ram, const std::string& ext, const std::string& threads);
+        void showFunStats_Interpreted(const std::string& cpu, const std::string& ram, const std::string& ext, const std::string& threads);
     
     private: 
         std::optional<slint::ComponentHandle<MainWindow>> ui;

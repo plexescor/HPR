@@ -638,3 +638,35 @@ void UiModelManager::showExtensions_Interpreted(const std::vector<std::pair<std:
         }
     });
 }
+
+void UiModelManager::showFunStats(const std::string& cpu, const std::string& ram, const std::string& ext, const std::string& threads)
+{
+    if (!ui.has_value()) return;
+    slint::ComponentWeakHandle<MainWindow> weak(ui.value());
+    slint::invoke_from_event_loop([weak, cpu, ram, ext, threads]()
+    {
+        if (auto handle = weak.lock())
+        {
+            (*handle)->set_cpuUsage(slint::SharedString(cpu));
+            (*handle)->set_ramUsage(slint::SharedString(ram));
+            (*handle)->set_loadedExtensions(slint::SharedString(ext));
+            (*handle)->set_activeThreads(slint::SharedString(threads));
+        }
+    });
+}
+
+void UiModelManager::showFunStats_Interpreted(const std::string& cpu, const std::string& ram, const std::string& ext, const std::string& threads)
+{
+    if (!ui_interp.has_value()) return;
+    slint::ComponentWeakHandle<slint::interpreter::ComponentInstance> weak(ui_interp.value());
+    slint::invoke_from_event_loop([weak, cpu, ram, ext, threads]()
+    {
+        if (auto handle = weak.lock())
+        {
+            (*handle)->set_property("cpuUsage", slint::interpreter::Value(slint::SharedString(cpu)));
+            (*handle)->set_property("ramUsage", slint::interpreter::Value(slint::SharedString(ram)));
+            (*handle)->set_property("loadedExtensions", slint::interpreter::Value(slint::SharedString(ext)));
+            (*handle)->set_property("activeThreads", slint::interpreter::Value(slint::SharedString(threads)));
+        }
+    });
+}
