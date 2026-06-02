@@ -125,10 +125,10 @@ void HPRInterpreter::reload()
         slint::invoke_from_event_loop([]() {
             HWND hwnd = FindWindowW(nullptr, L"HPR");
             if (hwnd) {
-                HICON big   = (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(1), IMAGE_ICON, 32, 32, LR_SHARED);
-                HICON small = (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(1), IMAGE_ICON, 16, 16, LR_SHARED);
-                if (big)   SendMessage(hwnd, WM_SETICON, ICON_BIG,   (LPARAM)big);
-                if (small) SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)small);
+                HICON hIconBig = (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(1), IMAGE_ICON, 32, 32, LR_SHARED);
+                HICON hIconSmall = (HICON)LoadImage(GetModuleHandle(NULL), MAKEINTRESOURCE(1), IMAGE_ICON, 16, 16, LR_SHARED);
+                if (hIconBig)   SendMessage(hwnd, WM_SETICON, ICON_BIG,   (LPARAM)hIconBig);
+                if (hIconSmall) SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIconSmall);
             }
         });
     #else
