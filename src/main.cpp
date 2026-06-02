@@ -41,7 +41,7 @@
 		//If not to use interpreter, use inbuilt ui
 		if (!conf.getConfig("use-interpreter", false))
 		{
-			HPR app;
+			HPR app(&ext);
 		
 			tray.onQuit = [&]() {
 				app.quit();
@@ -70,7 +70,7 @@
 		//use custom gui
 		else
 		{
-			HPRInterpreter app;
+			HPRInterpreter app(&ext);
 			tray.onQuit = [&]() {
 				app.quit();
 			};

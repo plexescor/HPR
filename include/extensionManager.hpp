@@ -76,12 +76,12 @@ class ExtensionManager
         void updateExtensionPath();
         void loadNativeExtension(const std::filesystem::path& path);
         void registerFunctions(LoadedExtension& ext);
-        void runExtension(LoadedExtension& ext);
+        void runExtension(std::shared_ptr<LoadedExtension> ext);
         void runNativeExtension(NativeExtension& ext);
 
     private:
         bool allowDynamicLibraryExtensionLoading;
-        std::vector<std::unique_ptr<LoadedExtension>> extensions;
+        std::vector<std::shared_ptr<LoadedExtension>> extensions;
         std::vector<std::unique_ptr<NativeExtension>> nativeExtensions;
         std::string extensionPath;
 

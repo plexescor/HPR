@@ -361,7 +361,7 @@ void ExtensionManager::run()
         ext->thread = std::thread(
             &ExtensionManager::runExtension,
             this,
-            std::ref(*ext)
+            ext
         );
     }
     for (auto& ext : nativeExtensions)
@@ -419,7 +419,7 @@ void ExtensionManager::loadExtensions()
         {
             if (entry.is_regular_file() && entry.path().extension() == ".lua")
             {
-                auto ext = std::make_unique<LoadedExtension>();
+                auto ext = std::make_shared<LoadedExtension>();
                 ext->path = entry.path();
                 
                 registerFunctions(*ext);
@@ -559,8 +559,9 @@ void ExtensionManager::runNativeExtension(NativeExtension& ext)
     }
 }
 
-void ExtensionManager::runExtension(LoadedExtension& ext)
+void ExtensionManager::runExtension(std::shared_ptr<LoadedExtension> ext_ptr)
 {
+    auto& ext = *ext_ptr;
     try
     {
 
@@ -681,19 +682,10 @@ void ExtensionManager::unloadExtension(std::string authorName, std::string exten
         {
             ext->running = false;
             
-            if (ext->thread.joinable())
+            std::thread t = std::move(ext->thread);
+            if (t.joinable())
             {
-                auto future = std::async(std::launch::async, [&]() 
-                {
-                    ext->thread.join();
-                });
-                
-                if (future.wait_for(std::chrono::milliseconds(450)) == std::future_status::timeout)
-                {
-                    std::cerr << "[HPR] Extension [" << ext->identity.second << "] took too long to stop, detaching. It will keep running until HPR exits.\n";
-                    Logger::log("[HPR] Extension [" + ext->identity.second + "] took too long to stop, detaching. It will keep running until HPR exits.");
-                    ext->thread.detach();
-                }
+                t.detach();
             }
 
             {
@@ -731,7 +723,7 @@ void ExtensionManager::reloadExtension(std::string authorName, std::string exten
         unloadExtension(authorName, extensionName);
     }
 
-    auto newExt = std::make_unique<LoadedExtension>();
+    auto newExt = std::make_shared<LoadedExtension>();
     newExt->path = extPath;
     registerFunctions(*newExt);
     try 
@@ -742,7 +734,8 @@ void ExtensionManager::reloadExtension(std::string authorName, std::string exten
         Logger::log("[HPR] Failed to reload extension: " + extPath.string() + "\nError: " + e.what() + "\n");
         return;
     }
-    newExt->thread = std::thread(&ExtensionManager::runExtension, this, std::ref(*newExt));
+    auto ext_copy = newExt;
+    newExt->thread = std::thread(&ExtensionManager::runExtension, this, ext_copy);
     extensions.push_back(std::move(newExt));
 }
 
@@ -756,26 +749,19 @@ void ExtensionManager::reloadAllExtensions()
     for (auto& ext : extensions)
         ext->running = false;
     for (auto& ext : extensions)
-        if (ext->thread.joinable())
+    {
+        std::thread t = std::move(ext->thread);
+        if (t.joinable())
         {
-            auto future = std::async(std::launch::async, [&]() 
-            {
-                ext->thread.join();
-            });
-            
-            if (future.wait_for(std::chrono::milliseconds(450)) == std::future_status::timeout)
-            {
-                std::cerr << "[HPR] Extension [" << ext->path.string() << "] took too long to stop, detaching. It will keep running until HPR exits.\n";
-                Logger::log("[HPR] Extension [" + ext->path.string() + "] took too long to stop, detaching. It will keep running until HPR exits.");
-                ext->thread.detach();
-            }
+            t.detach();
         }
+    }
     extensions.clear();
 
     // reload all
     for (const auto& path : paths)
     {
-        auto newExt = std::make_unique<LoadedExtension>();
+        auto newExt = std::make_shared<LoadedExtension>();
         newExt->path = path;
         registerFunctions(*newExt);
         try 
@@ -791,7 +777,10 @@ void ExtensionManager::reloadAllExtensions()
 
     // start all threads
     for (auto& ext : extensions)
-        ext->thread = std::thread(&ExtensionManager::runExtension, this, std::ref(*ext));
+    {
+        auto ext_copy = ext;
+        ext->thread = std::thread(&ExtensionManager::runExtension, this, ext_copy);
+    }
 }
 
 void ExtensionManager::refresh()
@@ -823,7 +812,7 @@ void ExtensionManager::refresh()
 
 
 
-                auto ext = std::make_unique<LoadedExtension>();
+                auto ext = std::make_shared<LoadedExtension>();
                 ext->path = entry.path();
                 
                 registerFunctions(*ext);
@@ -842,7 +831,8 @@ void ExtensionManager::refresh()
                 }
                             
                 extensions.push_back(std::move(ext));
-                extensions.back()->thread = std::thread(&ExtensionManager::runExtension, this, std::ref(*extensions.back()));
+                auto ext_copy = extensions.back();
+                extensions.back()->thread = std::thread(&ExtensionManager::runExtension, this, ext_copy);
             }
             else if (entry.is_regular_file())
             {
