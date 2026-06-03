@@ -4,17 +4,100 @@ import { AppRow } from "./app-row.slint";
 import { SwitchRow } from "./switch-row.slint";
 import { TimeLog, SwitchHistory } from "./types.slint";
 
+component ViewToggleButton inherits Rectangle {
+    in property <string> label;
+    in property <color> base-color;
+    in property <color> hover-color;
+    in property <color> pressed-color;
+    
+    in property <color> normal-bg-color;
+    in property <color> hover-bg-color;
+    in property <color> pressed-bg-color;
+    
+    in property <color> normal-border-color;
+    in property <color> hover-border-color;
+    in property <color> pressed-border-color;
+
+    callback clicked;
+
+    width: 115px;
+    height: 24px;
+    border-radius: 5px;
+    border-width: 1px;
+
+    animate background { duration: 100ms; }
+    animate border-color { duration: 100ms; }
+
+    states [
+        pressed when ta.pressed: {
+            background: pressed-bg-color;
+            border-color: pressed-border-color;
+        }
+        hovered when ta.has-hover: {
+            background: hover-bg-color;
+            border-color: hover-border-color;
+        }
+        normal when !ta.has-hover: {
+            background: normal-bg-color;
+            border-color: normal-border-color;
+        }
+    ]
+
+    Text {
+        text: label;
+        font-size: 10px;
+        font-weight: 600;
+        color: ta.pressed ? pressed-color : ta.has-hover ? hover-color : base-color;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+        animate color { duration: 100ms; }
+    }
+
+    ta := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
 export component DataView {
     in property <int>             trackedTime_S;
     in property <[TimeLog]>       timePerApp_S;
     in property <[SwitchHistory]> switchHistory_S;
+
+    callback switch-to-live-clicked;
 
     VerticalLayout {
         padding: 12px;
         padding-top: 0px;
         spacing: 10px;
 
-        SectionHeader { label: "TIME PER APP"; }
+        HorizontalLayout {
+            vertical-stretch: 0;
+
+            SectionHeader {
+                label: "TIME PER APP";
+                horizontal-stretch: 1;
+            }
+
+            HorizontalLayout {
+                spacing: 4px;
+                alignment: end;
+
+                ViewToggleButton {
+                    label: "Switch to Live View";
+                    base-color: #38bdf8;
+                    hover-color: #7dd3fc;
+                    pressed-color: #bae6fd;
+                    normal-bg-color: #38bdf812;
+                    hover-bg-color: #38bdf825;
+                    pressed-bg-color: #38bdf835;
+                    normal-border-color: #38bdf835;
+                    hover-border-color: #38bdf860;
+                    pressed-border-color: #38bdf880;
+                    clicked => { root.switch-to-live-clicked(); }
+                }
+            }
+        }
 
         Card {
             vertical-stretch: 1;

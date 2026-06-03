@@ -187,6 +187,7 @@ export component MainWindow inherits Window {
                 trackedTime_S: root.trackedTime_S;
                 timePerApp_S: root.timePerApp_S;
                 switchHistory_S: root.switchHistory_S;
+                switch-to-live-clicked => { root.loadLiveData(); }
             }
             
             if active-view == "INSIGHTS" : InsightsView {
@@ -334,7 +335,7 @@ export component MainWindow inherits Window {
                     SidebarButton {
                         icon: @image-url("./images/live.svg");
                         tip: "Switch to live view";
-                        clicked => { root.loadLiveData(); root.active-view = "DATA" }
+                        clicked => { root.active-view = "DATA" }
                     }
 
                     SidebarButton {
