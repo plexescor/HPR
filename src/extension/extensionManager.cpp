@@ -22,6 +22,8 @@
 
 #include "sol.hpp"
 
+#include "limitsManager.hpp"
+
 #include "appState.hpp"
 #include "uiRegistry.hpp"
 #include "getCurrentWindow.hpp"
@@ -708,11 +710,6 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
 
     lua["HPR"]["getExtensionDir_E"] = getExtensionRelativeDir;
     lua["HPR"]["getExtensionPath_E"] = getExtensionRelativeDir;
-
-    // lua["HPR"]["isUiActive_E"] = []() -> bool
-    // {
-    //     return UiRegistry::isActive();
-    // };
 
     lua["HPR"]["sleep_E"] = [&ext](int ms)
     {
@@ -1550,8 +1547,10 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         #ifdef _WIN32
             return "";
         #else
-            std::lock_guard<std::mutex> lock(AppState::stateMutex);
-            return AppState::state.currentPlatform;
+            std::string cmd = "echo $XDG_CURRENT_DESKTOP";
+            std::string result = runSystemCommand(cmd);
+            result.erase(result.find_last_not_of(" \n\r\t") + 1);
+            return result;
         #endif
     };
 
@@ -1582,7 +1581,11 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
             Logger::log("[HPR Extension Crash] HPR has been intentionally crashed via HPR.crash_E() by an extension!");
             std::cerr << "[HPR Extension Crash] HPR has been intentionally crashed via HPR.crash_E() by an extension!" << std::endl;
         }
-        std::exit(1);
+        #ifdef _WIN32
+            TerminateProcess(GetCurrentProcess(), 0);
+        #else
+            _exit(0);
+        #endif
     };
 
     lua["HPR"]["getLiveTimeLogPerApp_E"] = [&lua]() -> sol::table
@@ -1633,6 +1636,36 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
             std::string cmd = "kill -9 " + pid + " 2>/dev/null";
             runSystemCommand_UNSAFE(cmd);
         #endif
+    };
+
+    lua["HPR"]["setLimit_E"] = [](std::string name, int minutes)
+    {
+        LimitsManager::setLimit(name, minutes);
+    };
+
+    lua["HPR"]["getLimit_E"] = [](std::string name) -> int
+    {
+        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        if (AppState::state.appLimits.find(name) == AppState::state.appLimits.end())
+        {
+            return -1; // No limit set
+        }
+        return AppState::state.appLimits[name];
+    };
+
+    lua["HPR"]["setGoal_E"] = [](std::string name, int minutes)
+    {
+        LimitsManager::setGoal(name, minutes);
+    };
+
+    lua["HPR"]["getGoal_E"] = [](std::string name) -> int
+    {
+        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        if (AppState::state.appGoals.find(name) == AppState::state.appGoals.end())
+        {
+            return -1; // No goal set
+        }
+        return AppState::state.appGoals[name];
     };
 }
 
