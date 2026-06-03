@@ -18,6 +18,7 @@ export component GoalsView {
         padding: 12px;
         padding-top: 0px;
         spacing: 10px;
+        height: 100%;
 
         SectionHeader { label: "MANAGE APP LIMITS & GOALS"; }
 
@@ -50,7 +51,15 @@ export component GoalsView {
                         height: active-edit-index == i ? 98px : 48px;
                         border-radius: 5px;
                         clip: true;
-                        background: ta.has-hover ? #ffffff0e : (mod(i, 2) == 0 ? #ffffff03 : transparent);
+                        
+                        // Premium gradient & subtle tint if limit/goal exists
+                        background: ta.has-hover 
+                            ? #ffffff0e 
+                            : (app-goal-data.limit_mins > 0 
+                                ? #ef444405 
+                                : (app-goal-data.goal_mins > 0 
+                                    ? #10b98105 
+                                    : (mod(i, 2) == 0 ? #ffffff03 : transparent)));
 
                         animate height { duration: 180ms; easing: ease-in-out; }
                         animate background { duration: 100ms; easing: ease-out; }
@@ -58,7 +67,6 @@ export component GoalsView {
                         ta := TouchArea {
                             pointer-event(evt) => {
                                 if (evt.kind == PointerEventKind.down) {
-                                    // Toggle edit mode on right-click or click
                                     if (active-edit-index == i) {
                                         active-edit-index = -1;
                                     } else {
@@ -67,6 +75,21 @@ export component GoalsView {
                                     }
                                 }
                             }
+                        }
+
+                        // Left border indicator/accent bar
+                        Rectangle {
+                            x: 0px;
+                            y: (parent.height - self.height) / 2;
+                            width: 3px;
+                            height: parent.height - 16px;
+                            border-radius: 1.5px;
+                            background: app-goal-data.limit_mins > 0 
+                                ? (ta.has-hover ? #ef4444 : #ef4444bb)
+                                : (app-goal-data.goal_mins > 0 
+                                    ? (ta.has-hover ? #10b981 : #10b981bb)
+                                    : (ta.has-hover ? #ffffff30 : transparent));
+                            animate background { duration: 100ms; }
                         }
 
                         VerticalLayout {
@@ -85,27 +108,28 @@ export component GoalsView {
                                     alignment: start;
 
                                     Text {
-                                        text: app-goal-data.name;
-                                        color: ta.has-hover ? #e2e8f0 : #94a3b8;
-                                        font-size: 12px;
+                                        text: app-goal-data.raw_name;
+                                        color: ta.has-hover ? #f8fafc : #e2e8f0;
+                                        font-size: 13px;
+                                        font-weight: (app-goal-data.limit_mins > 0 || app-goal-data.goal_mins > 0) ? 600 : 400;
                                         vertical-alignment: center;
                                         animate color { duration: 100ms; }
                                         overflow: elide;
                                     }
 
                                     if app-goal-data.limit_mins > 0 : Rectangle {
-                                        background: #ef444420;
-                                        border-color: #ef444450;
+                                        background: #ef444428;
+                                        border-color: #ef444460;
                                         border-width: 1px;
-                                        border-radius: 3px;
-                                        height: 16px;
-                                        width: limit-text.preferred-width + 8px;
+                                        border-radius: 4px;
+                                        height: 20px;
+                                        width: limit-text.preferred-width + 12px;
                                         y: (parent.height - self.height) / 2;
 
                                         limit-text := Text {
                                             text: "Limit: " + app-goal-data.limit_mins + "m" + (app-goal-data.limit_remaining != "" ? " (" + app-goal-data.limit_remaining + " left)" : "");
-                                            color: #ef4444;
-                                            font-size: 9px;
+                                            color: #f87171;
+                                            font-size: 11px;
                                             font-weight: 700;
                                             horizontal-alignment: center;
                                             vertical-alignment: center;
@@ -113,18 +137,18 @@ export component GoalsView {
                                     }
 
                                     if app-goal-data.goal_mins > 0 : Rectangle {
-                                        background: #10b98120;
-                                        border-color: #10b98150;
+                                        background: #10b98128;
+                                        border-color: #10b98160;
                                         border-width: 1px;
-                                        border-radius: 3px;
-                                        height: 16px;
-                                        width: goal-text.preferred-width + 8px;
+                                        border-radius: 4px;
+                                        height: 20px;
+                                        width: goal-text.preferred-width + 12px;
                                         y: (parent.height - self.height) / 2;
 
                                         goal-text := Text {
                                             text: "Goal: " + app-goal-data.goal_mins + "m" + (app-goal-data.goal_remaining != "" ? " (" + app-goal-data.goal_remaining + " left)" : "");
-                                            color: #10b981;
-                                            font-size: 9px;
+                                            color: #34d399;
+                                            font-size: 11px;
                                             font-weight: 700;
                                             horizontal-alignment: center;
                                             vertical-alignment: center;
@@ -163,9 +187,11 @@ export component GoalsView {
                                         width: 24px;
                                         height: 24px;
                                         border-radius: 4px;
-                                        background: ta-minus.has-hover ? #ffffff15 : #ffffff08;
+                                        background: ta-minus.has-hover ? #ef444430 : #ef444410;
                                         border-width: 1px;
-                                        border-color: #ffffff10;
+                                        border-color: ta-minus.has-hover ? #ef444480 : #ef444430;
+                                        animate background { duration: 100ms; }
+                                        animate border-color { duration: 100ms; }
 
                                         ta-minus := TouchArea {
                                             clicked => {
@@ -177,7 +203,7 @@ export component GoalsView {
 
                                         Text {
                                             text: "-";
-                                            color: #e2e8f0;
+                                            color: #f87171;
                                             font-size: 14px;
                                             font-weight: 700;
                                             horizontal-alignment: center;
@@ -200,9 +226,11 @@ export component GoalsView {
                                         width: 24px;
                                         height: 24px;
                                         border-radius: 4px;
-                                        background: ta-plus.has-hover ? #ffffff15 : #ffffff08;
+                                        background: ta-plus.has-hover ? #10b98130 : #10b98110;
                                         border-width: 1px;
-                                        border-color: #ffffff10;
+                                        border-color: ta-plus.has-hover ? #10b98180 : #10b98130;
+                                        animate background { duration: 100ms; }
+                                        animate border-color { duration: 100ms; }
 
                                         ta-plus := TouchArea {
                                             clicked => {
@@ -236,9 +264,10 @@ export component GoalsView {
                                         border-color: ta-reset.has-hover ? #e2e8f060 : #e2e8f035;
 
                                         ta-reset := TouchArea {
+                                            mouse-cursor: pointer;
                                             clicked => {
-                                                root.set-limit(app-goal-data.name, 0);
-                                                root.set-goal(app-goal-data.name, 0);
+                                                root.set-limit(app-goal-data.raw_name, 0);
+                                                root.set-goal(app-goal-data.raw_name, 0);
                                                 active-edit-index = -1;
                                             }
                                         }
@@ -264,8 +293,9 @@ export component GoalsView {
                                         border-color: ta-limit.has-hover ? #ef444460 : #ef444435;
 
                                         ta-limit := TouchArea {
+                                            mouse-cursor: pointer;
                                             clicked => {
-                                                root.set-limit(app-goal-data.name, input-minutes);
+                                                root.set-limit(app-goal-data.raw_name, input-minutes);
                                                 active-edit-index = -1;
                                             }
                                         }
@@ -291,8 +321,9 @@ export component GoalsView {
                                         border-color: ta-goal.has-hover ? #10b98160 : #10b98135;
 
                                         ta-goal := TouchArea {
+                                            mouse-cursor: pointer;
                                             clicked => {
-                                                root.set-goal(app-goal-data.name, input-minutes);
+                                                root.set-goal(app-goal-data.raw_name, input-minutes);
                                                 active-edit-index = -1;
                                             }
                                         }

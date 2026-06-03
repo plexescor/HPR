@@ -238,7 +238,16 @@ void UiModelManager::update(const std::map<std::string, long> &rawTimeLog,
             std::string goal_rem =
                 LimitsManager::getGoalRemaining(raw, duration, goal);
 
+            // get display name using aliasManager under lua lock or default
+            std::string displayName;
+            {
+                // aliasManager uses extensions (lua state), so lock luaMutex as well if it exists or use stateMutex
+                std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                displayName = aliasManager.getAlias(raw);
+            }
+
             slintVec_RawApps.push_back({
+                slint::SharedString(displayName),
                 slint::SharedString(raw),
                 limit,
                 goal,
@@ -559,8 +568,12 @@ void UiModelManager::update_Interpreted(const std::map<std::string, long> &rawTi
             std::string limit_rem = LimitsManager::getLimitRemaining(raw, duration, limit);
             std::string goal_rem = LimitsManager::getGoalRemaining(raw, duration, goal);
 
+            // get display name using aliasManager under lua/state mutex lock (already locked via stateMutex)
+            std::string displayName = aliasManager.getAlias(raw);
+
             slint::interpreter::Struct entry;
-            entry.set_field("name", slint::interpreter::Value(slint::SharedString(raw)));
+            entry.set_field("name", slint::interpreter::Value(slint::SharedString(displayName)));
+            entry.set_field("raw_name", slint::interpreter::Value(slint::SharedString(raw)));
             entry.set_field("limit_mins", slint::interpreter::Value((double)limit));
             entry.set_field("goal_mins", slint::interpreter::Value((double)goal));
             entry.set_field("limit_remaining", slint::interpreter::Value(slint::SharedString(limit_rem)));

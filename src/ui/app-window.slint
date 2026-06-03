@@ -302,6 +302,12 @@ export component MainWindow inherits Window {
                     }
 
                     SidebarButton {
+                        icon: @image-url("./images/goals.svg");
+                        tip: "Manage per app limits and goals";
+                        clicked => { root.active-view = "LIMITS"; }
+                    }
+
+                    SidebarButton {
                         icon: @image-url("./images/calendar.svg");
                         tip: "View historical data";
                         clicked => { date-picker.show(); }
@@ -335,12 +341,6 @@ export component MainWindow inherits Window {
                         icon: @image-url("./images/extension.svg");
                         tip: "View loaded extensions";
                         clicked => { root.active-view = "EXTENSIONS"; }
-                    }
-
-                    SidebarButton {
-                        icon: @image-url("./images/goals.svg");
-                        tip: "Manage per app limits and goals";
-                        clicked => { root.active-view = "LIMITS"; }
                     }
 
 

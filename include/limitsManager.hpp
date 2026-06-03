@@ -36,6 +36,7 @@ private:
     static std::map<std::string, long> limitTimeBase;
     static std::map<std::string, long> goalTimeBase;
     static std::map<std::string, bool> killSent;
+    static std::chrono::steady_clock::time_point lastGlobalKillTime;
 
     static std::mutex limitsMutex;
 };
