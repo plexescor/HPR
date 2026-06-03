@@ -13,6 +13,7 @@
 #include <sys/wait.h> // WEXITSTATUS
 #include <unistd.h>
 #elif defined(_WIN32)
+#include <windows.h>
 #include "wintoastlib.h"
 #include <shellapi.h>
 #endif
@@ -143,6 +144,94 @@ namespace
         }
         return false;
     }
+
+#ifdef _WIN32
+    std::string runSystemCommandWindows(const std::string& command, int& exitCode)
+    {
+        HANDLE hChildStd_OUT_Rd = NULL;
+        HANDLE hChildStd_OUT_Wr = NULL;
+
+        SECURITY_ATTRIBUTES saAttr;
+        saAttr.nLength = sizeof(SECURITY_ATTRIBUTES);
+        saAttr.bInheritHandle = TRUE;
+        saAttr.lpSecurityDescriptor = NULL;
+
+        if (!CreatePipe(&hChildStd_OUT_Rd, &hChildStd_OUT_Wr, &saAttr, 0))
+        {
+            std::cerr << "Creating pipe failed!\n";
+            Logger::log("[HPR] Creating pipe failed for command: " + command);
+            exitCode = -1;
+            return "";
+        }
+
+        if (!SetHandleInformation(hChildStd_OUT_Rd, HANDLE_FLAG_INHERIT, 0))
+        {
+            CloseHandle(hChildStd_OUT_Wr);
+            CloseHandle(hChildStd_OUT_Rd);
+            exitCode = -1;
+            return "";
+        }
+
+        PROCESS_INFORMATION piProcInfo;
+        STARTUPINFOA siStartInfo;
+        ZeroMemory(&piProcInfo, sizeof(PROCESS_INFORMATION));
+        ZeroMemory(&siStartInfo, sizeof(STARTUPINFOA));
+        siStartInfo.cb = sizeof(STARTUPINFOA);
+        siStartInfo.hStdError = hChildStd_OUT_Wr;
+        siStartInfo.hStdOutput = hChildStd_OUT_Wr;
+        siStartInfo.dwFlags |= STARTF_USESTDHANDLES;
+
+        std::string cmdLine = "cmd.exe /c " + command;
+        std::vector<char> cmdLineBuf(cmdLine.begin(), cmdLine.end());
+        cmdLineBuf.push_back('\0');
+
+        BOOL bSuccess = CreateProcessA(
+            NULL,
+            cmdLineBuf.data(),
+            NULL,
+            NULL,
+            TRUE,
+            CREATE_NO_WINDOW,
+            NULL,
+            NULL,
+            &siStartInfo,
+            &piProcInfo
+        );
+
+        if (!bSuccess)
+        {
+            std::cerr << "CreateProcess failed!\n";
+            Logger::log("[HPR] CreateProcess failed for command: " + command);
+            CloseHandle(hChildStd_OUT_Wr);
+            CloseHandle(hChildStd_OUT_Rd);
+            exitCode = -1;
+            return "";
+        }
+
+        CloseHandle(hChildStd_OUT_Wr);
+
+        std::string output = "";
+        char buffer[256];
+        DWORD dwRead;
+        while (ReadFile(hChildStd_OUT_Rd, buffer, sizeof(buffer) - 1, &dwRead, NULL) && dwRead > 0)
+        {
+            buffer[dwRead] = '\0';
+            output.append(buffer, dwRead);
+        }
+
+        WaitForSingleObject(piProcInfo.hProcess, INFINITE);
+
+        DWORD dwExitCode = 0;
+        GetExitCodeProcess(piProcInfo.hProcess, &dwExitCode);
+        exitCode = static_cast<int>(dwExitCode);
+
+        CloseHandle(piProcInfo.hProcess);
+        CloseHandle(piProcInfo.hThread);
+        CloseHandle(hChildStd_OUT_Rd);
+
+        return output;
+    }
+#endif
 }
 
 std::string runSystemCommand(std::string &command) {
@@ -189,22 +278,8 @@ std::string runSystemCommand(std::string &command) {
     return output;
 #elif defined(_WIN32)
 
-    FILE *pipe = _popen(command.c_str(), "r");
-
-    if (!pipe) {
-      std::cerr << "Opening the pipe failed!\n";
-      Logger::log("[HPR] Opening the pipe failed for command: " + command);
-      return "";
-    }
-
-    std::string output = "";
-    char buffer[256];
-
-    while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
-      output += buffer;
-    }
-
-    int exitCode = _pclose(pipe);
+    int exitCode = 0;
+    std::string output = runSystemCommandWindows(command, exitCode);
 
     if (exitCode != 0) {
       std::cerr << "Running the command failed! Exit Code: " << exitCode << std::endl;
@@ -247,22 +322,8 @@ std::string runSystemCommand_UNSAFE(std::string &command) {
 
 #elif defined(_WIN32)
 
-    FILE *pipe = _popen(command.c_str(), "r");
-
-    if (!pipe) {
-      std::cerr << "Opening the pipe failed!\n";
-      Logger::log("[HPR] Opening the pipe failed for command: " + command);
-      return "";
-    }
-
-    std::string output = "";
-    char buffer[256];
-
-    while (fgets(buffer, sizeof(buffer), pipe) != nullptr) {
-      output += buffer;
-    }
-
-    int exitCode = _pclose(pipe);
+    int exitCode = 0;
+    std::string output = runSystemCommandWindows(command, exitCode);
 
     if (exitCode != 0) {
     //   std::cerr << "Running the command failed! Exit Code: " << exitCode << std::endl;
