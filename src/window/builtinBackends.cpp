@@ -602,9 +602,9 @@ void registerBuiltinBackends()
         []()
         {
             std::string cmd = "gdbus call --session --dest org.Cinnamon --object-path /org/Cinnamon --method org.Cinnamon.Eval \"global.display.focus_window.get_wm_class()\"";
-            std::string rawOutput = runSystemCommand_UNSAFE(cmd);
 
-            return rawOutput.contains("('");
+            std::string check = runSystemCommand_UNSAFE(cmd);
+            return check.contains("true");
         },
 
 
