@@ -17,39 +17,40 @@ echo ""
 
 # --- Step 1: Check if extension files already exist ---
 if [ -d "$EXT_DIR" ]; then
-    echo "[HPR] Step 1/3: Extension files already downloaded. Skipping download."
-else
-    echo "[HPR] Step 1/3: Downloading extension files..."
-    echo "[HPR]           (This requires git and an internet connection)"
-    echo ""
-
-    if ! command -v git &>/dev/null; then
-        echo "[HPR] ERROR: 'git' is not installed on your system."
-        echo "[HPR]        Please install it first:"
-        echo "[HPR]          Ubuntu/Debian:  sudo apt install git"
-        echo "[HPR]          Fedora:         sudo dnf install git"
-        echo "[HPR]          Arch:           sudo pacman -S git"
-        echo ""
-        exit 1
-    fi
-
-    CLONE_OUT=$(git clone "$REPO_URL" "$EXT_DIR" 2>&1)
-    CLONE_EXIT=$?
-
-    if [ $CLONE_EXIT -ne 0 ]; then
-        echo "[HPR] ERROR: Download failed. Details below:"
-        echo "$CLONE_OUT"
-        echo ""
-        echo "[HPR]        Common causes:"
-        echo "[HPR]          - No internet connection"
-        echo "[HPR]          - GitHub is unreachable"
-        echo "[HPR]          - Disk is full"
-        echo ""
-        exit 1
-    fi
-
-    echo "[HPR]           Download complete!"
+    echo "[HPR] Step 1/3: Extension already exists. Deleting it for a fresh install..."
+    rm -rf "$EXT_DIR"
 fi
+
+echo "[HPR] Step 1/3: Downloading extension files..."
+echo "[HPR]           (This requires git and an internet connection)"
+echo ""
+
+if ! command -v git &>/dev/null; then
+    echo "[HPR] ERROR: 'git' is not installed on your system."
+    echo "[HPR]        Please install it first:"
+    echo "[HPR]          Ubuntu/Debian:  sudo apt install git"
+    echo "[HPR]          Fedora:         sudo dnf install git"
+    echo "[HPR]          Arch:           sudo pacman -S git"
+    echo ""
+    exit 1
+fi
+
+CLONE_OUT=$(git clone "$REPO_URL" "$EXT_DIR" 2>&1)
+CLONE_EXIT=$?
+
+if [ $CLONE_EXIT -ne 0 ]; then
+    echo "[HPR] ERROR: Download failed. Details below:"
+    echo "$CLONE_OUT"
+    echo ""
+    echo "[HPR]        Common causes:"
+    echo "[HPR]          - No internet connection"
+    echo "[HPR]          - GitHub is unreachable"
+    echo "[HPR]          - Disk is full"
+    echo ""
+    exit 1
+fi
+
+echo "[HPR]           Download complete!"
 
 # --- Step 2: Try to enable the extension ---
 # GNOME Shell only knows about extensions that existed at login time.

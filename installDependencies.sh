@@ -91,7 +91,7 @@ install_pkg() {
 }
 
 install_pkg "dbus-1 (dev)"  pkg-config "--exists dbus-1"  "dbus"         "libdbus-1-dev"    "dbus-devel"   "dbus-1-devel"
-install_pkg "libcurl (dev)" pkg-config "--exists libcurl"  "libcurl"      "libcurl4-openssl-dev" "libcurl-devel" "libcurl-devel"
+install_pkg "libcurl (dev)" pkg-config "--exists libcurl"  "curl"         "libcurl4-openssl-dev" "libcurl-devel" "libcurl-devel"
 
 # ── Print mode ────────────────────────────────────────────────────────────────
 if [[ "${INSTALL_MODE}" == "system" ]]; then
@@ -191,6 +191,13 @@ install -Dm755 "${VIEWER_BIN}" "${DEST_BIN}/slint-viewer"
 # ── Done ──────────────────────────────────────────────────────────────────────
 echo ""
 success "Slint ${SLINT_VERSION} installed (${INSTALL_MODE})."
+echo ""
+
+# ── Install gnome extension from shippedWithBinary ────────────────────────────
+if [[ -f "${SCRIPT_DIR}/shippedWithBinary/installWindowCallsExtension.sh" ]]; then
+    info "Running Gnome Shell extension installer..."
+    bash "${SCRIPT_DIR}/shippedWithBinary/installWindowCallsExtension.sh" || warn "Extension installation skipped or failed."
+fi
 echo ""
 
 if [[ "${INSTALL_MODE}" == "user" ]]; then
