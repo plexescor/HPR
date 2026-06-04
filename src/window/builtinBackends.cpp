@@ -588,94 +588,71 @@ void registerBuiltinBackends()
     ({
         "Cinnamon",
 
-        // matchesEnvironment
         [](const std::string& env) 
         {
             return env.contains("Cinnamon");
         },
 
-        []()
-        {
-            //no shit
-        },
+        []() {},
 
-        []()
+        []() -> bool
         {
             std::string cmd = "gdbus call --session --dest org.Cinnamon --object-path /org/Cinnamon --method org.Cinnamon.Eval \"global.display.focus_window.get_wm_class()\"";
-
             std::string check = runSystemCommand_UNSAFE(cmd);
-            return check.contains("true");
+            return (check.contains("(true,") || check.contains("(false,"));
         },
-
 
         []() -> std::string
         {
             std::string cmd = "gdbus call --session --dest org.Cinnamon --object-path /org/Cinnamon --method org.Cinnamon.Eval \"global.display.focus_window.get_wm_class()\"";
-            std::string rawOutput = runSystemCommand_UNSAFE(cmd);
-            // Find the positions of the single-quotes wrapping the inner string
-            size_t startQuote = rawOutput.find('\'');
-            size_t endQuote = rawOutput.rfind('\'');
-            
-            if (startQuote == std::string::npos || endQuote == std::string::npos || startQuote >= endQuote) {
-                return ""; // return empty if quotes aren't matched
-            }
-            
-            // Extract everything between the single quotes
-            std::string inner = rawOutput.substr(startQuote + 1, endQuote - startQuote - 1);
-            
-            // strip the literal double-quotes if they exist
-            if (inner.length() >= 2 && inner.front() == '"' && inner.back() == '"') {
-                inner = inner.substr(1, inner.length() - 2);
-            }
-            
-            // trim any trailing newlines or extra whitespaces
-            while (!inner.empty() && (inner.back() == '\n' || inner.back() == '\r' || inner.back() == ' ')) {
-                inner.pop_back();
-            }
+            std::string raw = runSystemCommand_UNSAFE(cmd);
 
-            return inner;
+            // Format: (true, '"Value"')  or  ('Value',)
+            // Try double-quote extraction first
+            size_t dq1 = raw.find('"');
+            size_t dq2 = raw.rfind('"');
+            if (dq1 != std::string::npos && dq2 != std::string::npos && dq1 != dq2)
+                return raw.substr(dq1 + 1, dq2 - dq1 - 1);
+
+            // Fallback: single-quote extraction
+            size_t sq1 = raw.find('\'');
+            size_t sq2 = raw.rfind('\'');
+            if (sq1 != std::string::npos && sq2 != std::string::npos && sq1 != sq2)
+                return raw.substr(sq1 + 1, sq2 - sq1 - 1);
+
+            return "";
         },
-    
+
         []() -> std::string
         {
-            std::string cmd = "gdbus call --session --dest org.Cinnamon --object-path /org/Cinnamon --method org.Cinnamon.Eval 'global.get_window_actors().filter(a => a.meta_window.has_focus())[0].get_meta_window().get_title()'";
-            
-            std::string rawOutput = runSystemCommand_UNSAFE(cmd);
+            std::string cmd = "gdbus call --session --dest org.Cinnamon --object-path /org/Cinnamon --method org.Cinnamon.Eval \"global.display.focus_window.get_title()\"";
+            std::string raw = runSystemCommand_UNSAFE(cmd);
 
-            // Find the positions of the single-quotes wrapping the inner string
-            size_t startQuote = rawOutput.find('\'');
-            size_t endQuote = rawOutput.rfind('\'');
-            
-            if (startQuote == std::string::npos || endQuote == std::string::npos || startQuote >= endQuote) {
-                return ""; // return empty if quotes aren't matched
-            }
-            
-            // Extract everything between the single quotes
-            std::string inner = rawOutput.substr(startQuote + 1, endQuote - startQuote - 1);
-            
-            // strip the literal double-quotes if they exist
-            if (inner.length() >= 2 && inner.front() == '"' && inner.back() == '"') {
-                inner = inner.substr(1, inner.length() - 2);
-            }
-            
-            // trim any trailing newlines or extra whitespaces
-            while (!inner.empty() && (inner.back() == '\n' || inner.back() == '\r' || inner.back() == ' ')) {
-                inner.pop_back();
-            }
+            size_t dq1 = raw.find('"');
+            size_t dq2 = raw.rfind('"');
+            if (dq1 != std::string::npos && dq2 != std::string::npos && dq1 != dq2)
+                return raw.substr(dq1 + 1, dq2 - dq1 - 1);
 
-            return inner;
+            size_t sq1 = raw.find('\'');
+            size_t sq2 = raw.rfind('\'');
+            if (sq1 != std::string::npos && sq2 != std::string::npos && sq1 != sq2)
+                return raw.substr(sq1 + 1, sq2 - sq1 - 1);
+
+            return "";
         },
-        
+
         []() -> std::string
         {
             std::string cmd = "gdbus call --session --dest org.Cinnamon --object-path /org/Cinnamon --method org.Cinnamon.Eval \"global.display.focus_window.get_pid()\"";
-            std::string rawOutput = runSystemCommand_UNSAFE(cmd);
-            size_t start = rawOutput.find('(');
-            size_t end = rawOutput.find(',', start);
-            if (start == std::string::npos || end == std::string::npos) return "";
-            std::string pid = rawOutput.substr(start + 1, end - start - 1);
-            while (!pid.empty() && (pid.front() == ' ')) pid = pid.substr(1);
-            return pid;
+            std::string raw = runSystemCommand_UNSAFE(cmd);
+
+            // Format: (true, 12345,) — grab number after the comma
+            size_t comma = raw.find(',');
+            if (comma == std::string::npos) return "";
+            size_t numStart = raw.find_first_not_of(" \t", comma + 1);
+            if (numStart == std::string::npos) return "";
+            size_t numEnd = raw.find_first_of(",)\n", numStart);
+            return raw.substr(numStart, numEnd - numStart);
         }
     });
 }
