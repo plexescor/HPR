@@ -360,9 +360,9 @@ void HPRInterpreter::trackingLoop()
         }
         else
         {
-            //Chunked sleep based on ui-poll-interval
-            int uiPollInterval = AppState::configManager.getConfig("ui-poll-interval", 200);
-            int remaining = uiPollInterval;
+            //Chunked sleep based on ui-update-interval
+            int uiUpdateInterval = AppState::configManager.getConfig("ui-update-interval", 200);
+            int remaining = uiUpdateInterval;
             while (remaining > 0 && running)
             {
                 int sleepTime = std::min(remaining, 50);
