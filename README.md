@@ -14,7 +14,7 @@
 
 <p align="center">
   <img src="https://img.shields.io/badge/status-active_development-brightgreen?style=flat-square" />
-  <img src="https://img.shields.io/badge/version-v0.7-blue?style=flat-square" />
+  <img src="https://img.shields.io/badge/version-v0.8-blue?style=flat-square" />
   <img src="https://img.shields.io/badge/language-C%2B%2B23-orange?style=flat-square" />
   <img src="https://img.shields.io/badge/UI-Slint_1.16.1-purple?style=flat-square" />
   <img src="https://img.shields.io/badge/DB-SQLite3_bundled-lightgrey?style=flat-square" />
@@ -66,6 +66,7 @@ https://github.com/user-attachments/assets/a5fbe1f1-0cdc-41c8-a77b-68f40d96d531
 - [What It Does Not Do](#what-it-does-not-do)
 - [Browser Tab Tracking](#browser-tab-tracking)
 - [VS Code Project Tracking](#vs-code-project-tracking)
+- [App Limits and Goals](#app-limits-and-goals)
 - [Extensions](#extensions)
 - [System Tray](#system-tray)
 - [Data Storage](#data-storage)
@@ -107,7 +108,17 @@ At any point you get three things live:
 - **Total time per application today**, displayed as `2h 14m 30s`
 - **Your complete switch history**: every transition, timestamped, in order
 
-Click the date picker and pull up any day you have ever run HPR. It loads that day's database asynchronously off a plain SQLite file sitting on your own disk. No sync step. No cloud roundtrip. No spinner talking to a server.
+**Historical data — three modes:**
+
+Click the calendar icon in the sidebar to open the History Range view:
+
+| Mode | What it does |
+|---|---|
+| **Single Day** | Pick any specific date. Loads that day's `.db` file asynchronously off disk. |
+| **Last N Days** | Pull last 7, 14, 30 days or any custom count. Multiple daily files are merged and aggregated. |
+| **Date Range** | Set a start and end date. HPR reads every daily file in the span and streams the combined result back. |
+
+Historical loading runs on a dedicated background thread — live tracking is never paused. A "Switch to Live View" button in the data view takes you back to real-time instantly.
 
 That is the whole pitch. A compiled binary that watches one thing and writes it down. Everything else is just what happens when you do that well.
 
@@ -147,6 +158,28 @@ VS Code puts the active project name directly in its window title in the format 
 The result goes into `timeLog_PerProject`, a separate time accumulator running in parallel with the normal per-app log. The UI has a dedicated Project View showing time broken down by project name for the day. Toggle between **Raw View** (unprocessed title substring) and the default parsed view which applies `projectAliases.csv`.
 
 This works on every supported platform — Hyprland, GNOME, KDE, Cinnamon, and Windows — because each backend already has a window title getter and VS Code puts the project name in the title on all of them.
+
+---
+
+## App Limits and Goals
+
+Set a daily time **limit** or daily usage **goal** on any tracked application — directly from the built-in Goals view in the sidebar.
+
+**Limits** cap an app to a maximum number of minutes per day. When usage crosses that threshold:
+1. HPR sends a system notification.
+2. Optionally, HPR can **force-quit the application automatically**.
+
+**Goals** set a minimum number of minutes you want to spend in an app each day (e.g. 30 minutes in your code editor). HPR tracks progress and notifies you when you hit it.
+
+**How to configure:**
+1. Click the Goals icon in the sidebar — every tracked app appears in the list automatically.
+2. Click any app row to expand it inline — a minute input with +/− step buttons appears alongside three actions: **SET LIMIT**, **SET GOAL**, **RESET**.
+3. Done. A dedicated background thread (`LimitsManager`) monitors usage continuously. No restart required.
+
+Badges on each row show **remaining time live**. Limit rows have a red accent; goal rows have green.
+
+> [!NOTE]
+> Advanced users can intercept the limit-reached event via the [Function Overriding API](https://hpr-cpp.netlify.app/overrides.html) to run custom Lua logic — log it, send a webhook, suppress the notification, or anything else.
 
 ---
 
@@ -212,7 +245,7 @@ HPR reads exactly one thing from your system:
 
 No keystrokes. No mouse movement. No screen capture. No clipboard. No file scanning. One string, every 50ms, written locally.
 
-HPR is also not an Electron app, not a web server, not a Python daemon, not a subscription service. It is a compiled C++23 binary. It starts in milliseconds. Under 10MB of RAM on Windows.
+HPR is also not an Electron app, not a web server, not a Python daemon, not a subscription service. It is a compiled C++23 binary. It starts in milliseconds.
 
 ---
 
@@ -413,7 +446,10 @@ The networking libraries are bundled solely to power the Lua extension engine. B
 | Automatic tracking | Yes | Yes | Yes | No |
 | Native Wayland | Yes | Partial | N/A | N/A |
 | System tray | Yes (native, no libs) | Yes | Yes | Yes |
+| Browser tab tracking | Yes (built-in, no extension) | Optional extension | Required extension | Optional extension |
 | VS Code project tracking | Yes (built-in, no extension) | Via plugin | No | No |
+| Per-app limits & goals | Yes (with force-quit option) | No | Limits only (premium) | No |
+| Multi-day historical queries | Yes (Range / Last N Days) | Web dashboard only | No | No |
 | Lua extension engine | Yes | No | No | No |
 | Embedded web server | No | Yes | No | No |
 | Open source | Yes | Yes | No | No |
@@ -494,17 +530,18 @@ HPR is completely free. If it is useful to you, consider supporting development 
 
 ## Architecture Overview
 
-HPR is a multi-threaded C++23 application organized around a single shared state struct. 12–14 threads run at any given time with no extensions loaded. 4–7 of those are Slint internals (renderer, event loop, etc.). The remaining are HPR's own threads with defined responsibilities and cadences:
+HPR is a multi-threaded C++23 application organized around a single shared state struct. Each loaded extension adds its own dedicated thread on top of the baseline HPR threads (window poller, UI bridge, database writer, limits monitor):
 
 ```
 Main Thread          (Slint event loop)
   Window Poller      [50ms  tick  -  CurrentWindowManager]
   UI Bridge          [200ms tick  -  HPR / HPRInterpreter + UiModelManager]
   Database Writer    [10s   tick + event-driven  -  DatabaseManager]
-  + additional HPR internal threads
-```
+  Limits Monitor     [background  -  LimitsManager]
+  Extension Threads  [N threads, one per loaded extension  -  ExtensionManager]
 
-Each loaded extension adds one dedicated thread on top of this baseline.
+Historical Loader: spawns ad-hoc thread on date selection → emits result via EventHub
+```
 
 **Main thread** is `main.cpp`. It instantiates `ConfigManager`, `DatabaseManager`, and `CurrentWindowManager`, picks either `HPR` or `HPRInterpreter` based on config, then enters the Slint event loop.
 
@@ -754,7 +791,9 @@ The full codebase is readable in one sitting if you go in this order:
 main.cpp              →  startup, config loading, thread orchestration
 appState.hpp          →  the shared data model, the center of everything
 getCurrentWindow.cpp  →  platform-specific window polling per backend
-databaseManager.cpp   →  persistence, WAL, lock file, midnight database rollover
+databaseManager.cpp   →  persistence, lock file, midnight rollover, historical load
+limitsManager.cpp     →  per-app usage limit and goal monitoring, force-quit, notification dispatch
+extensionManager.cpp  →  Lua VM lifecycle, sol2 bindings, hot-reload, RAII subscription tracking
 uiModelManager.cpp    →  how C++ state becomes Slint models in both UI modes
 ```
 
@@ -768,7 +807,7 @@ If HPR has been useful to you, a Ko-fi helps keep development going:
 
 <p align="center">
   <sub>
-    Active development &nbsp;|&nbsp; v0.7 &nbsp;|&nbsp;
+    Active development &nbsp;|&nbsp; v0.8 &nbsp;|&nbsp;
     Hyprland · GNOME · KDE Plasma · Cinnamon · Windows 10/11 &nbsp;|&nbsp;
     C++23 · Slint 1.16.1 · SQLite3 amalgamation · sqlite_modern_cpp · Lua 5.4 · sol2
   </sub>
