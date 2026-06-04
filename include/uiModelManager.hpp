@@ -16,25 +16,25 @@ class UiModelManager
         UiModelManager(slint::ComponentHandle<slint::interpreter::ComponentInstance> &ui_handle);
         ~UiModelManager();
 
-        void update(const std::map<std::string, long> &rawTimeLog,
-                            const std::map<std::string, long> &rawTimeLog_Tab,
-                            const std::map<std::string, long> &rawTimeLog_Project,
+        void update(const std::map<std::string, uint64_t> &rawTimeLog,
+                            const std::map<std::string, uint64_t> &rawTimeLog_Tab,
+                            const std::map<std::string, uint64_t> &rawTimeLog_Project,
                             const std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> &rawHistory,
                             std::string &currentWindowName,
-                            long &totalTrackedTime,
-                            long &totalTrackedTime_Tab,
-                            long &totalTrackedTime_Project,
+                            uint64_t &totalTrackedTime,
+                            uint64_t &totalTrackedTime_Tab,
+                            uint64_t &totalTrackedTime_Project,
                             AliasManager &aliasManager
         );
 
-        void update_Interpreted(const std::map<std::string, long> &rawTimeLog,
-                            const std::map<std::string, long> &rawTimeLog_Tab,
-                            const std::map<std::string, long> &rawTimeLog_Project,
+        void update_Interpreted(const std::map<std::string, uint64_t> &rawTimeLog,
+                            const std::map<std::string, uint64_t> &rawTimeLog_Tab,
+                            const std::map<std::string, uint64_t> &rawTimeLog_Project,
                             const std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> &rawHistory,
                             std::string &currentWindowName,
-                            long &totalTrackedTime,
-                            long &totalTrackedTime_Tab,
-                            long &totalTrackedTime_Project,
+                            uint64_t &totalTrackedTime,
+                            uint64_t &totalTrackedTime_Tab,
+                            uint64_t &totalTrackedTime_Project,
                             AliasManager &aliasManager);
 
         void showInsights(const std::string mostUsed,

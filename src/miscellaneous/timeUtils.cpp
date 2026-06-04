@@ -50,14 +50,14 @@ std::string convertToTime_HHMMSS_12(uint64_t ms)
     catch (...) { return ""; }
 }
 
-std::string formatTime_HHMMSS(int ms)
+std::string formatTime_HHMMSS(uint64_t ms)
 {
     try
     {
-        int totalSeconds = ms / 1000;
-        int hours   = totalSeconds / 3600;
-        int minutes = (totalSeconds % 3600) / 60;
-        int seconds = totalSeconds % 60;
+        uint64_t totalSeconds = ms / 1000;
+        uint64_t hours   = totalSeconds / 3600;
+        uint64_t minutes = (totalSeconds % 3600) / 60;
+        uint64_t seconds = totalSeconds % 60;
 
         std::ostringstream oss;
         if (hours > 0)   oss << hours   << "h ";

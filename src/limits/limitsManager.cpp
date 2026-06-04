@@ -107,11 +107,11 @@ void LimitsManager::checkLoop()
 {
     while (running)
     {
-        std::map<std::string, long> currentUsage;
+        std::map<std::string, uint64_t> currentUsage;
         std::map<std::string, int> activeLimits;
         std::map<std::string, int> activeGoals;
-        std::map<std::string, long> limitBases;
-        std::map<std::string, long> goalBases;
+        std::map<std::string, uint64_t> limitBases;
+        std::map<std::string, uint64_t> goalBases;
 
         {
             std::lock_guard<std::mutex> lock(AppState::stateMutex);
@@ -127,15 +127,14 @@ void LimitsManager::checkLoop()
         {
             if (minutes <= 0) continue;
 
-            long limitMs = static_cast<long>(minutes) * 60 * 1000;
-            long warningMs = static_cast<long>(limitMs * 0.9);
+            uint64_t limitMs = static_cast<uint64_t>(minutes) * 60 * 1000;
+            uint64_t warningMs = static_cast<uint64_t>(limitMs * 0.9);
 
             if (currentUsage.count(appName))
             {
-                long duration = currentUsage.at(appName);
-                long base = limitBases.count(appName) ? limitBases.at(appName) : 0;
-                long elapsed = duration - base;
-                if (elapsed < 0) elapsed = 0;
+                uint64_t duration = currentUsage.at(appName);
+                uint64_t base = limitBases.count(appName) ? limitBases.at(appName) : 0;
+                uint64_t elapsed = (duration >= base) ? (duration - base) : 0;
 
                 bool sendWarning = false;
                 bool sendReached = false;
@@ -152,7 +151,7 @@ void LimitsManager::checkLoop()
                             sendReached = true;
                         }
 
-                        long killMs = static_cast<long>(limitMs * 1.05);
+                        uint64_t killMs = static_cast<uint64_t>(limitMs * 1.05);
                         if (elapsed >= killMs && !killSent[appName])
                         {
                             doKill = true;
@@ -260,15 +259,14 @@ void LimitsManager::checkLoop()
         {
             if (minutes <= 0) continue;
 
-            long goalMs = static_cast<long>(minutes) * 60 * 1000;
-            long warningMs = static_cast<long>(goalMs * 0.9);
+            uint64_t goalMs = static_cast<uint64_t>(minutes) * 60 * 1000;
+            uint64_t warningMs = static_cast<uint64_t>(goalMs * 0.9);
 
             if (currentUsage.count(appName))
             {
-                long duration = currentUsage.at(appName);
-                long base = goalBases.count(appName) ? goalBases.at(appName) : 0;
-                long elapsed = duration - base;
-                if (elapsed < 0) elapsed = 0;
+                uint64_t duration = currentUsage.at(appName);
+                uint64_t base = goalBases.count(appName) ? goalBases.at(appName) : 0;
+                uint64_t elapsed = (duration >= base) ? (duration - base) : 0;
 
                 bool sendGoalReached = false;
                 bool sendGoalWarning = false;
@@ -312,40 +310,38 @@ void LimitsManager::checkLoop()
     }
 }
 
-std::string LimitsManager::getLimitRemaining(const std::string& appName, long currentDurationMs, int limitMins)
+std::string LimitsManager::getLimitRemaining(const std::string& appName, uint64_t currentDurationMs, int limitMins)
 {
     if (limitMins <= 0) return "";
 
-    long limitMs = static_cast<long>(limitMins) * 60 * 1000;
-    long base = 0;
+    uint64_t limitMs = static_cast<uint64_t>(limitMins) * 60 * 1000;
+    uint64_t base = 0;
     {
         std::lock_guard<std::mutex> lock(AppState::stateMutex);
         if (AppState::state.limitTimeBase.count(appName))
             base = AppState::state.limitTimeBase.at(appName);
     }
-    long elapsed = currentDurationMs - base;
-    if (elapsed < 0) elapsed = 0;
+    uint64_t elapsed = (currentDurationMs >= base) ? (currentDurationMs - base) : 0;
 
-    long remaining = limitMs - elapsed;
-    if (remaining <= 0) return "0s";
+    if (elapsed >= limitMs) return "0s";
+    uint64_t remaining = limitMs - elapsed;
     return formatTime_HHMMSS(remaining);
 }
 
-std::string LimitsManager::getGoalRemaining(const std::string& appName, long currentDurationMs, int goalMins)
+std::string LimitsManager::getGoalRemaining(const std::string& appName, uint64_t currentDurationMs, int goalMins)
 {
     if (goalMins <= 0) return "";
 
-    long goalMs = static_cast<long>(goalMins) * 60 * 1000;
-    long base = 0;
+    uint64_t goalMs = static_cast<uint64_t>(goalMins) * 60 * 1000;
+    uint64_t base = 0;
     {
         std::lock_guard<std::mutex> lock(AppState::stateMutex);
         if (AppState::state.goalTimeBase.count(appName))
             base = AppState::state.goalTimeBase.at(appName);
     }
-    long elapsed = currentDurationMs - base;
-    if (elapsed < 0) elapsed = 0;
+    uint64_t elapsed = (currentDurationMs >= base) ? (currentDurationMs - base) : 0;
 
-    long remaining = goalMs - elapsed;
-    if (remaining <= 0) return "Met!";
+    if (elapsed >= goalMs) return "Met!";
+    uint64_t remaining = goalMs - elapsed;
     return formatTime_HHMMSS(remaining);
 }

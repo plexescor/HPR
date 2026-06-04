@@ -39,15 +39,15 @@ export component MainWindow inherits Window {
     callback setGoal(string, int);
 
 
-    in property <int>             trackedTime_S;
-    in property <int>             trackedTime_Tab_S;
+    in property <float>           trackedTime_S;
+    in property <float>           trackedTime_Tab_S;
     in property <string>          windowName_S;
     in property <[TimeLog]>       timePerApp_S;
     in property <[SwitchHistory]> switchHistory_S;
     in property <[TimeLog_Tab]>     timePerTab_S;
     in property <[TimeLog_Project]> timePerProject_S;
     in property <[LoadedExtension_S]> loadedExtensions_S;
-    in property <int>               trackedTime_Project_S;
+    in property <float>             trackedTime_Project_S;
     in property <[AppGoalData]>          rawApps_S;
 
 

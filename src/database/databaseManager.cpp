@@ -224,17 +224,17 @@ bool DatabaseManager::loadStateFromDB()
         
         // Load app_usage into AppState
         *db << "select name, duration from app_usage;"
-        >> [](std::string name, long duration) {
+        >> [](std::string name, uint64_t duration) {
             AppState::state.timeLog_PerApp[name] += duration;
         };
 
         *db << "select name, duration from tab_usage;"
-        >> [](std::string name, long duration) {
+        >> [](std::string name, uint64_t duration) {
             AppState::state.timeLog_PerTab[name] += duration;
         };
 
         *db << "select name, duration from project_usage;"
-        >> [](std::string name, long duration) {
+        >> [](std::string name, uint64_t duration) {
             AppState::state.timeLog_PerProject[name] += duration;
         };
 
@@ -256,12 +256,12 @@ bool DatabaseManager::loadStateFromDB()
         };
 
         *db << "select name, base_ms from limit_bases;"
-        >> [](std::string name, long base) {
+        >> [](std::string name, uint64_t base) {
             AppState::state.limitTimeBase[name] = base;
         };
 
         *db << "select name, base_ms from goal_bases;"
-        >> [](std::string name, long base) {
+        >> [](std::string name, uint64_t base) {
             AppState::state.goalTimeBase[name] = base;
         };
 
@@ -492,24 +492,24 @@ void DatabaseManager::loadDb_Singular(std::string requestedDate)
             histDb << "PRAGMA wal_checkpoint(TRUNCATE);";
 
             //Create an intermediate map
-            std::map<std::string, long> results;
-            std::map<std::string, long> results_Tab;
-            std::map<std::string, long> results_Project;
+            std::map<std::string, uint64_t> results;
+            std::map<std::string, uint64_t> results_Tab;
+            std::map<std::string, uint64_t> results_Project;
             std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> results_Switch;
 
             //load from db to the map
             histDb << "select name, duration from app_usage;"
-                   >> [&results](std::string name, long duration) {
+                   >> [&results](std::string name, uint64_t duration) {
                        results[name] = duration;
                    };
 
             histDb << "select name, duration from tab_usage;"
-                   >> [&results_Tab](std::string name, long duration) {
+                   >> [&results_Tab](std::string name, uint64_t duration) {
                        results_Tab[name] = duration;
                    };
 
             histDb << "select name, duration from project_usage;"
-                   >> [&results_Project](std::string name, long duration) {
+                   >> [&results_Project](std::string name, uint64_t duration) {
                        results_Project[name] = duration;
                    };
             
@@ -587,7 +587,7 @@ void DatabaseManager::loadDb_Number(int days, std::string mode)
         {
             std::string dateStr = convertToDate_DDMMYY(timeStampMs);
             fileNames.push_back(dateStr);
-            timeStampMs -= 86400000;
+            timeStampMs = (timeStampMs >= 86400000) ? (timeStampMs - 86400000) : 0;
         }
 
         for (int i = 0; i < days; ++i)
@@ -608,24 +608,24 @@ void DatabaseManager::loadDb_Number(int days, std::string mode)
                     sqlite::database numDb(fullPath);
 
                     //Create an intermediate map
-                    std::map<std::string, long> results;
-                    std::map<std::string, long> results_Tab;
-                    std::map<std::string, long> results_Project;
+                    std::map<std::string, uint64_t> results;
+                    std::map<std::string, uint64_t> results_Tab;
+                    std::map<std::string, uint64_t> results_Project;
                     std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> results_Switch;
 
                     //load from db to the map
                     numDb << "select name, duration from app_usage;"
-                        >> [&results](std::string name, long duration) {
+                        >> [&results](std::string name, uint64_t duration) {
                             results[name] = duration;
                         };
 
                     numDb << "select name, duration from tab_usage;"
-                        >> [&results_Tab](std::string name, long duration) {
+                        >> [&results_Tab](std::string name, uint64_t duration) {
                             results_Tab[name] = duration;
                         };
 
                     numDb << "select name, duration from project_usage;"
-                        >> [&results_Project](std::string name, long duration) {
+                        >> [&results_Project](std::string name, uint64_t duration) {
                             results_Project[name] = duration;
                         };
                     
@@ -695,12 +695,12 @@ void DatabaseManager::loadDb_Number(int days, std::string mode)
         for (int i = 0; i < days; ++i)
         {
             fileNames.push_back(convertToDate_DDMMYY(timeStampMs));
-            timeStampMs -= 86400000;
+            timeStampMs = (timeStampMs >= 86400000) ? (timeStampMs - 86400000) : 0;
         }
 
-        std::vector<std::map<std::string, long>> allApp(days);
-        std::vector<std::map<std::string, long>> allTab(days);
-        std::vector<std::map<std::string, long>> allProject(days);
+        std::vector<std::map<std::string, uint64_t>> allApp(days);
+        std::vector<std::map<std::string, uint64_t>> allTab(days);
+        std::vector<std::map<std::string, uint64_t>> allProject(days);
         std::vector<std::map<std::pair<std::string, std::string>, std::vector<uint64_t>>> allSwitches(days);
         std::vector<bool> loaded(days, false);
 
@@ -734,17 +734,17 @@ void DatabaseManager::loadDb_Number(int days, std::string mode)
                     sqlite::database numDb(fullPath);
 
                     numDb << "select name, duration from app_usage;"
-                        >> [&, i](std::string name, long duration) {
+                        >> [&, i](std::string name, uint64_t duration) {
                             allApp[i][name] = duration;
                         };
 
                     numDb << "select name, duration from tab_usage;"
-                        >> [&, i](std::string name, long duration) {
+                        >> [&, i](std::string name, uint64_t duration) {
                             allTab[i][name] = duration;
                         };
 
                     numDb << "select name, duration from project_usage;"
-                        >> [&, i](std::string name, long duration) {
+                        >> [&, i](std::string name, uint64_t duration) {
                             allProject[i][name] = duration;
                         };
 
@@ -766,9 +766,9 @@ void DatabaseManager::loadDb_Number(int days, std::string mode)
             if (w.joinable()) w.join();
 
         // O(n) average pass
-        std::map<std::string, long> totalApp;
-        std::map<std::string, long> totalTab;
-        std::map<std::string, long> totalProject;
+        std::map<std::string, uint64_t> totalApp;
+        std::map<std::string, uint64_t> totalTab;
+        std::map<std::string, uint64_t> totalProject;
         std::map<std::string, int> countApp;
         std::map<std::string, int> countTab;
         std::map<std::string, int> countProject;
@@ -871,7 +871,7 @@ void DatabaseManager::loadDb_Range(std::string dateFrom, std::string dateTo, std
         {
             std::string dateStr = convertToDate_DDMMYY(timeStampTo);
             fileNames.push_back(dateStr);
-            timeStampTo -= 86400000;
+            timeStampTo = (timeStampTo >= 86400000) ? (timeStampTo - 86400000) : 0;
         }
 
         for (int i = 0; i < days; ++i)
@@ -892,24 +892,24 @@ void DatabaseManager::loadDb_Range(std::string dateFrom, std::string dateTo, std
                     sqlite::database numDb(fullPath);
 
                     //Create an intermediate map
-                    std::map<std::string, long> results;
-                    std::map<std::string, long> results_Tab;
-                    std::map<std::string, long> results_Project;
+                    std::map<std::string, uint64_t> results;
+                    std::map<std::string, uint64_t> results_Tab;
+                    std::map<std::string, uint64_t> results_Project;
                     std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> results_Switch;
 
                     //load from db to the map
                     numDb << "select name, duration from app_usage;"
-                        >> [&results](std::string name, long duration) {
+                        >> [&results](std::string name, uint64_t duration) {
                             results[name] = duration;
                         };
 
                     numDb << "select name, duration from tab_usage;"
-                        >> [&results_Tab](std::string name, long duration) {
+                        >> [&results_Tab](std::string name, uint64_t duration) {
                             results_Tab[name] = duration;
                         };
 
                     numDb << "select name, duration from project_usage;"
-                        >> [&results_Project](std::string name, long duration) {
+                        >> [&results_Project](std::string name, uint64_t duration) {
                             results_Project[name] = duration;
                         };
                     
@@ -979,12 +979,12 @@ void DatabaseManager::loadDb_Range(std::string dateFrom, std::string dateTo, std
         for (int i = 0; i < days; ++i)
         {
             fileNames.push_back(convertToDate_DDMMYY(timeStampTo));
-            timeStampTo -= 86400000;
+            timeStampTo = (timeStampTo >= 86400000) ? (timeStampTo - 86400000) : 0;
         }
 
-        std::vector<std::map<std::string, long>> allApp(days);
-        std::vector<std::map<std::string, long>> allTab(days);
-        std::vector<std::map<std::string, long>> allProject(days);
+        std::vector<std::map<std::string, uint64_t>> allApp(days);
+        std::vector<std::map<std::string, uint64_t>> allTab(days);
+        std::vector<std::map<std::string, uint64_t>> allProject(days);
         std::vector<std::map<std::pair<std::string, std::string>, std::vector<uint64_t>>> allSwitches(days);
         std::vector<bool> loaded(days, false);
 
@@ -1018,17 +1018,17 @@ void DatabaseManager::loadDb_Range(std::string dateFrom, std::string dateTo, std
                     sqlite::database numDb(fullPath);
 
                     numDb << "select name, duration from app_usage;"
-                        >> [&, i](std::string name, long duration) {
+                        >> [&, i](std::string name, uint64_t duration) {
                             allApp[i][name] = duration;
                         };
 
                     numDb << "select name, duration from tab_usage;"
-                        >> [&, i](std::string name, long duration) {
+                        >> [&, i](std::string name, uint64_t duration) {
                             allTab[i][name] = duration;
                         };
 
                     numDb << "select name, duration from project_usage;"
-                        >> [&, i](std::string name, long duration) {
+                        >> [&, i](std::string name, uint64_t duration) {
                             allProject[i][name] = duration;
                         };
 
@@ -1050,9 +1050,9 @@ void DatabaseManager::loadDb_Range(std::string dateFrom, std::string dateTo, std
             if (w.joinable()) w.join();
 
         // O(n) average pass
-        std::map<std::string, long> totalApp;
-        std::map<std::string, long> totalTab;
-        std::map<std::string, long> totalProject;
+        std::map<std::string, uint64_t> totalApp;
+        std::map<std::string, uint64_t> totalTab;
+        std::map<std::string, uint64_t> totalProject;
         std::map<std::string, int> countApp;
         std::map<std::string, int> countTab;
         std::map<std::string, int> countProject;

@@ -562,8 +562,8 @@ namespace AppState {
     struct AppState {
         std::string currentWindow;
         std::string previousWindow;
-        std::map<std::string, long> timeLog_PerApp;
-        std::map<std::string, long> timeLog_PerTab;
+        std::map<std::string, uint64_t> timeLog_PerApp;
+        std::map<std::string, uint64_t> timeLog_PerTab;
         std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> switchHistory;
     };
     extern AppState state;
@@ -663,6 +663,8 @@ The writer sleeps in 100 intervals of 100ms rather than one 10-second block. HPR
 | `std::chrono::system_clock` | Recording switch timestamps for display only. Never used in arithmetic. |
 
 Using `system_clock` for duration measurement is a classic bug that corrupts accumulated totals when NTP fires or DST changes mid-session. Measurement and display use different clocks on purpose.
+
+All millisecond tracking accumulators and UI formatters use 64-bit integers (`uint64_t`) and floating-point types (`float` / `double` in Slint properties) to guarantee that the system will not experience overflow or lossy downcast issues even during extremely long tracking runs.
 
 ---
 

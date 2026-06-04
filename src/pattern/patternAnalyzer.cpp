@@ -55,7 +55,7 @@ void PatternAnalyzer::generateInsights()
     //PATTERN 2: Total tracked time
     if (!timeLog_PerApp.empty())
     {
-        int totalTrackedTime = 0;
+        uint64_t totalTrackedTime = 0;
         for (const auto &[raw, duration] : timeLog_PerApp)
         {
             totalTrackedTime += duration;
@@ -178,7 +178,7 @@ void PatternAnalyzer::generateInsights()
                 // if we have a departure, it MUST match the most recent arrival for THIS app
                 if (activeSessions.count(e.app)) 
                 {
-                    uint64_t duration = e.ts - activeSessions[e.app];
+                    uint64_t duration = (e.ts >= activeSessions[e.app]) ? (e.ts - activeSessions[e.app]) : 0;
                     
                     // Sanity cheacck: focus session can't be longer than 8 hours 
                     // or if you are a god and in the flow state, then it canbe

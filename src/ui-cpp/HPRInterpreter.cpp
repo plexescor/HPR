@@ -223,13 +223,13 @@ void HPRInterpreter::trackingLoop()
     bool uiReady = false;
 
     // Stuff native to c++, holds raw values
-    long totalTrackedTime; // For the bars
-    long totalTrackedTime_Tab;
-    long totalTrackedTime_Project;
+    uint64_t totalTrackedTime; // For the bars
+    uint64_t totalTrackedTime_Tab;
+    uint64_t totalTrackedTime_Project;
     std::string window;
-    std::map<std::string, long> timeLog;
-    std::map<std::string, long> timeLog_Tab;
-    std::map<std::string, long> timeLog_Project;
+    std::map<std::string, uint64_t> timeLog;
+    std::map<std::string, uint64_t> timeLog_Tab;
+    std::map<std::string, uint64_t> timeLog_Project;
     std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> switchHistory;
 
     //Special priority to insights because they arent exactly on demand loaded,

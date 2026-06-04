@@ -74,14 +74,14 @@ UiModelManager::~UiModelManager()
 {
 }
 
-void UiModelManager::update(const std::map<std::string, long> &rawTimeLog,
-                            const std::map<std::string, long> &rawTimeLog_Tab,
-                            const std::map<std::string, long> &rawTimeLog_Project,
+void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
+                            const std::map<std::string, uint64_t> &rawTimeLog_Tab,
+                            const std::map<std::string, uint64_t> &rawTimeLog_Project,
                             const std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> &rawHistory,
                             std::string &currentWindowName,
-                            long &totalTrackedTime,
-                            long &totalTrackedTime_Tab,
-                            long &totalTrackedTime_Project,
+                            uint64_t &totalTrackedTime,
+                            uint64_t &totalTrackedTime_Tab,
+                            uint64_t &totalTrackedTime_Project,
                             AliasManager &aliasManager)
 {
 
@@ -89,7 +89,7 @@ void UiModelManager::update(const std::map<std::string, long> &rawTimeLog,
     //----------------------TIME LOG-----------------------------------------------
 
     // make a middle man translatedTimeLog with correct aliases and push rawTimeLog
-    std::map<std::string, long> translatedTimeLog;
+    std::map<std::string, uint64_t> translatedTimeLog;
 
     for (const auto &[raw, duration] : rawTimeLog)
     {
@@ -99,7 +99,7 @@ void UiModelManager::update(const std::map<std::string, long> &rawTimeLog,
 
     //TAB
     bool isTabView;
-    std::map<std::string, long> translatedTimeLog_Tab;
+    std::map<std::string, uint64_t> translatedTimeLog_Tab;
     {
         std::lock_guard<std::mutex> lock(AppState::stateMutex);
         isTabView= AppState::state.useTabView;
@@ -125,7 +125,7 @@ void UiModelManager::update(const std::map<std::string, long> &rawTimeLog,
     
     //Projects
     bool isRawView;
-    std::map<std::string, long> translatedTimeLog_Project;
+    std::map<std::string, uint64_t> translatedTimeLog_Project;
     {
         std::lock_guard<std::mutex> lock(AppState::stateMutex);
         isRawView= AppState::state.isRawProjectView;
@@ -180,7 +180,7 @@ void UiModelManager::update(const std::map<std::string, long> &rawTimeLog,
     {
         slintVec_TimeLog.push_back({slint::SharedString(name),
                                     slint::SharedString(formatTime_HHMMSS(duration)), // The HH:MM:SS string
-                                    (int)duration});
+                                    (float)duration});
     }
 
     std::vector<TimeLog_Tab> slintVec_TimeLog_Tab;
@@ -188,7 +188,7 @@ void UiModelManager::update(const std::map<std::string, long> &rawTimeLog,
     {
         slintVec_TimeLog_Tab.push_back({slint::SharedString(name),
                                     slint::SharedString(formatTime_HHMMSS(duration)), // The HH:MM:SS string
-                                    (int)duration});
+                                    (float)duration});
     }
 
     std::vector<TimeLog_Project> slintVec_TimeLog_Project;
@@ -196,7 +196,7 @@ void UiModelManager::update(const std::map<std::string, long> &rawTimeLog,
     {
         slintVec_TimeLog_Project.push_back({slint::SharedString(name),
                                             slint::SharedString(formatTime_HHMMSS(duration)), // The HH:MM:SS string
-                                            (int)duration});
+                                            (float)duration});
     }
 
     // Sort so most used comes at top
@@ -315,9 +315,9 @@ void UiModelManager::update(const std::map<std::string, long> &rawTimeLog,
         if (auto handle = weak.lock()) {
                 (*handle)->set_windowName_S(slint::SharedString(currentWindowName));
 
-                (*handle)->set_trackedTime_S(totalTrackedTime);
-                (*handle)->set_trackedTime_Tab_S(totalTrackedTime_Tab);
-                (*handle)->set_trackedTime_Project_S(totalTrackedTime_Project);
+                (*handle)->set_trackedTime_S((float)totalTrackedTime);
+                (*handle)->set_trackedTime_Tab_S((float)totalTrackedTime_Tab);
+                (*handle)->set_trackedTime_Project_S((float)totalTrackedTime_Project);
                 // Surgical update to prevent layout panics during resize/maximize
                 auto syncModel = [](auto model, const auto& vec) 
                 {
@@ -377,23 +377,23 @@ void UiModelManager::update(const std::map<std::string, long> &rawTimeLog,
 
 }
 
-void UiModelManager::update_Interpreted(const std::map<std::string, long> &rawTimeLog,
-                            const std::map<std::string, long> &rawTimeLog_Tab,
-                            const std::map<std::string, long> &rawTimeLog_Project,
+void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &rawTimeLog,
+                            const std::map<std::string, uint64_t> &rawTimeLog_Tab,
+                            const std::map<std::string, uint64_t> &rawTimeLog_Project,
                             const std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> &rawHistory,
                             std::string &currentWindowName,
-                            long &totalTrackedTime,
-                            long &totalTrackedTime_Tab,
-                            long &totalTrackedTime_Project,
+                            uint64_t &totalTrackedTime,
+                            uint64_t &totalTrackedTime_Tab,
+                            uint64_t &totalTrackedTime_Project,
                             AliasManager &aliasManager)
 {
     currentWindowName = aliasManager.getAlias(currentWindowName);
 
     //----------------------TIME LOG-----------------------------------------------
 
-    std::map<std::string, long> translatedTimeLog;
-    std::map<std::string, long> translatedTimeLog_Tab;
-    std::map<std::string, long> translatedTimeLog_Project;
+    std::map<std::string, uint64_t> translatedTimeLog;
+    std::map<std::string, uint64_t> translatedTimeLog_Tab;
+    std::map<std::string, uint64_t> translatedTimeLog_Project;
 
     for (const auto &[raw, duration] : rawTimeLog)
     {

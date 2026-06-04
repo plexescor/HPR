@@ -31,20 +31,20 @@ namespace AppState {
         std::string currentTitle;
         
         //Apps
-        std::map<std::string, long> timeLog_PerApp; 
+        std::map<std::string, uint64_t> timeLog_PerApp; 
         std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> switchHistory;
 
         //Tabs
-        std::map<std::string, long> timeLog_PerTab;
+        std::map<std::string, uint64_t> timeLog_PerTab;
 
         //Projects
-        std::map<std::string, long> timeLog_PerProject;
+        std::map<std::string, uint64_t> timeLog_PerProject;
 
         // Limits & Goals
         std::map<std::string, int> appLimits;
         std::map<std::string, int> appGoals;
-        std::map<std::string, long> limitTimeBase;
-        std::map<std::string, long> goalTimeBase;
+        std::map<std::string, uint64_t> limitTimeBase;
+        std::map<std::string, uint64_t> goalTimeBase;
 
         //misc stuff
         std::map<std::string, std::string> appNamePid;
@@ -53,17 +53,17 @@ namespace AppState {
 
     //Intended to hold data for max 1 whole day
     struct HistoricalData_Singular {
-        std::map<std::string, long> timeLog_PerApp;
-        std::map<std::string, long> timeLog_PerTab;
-        std::map<std::string, long> timeLog_PerProject;
+        std::map<std::string, uint64_t> timeLog_PerApp;
+        std::map<std::string, uint64_t> timeLog_PerTab;
+        std::map<std::string, uint64_t> timeLog_PerProject;
         std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> switchHistory;
         bool isLoaded = false;
     };
 
     struct HistoricalData_Full {
-        std::map<std::string, long> timeLog_PerApp;
-        std::map<std::string, long> timeLog_PerTab;
-        std::map<std::string, long> timeLog_PerProject;
+        std::map<std::string, uint64_t> timeLog_PerApp;
+        std::map<std::string, uint64_t> timeLog_PerTab;
+        std::map<std::string, uint64_t> timeLog_PerProject;
         std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> switchHistory;
         bool isLoaded = false;
     };

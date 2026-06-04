@@ -53,19 +53,19 @@ void registerBackend_E(std::string name,
     });
 }
 
-std::map<std::string, long> getLiveTimeLogPerApp_E()
+std::map<std::string, uint64_t> getLiveTimeLogPerApp_E()
 {
     if (AppState::extManager)
     {
         auto res = AppState::extManager->dispatchOverride("getLiveTimeLogPerApp_E", {});
         if (res.has_value() && res->type == CppValue::Type::Struct)
         {
-            std::map<std::string, long> results;
+            std::map<std::string, uint64_t> results;
             for (const auto& [k, v] : res->struct_val)
             {
                 if (v.type == CppValue::Type::Double)
                 {
-                    results[k] = static_cast<long>(v.double_val);
+                    results[k] = static_cast<uint64_t>(v.double_val);
                 }
             }
             return results;
@@ -75,19 +75,19 @@ std::map<std::string, long> getLiveTimeLogPerApp_E()
     return AppState::state.timeLog_PerApp;
 }
 
-std::map<std::string, long> getLiveTimeLogPerTab_E()
+std::map<std::string, uint64_t> getLiveTimeLogPerTab_E()
 {
     if (AppState::extManager)
     {
         auto res = AppState::extManager->dispatchOverride("getLiveTimeLogPerTab_E", {});
         if (res.has_value() && res->type == CppValue::Type::Struct)
         {
-            std::map<std::string, long> results;
+            std::map<std::string, uint64_t> results;
             for (const auto& [k, v] : res->struct_val)
             {
                 if (v.type == CppValue::Type::Double)
                 {
-                    results[k] = static_cast<long>(v.double_val);
+                    results[k] = static_cast<uint64_t>(v.double_val);
                 }
             }
             return results;
@@ -97,19 +97,19 @@ std::map<std::string, long> getLiveTimeLogPerTab_E()
     return AppState::state.timeLog_PerTab;
 }
 
-std::map<std::string, long> getLiveTimeLogPerProject_E()
+std::map<std::string, uint64_t> getLiveTimeLogPerProject_E()
 {
     if (AppState::extManager)
     {
         auto res = AppState::extManager->dispatchOverride("getLiveTimeLogPerProject_E", {});
         if (res.has_value() && res->type == CppValue::Type::Struct)
         {
-            std::map<std::string, long> results;
+            std::map<std::string, uint64_t> results;
             for (const auto& [k, v] : res->struct_val)
             {
                 if (v.type == CppValue::Type::Double)
                 {
-                    results[k] = static_cast<long>(v.double_val);
+                    results[k] = static_cast<uint64_t>(v.double_val);
                 }
             }
             return results;

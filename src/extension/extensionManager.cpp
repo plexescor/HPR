@@ -1066,7 +1066,7 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         return convertToTime_HHMMSS_12(ms);
     };
 
-    lua["HPR"]["formatTime_HHMMSS_E"] = [](int ms)
+    lua["HPR"]["formatTime_HHMMSS_E"] = [](uint64_t ms)
     {
         return formatTime_HHMMSS(ms);
     };
@@ -1590,7 +1590,7 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
 
     lua["HPR"]["getLiveTimeLogPerApp_E"] = [&lua]() -> sol::table
     {
-        std::map<std::string, long> copy = getLiveTimeLogPerApp_E();
+        std::map<std::string, uint64_t> copy = getLiveTimeLogPerApp_E();
         sol::table result = lua.create_table();
         for (const auto& [app, ms] : copy)
         {
@@ -1601,7 +1601,7 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
 
     lua["HPR"]["getLiveTimeLogPerTab_E"] = [&lua]() -> sol::table
     {
-        std::map<std::string, long> copy = getLiveTimeLogPerTab_E();
+        std::map<std::string, uint64_t> copy = getLiveTimeLogPerTab_E();
         sol::table result = lua.create_table();
         for (const auto& [tab, ms] : copy)
         {
@@ -1612,7 +1612,7 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
 
     lua["HPR"]["getLiveTimeLogPerProject_E"] = [&lua]() -> sol::table
     {
-        std::map<std::string, long> copy = getLiveTimeLogPerProject_E();
+        std::map<std::string, uint64_t> copy = getLiveTimeLogPerProject_E();
         sol::table result = lua.create_table();
         for (const auto& [project, ms] : copy)
         {

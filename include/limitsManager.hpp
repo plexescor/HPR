@@ -16,8 +16,8 @@ public:
     static void setLimit(const std::string& appName, int minutes);
     static void setGoal(const std::string& appName, int minutes);
 
-    static std::string getLimitRemaining(const std::string& appName, long currentDurationMs, int limitMins);
-    static std::string getGoalRemaining(const std::string& appName, long currentDurationMs, int goalMins);
+    static std::string getLimitRemaining(const std::string& appName, uint64_t currentDurationMs, int limitMins);
+    static std::string getGoalRemaining(const std::string& appName, uint64_t currentDurationMs, int goalMins);
 
 private:
     void checkLoop();
@@ -33,8 +33,8 @@ private:
     static std::map<std::string, bool> goalWarningSent;
     static std::map<std::string, bool> goalReachedSent;
 
-    static std::map<std::string, long> limitTimeBase;
-    static std::map<std::string, long> goalTimeBase;
+    static std::map<std::string, uint64_t> limitTimeBase;
+    static std::map<std::string, uint64_t> goalTimeBase;
     static std::map<std::string, bool> killSent;
     static std::chrono::steady_clock::time_point lastGlobalKillTime;
 
