@@ -16,8 +16,25 @@ void PatternAnalyzer::generateInsights()
     //Make a copy of appstate's map into this
     {
         std::lock_guard<std::mutex> lock(AppState::stateMutex);
-        timeLog_PerApp = AppState::state.timeLog_PerApp;
-        switchHistory = AppState::state.switchHistory;
+
+        if (AppState::state.currentView == AppState::CurrentView::LIVE)
+        {
+            timeLog_PerApp = AppState::state.timeLog_PerApp;
+            switchHistory = AppState::state.switchHistory;
+        }
+        else if (AppState::state.currentView == AppState::CurrentView::HISTORICAL_SINGULAR)
+        {
+            std::lock_guard<std::mutex> lock(AppState::historyStateMutex);
+            timeLog_PerApp = AppState::historicalData_State.timeLog_PerApp;
+            switchHistory = AppState::historicalData_State.switchHistory;
+        }
+        else
+        {
+            std::lock_guard<std::mutex> lock(AppState::historyStateMutex);
+            timeLog_PerApp = AppState::historicalData_Full_State.timeLog_PerApp;
+            switchHistory = AppState::historicalData_Full_State.switchHistory;
+        }
+        
     }
 
     //PATTERN 1: MOST USED APP
