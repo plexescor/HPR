@@ -13,7 +13,7 @@ class ExtensionManager;
 
 namespace AppState {
     
-    enum CurrentView {HISTORICAL_SINGULAR, LIVE};
+    enum CurrentView {HISTORICAL_SINGULAR, LIVE, HISTORICAL_NUMBER, HISTORICAL_RANGE};
 
     struct AppState {
         std::vector<std::pair<std::string, std::string>> loadedExtensions;
@@ -52,7 +52,15 @@ namespace AppState {
     };
 
     //Intended to hold data for max 1 whole day
-    struct HistoricalData {
+    struct HistoricalData_Singular {
+        std::map<std::string, long> timeLog_PerApp;
+        std::map<std::string, long> timeLog_PerTab;
+        std::map<std::string, long> timeLog_PerProject;
+        std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> switchHistory;
+        bool isLoaded = false;
+    };
+
+    struct HistoricalData_Full {
         std::map<std::string, long> timeLog_PerApp;
         std::map<std::string, long> timeLog_PerTab;
         std::map<std::string, long> timeLog_PerProject;
@@ -61,7 +69,8 @@ namespace AppState {
     };
 
     extern AppState state;
-    extern HistoricalData historicalData_State;
+    extern HistoricalData_Singular historicalData_State; //keep name as is because i dont wanna update all files
+    extern HistoricalData_Full historicalData_Full_State;
 
     extern AliasManager aliasManager;
     extern PatternAnalyzer patternAnalyzer;

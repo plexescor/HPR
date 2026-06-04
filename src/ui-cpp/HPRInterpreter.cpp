@@ -267,6 +267,15 @@ void HPRInterpreter::trackingLoop()
                     timeLog_Project = AppState::historicalData_State.timeLog_PerProject;
                     switchHistory = AppState::historicalData_State.switchHistory;
                 }
+                else if (AppState::state.currentView == AppState::CurrentView::HISTORICAL_NUMBER || AppState::state.currentView == AppState::CurrentView::HISTORICAL_RANGE)
+                {
+                    std::lock_guard<std::mutex> histLock(AppState::historyStateMutex);
+                    window = AppState::state.currentWindow;
+                    timeLog = AppState::historicalData_Full_State.timeLog_PerApp;
+                    timeLog_Tab = AppState::historicalData_Full_State.timeLog_PerTab;
+                    timeLog_Project = AppState::historicalData_Full_State.timeLog_PerProject;
+                    switchHistory = AppState::historicalData_Full_State.switchHistory;
+                }
                 
                 
             }

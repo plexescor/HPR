@@ -92,7 +92,25 @@ DatabaseManager::DatabaseManager()
             this->loadDb_Singular(requestedDate);
         }
     });
+
+    number_DbLoadEventId = EventHub::connect(Event::LOAD_DATABASE_NUMBER, [this](EventData data)
+    {
+        if (std::holds_alternative<DatabaseDate_Number>(data)) 
+        {
+            auto arg = std::get<DatabaseDate_Number>(data);
+            this->loadDb_Number(arg.days, arg.mode);
+        }
+    });
     
+    range_DbLoadEventId = EventHub::connect(Event::LOAD_DATABASE_RANGE, [this](EventData data)
+    {
+        if (std::holds_alternative<DatabaseDate_Range>(data)) 
+        {
+            auto arg = std::get<DatabaseDate_Range>(data);
+            this->loadDb_Range(arg.dateFrom, arg.dateTo, arg.mode);
+        }
+    });
+
 }
 
 DatabaseManager::~DatabaseManager()
@@ -113,6 +131,8 @@ DatabaseManager::~DatabaseManager()
     #endif
 
     EventHub::disconnect(Event::LOAD_DATABASE_SINGULAR, singular_DbLoadEventId);
+    EventHub::disconnect(Event::LOAD_DATABASE_NUMBER, number_DbLoadEventId);
+    EventHub::disconnect(Event::LOAD_DATABASE_RANGE, range_DbLoadEventId);
 }
 
 void DatabaseManager::initDatabase(bool copyData)
@@ -518,6 +538,561 @@ void DatabaseManager::loadDb_Singular(std::string requestedDate)
             Logger::log("[HPR] Failed to load history: " + std::string(e.what()));
         }
     });
+}
+
+void DatabaseManager::loadDb_Number(int days, std::string mode)
+{
+    //so heres my plan, the "days" int will be from todays timestamp to the timestamp of today - 86400000 ms (1 day) * days
+    //then i will load all db files that have a date in their name that falls within, by subtracting -86400000 one by one
+    //my plan is to use N number of threads (N = Days) to load the db files in parallel, and then merge the results into the appstate with a mutex lock when they are done, and then emit the event when all threads are done
+    //each thread will have its own local map and after shit is loaded, push it to appstate
+    //hm for total view we can just do += but what about average because there are easy O(n^2) methods
+    //but we dont want that
+
+    //total mode
+    //get todays time stamp
+    uint64_t timeStampMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+                            std::chrono::system_clock::now().time_since_epoch()
+                        ).count();
+    
+    if (mode == "total")
+    {
+        std::string path;
+        #ifdef _WIN32
+            path = std::getenv("APPDATA");
+            path += "/HPR/HPR_DB/";
+        #else
+            const char* home = std::getenv("HOME");
+            if (!home) throw std::runtime_error("HOME env var not set");
+            path = home;
+            path += "/.local/share/HPR/HPR_DB/";
+        #endif
+
+        //the file names to load
+        std::vector<std::string> fileNames;
+        fileNames.reserve(days);
+
+        std::vector<std::thread> workers;
+        workers.reserve(days);
+
+        {
+            std::lock_guard<std::mutex> lock(AppState::historyStateMutex);
+            AppState::historicalData_Full_State.timeLog_PerApp.clear();
+            AppState::historicalData_Full_State.timeLog_PerTab.clear();
+            AppState::historicalData_Full_State.timeLog_PerProject.clear();
+            AppState::historicalData_Full_State.switchHistory.clear();
+        }
+
+        for (int i = 0; i < days; ++i)
+        {
+            std::string dateStr = convertToDate_DDMMYY(timeStampMs);
+            fileNames.push_back(dateStr);
+            timeStampMs -= 86400000;
+        }
+
+        for (int i = 0; i < days; ++i)
+        {
+            workers.emplace_back([this, i, &fileNames, &path]()
+            {
+                try
+                {
+                    std::string fullPath = path + extractMMYY_from_DDMMYY(fileNames[i]) + "/" + fileNames[i] + ".db";
+
+                    if (!std::filesystem::exists(fullPath))
+                    {
+                        std::cerr << "Historical file not found: " << fullPath << std::endl;
+                        Logger::log("[HPR] Historical file not found: " + fullPath);
+                        return;
+                    }
+
+                    sqlite::database numDb(fullPath);
+
+                    //Create an intermediate map
+                    std::map<std::string, long> results;
+                    std::map<std::string, long> results_Tab;
+                    std::map<std::string, long> results_Project;
+                    std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> results_Switch;
+
+                    //load from db to the map
+                    numDb << "select name, duration from app_usage;"
+                        >> [&results](std::string name, long duration) {
+                            results[name] = duration;
+                        };
+
+                    numDb << "select name, duration from tab_usage;"
+                        >> [&results_Tab](std::string name, long duration) {
+                            results_Tab[name] = duration;
+                        };
+
+                    numDb << "select name, duration from project_usage;"
+                        >> [&results_Project](std::string name, long duration) {
+                            results_Project[name] = duration;
+                        };
+                    
+                    numDb << "select fromWindow, toWindow, timeStamp from switch_history;"
+                        >> [&results_Switch](std::string from, std::string to, long long ts) {
+                            results_Switch[{from, to}].push_back((uint64_t)ts);
+                        };
+                        
+                    {
+                        std::lock_guard<std::mutex> lock(AppState::historyStateMutex);
+                        for (const auto& [key, value] : results) 
+                        {
+                            AppState::historicalData_Full_State.timeLog_PerApp[key] += value;
+                        }
+                        for (const auto& [key, value] : results_Tab) 
+                        {
+                            AppState::historicalData_Full_State.timeLog_PerTab[key] += value;
+                        }
+                        for (const auto& [key, value] : results_Project) 
+                        {
+                            AppState::historicalData_Full_State.timeLog_PerProject[key] += value;
+                        }
+                        for (const auto& [key, value] : results_Switch) 
+                        {
+                            AppState::historicalData_Full_State.switchHistory[key].insert(
+                                AppState::historicalData_Full_State.switchHistory[key].end(), 
+                                value.begin(), 
+                                value.end()
+                            );
+                        }
+                        AppState::historicalData_Full_State.isLoaded = true;
+                    }
+
+                } catch (const std::exception& e) {
+                    std::cerr << "Failed to load history: " << e.what() << std::endl;
+                    Logger::log("[HPR] Failed to load history: " + std::string(e.what()));
+                }
+            });
+        }
+
+        for (auto& w : workers)
+        {
+            if (w.joinable())
+                w.join();
+        }
+
+        EventHub::emit(Event::HISTORY_LOADED_NUMBER);
+        
+    }
+
+    if (mode == "average")
+    {
+        std::string path;
+        #ifdef _WIN32
+            path = std::getenv("APPDATA");
+            path += "/HPR/HPR_DB/";
+        #else
+            const char* home = std::getenv("HOME");
+            if (!home) throw std::runtime_error("HOME env var not set");
+            path = home;
+            path += "/.local/share/HPR/HPR_DB/";
+        #endif
+
+        std::vector<std::string> fileNames;
+        fileNames.reserve(days);
+
+        for (int i = 0; i < days; ++i)
+        {
+            fileNames.push_back(convertToDate_DDMMYY(timeStampMs));
+            timeStampMs -= 86400000;
+        }
+
+        std::vector<std::map<std::string, long>> allApp(days);
+        std::vector<std::map<std::string, long>> allTab(days);
+        std::vector<std::map<std::string, long>> allProject(days);
+        std::vector<std::map<std::pair<std::string, std::string>, std::vector<uint64_t>>> allSwitches(days);
+        std::vector<bool> loaded(days, false);
+
+        std::vector<std::thread> workers;
+        workers.reserve(days);
+
+        {
+            std::lock_guard<std::mutex> lock(AppState::historyStateMutex);
+            AppState::historicalData_Full_State.timeLog_PerApp.clear();
+            AppState::historicalData_Full_State.timeLog_PerTab.clear();
+            AppState::historicalData_Full_State.timeLog_PerProject.clear();
+            AppState::historicalData_Full_State.switchHistory.clear();
+            AppState::historicalData_Full_State.isLoaded = false;
+        }
+
+        for (int i = 0; i < days; ++i)
+        {
+            workers.emplace_back([i, &fileNames, &path, &allApp, &allTab, &allProject, &allSwitches, &loaded]()
+            {
+                try
+                {
+                    std::string fullPath = path + extractMMYY_from_DDMMYY(fileNames[i]) + "/" + fileNames[i] + ".db";
+
+                    if (!std::filesystem::exists(fullPath))
+                    {
+                        std::cerr << "Historical file not found: " << fullPath << std::endl;
+                        Logger::log("[HPR] Historical file not found: " + fullPath);
+                        return;
+                    }
+
+                    sqlite::database numDb(fullPath);
+
+                    numDb << "select name, duration from app_usage;"
+                        >> [&, i](std::string name, long duration) {
+                            allApp[i][name] = duration;
+                        };
+
+                    numDb << "select name, duration from tab_usage;"
+                        >> [&, i](std::string name, long duration) {
+                            allTab[i][name] = duration;
+                        };
+
+                    numDb << "select name, duration from project_usage;"
+                        >> [&, i](std::string name, long duration) {
+                            allProject[i][name] = duration;
+                        };
+
+                    numDb << "select fromWindow, toWindow, timeStamp from switch_history;"
+                        >> [&, i](std::string from, std::string to, long long ts) {
+                            allSwitches[i][{from, to}].push_back((uint64_t)ts);
+                        };
+
+                    loaded[i] = true;
+
+                } catch (const std::exception& e) {
+                    std::cerr << "Failed to load history: " << e.what() << std::endl;
+                    Logger::log("[HPR] Failed to load history: " + std::string(e.what()));
+                }
+            });
+        }
+
+        for (auto& w : workers)
+            if (w.joinable()) w.join();
+
+        // O(n) average pass
+        std::map<std::string, long> totalApp;
+        std::map<std::string, long> totalTab;
+        std::map<std::string, long> totalProject;
+        std::map<std::string, int> countApp;
+        std::map<std::string, int> countTab;
+        std::map<std::string, int> countProject;
+        std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> totalSwitches;
+        std::map<std::pair<std::string, std::string>, int> countSwitches;
+
+        for (int i = 0; i < days; ++i)
+        {
+            if (!loaded[i]) continue;
+            for (const auto& [k, v] : allApp[i])     { totalApp[k] += v;     countApp[k]++; }
+            for (const auto& [k, v] : allTab[i])     { totalTab[k] += v;     countTab[k]++; }
+            for (const auto& [k, v] : allProject[i]) { totalProject[k] += v; countProject[k]++; }
+            for (const auto& [k, v] : allSwitches[i])
+            {
+                totalSwitches[k].insert(totalSwitches[k].end(), v.begin(), v.end());
+                countSwitches[k]++;
+            }
+        }
+
+        {
+            std::lock_guard<std::mutex> lock(AppState::historyStateMutex);
+
+            for (const auto& [k, v] : totalApp)
+                AppState::historicalData_Full_State.timeLog_PerApp[k] = v / countApp[k];
+
+            for (const auto& [k, v] : totalTab)
+                AppState::historicalData_Full_State.timeLog_PerTab[k] = v / countTab[k];
+
+            for (const auto& [k, v] : totalProject)
+                AppState::historicalData_Full_State.timeLog_PerProject[k] = v / countProject[k];
+
+            for (const auto& [k, v] : totalSwitches)
+                AppState::historicalData_Full_State.switchHistory[k] = v;
+
+            AppState::historicalData_Full_State.isLoaded = true;
+        }
+
+        EventHub::emit(Event::HISTORY_LOADED_NUMBER);
+    }
+}
+
+void DatabaseManager::loadDb_Range(std::string dateFrom, std::string dateTo, std::string mode)
+{
+    //similar to number but instead of calculating the file names by subtracting days from the current timestamp, 
+    //we will calculate the file names by iterating from dateFrom to dateTo and 
+    //generating the file name for each date, and then loading them in parallel like in number
+
+    int days = 0;
+    //get time stamp of current date
+    //context "dateFrom" the date far-er from present
+    uint64_t timeStampFrom = parseDate_DDMMYY(dateFrom);
+    uint64_t timeStampTo = parseDate_DDMMYY(dateTo);
+
+    if (timeStampFrom == 0 || timeStampTo == 0)
+    {
+        std::cerr << "Invalid date format! Dates should be in DDMMYY format." << std::endl;
+        Logger::log("[HPR] Invalid date format! Dates should be in DDMMYY format.");
+        return;
+    }
+
+    //if the user reversed the order of dates
+    if (timeStampFrom > timeStampTo)
+    {
+        timeStampFrom = parseDate_DDMMYY(dateTo);
+        timeStampTo = parseDate_DDMMYY(dateFrom);
+    }
+
+    //finding total number of days between the two dates
+    days = (timeStampTo - timeStampFrom) / 86400000 + 1; // +1 to include both start and end date
+    
+    if (mode == "total")
+    {
+        std::string path;
+        #ifdef _WIN32
+            path = std::getenv("APPDATA");
+            path += "/HPR/HPR_DB/";
+        #else
+            const char* home = std::getenv("HOME");
+            if (!home) throw std::runtime_error("HOME env var not set");
+            path = home;
+            path += "/.local/share/HPR/HPR_DB/";
+        #endif
+
+        //the file names to load
+        std::vector<std::string> fileNames;
+        fileNames.reserve(days);
+
+        std::vector<std::thread> workers;
+        workers.reserve(days);
+
+        {
+            std::lock_guard<std::mutex> lock(AppState::historyStateMutex);
+            AppState::historicalData_Full_State.timeLog_PerApp.clear();
+            AppState::historicalData_Full_State.timeLog_PerTab.clear();
+            AppState::historicalData_Full_State.timeLog_PerProject.clear();
+            AppState::historicalData_Full_State.switchHistory.clear();
+        }
+
+        for (int i = 0; i < days; ++i)
+        {
+            std::string dateStr = convertToDate_DDMMYY(timeStampTo);
+            fileNames.push_back(dateStr);
+            timeStampTo -= 86400000;
+        }
+
+        for (int i = 0; i < days; ++i)
+        {
+            workers.emplace_back([this, i, &fileNames, &path]()
+            {
+                try
+                {
+                    std::string fullPath = path + extractMMYY_from_DDMMYY(fileNames[i]) + "/" + fileNames[i] + ".db";
+
+                    if (!std::filesystem::exists(fullPath))
+                    {
+                        std::cerr << "Historical file not found: " << fullPath << std::endl;
+                        Logger::log("[HPR] Historical file not found: " + fullPath);
+                        return;
+                    }
+
+                    sqlite::database numDb(fullPath);
+
+                    //Create an intermediate map
+                    std::map<std::string, long> results;
+                    std::map<std::string, long> results_Tab;
+                    std::map<std::string, long> results_Project;
+                    std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> results_Switch;
+
+                    //load from db to the map
+                    numDb << "select name, duration from app_usage;"
+                        >> [&results](std::string name, long duration) {
+                            results[name] = duration;
+                        };
+
+                    numDb << "select name, duration from tab_usage;"
+                        >> [&results_Tab](std::string name, long duration) {
+                            results_Tab[name] = duration;
+                        };
+
+                    numDb << "select name, duration from project_usage;"
+                        >> [&results_Project](std::string name, long duration) {
+                            results_Project[name] = duration;
+                        };
+                    
+                    numDb << "select fromWindow, toWindow, timeStamp from switch_history;"
+                        >> [&results_Switch](std::string from, std::string to, long long ts) {
+                            results_Switch[{from, to}].push_back((uint64_t)ts);
+                        };
+                        
+                    {
+                        std::lock_guard<std::mutex> lock(AppState::historyStateMutex);
+                        for (const auto& [key, value] : results) 
+                        {
+                            AppState::historicalData_Full_State.timeLog_PerApp[key] += value;
+                        }
+                        for (const auto& [key, value] : results_Tab) 
+                        {
+                            AppState::historicalData_Full_State.timeLog_PerTab[key] += value;
+                        }
+                        for (const auto& [key, value] : results_Project) 
+                        {
+                            AppState::historicalData_Full_State.timeLog_PerProject[key] += value;
+                        }
+                        for (const auto& [key, value] : results_Switch) 
+                        {
+                            AppState::historicalData_Full_State.switchHistory[key].insert(
+                                AppState::historicalData_Full_State.switchHistory[key].end(), 
+                                value.begin(), 
+                                value.end()
+                            );
+                        }
+                        AppState::historicalData_Full_State.isLoaded = true;
+                    }
+
+                    // EventHub::emit(Event::HISTORY_LOADED_NUMBER);
+
+                } catch (const std::exception& e) {
+                    std::cerr << "Failed to load history: " << e.what() << std::endl;
+                    Logger::log("[HPR] Failed to load history: " + std::string(e.what()));
+                }
+            });
+        }
+
+        for (auto& w : workers)
+        {
+            if (w.joinable())
+                w.join();
+        }
+        EventHub::emit(Event::HISTORY_LOADED_RANGE);
+    }
+
+    if (mode == "average")
+    {
+        std::string path;
+        #ifdef _WIN32
+            path = std::getenv("APPDATA");
+            path += "/HPR/HPR_DB/";
+        #else
+            const char* home = std::getenv("HOME");
+            if (!home) throw std::runtime_error("HOME env var not set");
+            path = home;
+            path += "/.local/share/HPR/HPR_DB/";
+        #endif
+
+        std::vector<std::string> fileNames;
+        fileNames.reserve(days);
+
+        for (int i = 0; i < days; ++i)
+        {
+            fileNames.push_back(convertToDate_DDMMYY(timeStampTo));
+            timeStampTo -= 86400000;
+        }
+
+        std::vector<std::map<std::string, long>> allApp(days);
+        std::vector<std::map<std::string, long>> allTab(days);
+        std::vector<std::map<std::string, long>> allProject(days);
+        std::vector<std::map<std::pair<std::string, std::string>, std::vector<uint64_t>>> allSwitches(days);
+        std::vector<bool> loaded(days, false);
+
+        std::vector<std::thread> workers;
+        workers.reserve(days);
+
+        {
+            std::lock_guard<std::mutex> lock(AppState::historyStateMutex);
+            AppState::historicalData_Full_State.timeLog_PerApp.clear();
+            AppState::historicalData_Full_State.timeLog_PerTab.clear();
+            AppState::historicalData_Full_State.timeLog_PerProject.clear();
+            AppState::historicalData_Full_State.switchHistory.clear();
+            AppState::historicalData_Full_State.isLoaded = false;
+        }
+
+        for (int i = 0; i < days; ++i)
+        {
+            workers.emplace_back([i, &fileNames, &path, &allApp, &allTab, &allProject, &allSwitches, &loaded]()
+            {
+                try
+                {
+                    std::string fullPath = path + extractMMYY_from_DDMMYY(fileNames[i]) + "/" + fileNames[i] + ".db";
+
+                    if (!std::filesystem::exists(fullPath))
+                    {
+                        std::cerr << "Historical file not found: " << fullPath << std::endl;
+                        Logger::log("[HPR] Historical file not found: " + fullPath);
+                        return;
+                    }
+
+                    sqlite::database numDb(fullPath);
+
+                    numDb << "select name, duration from app_usage;"
+                        >> [&, i](std::string name, long duration) {
+                            allApp[i][name] = duration;
+                        };
+
+                    numDb << "select name, duration from tab_usage;"
+                        >> [&, i](std::string name, long duration) {
+                            allTab[i][name] = duration;
+                        };
+
+                    numDb << "select name, duration from project_usage;"
+                        >> [&, i](std::string name, long duration) {
+                            allProject[i][name] = duration;
+                        };
+
+                    numDb << "select fromWindow, toWindow, timeStamp from switch_history;"
+                        >> [&, i](std::string from, std::string to, long long ts) {
+                            allSwitches[i][{from, to}].push_back((uint64_t)ts);
+                        };
+
+                    loaded[i] = true;
+
+                } catch (const std::exception& e) {
+                    std::cerr << "Failed to load history: " << e.what() << std::endl;
+                    Logger::log("[HPR] Failed to load history: " + std::string(e.what()));
+                }
+            });
+        }
+
+        for (auto& w : workers)
+            if (w.joinable()) w.join();
+
+        // O(n) average pass
+        std::map<std::string, long> totalApp;
+        std::map<std::string, long> totalTab;
+        std::map<std::string, long> totalProject;
+        std::map<std::string, int> countApp;
+        std::map<std::string, int> countTab;
+        std::map<std::string, int> countProject;
+        std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> totalSwitches;
+        std::map<std::pair<std::string, std::string>, int> countSwitches;
+
+        for (int i = 0; i < days; ++i)
+        {
+            if (!loaded[i]) continue;
+            for (const auto& [k, v] : allApp[i])     { totalApp[k] += v;     countApp[k]++; }
+            for (const auto& [k, v] : allTab[i])     { totalTab[k] += v;     countTab[k]++; }
+            for (const auto& [k, v] : allProject[i]) { totalProject[k] += v; countProject[k]++; }
+            for (const auto& [k, v] : allSwitches[i])
+            {
+                totalSwitches[k].insert(totalSwitches[k].end(), v.begin(), v.end());
+                countSwitches[k]++;
+            }
+        }
+
+        {
+            std::lock_guard<std::mutex> lock(AppState::historyStateMutex);
+
+            for (const auto& [k, v] : totalApp)
+                AppState::historicalData_Full_State.timeLog_PerApp[k] = v / countApp[k];
+
+            for (const auto& [k, v] : totalTab)
+                AppState::historicalData_Full_State.timeLog_PerTab[k] = v / countTab[k];
+
+            for (const auto& [k, v] : totalProject)
+                AppState::historicalData_Full_State.timeLog_PerProject[k] = v / countProject[k];
+
+            for (const auto& [k, v] : totalSwitches)
+                AppState::historicalData_Full_State.switchHistory[k] = v;
+
+            AppState::historicalData_Full_State.isLoaded = true;
+        }
+
+        EventHub::emit(Event::HISTORY_LOADED_RANGE);
+    }
+
 }
 
 // Runs INSERT, UPDATE, DELETE, CREATE TABLE, etc.

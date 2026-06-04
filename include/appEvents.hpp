@@ -19,6 +19,18 @@
         std::string date;
     };
 
+    //give the db certain number of days to load starting from today
+    struct DatabaseDate_Number{
+        int days;
+        std::string mode; // 
+    };
+
+    struct DatabaseDate_Range{
+        std::string dateFrom;
+        std::string dateTo;
+        std::string mode;
+     };
+
     //Data for window change event
     struct WindowChangedData {
         std::string fromWindow;
@@ -53,7 +65,11 @@
 // ------------    Actual Events -------------------------------
     enum class Event {
         LOAD_DATABASE_SINGULAR,
+        LOAD_DATABASE_NUMBER,
+        LOAD_DATABASE_RANGE,
         HISTORY_LOADED_SINGULAR,
+        HISTORY_LOADED_NUMBER,
+        HISTORY_LOADED_RANGE,
         LOAD_LIVE_DATA,
         APP_ERROR, //ERROR was reserved in msvc thats why
         MIDNIGHT_ROLLOVER,
@@ -63,9 +79,9 @@
 
 using EventKey = std::variant<Event, std::string>;
 
-using EventData = std::variant<Empty, DatabaseDate_Singular, ErrorGui, WindowChangedData, CppValue>;
+using EventData = std::variant<Empty, DatabaseDate_Singular, DatabaseDate_Number, DatabaseDate_Range, ErrorGui, WindowChangedData, CppValue>;
 
-// Converts type-safe EventData variant into generic CppValue
+/** Converts type-safe EventData variant into generic CppValue */
 inline CppValue toCppValue(const EventData& data)
 {
     CppValue result;
@@ -96,6 +112,19 @@ inline CppValue toCppValue(const EventData& data)
             result.struct_val["fromWindow"] = CppValue(CppValue::Type::String, arg.fromWindow);
             result.struct_val["toWindow"] = CppValue(CppValue::Type::String, arg.toWindow);
         }
+        else if constexpr (std::is_same_v<T, DatabaseDate_Number>) 
+        {
+            result.type = CppValue::Type::Struct;
+            result.struct_val["days"] = CppValue(CppValue::Type::Double, static_cast<double>(arg.days));
+            result.struct_val["mode"] = CppValue(CppValue::Type::String, arg.mode);
+        }
+        else if constexpr (std::is_same_v<T, DatabaseDate_Range>) 
+        {
+            result.type = CppValue::Type::Struct;
+            result.struct_val["dateFrom"] = CppValue(CppValue::Type::String, arg.dateFrom);
+            result.struct_val["dateTo"] = CppValue(CppValue::Type::String, arg.dateTo);
+            result.struct_val["mode"] = CppValue(CppValue::Type::String, arg.mode);
+        }
     }, data);
     return result;
 }
@@ -111,6 +140,26 @@ inline EventData toEventData(const EventKey& key, const CppValue& val)
             DatabaseDate_Singular d;
             if (val.type == CppValue::Type::Struct && val.struct_val.count("date"))
                 d.date = val.struct_val.at("date").str_val;
+            return d;
+        }
+        else if (ev == Event::LOAD_DATABASE_NUMBER)
+        {
+            DatabaseDate_Number d;
+            if (val.type == CppValue::Type::Struct && val.struct_val.count("days"))
+                d.days = static_cast<int>(val.struct_val.at("days").double_val);
+            if (val.type == CppValue::Type::Struct && val.struct_val.count("mode"))
+                d.mode = val.struct_val.at("mode").str_val;
+            return d;
+        }
+        else if (ev == Event::LOAD_DATABASE_RANGE)
+        {
+            DatabaseDate_Range d;
+            if (val.type == CppValue::Type::Struct && val.struct_val.count("dateFrom"))
+                d.dateFrom = val.struct_val.at("dateFrom").str_val;
+            if (val.type == CppValue::Type::Struct && val.struct_val.count("dateTo"))
+                d.dateTo = val.struct_val.at("dateTo").str_val;
+            if (val.type == CppValue::Type::Struct && val.struct_val.count("mode"))
+                d.mode = val.struct_val.at("mode").str_val;
             return d;
         }
         else if (ev == Event::APP_ERROR)

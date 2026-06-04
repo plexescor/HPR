@@ -38,6 +38,28 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow>& ui,  ExtensionM
         );
     });
 
+    ui->on_loadHistoricalData_Number([](int days, slint::SharedString mode)
+    {
+        std::string modeStr = std::string(mode);
+        //Emit the signal that we need to load data
+        EventHub::emit(
+            Event::LOAD_DATABASE_NUMBER, 
+            DatabaseDate_Number{days, modeStr}
+        );
+    });
+
+    ui->on_loadHistoricalData_Range([](slint::SharedString dateFrom, slint::SharedString dateTo, slint::SharedString mode)
+    {
+        std::string dateFromStr = std::string(dateFrom);
+        std::string dateToStr = std::string(dateTo);
+        std::string modeStr = std::string(mode);
+        //Emit the signal that we need to load data
+        EventHub::emit(
+            Event::LOAD_DATABASE_RANGE, 
+            DatabaseDate_Range{dateFromStr, dateToStr, modeStr}
+        );
+    });
+
     ui->on_loadLiveData([this]() 
     {
         //No need for event hub
@@ -171,6 +193,49 @@ UiEventBridge::UiEventBridge(
             }
             return slint::interpreter::Value(); // void return
         });
+
+    ui->set_callback("loadHistoricalData_Number", [](auto args) -> slint::interpreter::Value 
+    {
+        if (args.size() > 1) 
+        {
+            auto opt_days = args[0].to_number();
+            auto opt_mode = args[1].to_string();
+            if (opt_days.has_value() && opt_mode.has_value()) 
+            {
+                int days = static_cast<int>(opt_days.value());
+                std::string modeStr = std::string(opt_mode.value());
+
+                EventHub::emit(
+                    Event::LOAD_DATABASE_NUMBER,
+                    DatabaseDate_Number{days, modeStr}
+                );
+            }
+        }
+        return slint::interpreter::Value(); // void return
+    });
+
+    ui->set_callback("loadHistoricalData_Range", [](auto args) -> slint::interpreter::Value 
+    {
+        if (args.size() > 2) 
+        {
+            auto opt_dateFrom = args[0].to_string();
+            auto opt_dateTo = args[1].to_string();
+            auto opt_mode = args[2].to_string();
+            if (opt_dateFrom.has_value() && opt_dateTo.has_value() && opt_mode.has_value()) 
+            {
+                std::string dateFromStr = std::string(opt_dateFrom.value());
+                std::string dateToStr = std::string(opt_dateTo.value());
+                std::string modeStr = std::string(opt_mode.value());
+
+                EventHub::emit(
+                    Event::LOAD_DATABASE_RANGE,
+                    DatabaseDate_Range{dateFromStr, dateToStr, modeStr}
+                );
+            }
+        }
+        return slint::interpreter::Value(); // void return
+    });
+
     ui->set_callback("loadLiveData", [this](auto args) -> slint::interpreter::Value
     {
         //No need for event hub
@@ -319,6 +384,8 @@ UiEventBridge::UiEventBridge(
 UiEventBridge::~UiEventBridge()
 {
     EventHub::disconnect(Event::HISTORY_LOADED_SINGULAR, loadDbSingularId);
+    EventHub::disconnect(Event::HISTORY_LOADED_NUMBER, loadDbNumberId);
+    EventHub::disconnect(Event::HISTORY_LOADED_RANGE, loadDbRangeId);
 }
 
 void UiEventBridge::init() {
@@ -327,6 +394,16 @@ void UiEventBridge::init() {
     {
         this->showHistoricalDataSingular();
     });
+
+    loadDbNumberId = EventHub::connect(Event::HISTORY_LOADED_NUMBER, [this](EventData data)
+    {
+        this->showHistoricalDataNumber();
+    });
+
+    loadDbRangeId = EventHub::connect(Event::HISTORY_LOADED_RANGE, [this](EventData data)
+    {
+        this->showHistoricalDataRange();
+    });
 }
 
 void UiEventBridge::showHistoricalDataSingular()
@@ -334,6 +411,20 @@ void UiEventBridge::showHistoricalDataSingular()
     //Make the current app state historical
     std::lock_guard<std::mutex> lock(AppState::stateMutex);
     AppState::state.currentView = AppState::CurrentView::HISTORICAL_SINGULAR;
+}
+
+void UiEventBridge::showHistoricalDataNumber()
+{
+    //Make the current app state historical
+    std::lock_guard<std::mutex> lock(AppState::stateMutex);
+    AppState::state.currentView = AppState::CurrentView::HISTORICAL_NUMBER;
+}
+
+void UiEventBridge::showHistoricalDataRange()
+{
+    //Make the current app state historical
+    std::lock_guard<std::mutex> lock(AppState::stateMutex);
+    AppState::state.currentView = AppState::CurrentView::HISTORICAL_RANGE;
 }
 
 void UiEventBridge::showLiveData()

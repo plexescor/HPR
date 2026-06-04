@@ -1,0 +1,428 @@
+import { Card } from "./card.slint";
+import { SectionHeader } from "./section-header.slint";
+import { LineEdit, DatePickerPopup } from "std-widgets.slint";
+
+component PresetButton inherits Rectangle {
+    in property <string> text;
+    in property <bool> selected;
+    callback clicked;
+
+    height: 36px;
+    border-radius: 6px;
+    border-width: 1px;
+    background: selected 
+        ? #c084fc25 
+        : (ta.pressed ? #ffffff10 : (ta.has-hover ? #ffffff0a : transparent));
+    border-color: selected 
+        ? #c084fcbb 
+        : (ta.pressed ? #ffffff25 : (ta.has-hover ? #ffffff1c : #ffffff10));
+
+    animate background { duration: 100ms; }
+    animate border-color { duration: 100ms; }
+
+    Text {
+        text: root.text;
+        color: selected 
+            ? #d8b4fe 
+            : (ta.has-hover ? #e2e8f0 : #94a3b8);
+        font-size: 11px;
+        font-weight: 600;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+        animate color { duration: 100ms; }
+    }
+
+    ta := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+component ViewModeButton inherits Rectangle {
+    in property <string> text;
+    in property <bool> selected;
+    callback clicked;
+
+    height: 30px;
+    border-radius: 5px;
+    border-width: 1px;
+    background: selected 
+        ? #38bdf825 
+        : (ta.pressed ? #ffffff10 : (ta.has-hover ? #ffffff0a : transparent));
+    border-color: selected 
+        ? #38bdf8bb 
+        : (ta.pressed ? #ffffff25 : (ta.has-hover ? #ffffff1c : #ffffff10));
+
+    animate background { duration: 100ms; }
+    animate border-color { duration: 100ms; }
+
+    Text {
+        text: root.text;
+        color: selected 
+            ? #7dd3fc 
+            : (ta.has-hover ? #e2e8f0 : #94a3b8);
+        font-size: 10px;
+        font-weight: 600;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+        animate color { duration: 100ms; }
+    }
+
+    ta := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+component DateIconButton inherits Rectangle {
+    callback clicked;
+    width: 28px;
+    height: 26px;
+    border-radius: 4px;
+    background: ta.pressed ? #ffffff20 : (ta.has-hover ? #ffffff0e : #ffffff07);
+    border-width: 1px;
+    border-color: ta.has-hover ? #ffffff30 : #ffffff15;
+    animate background { duration: 100ms; }
+    animate border-color { duration: 100ms; }
+
+    Text {
+        text: "📅";
+        font-size: 12px;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+
+    ta := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+component ConfirmButton inherits Rectangle {
+    in property <string> text;
+    in property <bool> enabled: true;
+    callback clicked;
+
+    height: 40px;
+    border-radius: 6px;
+    background: !enabled 
+        ? #ffffff05 
+        : (ta.pressed ? #10b98145 : (ta.has-hover ? #10b98125 : #10b98112));
+    border-width: 1px;
+    border-color: !enabled 
+        ? #ffffff10 
+        : (ta.has-hover ? #10b98160 : #10b98135);
+    animate background { duration: 100ms; }
+    animate border-color { duration: 100ms; }
+
+    Text {
+        text: root.text;
+        color: !enabled 
+            ? #ffffff20 
+            : (ta.has-hover ? #34d399 : #10b981);
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+        animate color { duration: 100ms; }
+    }
+
+    ta := TouchArea {
+        mouse-cursor: enabled ? pointer : default;
+        clicked => { if (enabled) { root.clicked(); } }
+    }
+}
+
+export component HistoryRangeView {
+    callback load-historical-data-singular(string);
+    callback load-historical-data-number(int, string);
+    callback load-historical-data-range(string, string, string);
+
+    property <string> active-tab: "singular"; // "singular" or "range"
+    property <string> singular-date: "";
+
+    property <string> selected-mode: "total";
+    property <int> selected-days: -1;
+    property <string> start-date: "";
+    property <string> end-date: "";
+
+    singular-date-picker := DatePickerPopup {
+        x: (root.width - self.width) / 2;
+        y: (root.height - self.height) / 2;
+        close-policy: PopupClosePolicy.no-auto-close;
+        accepted(date) => {
+            root.singular-date = (date.day < 10 ? "0" : "") + date.day + "-" +
+                                 (date.month < 10 ? "0" : "") + date.month + "-" +
+                                 (Math.mod(date.year, 100) < 10 ? "0" : "") + Math.mod(date.year, 100);
+            singular-date-picker.close();
+        }
+        canceled => { singular-date-picker.close(); }
+    }
+
+    start-date-picker := DatePickerPopup {
+        x: (root.width - self.width) / 2;
+        y: (root.height - self.height) / 2;
+        close-policy: PopupClosePolicy.no-auto-close;
+        accepted(date) => {
+            root.start-date = (date.day < 10 ? "0" : "") + date.day + "-" +
+                              (date.month < 10 ? "0" : "") + date.month + "-" +
+                              (Math.mod(date.year, 100) < 10 ? "0" : "") + Math.mod(date.year, 100);
+            root.selected-days = -1;
+            start-date-picker.close();
+        }
+        canceled => { start-date-picker.close(); }
+    }
+
+    end-date-picker := DatePickerPopup {
+        x: (root.width - self.width) / 2;
+        y: (root.height - self.height) / 2;
+        close-policy: PopupClosePolicy.no-auto-close;
+        accepted(date) => {
+            root.end-date = (date.day < 10 ? "0" : "") + date.day + "-" +
+                            (date.month < 10 ? "0" : "") + date.month + "-" +
+                            (Math.mod(date.year, 100) < 10 ? "0" : "") + Math.mod(date.year, 100);
+            root.selected-days = -1;
+            end-date-picker.close();
+        }
+        canceled => { end-date-picker.close(); }
+    }
+
+    VerticalLayout {
+        padding: 12px;
+        padding-top: 0px;
+        spacing: 15px;
+        height: 100%;
+
+        SectionHeader { label: "HISTORICAL QUERY CONFIGURATION"; }
+
+        // Tab Selector
+        HorizontalLayout {
+            spacing: 8px;
+            alignment: start;
+            ViewModeButton {
+                text: "SINGULAR DAY";
+                selected: root.active-tab == "singular";
+                clicked => { root.active-tab = "singular"; }
+                width: 130px;
+            }
+            ViewModeButton {
+                text: "RANGE / PRESETS";
+                selected: root.active-tab == "range";
+                clicked => { root.active-tab = "range"; }
+                width: 130px;
+            }
+        }
+
+        Card {
+            vertical-stretch: 1;
+            
+            if root.active-tab == "singular" : VerticalLayout {
+                padding: 16px;
+                spacing: 16px;
+                alignment: start;
+
+                VerticalLayout {
+                    spacing: 6px;
+                    Text {
+                        text: "SELECT SINGULAR DAY (DD-MM-YY)";
+                        color: #ffffff40;
+                        font-size: 9px;
+                        font-weight: 700;
+                        letter-spacing: 1px;
+                    }
+                    HorizontalLayout {
+                        spacing: 8px;
+                        alignment: start;
+                        LineEdit {
+                            text: root.singular-date;
+                            edited(val) => { root.singular-date = val; }
+                            placeholder-text: "DD-MM-YY";
+                            width: 180px;
+                        }
+                        DateIconButton {
+                            clicked => { singular-date-picker.show(); }
+                        }
+                    }
+                }
+
+                Rectangle {
+                    vertical-stretch: 1;
+                }
+
+                ConfirmButton {
+                    text: "LOAD SINGLE DAY";
+                    enabled: root.singular-date != "";
+                    clicked => {
+                        root.load-historical-data-singular(root.singular-date);
+                    }
+                }
+            }
+
+            if root.active-tab == "range" : VerticalLayout {
+                padding: 16px;
+                spacing: 16px;
+                alignment: start;
+
+                // 1. Mode Selection
+                VerticalLayout {
+                    spacing: 6px;
+                    Text {
+                        text: "VIEW MODE";
+                        color: #ffffff40;
+                        font-size: 9px;
+                        font-weight: 700;
+                        letter-spacing: 1px;
+                    }
+                    HorizontalLayout {
+                        spacing: 8px;
+                        ViewModeButton {
+                            text: "TOTAL/AGGREGATE VIEW";
+                            selected: root.selected-mode == "total";
+                            clicked => { root.selected-mode = "total"; }
+                        }
+                        ViewModeButton {
+                            text: "AVERAGE VIEW";
+                            selected: root.selected-mode == "average";
+                            clicked => { root.selected-mode = "average"; }
+                        }
+                    }
+                }
+
+                // Divider line
+                Rectangle {
+                    height: 1px;
+                    background: #ffffff08;
+                }
+
+                // 2. Presets Selection
+                VerticalLayout {
+                    spacing: 6px;
+                    Text {
+                        text: "PRESET RANGES";
+                        color: #ffffff40;
+                        font-size: 9px;
+                        font-weight: 700;
+                        letter-spacing: 1px;
+                    }
+                    VerticalLayout {
+                        spacing: 8px;
+                        HorizontalLayout {
+                            spacing: 8px;
+                            PresetButton {
+                                text: "7 Days";
+                                selected: root.selected-days == 7;
+                                clicked => { root.selected-days = 7; root.start-date = ""; root.end-date = ""; }
+                            }
+                            PresetButton {
+                                text: "14 Days";
+                                selected: root.selected-days == 14;
+                                clicked => { root.selected-days = 14; root.start-date = ""; root.end-date = ""; }
+                            }
+                            PresetButton {
+                                text: "30 Days";
+                                selected: root.selected-days == 30;
+                                clicked => { root.selected-days = 30; root.start-date = ""; root.end-date = ""; }
+                            }
+                        }
+                        HorizontalLayout {
+                            spacing: 8px;
+                            PresetButton {
+                                text: "60 Days";
+                                selected: root.selected-days == 60;
+                                clicked => { root.selected-days = 60; root.start-date = ""; root.end-date = ""; }
+                            }
+                            PresetButton {
+                                text: "90 Days";
+                                selected: root.selected-days == 90;
+                                clicked => { root.selected-days = 90; root.start-date = ""; root.end-date = ""; }
+                            }
+                            PresetButton {
+                                text: "365 Days";
+                                selected: root.selected-days == 365;
+                                clicked => { root.selected-days = 365; root.start-date = ""; root.end-date = ""; }
+                            }
+                        }
+                    }
+                }
+
+                // Divider line
+                Rectangle {
+                    height: 1px;
+                    background: #ffffff08;
+                }
+
+                // 3. Custom Date Range Selection
+                VerticalLayout {
+                    spacing: 6px;
+                    Text {
+                        text: "CUSTOM DATE RANGE (DD-MM-YY)";
+                        color: #ffffff40;
+                        font-size: 9px;
+                        font-weight: 700;
+                        letter-spacing: 1px;
+                    }
+                    HorizontalLayout {
+                        spacing: 12px;
+                        VerticalLayout {
+                            spacing: 4px;
+                            Text {
+                                text: "Start Date:";
+                                color: #94a3b8;
+                                font-size: 10px;
+                            }
+                            HorizontalLayout {
+                                spacing: 4px;
+                                LineEdit {
+                                    text: root.start-date;
+                                    edited(val) => { root.start-date = val; root.selected-days = -1; }
+                                    placeholder-text: "DD-MM-YY";
+                                }
+                                DateIconButton {
+                                    clicked => { start-date-picker.show(); }
+                                }
+                            }
+                        }
+                        VerticalLayout {
+                            spacing: 4px;
+                            Text {
+                                text: "End Date:";
+                                color: #94a3b8;
+                                font-size: 10px;
+                            }
+                            HorizontalLayout {
+                                spacing: 4px;
+                                LineEdit {
+                                    text: root.end-date;
+                                    edited(val) => { root.end-date = val; root.selected-days = -1; }
+                                    placeholder-text: "DD-MM-YY";
+                                }
+                                DateIconButton {
+                                    clicked => { end-date-picker.show(); }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Vertical stretch spacer
+                Rectangle {
+                    vertical-stretch: 1;
+                }
+
+                // 4. Action Button
+                ConfirmButton {
+                    text: "CONFIRM SELECTION";
+                    enabled: root.selected-days > 0 || (root.start-date != "" && root.end-date != "");
+                    clicked => {
+                        if (root.selected-days > 0) {
+                            root.load-historical-data-number(root.selected-days, root.selected-mode);
+                        } else {
+                            root.load-historical-data-range(root.start-date, root.end-date, root.selected-mode);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

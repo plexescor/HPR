@@ -2,7 +2,8 @@
 
 // Do the shit here so it doesnt need to be done in a random cpp
 AppState::AppState AppState::state;
-AppState::HistoricalData AppState::historicalData_State;
+AppState::HistoricalData_Singular AppState::historicalData_State;
+AppState::HistoricalData_Full AppState::historicalData_Full_State;
 
 AliasManager AppState::aliasManager;
 PatternAnalyzer AppState::patternAnalyzer;

@@ -35,6 +35,8 @@ class DatabaseManager
         void updateFileName();
 
         void loadDb_Singular(std::string date);
+        void loadDb_Number(int days, std::string mode);
+        void loadDb_Range(std::string dateFrom, std::string dateTo, std::string mode);
 
     private:
         std::optional<sqlite::database> db;
@@ -60,6 +62,8 @@ class DatabaseManager
 
         //Ids for event listener
         size_t singular_DbLoadEventId;
+        size_t number_DbLoadEventId;
+        size_t range_DbLoadEventId;
 
         //Lock
         #ifdef _WIN32

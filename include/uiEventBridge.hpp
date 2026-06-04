@@ -17,6 +17,8 @@ class UiEventBridge
     private:
         void init();
         void showHistoricalDataSingular();
+        void showHistoricalDataNumber();
+        void showHistoricalDataRange();
         void showLiveData();
         void tabViewClicked();
         void siteViewClicked();
@@ -27,4 +29,6 @@ class UiEventBridge
         ExtensionManager* extManager = nullptr;
         HPRInterpreter* interpreter = nullptr;
         size_t loadDbSingularId;
+        size_t loadDbNumberId;
+        size_t loadDbRangeId;
 };

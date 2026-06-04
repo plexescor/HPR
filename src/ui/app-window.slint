@@ -8,6 +8,7 @@ import { ProjectView } from "./project-view.slint";
 import { ExtensionsView, LoadedExtension_S } from "./extension-view.slint";
 import { AboutView } from "./about-view.slint";
 import { GoalsView } from "./goals-view.slint";
+import { HistoryRangeView } from "./history-range-view.slint";
 
 
 import { TimeLog, SwitchHistory, TimeLog_Tab, TimeLog_Project, AppGoalData } from "./types.slint";
@@ -16,6 +17,8 @@ import { TimeLog, SwitchHistory, TimeLog_Tab, TimeLog_Project, AppGoalData } fro
 // ── Main Window ──────────────────────────────────────────────────────────────
 export component MainWindow inherits Window {
     callback loadHistoricalData_Singular(string);
+    callback loadHistoricalData_Number(int, string);
+    callback loadHistoricalData_Range(string, string, string);
     callback loadInsights;
     callback loadLiveData;
     callback tabViewClicked;
@@ -238,6 +241,12 @@ export component MainWindow inherits Window {
                 open-releases => { root.openReleases(); }
                 open-issues => { root.openIssues(); }
             }
+            if active-view == "HISTORY_RANGE" : HistoryRangeView {
+                vertical-stretch: 1;
+                load-historical-data-singular(date) => { root.loadHistoricalData_Singular(date); }
+                load-historical-data-number(days, mode) => { root.loadHistoricalData_Number(days, mode); }
+                load-historical-data-range(start, end, mode) => { root.loadHistoricalData_Range(start, end, mode); }
+            }
 
         }
 
@@ -311,7 +320,7 @@ export component MainWindow inherits Window {
                     SidebarButton {
                         icon: @image-url("./images/calendar.svg");
                         tip: "View historical data";
-                        clicked => { date-picker.show(); }
+                        clicked => { root.active-view = "HISTORY_RANGE"; }
                     }
 
                     SidebarButton {
