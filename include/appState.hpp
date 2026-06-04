@@ -1,6 +1,7 @@
 #pragma once
 #include "aliasManager.hpp"
 #include "patternAnalyzer.hpp"
+#include "configManager.hpp"
 #include <string>
 #include <atomic>
 #include <mutex>
@@ -71,6 +72,8 @@ namespace AppState {
     extern AppState state;
     extern HistoricalData_Singular historicalData_State; //keep name as is because i dont wanna update all files
     extern HistoricalData_Full historicalData_Full_State;
+
+    extern ConfigManager configManager;
 
     extern AliasManager aliasManager;
     extern PatternAnalyzer patternAnalyzer;

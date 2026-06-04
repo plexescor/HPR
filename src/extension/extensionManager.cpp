@@ -276,14 +276,21 @@ ExtensionManager::~ExtensionManager()
             });
 
             auto start = std::chrono::steady_clock::now();
+            int shutdownTimeout = AppState::configManager.getConfig("extension-shutdown-timeout", 300);
             while (!joined)
             {
-                if (std::chrono::steady_clock::now() - start >= std::chrono::milliseconds(300))
+                if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count() >= shutdownTimeout)
                 {
                     std::cerr << "Extension " << ext->path << " timed out, detaching\n";
                     Logger::log("[HPR] Extension " + ext->path.string() + " timed out during shutdown, detaching thread to prevent hang");
                     ext->thread.detach();
                     joiner.detach();
+                    ext->detached = true;
+                    std::unique_lock<std::recursive_mutex> lock(ext->luaMutex, std::defer_lock);
+                    if (lock.try_lock())
+                    {
+                        ext->lua["HPR"] = sol::nil;
+                    }
                     std::cerr << "Force exiting to avoid potential hangs\n";
                     Logger::log("[HPR] Force exiting due to extension shutdown timeout");
                     #ifdef _WIN32
@@ -294,7 +301,10 @@ ExtensionManager::~ExtensionManager()
                 }
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));
             }
-            joiner.join();
+            if (joined)
+            {
+                joiner.join();
+            }
         }
     }
     registeredBackends.clear();
@@ -482,7 +492,36 @@ void ExtensionManager::unloadExtension(std::string authorName, std::string exten
             std::thread t = std::move(ext->thread);
             if (t.joinable())
             {
-                t.detach();
+                bool joined = false;
+                std::thread joiner([&]() {
+                    t.join();
+                    joined = true;
+                });
+
+                int reloadTimeout = AppState::configManager.getConfig("extension-reload-timeout", 450);
+                auto start = std::chrono::steady_clock::now();
+                while (!joined)
+                {
+                    if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count() >= reloadTimeout)
+                    {
+                        std::cerr << "Extension reload/unload timed out, detaching thread to prevent hang\n";
+                        Logger::log("[HPR] Extension reload/unload timed out, detaching thread to prevent hang");
+                        t.detach();
+                        joiner.detach();
+                        ext->detached = true;
+                        std::unique_lock<std::recursive_mutex> lock(ext->luaMutex, std::defer_lock);
+                        if (lock.try_lock())
+                        {
+                            ext->lua["HPR"] = sol::nil;
+                        }
+                        break;
+                    }
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                }
+                if (joined)
+                {
+                    joiner.join();
+                }
             }
 
             {
@@ -550,7 +589,36 @@ void ExtensionManager::reloadAllExtensions()
         std::thread t = std::move(ext->thread);
         if (t.joinable())
         {
-            t.detach();
+            bool joined = false;
+            std::thread joiner([&]() {
+                t.join();
+                joined = true;
+            });
+
+            int reloadTimeout = AppState::configManager.getConfig("extension-reload-timeout", 450);
+            auto start = std::chrono::steady_clock::now();
+            while (!joined)
+            {
+                if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count() >= reloadTimeout)
+                {
+                    std::cerr << "Extension reload timed out, detaching thread to prevent hang\n";
+                    Logger::log("[HPR] Extension reload timed out, detaching thread to prevent hang");
+                    t.detach();
+                    joiner.detach();
+                    ext->detached = true;
+                    std::unique_lock<std::recursive_mutex> lock(ext->luaMutex, std::defer_lock);
+                    if (lock.try_lock())
+                    {
+                        ext->lua["HPR"] = sol::nil;
+                    }
+                    break;
+                }
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            }
+            if (joined)
+            {
+                joiner.join();
+            }
         }
     }
     extensions.clear();

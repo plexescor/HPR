@@ -381,7 +381,10 @@ void DatabaseManager::writeLoop()
             initDatabase(false);
         }
 
-        for (int i = 0; i < 100 && running; i++)
+        int flushInterval = AppState::configManager.getConfig("db-flush-interval", 10000);
+        int iterations = flushInterval / 100;
+        if (iterations <= 0) iterations = 1;
+        for (int i = 0; i < iterations && running; i++)
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 

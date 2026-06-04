@@ -4,6 +4,8 @@
 #include <sstream>
 #include <string>
 #include <unordered_map>
+#include <type_traits>
+#include <cstdlib>
 #include "logger.hpp"
 #ifdef _WIN32
 #include <windows.h>
@@ -58,15 +60,117 @@ void ConfigManager::loadConfig()
     }
 }
 
-bool ConfigManager::getConfig(const std::string &requestedParam, bool defaultValue)
+void ConfigManager::saveConfig()
+{
+    std::ofstream file(filePath);
+    if (!file.is_open())
+    {
+        std::cerr << "Error: Failed to open config file for writing: " << filePath << std::endl;
+        Logger::log("Error: Failed to open config file for writing: " + filePath);
+        return;
+    }
+    for (const auto& [param, value] : config)
+    {
+        file << param << "," << value << "\n";
+    }
+    file.close();
+}
+
+template <typename T>
+T ConfigManager::getConfig(const std::string requestedParam, const T& defaultValue)
 {
     for (const auto &[param, value] : config)
     {
         if (requestedParam.contains(param))
         {
-            if (value == "true") return true;
-            else if (value == "false") return false;
+            if constexpr (std::is_same_v<T, bool>)
+            {
+                if (value == "true") return true;
+                if (value == "false") return false;
+                return defaultValue;
+            }
+            else if constexpr (std::is_same_v<T, std::string>)
+            {
+                return value;
+            }
+            else if constexpr (std::is_arithmetic_v<T>)
+            {
+                char* endptr = nullptr;
+                double val = std::strtod(value.c_str(), &endptr);
+                if (endptr != value.c_str())
+                {
+                    return static_cast<T>(val);
+                }
+                return defaultValue;
+            }
+            else
+            {
+                std::stringstream ss(value);
+                T result;
+                if (ss >> result)
+                {
+                    return result;
+                }
+            }
         }
     }
     return defaultValue;
 }
+
+template <typename T>
+void ConfigManager::setConfig(const std::string paramName, const T& value)
+{
+    std::string valueStr;
+    if constexpr (std::is_same_v<T, bool>)
+    {
+        valueStr = value ? "true" : "false";
+    }
+    else if constexpr (std::is_same_v<T, std::string>)
+    {
+        valueStr = value;
+    }
+    else if constexpr (std::is_same_v<T, const char*>)
+    {
+        valueStr = std::string(value);
+    }
+    else if constexpr (std::is_arithmetic_v<T>)
+    {
+        valueStr = std::to_string(value);
+    }
+    else
+    {
+        std::stringstream ss;
+        ss << value;
+        valueStr = ss.str();
+    }
+
+    bool updated = false;
+    for (auto& [param, val] : config)
+    {
+        if (param == paramName)
+        {
+            val = valueStr;
+            updated = true;
+            break;
+        }
+    }
+    if (!updated)
+    {
+        config.push_back({paramName, valueStr});
+    }
+    saveConfig();
+}
+
+// Explicit template instantiations
+template bool ConfigManager::getConfig<bool>(const std::string, const bool&);
+template std::string ConfigManager::getConfig<std::string>(const std::string, const std::string&);
+template int ConfigManager::getConfig<int>(const std::string, const int&);
+template double ConfigManager::getConfig<double>(const std::string, const double&);
+template float ConfigManager::getConfig<float>(const std::string, const float&);
+
+template void ConfigManager::setConfig<bool>(const std::string, const bool&);
+template void ConfigManager::setConfig<std::string>(const std::string, const std::string&);
+template void ConfigManager::setConfig<const char*>(const std::string, const char* const&);
+template void ConfigManager::setConfig<int>(const std::string, const int&);
+template void ConfigManager::setConfig<double>(const std::string, const double&);
+template void ConfigManager::setConfig<float>(const std::string, const float&);

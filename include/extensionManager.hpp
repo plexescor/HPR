@@ -31,6 +31,7 @@ struct LoadedExtension
     sol::state lua;
     std::thread thread;
     std::atomic<bool> running{true};
+    std::atomic<bool> detached{false};
     std::pair<std::string, std::string> identity;
     std::recursive_mutex luaMutex; // Guards all shared Lua VM operations recursively to prevent multi-threaded race conditions without deadlocking
     std::recursive_mutex serverMutex;

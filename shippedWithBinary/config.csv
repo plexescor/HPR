@@ -2,3 +2,30 @@
 #without recompilation -> slint files in: $HPR_CONFIG_DIR/ui/
 use-interpreter,false
 hardware-acceleration,true
+
+# kill-apps -> enable or disable automatic termination of applications when daily limits are exceeded
+kill-apps,true
+
+# kill-cooldown -> minimum time interval (in milliseconds) between sequential application terminations
+kill-cooldown,2500
+
+# poll-interval -> window focus check frequency (in milliseconds)
+poll-interval,50
+
+# db-flush-interval -> how often window tracking totals are saved to disk (in milliseconds)
+db-flush-interval,10000
+
+# extension-shutdown-timeout -> wait time (in milliseconds) for Lua extensions to finish onExit before force exiting
+extension-shutdown-timeout,300
+
+# extension-reload-timeout -> wait time (in milliseconds) for Lua extensions to finish on reload/unload before detaching
+extension-reload-timeout,450
+
+# ui-poll-interval -> tracking loop polling and UI update frequency (in milliseconds)
+ui-poll-interval,200
+
+# ui-insight-interval -> interval to run the pattern analyzer and update insights on the UI (in milliseconds)
+ui-insight-interval,1000
+
+# ui-error-duration -> duration for which active errors are displayed on the UI (in milliseconds)
+ui-error-duration,5000

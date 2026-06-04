@@ -482,6 +482,15 @@ The raw OS string is always preserved in the database. Aliases apply only at dis
 ```csv
 use-interpreter,false       # true = load UI from config dir at runtime instead of compiled-in UI
 hardware-acceleration,true  # false = CPU renderer, eliminates GPU library overhead on Linux
+kill-apps,true              # false = disable automatic termination of applications when daily limits are exceeded
+kill-cooldown,2500          # minimum time interval (in milliseconds) between sequential application terminations
+poll-interval,50            # window focus check frequency (in milliseconds)
+db-flush-interval,10000     # how often window tracking totals are saved to disk (in milliseconds)
+extension-shutdown-timeout,300 # wait time (in milliseconds) for Lua extensions to finish onExit before force exiting
+extension-reload-timeout,450 # wait time (in milliseconds) for Lua extensions to finish on reload/unload before detaching
+ui-poll-interval,200         # tracking loop polling and UI update frequency (in milliseconds)
+ui-insight-interval,1000     # interval to run the pattern analyzer and update insights on the UI (in milliseconds)
+ui-error-duration,5000       # duration for which active errors are displayed on the UI (in milliseconds)
 ```
 
 ```

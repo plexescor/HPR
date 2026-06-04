@@ -1,18 +1,23 @@
 #pragma once
 
-#include <unordered_map>
 #include <string>
-#include <filesystem>
 #include <vector>
+#include <utility>
 
 class ConfigManager
 {
     public: //No need for destructor
         ConfigManager();
-        bool getConfig(const std::string& requestedParam, bool defaultValue);
+
+        template <typename T>
+        T getConfig(const std::string requestedParam, const T& defaultValue);
+
+        template <typename T>
+        void setConfig(const std::string paramName, const T& value);
 
     private:
         void loadConfig();
+        void saveConfig();
     
     private:
         std::vector<std::pair<std::string, std::string>> config; 

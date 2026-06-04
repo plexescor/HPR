@@ -4,6 +4,7 @@
 #include "logger.hpp"
 #include <chrono>
 #include "timeUtils.hpp"
+#include "configManager.hpp"
 
 //i dont remember why i defined these as globals
 //but there must be a reason so keep it as is
@@ -179,73 +180,81 @@ void LimitsManager::checkLoop()
                     showNotification("HPR Alert", "Daily limit reached for " + aliasedName + "!");
                 if (doKill)
                 {
-                    showNotification("HPR Termination", aliasedName + " has exceeded its limit by 5%. Terminating process!");
-                    
-                    // Check global kill cooldown
-                    auto now = std::chrono::steady_clock::now();
-                    auto timeSinceLastKill = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastGlobalKillTime).count();
-                    if (timeSinceLastKill >= 2500)
+                    if (AppState::configManager.getConfig("kill-apps", true))
                     {
-                        lastGlobalKillTime = now;
-                        std::string pid;
+                        showNotification("HPR Termination", aliasedName + " has exceeded its limit by 5%. Terminating process!");
+                        
+                        // Check global kill cooldown
+                        auto now = std::chrono::steady_clock::now();
+                        auto timeSinceLastKill = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastGlobalKillTime).count();
+                        int killCooldown = AppState::configManager.getConfig("kill-cooldown", 2500);
+                        if (timeSinceLastKill >= killCooldown)
                         {
-                            std::lock_guard<std::mutex> lock(AppState::stateMutex);
-                            if (AppState::state.appNamePid.count(appName))
-                                pid = AppState::state.appNamePid.at(appName);
+                            lastGlobalKillTime = now;
+                            std::string pid;
+                            {
+                                std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                                if (AppState::state.appNamePid.count(appName))
+                                    pid = AppState::state.appNamePid.at(appName);
+                            }
+                            std::string cmd;
+                            if (!pid.empty())
+                            {
+                                #ifdef _WIN32
+                                    cmd = "taskkill /F /PID " + pid;
+                                #else
+                                    cmd = "kill -9 " + pid + " 2>/dev/null";
+                                #endif
+                            }
+                            else
+                            {
+                                #ifdef _WIN32
+                                    cmd = "taskkill /F /IM " + appName + " /IM " + appName + ".exe";
+                                #else
+                                    cmd = "pkill -f \"" + appName + "\" || killall \"" + appName + "\"";
+                                #endif
+                            }
+                            runSystemCommand_UNSAFE(cmd);
                         }
-                        std::string cmd;
-                        if (!pid.empty())
-                        {
-                            #ifdef _WIN32
-                                cmd = "taskkill /F /PID " + pid;
-                            #else
-                                cmd = "kill -9 " + pid + " 2>/dev/null";
-                            #endif
-                        }
-                        else
-                        {
-                            #ifdef _WIN32
-                                cmd = "taskkill /F /IM " + appName + " /IM " + appName + ".exe";
-                            #else
-                                cmd = "pkill -f \"" + appName + "\" || killall \"" + appName + "\"";
-                            #endif
-                        }
-                        runSystemCommand_UNSAFE(cmd);
                     }
                 }
 
                 if (killSent[appName])
                 {
-                    // Check global kill cooldown before repeating kill command
-                    auto now = std::chrono::steady_clock::now();
-                    auto timeSinceLastKill = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastGlobalKillTime).count();
-                    if (timeSinceLastKill >= 2500)
+                    if (AppState::configManager.getConfig("kill-apps", true))
                     {
-                        lastGlobalKillTime = now;
-                        std::string pid;
+                        // Check global kill cooldown before repeating kill command
+                        auto now = std::chrono::steady_clock::now();
+                        auto timeSinceLastKill = std::chrono::duration_cast<std::chrono::milliseconds>(now - lastGlobalKillTime).count();
+                        int killCooldown = AppState::configManager.getConfig("kill-cooldown", 2500);
+                        if (timeSinceLastKill >= killCooldown)
                         {
-                            std::lock_guard<std::mutex> lock(AppState::stateMutex);
-                            if (AppState::state.appNamePid.count(appName))
-                                pid = AppState::state.appNamePid.at(appName);
+                            lastGlobalKillTime = now;
+                            std::string pid;
+                            {
+                                std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                                if (AppState::state.appNamePid.count(appName))
+                                    pid = AppState::state.appNamePid.at(appName);
+                            }
+                            std::string cmd;
+                            if (!pid.empty())
+                            {
+                                #ifdef _WIN32
+                                    cmd = "taskkill /F /PID " + pid;
+                                #else
+                                    cmd = "kill -9 " + pid + " 2>/dev/null";
+                                #endif
+                            }
+                            else
+                            {
+                                #ifdef _WIN32
+                                    cmd = "taskkill /F /IM " + appName + " /IM " + appName + ".exe";
+                                #else
+                                    cmd = "pkill -f \"" + appName + "\" || killall \"" + appName + "\"";
+                                #endif
+                            }
+                            runSystemCommand_UNSAFE(cmd);
                         }
-                        std::string cmd;
-                        if (!pid.empty())
-                        {
-                            #ifdef _WIN32
-                                cmd = "taskkill /F /PID " + pid;
-                            #else
-                                cmd = "kill -9 " + pid + " 2>/dev/null";
-                            #endif
-                        }
-                        else
-                        {
-                            #ifdef _WIN32
-                                cmd = "taskkill /F /IM " + appName + " /IM " + appName + ".exe";
-                            #else
-                                cmd = "pkill -f \"" + appName + "\" || killall \"" + appName + "\"";
-                            #endif
-                        }
-                        runSystemCommand_UNSAFE(cmd);
                     }
                 }
 

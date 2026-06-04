@@ -81,6 +81,7 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 	}
 	while (running)
 	{
+		int pollInterval = AppState::configManager.getConfig("poll-interval", 50);
 		window = getCurrentWindow();
 
 		std::string lowerWindowName = window;
@@ -100,12 +101,12 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 				std::lock_guard<std::mutex> lock(AppState::stateMutex);
 				AppState::state.currentWindow = window;
 			}
-			std::this_thread::sleep_for(std::chrono::milliseconds(50));
+			std::this_thread::sleep_for(std::chrono::milliseconds(pollInterval));
 			continue;
 		}
 		if (window.contains("Unknown"))
 		{
-			std::this_thread::sleep_for(std::chrono::milliseconds(50));
+			std::this_thread::sleep_for(std::chrono::milliseconds(pollInterval));
 			continue;
 		}
 
@@ -207,7 +208,7 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 			AppState::state.appNamePid[window] = getCurrentPid();
 		}
 
-		std::this_thread::sleep_for(std::chrono::milliseconds(50));
+		std::this_thread::sleep_for(std::chrono::milliseconds(pollInterval));
 	}
 }
 

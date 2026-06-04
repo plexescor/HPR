@@ -6,6 +6,7 @@ AppState::HistoricalData_Singular AppState::historicalData_State;
 AppState::HistoricalData_Full AppState::historicalData_Full_State;
 
 AliasManager AppState::aliasManager;
+ConfigManager AppState::configManager;
 PatternAnalyzer AppState::patternAnalyzer;
 
 ExtensionManager* AppState::extManager = nullptr;

@@ -184,14 +184,15 @@ void HPR::trackingLoop()
             if (!activeGuiError.empty())
             {
                 auto now = std::chrono::steady_clock::now();
-                if (std::chrono::duration_cast<std::chrono::seconds>(now - errorTimestamp).count() >= 5)
+                int errorDuration = AppState::configManager.getConfig("ui-error-duration", 5000);
+                if (std::chrono::duration_cast<std::chrono::milliseconds>(now - errorTimestamp).count() >= errorDuration)
                 {
-                    // 5 seconds have passed, clear the error
+                    // clear the error
                     activeGuiError = "";
                 }
                 else
                 {
-                    // Still within 5 seconds, keep showing it
+                    // keep showing it
                     window = "Error: " + activeGuiError;
                 }
             }
@@ -213,8 +214,9 @@ void HPR::trackingLoop()
                 AppState::patternAnalyzer.generateInsights();
             }
 
-            // Update insight every 1 (or on first frame)
-            if (firstRun || std::chrono::duration_cast<std::chrono::seconds>(now - lastInsightUpdate).count() >= 1) 
+            // Update insight (or on first frame)
+            int insightInterval = AppState::configManager.getConfig("ui-insight-interval", 1000);
+            if (firstRun || std::chrono::duration_cast<std::chrono::milliseconds>(now - lastInsightUpdate).count() >= insightInterval) 
             {
                 std::lock_guard<std::mutex> lock(AppState::patternAnalyzerMutex);
                 
@@ -252,10 +254,14 @@ void HPR::trackingLoop()
         }
         else
         {
-            //Chunked sleep
-            for (int i = 0; i < 2 && running; i++)
+            //Chunked sleep based on ui-poll-interval
+            int uiPollInterval = AppState::configManager.getConfig("ui-poll-interval", 200);
+            int remaining = uiPollInterval;
+            while (remaining > 0 && running)
             {
-                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                int sleepTime = std::min(remaining, 50);
+                std::this_thread::sleep_for(std::chrono::milliseconds(sleepTime));
+                remaining -= sleepTime;
             }
         }    
     }
