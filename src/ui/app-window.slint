@@ -69,6 +69,7 @@ export component MainWindow inherits Window {
     //As "LIVE" isnt accurate cz main view can also show historical data
     //so i renamed to it "DATA"
     property <string> active-view: "DATA";
+    property <string> current-view-mode: "Live";
 
     title: "HPR";
     default-font-size: 13px;
@@ -86,6 +87,10 @@ export component MainWindow inherits Window {
                 (date.month < 10 ? "0" : "") + date.month + "-" +
                 (Math.mod(date.year, 100) < 10 ? "0" : "") + Math.mod(date.year, 100)
             );
+            root.current-view-mode = "Historical: " + 
+                ((date.day < 10 ? "0" : "") + date.day + "-" +
+                (date.month < 10 ? "0" : "") + date.month + "-" +
+                (Math.mod(date.year, 100) < 10 ? "0" : "") + Math.mod(date.year, 100));
             date-picker.close();
         }
         canceled => { date-picker.close(); }
@@ -148,6 +153,25 @@ export component MainWindow inherits Window {
                             letter-spacing: 0.3px;
                             vertical-alignment: center;
                         }
+
+                        if current-view-mode != "" : Rectangle {
+                            background: current-view-mode == "Live" ? #22c55e15 : #ef444415;
+                            border-color: current-view-mode == "Live" ? #22c55e60 : #ef444460;
+                            border-width: 1px;
+                            border-radius: 4px;
+                            height: 18px;
+                            width: mode-text.preferred-width + 12px;
+                            y: (parent.height - self.height) / 2;
+
+                            mode-text := Text {
+                                text: root.current-view-mode;
+                                color: current-view-mode == "Live" ? #4ade80 : #f87171;
+                                font-size: 10px;
+                                font-weight: 700;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
                     }
 
                     Rectangle {
@@ -190,7 +214,7 @@ export component MainWindow inherits Window {
                 trackedTime_S: root.trackedTime_S;
                 timePerApp_S: root.timePerApp_S;
                 switchHistory_S: root.switchHistory_S;
-                switch-to-live-clicked => { root.loadLiveData(); }
+                switch-to-live-clicked => { root.loadLiveData(); root.current-view-mode = "Live"; }
             }
             
             if active-view == "INSIGHTS" : InsightsView {
@@ -243,9 +267,18 @@ export component MainWindow inherits Window {
             }
             if active-view == "HISTORY_RANGE" : HistoryRangeView {
                 vertical-stretch: 1;
-                load-historical-data-singular(date) => { root.loadHistoricalData_Singular(date); }
-                load-historical-data-number(days, mode) => { root.loadHistoricalData_Number(days, mode); }
-                load-historical-data-range(start, end, mode) => { root.loadHistoricalData_Range(start, end, mode); }
+                load-historical-data-singular(date) => { 
+                    root.loadHistoricalData_Singular(date); 
+                    root.current-view-mode = "Historical: " + date;
+                }
+                load-historical-data-number(days, mode) => { 
+                    root.loadHistoricalData_Number(days, mode); 
+                    root.current-view-mode = "Historical: last " + days + " days";
+                }
+                load-historical-data-range(start, end, mode) => { 
+                    root.loadHistoricalData_Range(start, end, mode); 
+                    root.current-view-mode = "Historical: " + start + " — " + end;
+                }
             }
 
         }
