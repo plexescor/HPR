@@ -237,7 +237,7 @@ std::string getQDBusCommand()
     if (!s_qdbus_bin.empty()) return s_qdbus_bin;
     
     std::string cmd = "command -v qdbus6 || command -v qdbus-qt6 || command -v qdbus";
-    std::string check = runSystemCommand(cmd);
+    std::string check = runSystemCommand_UNSAFE(cmd);
     
     // Trim whitespace/newlines
     while (!check.empty() && (check.back() == '\n' || check.back() == ' '))
@@ -278,7 +278,7 @@ void registerBuiltinBackends()
                 "LolAnotherWindowExtension.FocusClass 2>&1";
 
             std::string extensionCheckResult =
-                runSystemCommand(extensionCheckCommand);
+                runSystemCommand_UNSAFE(extensionCheckCommand);
 
             Logger::log("[HPR] GNOME extension check: " + extensionCheckResult);
 
@@ -291,7 +291,7 @@ void registerBuiltinBackends()
 
                 std::string cmd = "gnome-extensions enable "
                     "lol-another-window-extension@plexescor";
-                runSystemCommand(cmd);
+                runSystemCommand_UNSAFE(cmd);
             }
         },
 
@@ -308,7 +308,7 @@ void registerBuiltinBackends()
                 "LolAnotherWindowExtension.FocusClass 2>&1";
 
             std::string result =
-                runSystemCommand(extensionCheckCommand);
+                runSystemCommand_UNSAFE(extensionCheckCommand);
 
             return result.contains("('");
         },
@@ -319,7 +319,7 @@ void registerBuiltinBackends()
                 "/org/gnome/Shell/Extensions/LolAnotherWindowExtension --method "
                 "org.gnome.Shell.Extensions.LolAnotherWindowExtension.FocusClass";
 
-            std::string result = runSystemCommand(command);
+            std::string result = runSystemCommand_UNSAFE(command);
 
             size_t start = result.find('\'');
             size_t end = result.rfind('\'');
@@ -341,7 +341,7 @@ void registerBuiltinBackends()
                 "/org/gnome/Shell/Extensions/LolAnotherWindowExtension --method "
                 "org.gnome.Shell.Extensions.LolAnotherWindowExtension.FocusTitle";
 
-            std::string result = runSystemCommand(command);
+            std::string result = runSystemCommand_UNSAFE(command);
 
             size_t start = result.find('\'');
             size_t end = result.rfind('\'');
@@ -363,7 +363,7 @@ void registerBuiltinBackends()
                 "/org/gnome/Shell/Extensions/LolAnotherWindowExtension --method "
                 "org.gnome.Shell.Extensions.LolAnotherWindowExtension.FocusAppId";
 
-            std::string result = runSystemCommand(command);
+            std::string result = runSystemCommand_UNSAFE(command);
 
             size_t start = result.find('\'');
             size_t end = result.rfind('\'');
@@ -438,7 +438,7 @@ void registerBuiltinBackends()
         []()
         {
             std::string cmd = "hyprctl monitors -j";
-            std::string result = runSystemCommand(cmd);
+            std::string result = runSystemCommand_UNSAFE(cmd);
             // Logger::log("hyprctl monitors result: '" + result + "'");
             return result.contains("id");
         },
@@ -446,7 +446,7 @@ void registerBuiltinBackends()
         []() -> std::string
         {
             std::string cmd = "hyprctl activewindow -j";
-            std::string json = runSystemCommand(cmd);
+            std::string json = runSystemCommand_UNSAFE(cmd);
             const std::string key = "\"class\":";
             size_t keyPos = json.find(key);
             if (keyPos == std::string::npos) return "";
@@ -460,7 +460,7 @@ void registerBuiltinBackends()
         []() -> std::string
         {
             std::string cmd = "hyprctl activewindow -j";
-            std::string json = runSystemCommand(cmd);
+            std::string json = runSystemCommand_UNSAFE(cmd);
             const std::string key = "\"title\":";
             size_t keyPos = json.find(key);
             if (keyPos == std::string::npos) return "";
@@ -474,7 +474,7 @@ void registerBuiltinBackends()
         []() -> std::string
         {
             std::string cmd = "hyprctl activewindow -j";
-            std::string json = runSystemCommand(cmd);
+            std::string json = runSystemCommand_UNSAFE(cmd);
             const std::string key = "\"pid\":";
             size_t keyPos = json.find(key);
             if (keyPos == std::string::npos) return "";
@@ -602,7 +602,7 @@ void registerBuiltinBackends()
         []()
         {
             std::string cmd = "gdbus call --session --dest org.Cinnamon --object-path /org/Cinnamon --method org.Cinnamon.Eval \"global.display.focus_window.get_wm_class()\"";
-            std::string rawOutput = runSystemCommand(cmd);
+            std::string rawOutput = runSystemCommand_UNSAFE(cmd);
 
             return rawOutput.contains("('");
         },
@@ -611,7 +611,7 @@ void registerBuiltinBackends()
         []() -> std::string
         {
             std::string cmd = "gdbus call --session --dest org.Cinnamon --object-path /org/Cinnamon --method org.Cinnamon.Eval \"global.display.focus_window.get_wm_class()\"";
-            std::string rawOutput = runSystemCommand(cmd);
+            std::string rawOutput = runSystemCommand_UNSAFE(cmd);
             // Find the positions of the single-quotes wrapping the inner string
             size_t startQuote = rawOutput.find('\'');
             size_t endQuote = rawOutput.rfind('\'');
@@ -640,7 +640,7 @@ void registerBuiltinBackends()
         {
             std::string cmd = "gdbus call --session --dest org.Cinnamon --object-path /org/Cinnamon --method org.Cinnamon.Eval 'global.get_window_actors().filter(a => a.meta_window.has_focus())[0].get_meta_window().get_title()'";
             
-            std::string rawOutput = runSystemCommand(cmd);
+            std::string rawOutput = runSystemCommand_UNSAFE(cmd);
 
             // Find the positions of the single-quotes wrapping the inner string
             size_t startQuote = rawOutput.find('\'');
@@ -669,7 +669,7 @@ void registerBuiltinBackends()
         []() -> std::string
         {
             std::string cmd = "gdbus call --session --dest org.Cinnamon --object-path /org/Cinnamon --method org.Cinnamon.Eval \"global.display.focus_window.get_pid()\"";
-            std::string rawOutput = runSystemCommand(cmd);
+            std::string rawOutput = runSystemCommand_UNSAFE(cmd);
             size_t start = rawOutput.find('(');
             size_t end = rawOutput.find(',', start);
             if (start == std::string::npos || end == std::string::npos) return "";
