@@ -1,4 +1,8 @@
 <p align="center">
+  <img src="./assetsgithub/banner.png" alt="HPR Banner" width="800"/>
+</p>
+
+<p align="center">
   <a href="https://ko-fi.com/plexescor">
     <img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support on Ko-fi" />
   </a>
@@ -36,13 +40,13 @@
 ---
 
 <p align="center">
-  <img src="./assets/HPRHOME.png" alt="HPR Home Screen" width="800"/>
+  <img src="./assetsgithub/main.png" alt="HPR Home Screen" width="800"/>
 </p>
 
 ---
 
 <p align="center">
-  <img src="./assets/HPRINSIGHTS.png" alt="HPR Insights Screen" width="800"/>
+  <img src="./assetsgithub/insights.png" alt="HPR Insights Screen" width="800"/>
 </p>
 
 ---
@@ -53,9 +57,7 @@
 </p>
 
 <p align="center">
-
-https://github.com/user-attachments/assets/a5fbe1f1-0cdc-41c8-a77b-68f40d96d531
-
+  <video src="./assetsgithub/video.mp4" width="800" controls></video>
 </p>
 
 ---
@@ -120,6 +122,10 @@ Click the calendar icon in the sidebar to open the History Range view:
 
 Historical loading runs on a dedicated background thread — live tracking is never paused. A "Switch to Live View" button in the data view takes you back to real-time instantly.
 
+<p align="center">
+  <img src="./assetsgithub/history.png" alt="HPR History Range View" width="800"/>
+</p>
+
 That is the whole pitch. A compiled binary that watches one thing and writes it down. Everything else is just what happens when you do that well.
 
 **Tray controls:**
@@ -178,6 +184,10 @@ Set a daily time **limit** or daily usage **goal** on any tracked application �
 
 Badges on each row show **remaining time live**. Limit rows have a red accent; goal rows have green.
 
+<p align="center">
+  <img src="./assetsgithub/limits.png" alt="HPR App Limits and Goals" width="800"/>
+</p>
+
 > [!NOTE]
 > Advanced users can intercept the limit-reached event via the [Function Overriding API](https://hpr-cpp.netlify.app/overrides.html) to run custom Lua logic — log it, send a webhook, suppress the notification, or anything else.
 
@@ -197,6 +207,10 @@ Each extension runs in its own isolated VM on a dedicated background thread, com
 - Build interactive custom UI panels that render inside HPR via Slint callback bindings
 - **Function Overriding (Advanced)**: Intercept, block, or modify 26+ core C++ functions directly from Lua (e.g., intercepting window validation, customizing how active windows are processed, blocking notifications, etc.)
 - AND MUCH MORE INSANE STUFF like impersonating ActivtyWatch client to feed the received data into HPR
+
+<p align="center">
+  <img src="./assetsgithub/extensions.png" alt="HPR Extensions" width="800"/>
+</p>
 
 **Where to put your extensions:**
 
