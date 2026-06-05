@@ -57,7 +57,11 @@
 </p>
 
 <p align="center">
-  <video src="./assetsgithub/video.mp4" width="800" controls></video>
+  
+
+https://github.com/user-attachments/assets/07659d3d-0f3b-4bbc-8823-8b5d11bfd32f
+
+
 </p>
 
 ---
