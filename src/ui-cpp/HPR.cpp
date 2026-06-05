@@ -227,7 +227,16 @@ void HPR::trackingLoop()
                     AppState::patternAnalyzer.getMostSwitchedFrom(),
                     AppState::patternAnalyzer.getMostSwitchedTo(),
                     AppState::patternAnalyzer.getMostFocusedSession(),
-                    AppState::patternAnalyzer.getMostProductiveHour()
+                    AppState::patternAnalyzer.getMostProductiveHour(),
+                    AppState::patternAnalyzer.getEscapePattern(),
+                    AppState::patternAnalyzer.getReturnRate(),
+                    AppState::patternAnalyzer.getAvgFocusSession(),
+                    AppState::patternAnalyzer.getMostDistractedDay(),
+                    AppState::patternAnalyzer.getProductiveDaysThisWeek(),
+                    AppState::patternAnalyzer.getScreenTimeVsAverage(),
+                    AppState::patternAnalyzer.getFocusDipHour(),
+                    AppState::patternAnalyzer.getDeepWorkBeforeNoon(),
+                    AppState::patternAnalyzer.getWeekendVsWeekday()
                 );
                 lastInsightUpdate = now;
                 firstRun = false;

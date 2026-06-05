@@ -111,6 +111,15 @@ DatabaseManager::DatabaseManager()
         }
     });
 
+    patterns_DbLoadEventId = EventHub::connect(Event::LOAD_PATTERNS_DATA, [this](EventData data)
+    {
+        if (std::holds_alternative<PatternDataRequest>(data))
+        {
+            int days = std::get<PatternDataRequest>(data).days;
+            this->loadPatternsData(days);
+        }
+    });
+
 }
 
 DatabaseManager::~DatabaseManager()
@@ -133,6 +142,7 @@ DatabaseManager::~DatabaseManager()
     EventHub::disconnect(Event::LOAD_DATABASE_SINGULAR, singular_DbLoadEventId);
     EventHub::disconnect(Event::LOAD_DATABASE_NUMBER, number_DbLoadEventId);
     EventHub::disconnect(Event::LOAD_DATABASE_RANGE, range_DbLoadEventId);
+    EventHub::disconnect(Event::LOAD_PATTERNS_DATA, patterns_DbLoadEventId);
 }
 
 void DatabaseManager::initDatabase(bool copyData)
@@ -1148,6 +1158,92 @@ void DatabaseManager::loadDb_Range(std::string dateFrom, std::string dateTo, std
             EventHub::emit(Event::HISTORY_LOADED_RANGE);
         }
     });
+}
+
+// Synchronous: loads N days of per-day data into PatternAnalyzer for advanced insight computation.
+// Called directly on the EventHub thread — no async needed because the UI just reads the output strings.
+void DatabaseManager::loadPatternsData(int days)
+{
+    std::string activeFileName = this->fileName;
+
+    std::string basePath;
+    #ifdef _WIN32
+        basePath = std::getenv("APPDATA");
+        basePath += "/HPR/HPR_DB/";
+    #else
+        const char* home = std::getenv("HOME");
+        if (!home)
+        {
+            std::cerr << "[loadPatternsData] HOME env var not set\n";
+            Logger::log("[loadPatternsData] HOME env var not set");
+            return;
+        }
+        basePath = home;
+        basePath += "/.local/share/HPR/HPR_DB/";
+    #endif
+
+    // Walk backwards from today, one day at a time
+    uint64_t tsMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+                        std::chrono::system_clock::now().time_since_epoch()).count();
+
+    std::vector<DayData> result;
+    result.reserve(days);
+
+    for (int i = 0; i < days; ++i)
+    {
+        std::string dateStr = convertToDate_DDMMYY(tsMs);
+        tsMs = (tsMs >= 86400000ULL) ? (tsMs - 86400000ULL) : 0;
+
+        DayData dayData;
+        dayData.date = dateStr;
+
+        if (dateStr + ".db" == activeFileName)
+        {
+            // Today's live data — read from AppState under lock
+            std::lock_guard<std::mutex> lock(AppState::stateMutex);
+            dayData.timePerApp   = AppState::state.timeLog_PerApp;
+            dayData.switchHistory = AppState::state.switchHistory;
+        }
+        else
+        {
+            std::string fullPath = basePath + extractMMYY_from_DDMMYY(dateStr) + "/" + dateStr + ".db";
+            if (!std::filesystem::exists(fullPath))
+            {
+                // Missing day — skip silently (user may not have data for every day)
+                continue;
+            }
+
+            try
+            {
+                sqlite::database dayDb(fullPath);
+                dayDb << "PRAGMA wal_checkpoint(PASSIVE);";
+
+                dayDb << "select name, duration from app_usage;"
+                      >> [&dayData](std::string name, uint64_t duration) {
+                             dayData.timePerApp[name] = duration;
+                         };
+
+                dayDb << "select fromWindow, toWindow, timeStamp from switch_history;"
+                      >> [&dayData](std::string from, std::string to, long long ts) {
+                             dayData.switchHistory[{from, to}].push_back((uint64_t)ts);
+                         };
+            }
+            catch (const std::exception& e)
+            {
+                std::cerr << "[loadPatternsData] Failed to load " << fullPath << ": " << e.what() << "\n";
+                Logger::log("[loadPatternsData] Failed to load " + fullPath + ": " + std::string(e.what()));
+                continue;
+            }
+        }
+
+        result.push_back(std::move(dayData));
+    }
+
+    {
+        std::lock_guard<std::mutex> lock(AppState::patternAnalyzerMutex);
+        AppState::patternAnalyzer.setMultiDayData(std::move(result));
+        AppState::patternAnalyzer.generateAdvancedInsights();
+    }
 }
 
 // Runs INSERT, UPDATE, DELETE, CREATE TABLE, etc.

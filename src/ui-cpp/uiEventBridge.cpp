@@ -131,6 +131,14 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow>& ui,  ExtensionM
         LimitsManager::setGoal(std::string(appName), minutes);
     });
 
+    ui->on_loadInsights([this]()
+    {
+        int days = AppState::configManager.getConfig("pattern-days", 7);
+        std::thread([days]() {
+            EventHub::emit(Event::LOAD_PATTERNS_DATA, PatternDataRequest{days});
+        }).detach();
+    });
+
 
     ui->on_openKofi([this]()
 
@@ -357,6 +365,15 @@ UiEventBridge::UiEventBridge(
                 LimitsManager::setGoal(std::string(opt_name.value()), (int)opt_mins.value());
             }
         }
+        return slint::interpreter::Value();
+    });
+
+    ui->set_callback("loadInsights", [this](auto args) -> slint::interpreter::Value
+    {
+        int days = AppState::configManager.getConfig("pattern-days", 7);
+        std::thread([days]() {
+            EventHub::emit(Event::LOAD_PATTERNS_DATA, PatternDataRequest{days});
+        }).detach();
         return slint::interpreter::Value();
     });
 

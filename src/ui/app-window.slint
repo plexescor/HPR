@@ -9,9 +9,10 @@ import { ExtensionsView, LoadedExtension_S } from "./extension-view.slint";
 import { AboutView } from "./about-view.slint";
 import { GoalsView } from "./goals-view.slint";
 import { HistoryRangeView } from "./history-range-view.slint";
+import { TimelineView } from "./timeline-view.slint";
 
 
-import { TimeLog, SwitchHistory, TimeLog_Tab, TimeLog_Project, AppGoalData } from "./types.slint";
+import { TimeLog, SwitchHistory, TimeLog_Tab, TimeLog_Project, AppGoalData, TimelineEvent } from "./types.slint";
 
 
 // ── Main Window ──────────────────────────────────────────────────────────────
@@ -49,6 +50,10 @@ export component MainWindow inherits Window {
     in property <[LoadedExtension_S]> loadedExtensions_S;
     in property <float>             trackedTime_Project_S;
     in property <[AppGoalData]>          rawApps_S;
+    in property <[TimelineEvent]>        timelineEvents_S;
+    in-out property <int>                timelinePresetHours: 24;
+    in-out property <int>                timelineStartHour: 0;
+    in-out property <int>                timelineEndHour: 24;
 
 
 
@@ -60,6 +65,17 @@ export component MainWindow inherits Window {
     in property <string>          mostSwitchedTo_S;
     in property <string>          longestFocus_S;
     in property <string>          peakHour_S;
+
+    // Advanced cross-day insight properties
+    in property <string>          escapePattern_S;
+    in property <string>          returnRate_S;
+    in property <string>          avgFocusSession_S;
+    in property <string>          mostDistractedDay_S;
+    in property <string>          productiveDays_S;
+    in property <string>          screenTimeVsAvg_S;
+    in property <string>          focusDipHour_S;
+    in property <string>          deepWorkBeforeNoon_S;
+    in property <string>          weekendVsWeekday_S;
 
     in property <string>          cpuUsage;
     in property <string>          ramUsage;
@@ -226,6 +242,16 @@ export component MainWindow inherits Window {
                 mostSwitchedTo_S: root.mostSwitchedTo_S;
                 longestFocus_S: root.longestFocus_S;
                 peakHour_S: root.peakHour_S;
+                escapePattern_S: root.escapePattern_S;
+                returnRate_S: root.returnRate_S;
+                avgFocusSession_S: root.avgFocusSession_S;
+                mostDistractedDay_S: root.mostDistractedDay_S;
+                productiveDays_S: root.productiveDays_S;
+                screenTimeVsAvg_S: root.screenTimeVsAvg_S;
+                focusDipHour_S: root.focusDipHour_S;
+                deepWorkBeforeNoon_S: root.deepWorkBeforeNoon_S;
+                weekendVsWeekday_S: root.weekendVsWeekday_S;
+                load-insights => { root.loadInsights(); }
             }
 
             if active-view == "TAB" : TabView {
@@ -279,6 +305,13 @@ export component MainWindow inherits Window {
                     root.loadHistoricalData_Range(start, end, mode); 
                     root.current-view-mode = "Historical: " + start + " — " + end;
                 }
+            }
+            if active-view == "TIMELINE" : TimelineView {
+                vertical-stretch: 1;
+                timelineEvents: root.timelineEvents_S;
+                timelinePresetHours <=> root.timelinePresetHours;
+                timelineStartHour <=> root.timelineStartHour;
+                timelineEndHour <=> root.timelineEndHour;
             }
 
         }
@@ -357,6 +390,12 @@ export component MainWindow inherits Window {
                     }
 
                     SidebarButton {
+                        icon: @image-url("./images/timeline.svg");
+                        tip: "View day timeline";
+                        clicked => { root.active-view = "TIMELINE"; }
+                    }
+
+                    SidebarButton {
                         icon: @image-url("./images/tab.svg");
                         tip: "View usage per tab";
                         clicked => { root.active-view = "TAB"; }
@@ -371,7 +410,7 @@ export component MainWindow inherits Window {
                     SidebarButton {
                         icon: @image-url("./images/insights.svg");
                         tip: "View insights";
-                        clicked => { root.active-view = "INSIGHTS"; }
+                        clicked => { root.active-view = "INSIGHTS"; root.loadInsights(); }
                     }
 
                     SidebarButton {

@@ -10,12 +10,72 @@ export component InsightsView {
     in property <string> longestFocus_S;
     in property <string> peakHour_S;
 
+    // Advanced cross-day insights
+    in property <string> escapePattern_S;
+    in property <string> returnRate_S;
+    in property <string> avgFocusSession_S;
+    in property <string> mostDistractedDay_S;
+    in property <string> productiveDays_S;
+    in property <string> screenTimeVsAvg_S;
+    in property <string> focusDipHour_S;
+    in property <string> deepWorkBeforeNoon_S;
+    in property <string> weekendVsWeekday_S;
+
+    callback load-insights;
+
     VerticalLayout {
         padding: 12px;
         padding-top: 0px;
         spacing: 10px;
 
-        SectionHeader { label: "INSIGHTS"; }
+        HorizontalLayout {
+            alignment: space-between;
+            vertical-stretch: 0;
+            padding-top: 4px;
+
+            SectionHeader { label: "INSIGHTS"; }
+
+            refreshBtn := Rectangle {
+                width: 72px;
+                height: 26px;
+                border-radius: 6px;
+                border-width: 1px;
+
+                animate background { duration: 100ms; }
+                animate border-color { duration: 100ms; }
+
+                ta-refresh := TouchArea {
+                    mouse-cursor: pointer;
+                    clicked => { root.load-insights(); }
+                }
+
+                states [
+                    pressed when ta-refresh.pressed: {
+                        background: #34d39935;
+                        border-color: #34d39980;
+                    }
+                    hovered when ta-refresh.has-hover: {
+                        background: #34d39925;
+                        border-color: #34d39960;
+                    }
+                    normal when !ta-refresh.has-hover: {
+                        background: #34d39912;
+                        border-color: #34d39935;
+                    }
+                ]
+
+                Text {
+                    text: "REFRESH";
+                    font-size: 8px;
+                    font-weight: 700;
+                    letter-spacing: 2px;
+                    color: ta-refresh.pressed ? #a7f3d0 : ta-refresh.has-hover ? #6ee7b7 : #34d399;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                    animate color { duration: 100ms; }
+                }
+            }
+        }
 
         Flickable {
             vertical-stretch: 1;
@@ -26,7 +86,16 @@ export component InsightsView {
                 width: 100%;
                 spacing: 8px;
 
-                // ── Card 1 ───────────────────────────────────────────────
+                // ── TODAY ────────────────────────────────────────────────────
+                Text {
+                    text: "TODAY";
+                    font-size: 8px;
+                    font-weight: 700;
+                    letter-spacing: 3px;
+                    color: #ffffff25;
+                    x: 4px;
+                }
+
                 Card {
                     height: 64px;
                     HorizontalLayout {
@@ -42,7 +111,7 @@ export component InsightsView {
                         }
                         Text {
                             text: mostUsedApp_S;
-                            font-size: 13px;
+                            font-size: 15px;
                             font-weight: 600;
                             color: #a3e635;
                             vertical-alignment: center;
@@ -50,7 +119,6 @@ export component InsightsView {
                     }
                 }
 
-                // ── Card 2 ───────────────────────────────────────────────
                 Card {
                     height: 64px;
                     HorizontalLayout {
@@ -66,7 +134,7 @@ export component InsightsView {
                         }
                         Text {
                             text: totalTrackedTime_S;
-                            font-size: 13px;
+                            font-size: 15px;
                             font-weight: 600;
                             color: #38bdf8;
                             vertical-alignment: center;
@@ -74,7 +142,6 @@ export component InsightsView {
                     }
                 }
 
-                // ── Card 3 ───────────────────────────────────────────────
                 Card {
                     height: 64px;
                     HorizontalLayout {
@@ -90,7 +157,7 @@ export component InsightsView {
                         }
                         Text {
                             text: totalSwitches_S;
-                            font-size: 13px;
+                            font-size: 15px;
                             font-weight: 600;
                             color: #f472b6;
                             vertical-alignment: center;
@@ -98,7 +165,6 @@ export component InsightsView {
                     }
                 }
 
-                // ── Card 4 ───────────────────────────────────────────────
                 Card {
                     height: 64px;
                     HorizontalLayout {
@@ -114,7 +180,7 @@ export component InsightsView {
                         }
                         Text {
                             text: mostSwitchedFrom_S;
-                            font-size: 13px;
+                            font-size: 15px;
                             font-weight: 600;
                             color: #fb923c;
                             vertical-alignment: center;
@@ -122,7 +188,6 @@ export component InsightsView {
                     }
                 }
 
-                // ── Card 4's brother, i dont wanna rename everything ───────────────────────────────────────────────
                 Card {
                     height: 64px;
                     HorizontalLayout {
@@ -138,7 +203,7 @@ export component InsightsView {
                         }
                         Text {
                             text: mostSwitchedTo_S;
-                            font-size: 13px;
+                            font-size: 15px;
                             font-weight: 600;
                             color: #fb923c;
                             vertical-alignment: center;
@@ -146,7 +211,6 @@ export component InsightsView {
                     }
                 }
 
-                // ── Card 5 ───────────────────────────────────────────────
                 Card {
                     height: 64px;
                     HorizontalLayout {
@@ -162,7 +226,7 @@ export component InsightsView {
                         }
                         Text {
                             text: longestFocus_S;
-                            font-size: 13px;
+                            font-size: 15px;
                             font-weight: 600;
                             color: #34d399;
                             vertical-alignment: center;
@@ -170,7 +234,6 @@ export component InsightsView {
                     }
                 }
 
-                // ── Card 6 ───────────────────────────────────────────────
                 Card {
                     height: 64px;
                     HorizontalLayout {
@@ -186,10 +249,239 @@ export component InsightsView {
                         }
                         Text {
                             text: peakHour_S;
-                            font-size: 13px;
+                            font-size: 15px;
                             font-weight: 600;
                             color: #c084fc;
                             vertical-alignment: center;
+                        }
+                    }
+                }
+
+                // ── PATTERNS (multi-day) ─────────────────────────────────────
+                Rectangle { height: 8px; }
+
+                Text {
+                    text: "PATTERNS";
+                    font-size: 8px;
+                    font-weight: 700;
+                    letter-spacing: 3px;
+                    color: #ffffff25;
+                    x: 4px;
+                }
+
+                // Full-width natural-language cards
+                Card {
+                    height: 64px;
+                    VerticalLayout {
+                        padding-left: 16px;
+                        padding-right: 16px;
+                        alignment: center;
+                        spacing: 2px;
+                        Text {
+                            text: "ESCAPE PATTERN";
+                            font-size: 9px;
+                            font-weight: 700;
+                            letter-spacing: 2.5px;
+                            color: #ffffff40;
+                        }
+                        Text {
+                            text: escapePattern_S;
+                            font-size: 14px;
+                            font-weight: 700;
+                            color: #f472b6;
+                            wrap: word-wrap;
+                        }
+                    }
+                }
+
+                Card {
+                    height: 64px;
+                    VerticalLayout {
+                        padding-left: 16px;
+                        padding-right: 16px;
+                        alignment: center;
+                        spacing: 2px;
+                        Text {
+                            text: "RETURN RATE";
+                            font-size: 9px;
+                            font-weight: 700;
+                            letter-spacing: 2.5px;
+                            color: #ffffff40;
+                        }
+                        Text {
+                            text: returnRate_S;
+                            font-size: 14px;
+                            font-weight: 700;
+                            color: #fb923c;
+                            wrap: word-wrap;
+                        }
+                    }
+                }
+
+                Card {
+                    height: 64px;
+                    VerticalLayout {
+                        padding-left: 16px;
+                        padding-right: 16px;
+                        alignment: center;
+                        spacing: 2px;
+                        Text {
+                            text: "AVERAGE FOCUS SESSION";
+                            font-size: 9px;
+                            font-weight: 700;
+                            letter-spacing: 2.5px;
+                            color: #ffffff40;
+                        }
+                        Text {
+                            text: avgFocusSession_S;
+                            font-size: 14px;
+                            font-weight: 700;
+                            color: #34d399;
+                            wrap: word-wrap;
+                        }
+                    }
+                }
+
+                Card {
+                    height: 64px;
+                    VerticalLayout {
+                        padding-left: 16px;
+                        padding-right: 16px;
+                        alignment: center;
+                        spacing: 2px;
+                        Text {
+                            text: "MOST DISTRACTED DAY";
+                            font-size: 9px;
+                            font-weight: 700;
+                            letter-spacing: 2.5px;
+                            color: #ffffff40;
+                        }
+                        Text {
+                            text: mostDistractedDay_S;
+                            font-size: 14px;
+                            font-weight: 700;
+                            color: #f87171;
+                            wrap: word-wrap;
+                        }
+                    }
+                }
+
+                Card {
+                    height: 64px;
+                    VerticalLayout {
+                        padding-left: 16px;
+                        padding-right: 16px;
+                        alignment: center;
+                        spacing: 2px;
+                        Text {
+                            text: "PRODUCTIVE DAYS";
+                            font-size: 9px;
+                            font-weight: 700;
+                            letter-spacing: 2.5px;
+                            color: #ffffff40;
+                        }
+                        Text {
+                            text: productiveDays_S;
+                            font-size: 14px;
+                            font-weight: 700;
+                            color: #a3e635;
+                            wrap: word-wrap;
+                        }
+                    }
+                }
+
+                Card {
+                    height: 64px;
+                    VerticalLayout {
+                        padding-left: 16px;
+                        padding-right: 16px;
+                        alignment: center;
+                        spacing: 2px;
+                        Text {
+                            text: "SCREEN TIME VS AVERAGE";
+                            font-size: 9px;
+                            font-weight: 700;
+                            letter-spacing: 2.5px;
+                            color: #ffffff40;
+                        }
+                        Text {
+                            text: screenTimeVsAvg_S;
+                            font-size: 14px;
+                            font-weight: 700;
+                            color: #38bdf8;
+                            wrap: word-wrap;
+                        }
+                    }
+                }
+
+                Card {
+                    height: 64px;
+                    VerticalLayout {
+                        padding-left: 16px;
+                        padding-right: 16px;
+                        alignment: center;
+                        spacing: 2px;
+                        Text {
+                            text: "DAILY FOCUS DIP";
+                            font-size: 9px;
+                            font-weight: 700;
+                            letter-spacing: 2.5px;
+                            color: #ffffff40;
+                        }
+                        Text {
+                            text: focusDipHour_S;
+                            font-size: 14px;
+                            font-weight: 700;
+                            color: #fbbf24;
+                            wrap: word-wrap;
+                        }
+                    }
+                }
+
+                Card {
+                    height: 64px;
+                    VerticalLayout {
+                        padding-left: 16px;
+                        padding-right: 16px;
+                        alignment: center;
+                        spacing: 2px;
+                        Text {
+                            text: "PEAK DEEP WORK WINDOW";
+                            font-size: 9px;
+                            font-weight: 700;
+                            letter-spacing: 2.5px;
+                            color: #ffffff40;
+                        }
+                        Text {
+                            text: deepWorkBeforeNoon_S;
+                            font-size: 14px;
+                            font-weight: 700;
+                            color: #c084fc;
+                            wrap: word-wrap;
+                        }
+                    }
+                }
+
+                Card {
+                    height: 64px;
+                    VerticalLayout {
+                        padding-left: 16px;
+                        padding-right: 16px;
+                        alignment: center;
+                        spacing: 2px;
+                        Text {
+                            text: "WEEKEND VS WEEKDAY";
+                            font-size: 9px;
+                            font-weight: 700;
+                            letter-spacing: 2.5px;
+                            color: #ffffff40;
+                        }
+                        Text {
+                            text: weekendVsWeekday_S;
+                            font-size: 14px;
+                            font-weight: 700;
+                            color: #818cf8;
+                            wrap: word-wrap;
                         }
                     }
                 }

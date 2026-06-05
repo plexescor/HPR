@@ -5,6 +5,32 @@
 #include <vector>
 #include <cstdint>
 
+enum class AppCategory {
+    WORK,
+    SOCIAL,
+    DISTRACTION,
+    BROWSER,
+    SYSTEM,
+    UNKNOWN
+};
+
+struct switchHistory
+{
+    std::string date;
+    std::string fromWindow;
+    std::string toWindow;
+    uint64_t timestamp;
+};
+
+// Holds one day of raw tracking data — used exclusively by generateAdvancedInsights()
+struct DayData
+{
+    std::string date; // DDMMYY
+    std::map<std::string, uint64_t> timePerApp;
+    std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> switchHistory;
+};
+
+
 class PatternAnalyzer
 {
     public:
@@ -12,7 +38,10 @@ class PatternAnalyzer
         // ~PatternAnalyzer();
 
         void generateInsights();
+        void generateAdvancedInsights();
+        AppCategory getCategory(const std::string appName);
 
+        // Basic insight getters
         std::string getMostUsed();
         std::string getTotalTrackedTime();
         std::string getSwitchCount();
@@ -20,6 +49,20 @@ class PatternAnalyzer
         std::string getMostSwitchedTo();
         std::string getMostFocusedSession();
         std::string getMostProductiveHour();
+
+        // Advanced cross-day insight getters
+        std::string getEscapePattern();
+        std::string getReturnRate();
+        std::string getAvgFocusSession();
+        std::string getMostDistractedDay();
+        std::string getProductiveDaysThisWeek();
+        std::string getScreenTimeVsAverage();
+        std::string getFocusDipHour();
+        std::string getDeepWorkBeforeNoon();
+        std::string getWeekendVsWeekday();
+
+        // Called by DatabaseManager when LOAD_PATTERNS_DATA fires
+        void setMultiDayData(std::vector<DayData> data);
 
 
     private: //Local vars to hold mutex for little time
@@ -35,4 +78,18 @@ class PatternAnalyzer
         std::string mostSwitchedTo_O;
         std::string mostFocusedSession_O;
         std::string mostProductiveHour_O;
+
+        //advanced stuff
+        std::string escapePattern_O;
+        std::string returnRate_O;
+        std::string avgFocusSession_O;
+        std::string mostDistractedDay_O;
+        std::string productiveDaysThisWeek_O;
+        std::string screenTimeVsAverage_O;
+        std::string focusDipHour_O;
+        std::string deepWorkBeforeNoon_O;
+        std::string weekendVsWeekday_O;
+
+    private: // Multi-day data loaded by DB manager
+        std::vector<DayData> multiDayData_;
 };

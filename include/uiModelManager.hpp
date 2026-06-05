@@ -43,7 +43,16 @@ class UiModelManager
                           const std::string mostSwitchedFrom,
                           const std::string mostSwitchedTo,
                           const std::string mostFocusedSession,
-                          const std::string mostProductiveHour);
+                          const std::string mostProductiveHour,
+                          const std::string escapePattern,
+                          const std::string returnRate,
+                          const std::string avgFocusSession,
+                          const std::string mostDistractedDay,
+                          const std::string productiveDays,
+                          const std::string screenTimeVsAvg,
+                          const std::string focusDipHour,
+                          const std::string deepWorkBeforeNoon,
+                          const std::string weekendVsWeekday);
 
         void showInsights_Interpreted(const std::string mostUsed,
                           const std::string totalTrackedTime,
@@ -51,7 +60,16 @@ class UiModelManager
                           const std::string mostSwitchedFrom,
                           const std::string mostSwitchedTo,
                           const std::string mostFocusedSession,
-                          const std::string mostProductiveHour);
+                          const std::string mostProductiveHour,
+                          const std::string escapePattern,
+                          const std::string returnRate,
+                          const std::string avgFocusSession,
+                          const std::string mostDistractedDay,
+                          const std::string productiveDays,
+                          const std::string screenTimeVsAvg,
+                          const std::string focusDipHour,
+                          const std::string deepWorkBeforeNoon,
+                          const std::string weekendVsWeekday);
 
         void showExtensions(const std::vector<std::pair<std::string,std::string>>& extensions);
         void showExtensions_Interpreted(const std::vector<std::pair<std::string,std::string>>& extensions);
@@ -70,6 +88,7 @@ class UiModelManager
         std::shared_ptr<slint::VectorModel<SwitchHistory>> switchHistoryModel;
         std::shared_ptr<slint::VectorModel<LoadedExtension_S>> extensionsModel;
         std::shared_ptr<slint::VectorModel<AppGoalData>> rawAppsModel;
+        std::shared_ptr<slint::VectorModel<TimelineEvent>> timelineEventsModel;
 
         // Middle men
         // std::map<std::string, long> translatedTimeLog;
@@ -83,5 +102,6 @@ class UiModelManager
         std::shared_ptr<slint::VectorModel<slint::interpreter::Value>> switchHistoryModel_interp;
         std::shared_ptr<slint::VectorModel<slint::interpreter::Value>> extensionsModel_interp;
         std::shared_ptr<slint::VectorModel<slint::interpreter::Value>> rawAppsModel_interp;
+        std::shared_ptr<slint::VectorModel<slint::interpreter::Value>> timelineEventsModel_interp;
 
 };  

@@ -31,6 +31,11 @@
         std::string mode;
      };
 
+    // Request PatternAnalyzer to load N days of raw per-day data (synchronous)
+    struct PatternDataRequest {
+        int days;
+    };
+
     //Data for window change event
     struct WindowChangedData {
         std::string fromWindow;
@@ -74,12 +79,13 @@
         APP_ERROR, //ERROR was reserved in msvc thats why
         MIDNIGHT_ROLLOVER,
         WINDOW_CHANGED,
-        UI_READY
+        UI_READY,
+        LOAD_PATTERNS_DATA  // Synchronous: DB manager loads per-day data into PatternAnalyzer
     };
 
 using EventKey = std::variant<Event, std::string>;
 
-using EventData = std::variant<Empty, DatabaseDate_Singular, DatabaseDate_Number, DatabaseDate_Range, ErrorGui, WindowChangedData, CppValue>;
+using EventData = std::variant<Empty, DatabaseDate_Singular, DatabaseDate_Number, DatabaseDate_Range, ErrorGui, WindowChangedData, CppValue, PatternDataRequest>;
 
 /** Converts type-safe EventData variant into generic CppValue */
 inline CppValue toCppValue(const EventData& data)

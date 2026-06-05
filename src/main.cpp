@@ -10,6 +10,7 @@
 #include "windowUtilities.hpp"
 #include "appState.hpp"
 #include "limitsManager.hpp"
+#include "timelineManager.hpp"
 
 #ifdef _WIN32
 	#include <windows.h>
@@ -25,6 +26,9 @@
 
 		LimitsManager lim;
 		lim.run();
+
+		TimelineManager tlm;
+		tlm.run();
 
 		ExtensionManager ext;
 		AppState::extManager = &ext;
@@ -119,6 +123,9 @@
 
 		LimitsManager lim;
 		lim.run();
+
+		TimelineManager tlm;
+		tlm.run();
 
 
 		ExtensionManager ext;

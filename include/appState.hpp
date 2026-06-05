@@ -35,6 +35,9 @@ namespace AppState {
         std::map<std::string, uint64_t> timeLog_PerApp; 
         std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> switchHistory;
 
+        //idk
+        // std::vector<std::pair<std::string, uint64_t>> switchEventLog;
+
         //Tabs
         std::map<std::string, uint64_t> timeLog_PerTab;
 
@@ -69,6 +72,14 @@ namespace AppState {
         bool isLoaded = false;
     };
 
+    struct TimelineEventInternal {
+        std::string appName;
+        std::string startTime;
+        std::string endTime;
+        std::string duration;
+        double durationMs;
+    };
+
     extern AppState state;
     extern HistoricalData_Singular historicalData_State; //keep name as is because i dont wanna update all files
     extern HistoricalData_Full historicalData_Full_State;
@@ -86,4 +97,7 @@ namespace AppState {
     extern std::mutex historyStateMutex;
     extern std::mutex historyLoadedMutex;
     extern std::condition_variable historyLoadedCV;
+
+    extern std::vector<TimelineEventInternal> timelineEvents;
+    extern std::mutex timelineMutex;
 }

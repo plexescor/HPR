@@ -3,6 +3,7 @@
 #include "timeUtils.hpp"
 #include "appState.hpp"
 #include "limitsManager.hpp"
+#include "timelineManager.hpp"
 
 
 #include <map>
@@ -24,8 +25,7 @@ UiModelManager::UiModelManager(slint::ComponentHandle<MainWindow> &ui_handle) : 
     switchHistoryModel = std::make_shared<slint::VectorModel<SwitchHistory>>();
     extensionsModel = std::make_shared<slint::VectorModel<LoadedExtension_S>>();
     rawAppsModel = std::make_shared<slint::VectorModel<AppGoalData>>();
-
-
+    timelineEventsModel = std::make_shared<slint::VectorModel<TimelineEvent>>();
 
     slint::ComponentWeakHandle<MainWindow> weak(ui.value());
     slint::invoke_from_event_loop([weak, this]()
@@ -38,6 +38,7 @@ UiModelManager::UiModelManager(slint::ComponentHandle<MainWindow> &ui_handle) : 
             (*handle)->set_switchHistory_S(switchHistoryModel);
             (*handle)->set_loadedExtensions_S(extensionsModel);
             (*handle)->set_rawApps_S(rawAppsModel);
+            (*handle)->set_timelineEvents_S(timelineEventsModel);
         } 
     });
 
@@ -52,6 +53,7 @@ UiModelManager::UiModelManager(slint::ComponentHandle<slint::interpreter::Compon
     switchHistoryModel_interp = std::make_shared<slint::VectorModel<slint::interpreter::Value>>();
     extensionsModel_interp = std::make_shared<slint::VectorModel<slint::interpreter::Value>>();
     rawAppsModel_interp = std::make_shared<slint::VectorModel<slint::interpreter::Value>>();
+    timelineEventsModel_interp = std::make_shared<slint::VectorModel<slint::interpreter::Value>>();
 
 
     slint::ComponentWeakHandle<slint::interpreter::ComponentInstance> weak(ui_interp.value());
@@ -65,6 +67,7 @@ UiModelManager::UiModelManager(slint::ComponentHandle<slint::interpreter::Compon
             (*handle)->set_property("switchHistory_S", slint::interpreter::Value(switchHistoryModel_interp));
             (*handle)->set_property("loadedExtensions_S", slint::interpreter::Value(extensionsModel_interp));
             (*handle)->set_property("rawApps_S", slint::interpreter::Value(rawAppsModel_interp));
+            (*handle)->set_property("timelineEvents_S", slint::interpreter::Value(timelineEventsModel_interp));
         }
     });
 
@@ -372,6 +375,29 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
                     }
                 };
                 syncModelRaw(rawAppsModel, slintVec_RawApps);
+
+                // Reconstruct and sync timeline events
+                int preset = (*handle)->get_timelinePresetHours();
+                int startH = (*handle)->get_timelineStartHour();
+                int endH = (*handle)->get_timelineEndHour();
+
+                TimelineManager::updateTimeline(preset, startH, endH);
+
+                std::vector<TimelineEvent> slintVec_Timeline;
+                {
+                    std::lock_guard<std::mutex> lock(AppState::timelineMutex);
+                    for (const auto& item : AppState::timelineEvents)
+                    {
+                        slintVec_Timeline.push_back(TimelineEvent{
+                            slint::SharedString(item.appName),
+                            slint::SharedString(item.startTime),
+                            slint::SharedString(item.endTime),
+                            slint::SharedString(item.duration),
+                            static_cast<float>(item.durationMs)
+                        });
+                    }
+                }
+                syncModel(timelineEventsModel, slintVec_Timeline);
             }
     });
 
@@ -690,6 +716,29 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
             syncModel(timeLogModelProject_interp, slintVec_TimeLog_Project);
             syncModel(switchHistoryModel_interp,  slintVec_SwitchHistory);
             syncModel(rawAppsModel_interp,        slintVec_RawApps);
+
+            // Reconstruct and sync timeline events (interpreted)
+            int preset = (*handle)->get_property("timelinePresetHours").value_or(slint::interpreter::Value(24.0)).to_number().value_or(24.0);
+            int startH = (*handle)->get_property("timelineStartHour").value_or(slint::interpreter::Value(0.0)).to_number().value_or(0.0);
+            int endH = (*handle)->get_property("timelineEndHour").value_or(slint::interpreter::Value(24.0)).to_number().value_or(24.0);
+
+            TimelineManager::updateTimeline(preset, startH, endH);
+
+            std::vector<slint::interpreter::Value> slintVec_Timeline;
+            {
+                std::lock_guard<std::mutex> lock(AppState::timelineMutex);
+                for (const auto& item : AppState::timelineEvents)
+                {
+                    slint::interpreter::Struct entry;
+                    entry.set_field("appName", slint::interpreter::Value(slint::SharedString(item.appName)));
+                    entry.set_field("startTime", slint::interpreter::Value(slint::SharedString(item.startTime)));
+                    entry.set_field("endTime", slint::interpreter::Value(slint::SharedString(item.endTime)));
+                    entry.set_field("duration", slint::interpreter::Value(slint::SharedString(item.duration)));
+                    entry.set_field("duration_ms", slint::interpreter::Value(item.durationMs));
+                    slintVec_Timeline.push_back(slint::interpreter::Value(entry));
+                }
+            }
+            syncModel(timelineEventsModel_interp, slintVec_Timeline);
         }
     });
 
@@ -701,13 +750,23 @@ void UiModelManager::showInsights(const std::string mostUsed,
                           const std::string mostSwitchedFrom,
                           const std::string mostSwitchedTo,
                           const std::string mostFocusedSession,
-                          const std::string mostProductiveHour)
+                          const std::string mostProductiveHour,
+                          const std::string escapePattern,
+                          const std::string returnRate,
+                          const std::string avgFocusSession,
+                          const std::string mostDistractedDay,
+                          const std::string productiveDays,
+                          const std::string screenTimeVsAvg,
+                          const std::string focusDipHour,
+                          const std::string deepWorkBeforeNoon,
+                          const std::string weekendVsWeekday)
 {
     if (!ui.has_value()) {
-        return; //skip update if ui handle aint ready
+        return;
     }
     slint::ComponentWeakHandle<MainWindow> weak(ui.value());
-    slint::invoke_from_event_loop([weak, mostUsed, totalTrackedTime, switchCount, mostSwitchedFrom, mostSwitchedTo, mostFocusedSession, mostProductiveHour, this]()
+    slint::invoke_from_event_loop([weak, mostUsed, totalTrackedTime, switchCount, mostSwitchedFrom, mostSwitchedTo, mostFocusedSession, mostProductiveHour,
+                                   escapePattern, returnRate, avgFocusSession, mostDistractedDay, productiveDays, screenTimeVsAvg, focusDipHour, deepWorkBeforeNoon, weekendVsWeekday, this]()
     {
         if (auto handle = weak.lock())
         {
@@ -718,6 +777,15 @@ void UiModelManager::showInsights(const std::string mostUsed,
             (*handle)->set_mostSwitchedTo_S(slint::SharedString(mostSwitchedTo));
             (*handle)->set_longestFocus_S(slint::SharedString(mostFocusedSession));
             (*handle)->set_peakHour_S(slint::SharedString(mostProductiveHour));
+            (*handle)->set_escapePattern_S(slint::SharedString(escapePattern));
+            (*handle)->set_returnRate_S(slint::SharedString(returnRate));
+            (*handle)->set_avgFocusSession_S(slint::SharedString(avgFocusSession));
+            (*handle)->set_mostDistractedDay_S(slint::SharedString(mostDistractedDay));
+            (*handle)->set_productiveDays_S(slint::SharedString(productiveDays));
+            (*handle)->set_screenTimeVsAvg_S(slint::SharedString(screenTimeVsAvg));
+            (*handle)->set_focusDipHour_S(slint::SharedString(focusDipHour));
+            (*handle)->set_deepWorkBeforeNoon_S(slint::SharedString(deepWorkBeforeNoon));
+            (*handle)->set_weekendVsWeekday_S(slint::SharedString(weekendVsWeekday));
         }
     });
 }
@@ -728,21 +796,39 @@ void UiModelManager::showInsights_Interpreted(const std::string mostUsed,
                           const std::string mostSwitchedFrom,
                           const std::string mostSwitchedTo,
                           const std::string mostFocusedSession,
-                          const std::string mostProductiveHour)
+                          const std::string mostProductiveHour,
+                          const std::string escapePattern,
+                          const std::string returnRate,
+                          const std::string avgFocusSession,
+                          const std::string mostDistractedDay,
+                          const std::string productiveDays,
+                          const std::string screenTimeVsAvg,
+                          const std::string focusDipHour,
+                          const std::string deepWorkBeforeNoon,
+                          const std::string weekendVsWeekday)
 {
     slint::ComponentWeakHandle<slint::interpreter::ComponentInstance> weak(ui_interp.value());
-    slint::invoke_from_event_loop([weak, mostUsed, totalTrackedTime, switchCount, mostSwitchedFrom, mostSwitchedTo, mostFocusedSession, mostProductiveHour, this]()
+    slint::invoke_from_event_loop([weak, mostUsed, totalTrackedTime, switchCount, mostSwitchedFrom, mostSwitchedTo, mostFocusedSession, mostProductiveHour,
+                                   escapePattern, returnRate, avgFocusSession, mostDistractedDay, productiveDays, screenTimeVsAvg, focusDipHour, deepWorkBeforeNoon, weekendVsWeekday, this]()
     {
         if (auto handle = weak.lock())
         {
-            (*handle)->set_property("mostUsedApp_S",   slint::interpreter::Value(slint::SharedString(mostUsed)));
+            (*handle)->set_property("mostUsedApp_S",        slint::interpreter::Value(slint::SharedString(mostUsed)));
             (*handle)->set_property("totalTrackedTime_S",   slint::interpreter::Value(slint::SharedString(totalTrackedTime)));
-            (*handle)->set_property("totalSwitches_S",   slint::interpreter::Value(slint::SharedString(switchCount)));
+            (*handle)->set_property("totalSwitches_S",      slint::interpreter::Value(slint::SharedString(switchCount)));
             (*handle)->set_property("mostSwitchedFrom_S",   slint::interpreter::Value(slint::SharedString(mostSwitchedFrom)));
-            (*handle)->set_property("mostSwitchedTo_S",   slint::interpreter::Value(slint::SharedString(mostSwitchedTo)));
-            (*handle)->set_property("longestFocus_S",   slint::interpreter::Value(slint::SharedString(mostFocusedSession)));
-            (*handle)->set_property("peakHour_S",   slint::interpreter::Value(slint::SharedString(mostProductiveHour)));
-
+            (*handle)->set_property("mostSwitchedTo_S",     slint::interpreter::Value(slint::SharedString(mostSwitchedTo)));
+            (*handle)->set_property("longestFocus_S",       slint::interpreter::Value(slint::SharedString(mostFocusedSession)));
+            (*handle)->set_property("peakHour_S",           slint::interpreter::Value(slint::SharedString(mostProductiveHour)));
+            (*handle)->set_property("escapePattern_S",      slint::interpreter::Value(slint::SharedString(escapePattern)));
+            (*handle)->set_property("returnRate_S",         slint::interpreter::Value(slint::SharedString(returnRate)));
+            (*handle)->set_property("avgFocusSession_S",    slint::interpreter::Value(slint::SharedString(avgFocusSession)));
+            (*handle)->set_property("mostDistractedDay_S",  slint::interpreter::Value(slint::SharedString(mostDistractedDay)));
+            (*handle)->set_property("productiveDays_S",     slint::interpreter::Value(slint::SharedString(productiveDays)));
+            (*handle)->set_property("screenTimeVsAvg_S",    slint::interpreter::Value(slint::SharedString(screenTimeVsAvg)));
+            (*handle)->set_property("focusDipHour_S",       slint::interpreter::Value(slint::SharedString(focusDipHour)));
+            (*handle)->set_property("deepWorkBeforeNoon_S", slint::interpreter::Value(slint::SharedString(deepWorkBeforeNoon)));
+            (*handle)->set_property("weekendVsWeekday_S",   slint::interpreter::Value(slint::SharedString(weekendVsWeekday)));
         }
     });
 }

@@ -1,0 +1,330 @@
+import { Card } from "./card.slint";
+import { SectionHeader } from "./section-header.slint";
+import { TimelineEvent } from "./types.slint";
+
+component PresetBtn inherits Rectangle {
+    in property <string> text;
+    in property <bool> selected;
+    callback clicked;
+
+    height: 26px;
+    border-radius: 5px;
+    border-width: 1px;
+    background: selected 
+        ? #38bdf825 
+        : (ta.pressed ? #ffffff10 : (ta.has-hover ? #ffffff0a : transparent));
+    border-color: selected 
+        ? #38bdf8bb 
+        : (ta.pressed ? #ffffff25 : (ta.has-hover ? #ffffff1c : #ffffff10));
+
+    animate background { duration: 100ms; }
+    animate border-color { duration: 100ms; }
+
+    Text {
+        text: root.text;
+        color: selected 
+            ? #7dd3fc 
+            : (ta.has-hover ? #e2e8f0 : #94a3b8);
+        font-size: 10px;
+        font-weight: 600;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+        animate color { duration: 100ms; }
+    }
+
+    ta := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+component AdjustBtn inherits Rectangle {
+    in property <string> text;
+    callback clicked;
+
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    background: ta.pressed ? #ffffff20 : (ta.has-hover ? #ffffff0e : #ffffff07);
+    border-width: 1px;
+    border-color: ta.has-hover ? #ffffff30 : #ffffff15;
+    animate background { duration: 100ms; }
+    animate border-color { duration: 100ms; }
+
+    Text {
+        text: root.text;
+        font-size: 12px;
+        font-weight: 800;
+        color: #e2e8f0;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+
+    ta := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+component TimelineRow inherits Rectangle {
+    in property <string> app-name;
+    in property <string> duration;
+    in property <string> start-time;
+    in property <string> end-time;
+    in property <bool> is-even;
+
+    in property <color> bar-color: Colors.hsv(mod(app-name.character-count * 47, 360), 0.75, 0.85);
+
+    height: 52px;
+    border-radius: 5px;
+    clip: true;
+
+    background: ta.has-hover ? #ffffff0e : (is-even ? #ffffff03 : transparent);
+    animate background { duration: 100ms; easing: ease-out; }
+
+    HorizontalLayout {
+        padding-left: 16px;
+        padding-right: 16px;
+        spacing: 12px;
+        alignment: space-between;
+
+        // Left section: time interval
+        VerticalLayout {
+            alignment: center;
+            width: 130px;
+            HorizontalLayout {
+                spacing: 4px;
+                Text {
+                    text: start-time;
+                    color: #94a3b8;
+                    font-size: 11px;
+                    font-weight: 600;
+                }
+                Text {
+                    text: "→";
+                    color: #475569;
+                    font-size: 11px;
+                }
+                Text {
+                    text: end-time;
+                    color: #94a3b8;
+                    font-size: 11px;
+                    font-weight: 600;
+                }
+            }
+            Text {
+                text: duration;
+                color: bar-color;
+                font-size: 9px;
+                font-weight: 700;
+            }
+        }
+
+        // Mid section: Color dot & app name
+        HorizontalLayout {
+            spacing: 10px;
+            alignment: start;
+            horizontal-stretch: 1;
+
+            Rectangle {
+                width: 8px;
+                height: 8px;
+                border-radius: 4px;
+                background: bar-color;
+                y: (parent.height - self.height) / 2;
+            }
+
+            Text {
+                text: app-name;
+                color: ta.has-hover ? #e2e8f0 : #94a3b8;
+                font-size: 12px;
+                font-weight: 500;
+                vertical-alignment: center;
+                overflow: elide;
+                animate color { duration: 100ms; }
+            }
+        }
+    }
+
+    ta := TouchArea {}
+}
+
+export component TimelineView {
+    in property <[TimelineEvent]> timelineEvents;
+    
+    in-out property <int> timelinePresetHours: 24;
+    in-out property <int> timelineStartHour: 0;
+    in-out property <int> timelineEndHour: 24;
+
+    VerticalLayout {
+        padding: 12px;
+        padding-top: 0px;
+        spacing: 12px;
+        height: 100%;
+
+        SectionHeader { label: "DAY CONSTRUCTION TIMELINE"; }
+
+        // Controls Card
+        Card {
+            height: 86px;
+            vertical-stretch: 0;
+            
+            VerticalLayout {
+                padding: 10px;
+                spacing: 8px;
+                alignment: center;
+
+                // Row 1: Presets
+                HorizontalLayout {
+                    spacing: 8px;
+                    alignment: start;
+
+                    Text {
+                        text: "PRESET:";
+                        color: #ffffff40;
+                        font-size: 9px;
+                        font-weight: 700;
+                        letter-spacing: 1px;
+                        vertical-alignment: center;
+                        width: 55px;
+                    }
+
+                    PresetBtn {
+                        text: "1 HOUR";
+                        selected: root.timelinePresetHours == 1;
+                        clicked => { root.timelinePresetHours = 1; }
+                        width: 75px;
+                    }
+                    PresetBtn {
+                        text: "3 HOURS";
+                        selected: root.timelinePresetHours == 3;
+                        clicked => { root.timelinePresetHours = 3; }
+                        width: 75px;
+                    }
+                    PresetBtn {
+                        text: "8 HOURS";
+                        selected: root.timelinePresetHours == 8;
+                        clicked => { root.timelinePresetHours = 8; }
+                        width: 75px;
+                    }
+                    PresetBtn {
+                        text: "24 HOURS";
+                        selected: root.timelinePresetHours == 24;
+                        clicked => { root.timelinePresetHours = 24; }
+                        width: 75px;
+                    }
+                    PresetBtn {
+                        text: "ALL DAY";
+                        selected: root.timelinePresetHours == 0;
+                        clicked => { root.timelinePresetHours = 0; }
+                        width: 75px;
+                    }
+                }
+
+                // Row 2: Hour Zoom Range
+                HorizontalLayout {
+                    spacing: 8px;
+                    alignment: start;
+
+                    Text {
+                        text: "ZOOM TIME:";
+                        color: #ffffff40;
+                        font-size: 9px;
+                        font-weight: 700;
+                        letter-spacing: 1px;
+                        vertical-alignment: center;
+                        width: 75px;
+                    }
+
+                    // Start Hour
+                    Text {
+                        text: "Start Hour:";
+                        color: #94a3b8;
+                        font-size: 10px;
+                        vertical-alignment: center;
+                    }
+                    AdjustBtn {
+                        text: "-";
+                        clicked => { if (root.timelineStartHour > 0) { root.timelineStartHour -= 1; } }
+                    }
+                    Text {
+                        text: (root.timelineStartHour < 10 ? "0" : "") + root.timelineStartHour + ":00";
+                        color: #e2e8f0;
+                        font-size: 11px;
+                        font-weight: 600;
+                        vertical-alignment: center;
+                        width: 42px;
+                        horizontal-alignment: center;
+                    }
+                    AdjustBtn {
+                        text: "+";
+                        clicked => { if (root.timelineStartHour < root.timelineEndHour - 1) { root.timelineStartHour += 1; } }
+                    }
+
+                    Rectangle { width: 12px; }
+
+                    // End Hour
+                    Text {
+                        text: "End Hour:";
+                        color: #94a3b8;
+                        font-size: 10px;
+                        vertical-alignment: center;
+                    }
+                    AdjustBtn {
+                        text: "-";
+                        clicked => { if (root.timelineEndHour > root.timelineStartHour + 1) { root.timelineEndHour -= 1; } }
+                    }
+                    Text {
+                        text: (root.timelineEndHour < 10 ? "0" : "") + root.timelineEndHour + ":00";
+                        color: #e2e8f0;
+                        font-size: 11px;
+                        font-weight: 600;
+                        vertical-alignment: center;
+                        width: 42px;
+                        horizontal-alignment: center;
+                    }
+                    AdjustBtn {
+                        text: "+";
+                        clicked => { if (root.timelineEndHour < 24) { root.timelineEndHour += 1; } }
+                    }
+                }
+            }
+        }
+
+        // Timeline events list Card
+        Card {
+            vertical-stretch: 1;
+
+            if timelineEvents.length == 0 : VerticalLayout {
+                alignment: center;
+                spacing: 8px;
+                Text {
+                    text: "NO ACTIVITY DETECTED IN THIS RANGE";
+                    color: #ffffff20;
+                    font-size: 11px;
+                    font-weight: 700;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
+                }
+            }
+
+            if timelineEvents.length > 0 : Flickable {
+                width: 100%;
+                height: 100%;
+                interactive: true;
+                viewport-height: listContent.preferred-height;
+
+                listContent := VerticalLayout {
+                    width: 100%;
+                    for entry[i] in timelineEvents : TimelineRow {
+                        app-name: entry.appName;
+                        duration: entry.duration;
+                        start-time: entry.startTime;
+                        end-time: entry.endTime;
+                        is-even: mod(i, 2) == 0;
+                    }
+                }
+            }
+        }
+    }
+}

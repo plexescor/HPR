@@ -10,6 +10,11 @@
 #include <mutex>
 #include <algorithm>
 #include <iostream>
+#include <cstdlib>
+#include <ctime>
+#include <cmath>
+
+
 
 void PatternAnalyzer::generateInsights()
 {
@@ -141,7 +146,7 @@ void PatternAnalyzer::generateInsights()
         // Use multiple possible names for the HPR window to be safe
         auto isSelf = [](const std::string& name) 
         {
-            return name == "HPR" || name == "Unknown";
+            return name == "HPR" || name == "Unknown" || name.empty();
         };
 
         for (const auto& [apps, vec] : switchHistory) 
@@ -168,20 +173,18 @@ void PatternAnalyzer::generateInsights()
         {
             if (e.isArrival) 
             {
-                // Open a new session
-                // if multiple arrives at the same time, it will take the last one
-                // which is fine
+                if (activeSessions.count(e.app))
+                {
+                    activeSessions.erase(e.app); // Discard old arrival that had no departure
+                }
                 activeSessions[e.app] = e.ts;
             } 
             else 
             {
-                // if we have a departure, it MUST match the most recent arrival for THIS app
                 if (activeSessions.count(e.app)) 
                 {
                     uint64_t duration = (e.ts >= activeSessions[e.app]) ? (e.ts - activeSessions[e.app]) : 0;
                     
-                    // Sanity cheacck: focus session can't be longer than 8 hours 
-                    // or if you are a god and in the flow state, then it canbe
                     if (duration > 1000 && duration < (8ULL * 60 * 60 * 1000)) 
                     {
                         if (duration > bestDuration) {
@@ -189,7 +192,6 @@ void PatternAnalyzer::generateInsights()
                             bestApp = e.app;
                         }
                     }
-                    // Crucial: Clear the arrival so it can't be matched twice!
                     activeSessions.erase(e.app); 
                 }
             }
@@ -289,6 +291,693 @@ void PatternAnalyzer::generateInsights()
     }
 }
 
+AppCategory PatternAnalyzer::getCategory(const std::string appName)
+{
+    std::string lower = appName;
+    std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+
+    if (lower.contains("discord") || lower.contains("telegram") || lower.contains("whatsapp"))
+        return AppCategory::SOCIAL;
+
+    if (lower.contains("youtube") || lower.contains("netflix") || lower.contains("reddit") || lower.contains("instagram"))
+        return AppCategory::DISTRACTION;
+
+    if (lower.contains("code") || lower.contains("rider") || lower.contains("clion") || lower.contains("rider"))
+        return AppCategory::WORK;
+
+    if (lower.contains("chrome") || lower.contains("firefox") || lower.contains("brave") || lower.contains("edge"))
+        return AppCategory::BROWSER;
+
+    return AppCategory::UNKNOWN;
+}
+
+namespace {
+
+// Returns a stable-seeded random index 0..n-1 for variant picking.
+// Re-seeded each call so successive insights in the same run can differ.
+static int pick(int n)
+{
+    return static_cast<int>(std::rand() % n);
+}
+
+// Returns the hour-of-day (0-23, local time) for a ms-since-epoch timestamp.
+int localHour(uint64_t ms)
+{
+    time_t t = static_cast<time_t>(ms / 1000);
+    std::tm* lt = std::localtime(&t);
+    return lt ? lt->tm_hour : 0;
+}
+
+// Returns the day-of-week (0=Sunday … 6=Saturday) for a ms-since-epoch timestamp.
+int localDow(uint64_t ms)
+{
+    time_t t = static_cast<time_t>(ms / 1000);
+    std::tm* lt = std::localtime(&t);
+    return lt ? lt->tm_wday : 0;
+}
+
+static const char* dowName(int dow)
+{
+    static const char* names[] = {"Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"};
+    return (dow >= 0 && dow <= 6) ? names[dow] : "Unknown";
+}
+
+// Given a day's switchHistory, reconstruct all focus sessions longer than minMs.
+// Returns a vector of {duration_ms, start_ts_ms} pairs.
+struct Session { uint64_t duration; uint64_t startTs; };
+std::vector<Session> buildSessions(
+    const std::map<std::pair<std::string,std::string>, std::vector<uint64_t>>& sh,
+    uint64_t minMs = 30000ULL)
+{
+    struct Ev { uint64_t ts; std::string app; bool arrival; };
+    std::vector<Ev> events;
+
+    auto isSelf = [](const std::string& n)
+    {
+        return n == "HPR" || n == "Unknown" || n.empty();
+    };
+
+    for (const auto& [apps, vec] : sh)
+    {
+        for (uint64_t ts : vec)
+        {
+            if (!isSelf(apps.first))  events.push_back({ts, apps.first,  false});
+            if (!isSelf(apps.second)) events.push_back({ts, apps.second, true});
+        }
+    }
+
+    std::sort(events.begin(), events.end(), [](const Ev& a, const Ev& b){
+        return a.ts != b.ts ? a.ts < b.ts : (int)a.arrival < (int)b.arrival;
+    });
+
+    std::map<std::string, uint64_t> active; // app → arrival ts
+    std::vector<Session> sessions;
+
+    for (const auto& e : events)
+    {
+        if (e.arrival)
+        {
+            if (active.count(e.app))
+            {
+                active.erase(e.app); // Discard old arrival that had no departure
+            }
+            active[e.app] = e.ts;
+        }
+        else
+        {
+            if (active.count(e.app))
+            {
+                uint64_t dur = (e.ts >= active[e.app]) ? (e.ts - active[e.app]) : 0;
+                if (dur >= minMs && dur < 8ULL*3600*1000)
+                    sessions.push_back({dur, active[e.app]});
+                active.erase(e.app);
+            }
+        }
+    }
+    return sessions;
+}
+
+} // anonymous namespace
+
+
+void PatternAnalyzer::setMultiDayData(std::vector<DayData> data)
+{
+    multiDayData_ = std::move(data);
+}
+
+/* AIM
+    "You escape to Discord from VSCode ~4 times a day"
+    "You almost never return to VSCode after opening YouTube"
+    "Your average focus session is 23 minutes before switching"
+    "Your most distracted day is usually Tuesday"
+    "You've had 5 productive days this week"
+    "Your screen time is 30% higher than your weekly average today"
+    "After lunch you almost always lose focus for ~40 minutes"
+    "73% of your deep work happens before 1PM"
+    "Weekends you barely use VSCode"
+*/
+
+void PatternAnalyzer::generateAdvancedInsights()
+{
+    if (multiDayData_.empty())
+    {
+        escapePattern_O        = "Not enough data";
+        returnRate_O           = "Not enough data";
+        avgFocusSession_O      = "Not enough data";
+        mostDistractedDay_O    = "Not enough data";
+        productiveDaysThisWeek_O = "Not enough data";
+        screenTimeVsAverage_O  = "Not enough data";
+        focusDipHour_O         = "Not enough data";
+        deepWorkBeforeNoon_O   = "Not enough data";
+        weekendVsWeekday_O     = "Not enough data";
+        return;
+    }
+
+    // Config-driven tunables
+    std::string cfgWorkApp    = AppState::configManager.getConfig<std::string>("pattern-work-app",    "");
+    std::string cfgBrowserApp = AppState::configManager.getConfig<std::string>("pattern-browser-app", "");
+    int  switchThreshold      = AppState::configManager.getConfig("pattern-productive-switch-threshold", 10);
+    uint64_t minSessionMs     = static_cast<uint64_t>(AppState::configManager.getConfig("pattern-focus-min-session-ms", 60000));
+
+    // Auto-detect dominant work & browser apps across all days if not in config
+    std::string workApp, browserApp;
+
+    {
+        std::map<std::string, uint64_t> totalTime;
+        for (const auto& day : multiDayData_)
+            for (const auto& [app, dur] : day.timePerApp)
+                totalTime[app] += dur;
+
+        if (!cfgWorkApp.empty())
+        {
+            workApp = cfgWorkApp;
+        }
+        else
+        {
+            // Highest time app that we categorise as WORK
+            uint64_t best = 0;
+            for (const auto& [app, dur] : totalTime)
+            {
+                if (getCategory(app) == AppCategory::WORK && dur > best)
+                {
+                    best    = dur;
+                    workApp = app;
+                }
+            }
+            if (workApp.empty())
+            {
+                // Fallback: just the top app overall
+                auto it = std::max_element(totalTime.begin(), totalTime.end(),
+                    [](const auto& a, const auto& b){ return a.second < b.second; });
+                if (it != totalTime.end()) workApp = it->first;
+            }
+        }
+
+        if (!cfgBrowserApp.empty())
+        {
+            browserApp = cfgBrowserApp;
+        }
+        else
+        {
+            uint64_t best = 0;
+            for (const auto& [app, dur] : totalTime)
+            {
+                if (getCategory(app) == AppCategory::BROWSER && dur > best)
+                {
+                    best      = dur;
+                    browserApp = app;
+                }
+            }
+        }
+    }
+
+    std::string workAlias    = workApp.empty()    ? "your work app"  : AppState::aliasManager.getAlias(workApp);
+    std::string browserAlias = browserApp.empty() ? "your browser"   : AppState::aliasManager.getAlias(browserApp);
+
+    // Escape pattern: avg WORK→BROWSER switches per day
+    {
+        double totalEscapes = 0.0;
+        int daysWithWork    = 0;
+
+        for (const auto& day : multiDayData_)
+        {
+            int dayEscapes = 0;
+            for (const auto& [apps, vec] : day.switchHistory)
+            {
+                bool fromWork = (!workApp.empty() && apps.first.find(workApp) != std::string::npos)
+                             || getCategory(apps.first) == AppCategory::WORK;
+                bool toBrowser = (!browserApp.empty() && apps.second.find(browserApp) != std::string::npos)
+                              || getCategory(apps.second) == AppCategory::BROWSER;
+                if (fromWork && toBrowser)
+                    dayEscapes += static_cast<int>(vec.size());
+            }
+            if (dayEscapes > 0) { totalEscapes += dayEscapes; ++daysWithWork; }
+        }
+
+        if (daysWithWork == 0)
+        {
+            escapePattern_O = "No escape switches detected yet";
+        }
+        else
+        {
+            double avg = totalEscapes / daysWithWork;
+            char buf[160];
+            std::srand(static_cast<unsigned>(std::time(nullptr)) ^ 0x1A);
+            switch (pick(5))
+            {
+                case 0: std::snprintf(buf, sizeof(buf), "You escape to %s from %s ~%.0f times a day", browserAlias.c_str(), workAlias.c_str(), avg); break;
+                case 1: std::snprintf(buf, sizeof(buf), "%s pulls you away from %s about %.0f times a day", browserAlias.c_str(), workAlias.c_str(), avg); break;
+                case 2: std::snprintf(buf, sizeof(buf), "You ditch %s for %s roughly %.0f times daily", workAlias.c_str(), browserAlias.c_str(), avg); break;
+                case 3: std::snprintf(buf, sizeof(buf), "On average you switch to %s from %s %.0f time%s each day", browserAlias.c_str(), workAlias.c_str(), avg, avg < 1.5 ? "" : "s"); break;
+                default: std::snprintf(buf, sizeof(buf), "About %.0f time%s a day %s loses you to %s", avg, avg < 1.5 ? "" : "s", workAlias.c_str(), browserAlias.c_str()); break;
+            }
+            escapePattern_O = buf;
+        }
+    }
+
+    // Return rate: after work→browser, what % go back to work?
+    {
+        int escapes = 0;
+        int returns = 0;
+
+        for (const auto& day : multiDayData_)
+        {
+            // Build a flat sorted event list: {ts, from, to}
+            struct Sw { uint64_t ts; std::string from; std::string to; };
+            std::vector<Sw> events;
+            for (const auto& [apps, vec] : day.switchHistory)
+                for (uint64_t ts : vec)
+                    events.push_back({ts, apps.first, apps.second});
+            std::sort(events.begin(), events.end(), [](const Sw& a, const Sw& b){ return a.ts < b.ts; });
+
+            for (size_t i = 0; i < events.size(); ++i)
+            {
+                bool fromWork = (!workApp.empty() && events[i].from.find(workApp) != std::string::npos)
+                             || getCategory(events[i].from) == AppCategory::WORK;
+                bool toBrowser = (!browserApp.empty() && events[i].to.find(browserApp) != std::string::npos)
+                              || getCategory(events[i].to) == AppCategory::BROWSER;
+
+                if (fromWork && toBrowser)
+                {
+                    ++escapes;
+                    // Look at the very next switch — did it go back to work?
+                    if (i + 1 < events.size())
+                    {
+                        bool nextFromBrowser = (!browserApp.empty() && events[i+1].from.find(browserApp) != std::string::npos)
+                                            || getCategory(events[i+1].from) == AppCategory::BROWSER;
+                        bool nextToWork = (!workApp.empty() && events[i+1].to.find(workApp) != std::string::npos)
+                                       || getCategory(events[i+1].to) == AppCategory::WORK;
+                        if (nextFromBrowser && nextToWork) ++returns;
+                    }
+                }
+            }
+        }
+
+        if (escapes == 0)
+        {
+            returnRate_O = "No browser escapes recorded yet";
+        }
+        else
+        {
+            int pct = static_cast<int>(100.0 * returns / escapes);
+            char buf[192];
+            std::srand(static_cast<unsigned>(std::time(nullptr)) ^ 0x2B);
+            switch (pick(5))
+            {
+                case 0: std::snprintf(buf, sizeof(buf), "After switching to %s, you return to %s only %d%% of the time", browserAlias.c_str(), workAlias.c_str(), pct); break;
+                case 1: std::snprintf(buf, sizeof(buf), "Only %d%% of the time does %s bring you back to %s", pct, browserAlias.c_str(), workAlias.c_str()); break;
+                case 2: std::snprintf(buf, sizeof(buf), "You find your way back to %s just %d%% of the time after opening %s", workAlias.c_str(), pct, browserAlias.c_str()); break;
+                case 3: std::snprintf(buf, sizeof(buf), "%d%% of your %s breaks end with you returning to %s", pct, browserAlias.c_str(), workAlias.c_str()); break;
+                default: std::snprintf(buf, sizeof(buf), "Once you open %s, there's only a %d%% chance you go back to %s", browserAlias.c_str(), pct, workAlias.c_str()); break;
+            }
+            returnRate_O = buf;
+        }
+    }
+
+    // Average focus session length across all days
+    {
+        uint64_t totalDur = 0;
+        int      count    = 0;
+
+        for (const auto& day : multiDayData_)
+        {
+            auto sessions = buildSessions(day.switchHistory, minSessionMs);
+            for (const auto& s : sessions)
+            {
+                totalDur += s.duration;
+                ++count;
+            }
+        }
+
+        if (count == 0)
+        {
+            avgFocusSession_O = "Not enough focus sessions yet";
+        }
+        else
+        {
+            int avgMin = static_cast<int>((totalDur / count) / 60000);
+            const char* pl = avgMin == 1 ? "" : "s";
+            char buf[160];
+            std::srand(static_cast<unsigned>(std::time(nullptr)) ^ 0x3C);
+            switch (pick(5))
+            {
+                case 0: std::snprintf(buf, sizeof(buf), "Your average focus session is %d minute%s before you switch", avgMin, pl); break;
+                case 1: std::snprintf(buf, sizeof(buf), "You stay focused for about %d minute%s on average before switching away", avgMin, pl); break;
+                case 2: std::snprintf(buf, sizeof(buf), "On average you hold focus for %d minute%s before jumping to something else", avgMin, pl); break;
+                case 3: std::snprintf(buf, sizeof(buf), "Your typical uninterrupted stretch lasts around %d minute%s", avgMin, pl); break;
+                default: std::snprintf(buf, sizeof(buf), "It takes about %d minute%s before you switch apps on an average session", avgMin, pl); break;
+            }
+            avgFocusSession_O = buf;
+        }
+    }
+
+    // Most distracted day of week (highest avg switches)
+    {
+        // Map DOW → list of per-day switch totals
+        std::map<int, std::vector<int>> switchesByDow;
+
+        for (const auto& day : multiDayData_)
+        {
+            // Parse date DDMMYY → get a representative timestamp for DOW
+            // Use the first switch timestamp if available, else skip
+            uint64_t repTs = 0;
+            for (const auto& [apps, vec] : day.switchHistory)
+            {
+                if (!vec.empty()) { repTs = vec.front(); break; }
+            }
+            if (repTs == 0) continue;
+
+            int dow = localDow(repTs);
+            int total = 0;
+            for (const auto& [apps, vec] : day.switchHistory)
+                total += static_cast<int>(vec.size());
+
+            switchesByDow[dow].push_back(total);
+        }
+
+        if (switchesByDow.empty())
+        {
+            mostDistractedDay_O = "Not enough data across days";
+        }
+        else
+        {
+            int worstDow = 0;
+            double worstAvg = -1.0;
+            for (const auto& [dow, counts] : switchesByDow)
+            {
+                double avg = 0;
+                for (int c : counts) avg += c;
+                avg /= counts.size();
+                if (avg > worstAvg) { worstAvg = avg; worstDow = dow; }
+            }
+            char buf[192];
+            const char* dn = dowName(worstDow);
+            std::srand(static_cast<unsigned>(std::time(nullptr)) ^ 0x4D);
+            switch (pick(5))
+            {
+                case 0: std::snprintf(buf, sizeof(buf), "%s is your most distracted day — you switch apps ~%.0f times on average", dn, worstAvg); break;
+                case 1: std::snprintf(buf, sizeof(buf), "You're at your most scattered on %ss — averaging ~%.0f app switches", dn, worstAvg); break;
+                case 2: std::snprintf(buf, sizeof(buf), "%s hits different — you switch apps about %.0f times that day on average", dn, worstAvg); break;
+                case 3: std::snprintf(buf, sizeof(buf), "Your focus takes the biggest hit on %ss — ~%.0f switches on average", dn, worstAvg); break;
+                default: std::snprintf(buf, sizeof(buf), "%.0f app switches on average — %s is your most chaotic day", worstAvg, dn); break;
+            }
+            mostDistractedDay_O = buf;
+        }
+    }
+
+    // Number of productive days (low switch rate)
+    {
+        int productive = 0;
+
+        for (const auto& day : multiDayData_)
+        {
+            // Total switches
+            int totalSwitches = 0;
+            for (const auto& [apps, vec] : day.switchHistory)
+                totalSwitches += static_cast<int>(vec.size());
+
+            // Active hours: span from first to last switch event
+            uint64_t earliest = UINT64_MAX, latest = 0;
+            for (const auto& [apps, vec] : day.switchHistory)
+            {
+                for (uint64_t ts : vec)
+                {
+                    if (ts < earliest) earliest = ts;
+                    if (ts > latest)   latest   = ts;
+                }
+            }
+
+            if (earliest == UINT64_MAX || latest <= earliest) continue;
+
+            double activeHours = (latest - earliest) / 3600000.0;
+            if (activeHours < 0.1) continue;
+
+            double rate = totalSwitches / activeHours;
+            if (rate <= static_cast<double>(switchThreshold))
+                ++productive;
+        }
+
+        const char* pl2 = productive == 1 ? "" : "s";
+        char buf[128];
+        std::srand(static_cast<unsigned>(std::time(nullptr)) ^ 0x5E);
+        switch (pick(5))
+        {
+            case 0: std::snprintf(buf, sizeof(buf), "You had %d productive day%s this week", productive, pl2); break;
+            case 1: std::snprintf(buf, sizeof(buf), "%d out of %d day%s this week counted as productive", productive, static_cast<int>(multiDayData_.size()), multiDayData_.size() == 1 ? "" : "s"); break;
+            case 2: std::snprintf(buf, sizeof(buf), "This week you stayed on track %d day%s", productive, pl2); break;
+            case 3: std::snprintf(buf, sizeof(buf), "%d focused day%s logged this week", productive, pl2); break;
+            default: std::snprintf(buf, sizeof(buf), "You locked in %d day%s this week", productive, pl2); break;
+        }
+        productiveDaysThisWeek_O = buf;
+    }
+
+    // Today's screen time vs. N-day average
+    {
+        if (multiDayData_.empty())
+        {
+            screenTimeVsAverage_O = "Not enough data";
+        }
+        else
+        {
+            // Index 0 = today (most recent day loaded)
+            uint64_t todayTotal = 0;
+            for (const auto& [app, dur] : multiDayData_[0].timePerApp)
+                todayTotal += dur;
+
+            if (multiDayData_.size() < 2)
+            {
+                screenTimeVsAverage_O = "Need more days to compare";
+            }
+            else
+            {
+                uint64_t otherTotal = 0;
+                int      otherDays  = 0;
+                for (size_t i = 1; i < multiDayData_.size(); ++i)
+                {
+                    uint64_t daySum = 0;
+                    for (const auto& [app, dur] : multiDayData_[i].timePerApp)
+                        daySum += dur;
+                    if (daySum > 0) { otherTotal += daySum; ++otherDays; }
+                }
+
+                if (otherDays == 0 || otherTotal == 0)
+                {
+                    screenTimeVsAverage_O = "Not enough historical data";
+                }
+                else
+                {
+                    double avgOther = static_cast<double>(otherTotal) / otherDays;
+                    int pct = static_cast<int>(std::round(
+                        (static_cast<double>(todayTotal) - avgOther) / avgOther * 100.0));
+                    char buf[192];
+                    std::srand(static_cast<unsigned>(std::time(nullptr)) ^ 0x6F);
+                    int absPct = pct >= 0 ? pct : -pct;
+                    if (pct >= 0)
+                    {
+                        switch (pick(5))
+                        {
+                            case 0: std::snprintf(buf, sizeof(buf), "Today your screen time is %d%% higher than your weekly average", absPct); break;
+                            case 1: std::snprintf(buf, sizeof(buf), "You're %d%% more active on screen today than usual", absPct); break;
+                            case 2: std::snprintf(buf, sizeof(buf), "Today is running %d%% heavier than your typical day", absPct); break;
+                            case 3: std::snprintf(buf, sizeof(buf), "Screen time today is up %d%% from your weekly average", absPct); break;
+                            default: std::snprintf(buf, sizeof(buf), "You've spent %d%% more time on screen today than average", absPct); break;
+                        }
+                    }
+                    else
+                    {
+                        switch (pick(5))
+                        {
+                            case 0: std::snprintf(buf, sizeof(buf), "Today your screen time is %d%% lower than your weekly average", absPct); break;
+                            case 1: std::snprintf(buf, sizeof(buf), "You're %d%% lighter on screen today than usual", absPct); break;
+                            case 2: std::snprintf(buf, sizeof(buf), "Today is running %d%% below your typical day", absPct); break;
+                            case 3: std::snprintf(buf, sizeof(buf), "Screen time today is down %d%% from your weekly average", absPct); break;
+                            default: std::snprintf(buf, sizeof(buf), "You've spent %d%% less time on screen today than average", absPct); break;
+                        }
+                    }
+                    screenTimeVsAverage_O = buf;
+                }
+            }
+        }
+    }
+
+    // Focus dip hour: hour most consistently spiked in switches
+    {
+        // For each day build hourly switch counts, then find the hour with
+        // the highest average switch count across days.
+        std::map<int, std::vector<int>> switchesPerHour; // hour → per-day counts
+
+        for (const auto& day : multiDayData_)
+        {
+            std::map<int, int> hourCount;
+            for (const auto& [apps, vec] : day.switchHistory)
+                for (uint64_t ts : vec)
+                    hourCount[localHour(ts)]++;
+
+            for (const auto& [hr, cnt] : hourCount)
+                switchesPerHour[hr].push_back(cnt);
+        }
+
+        if (switchesPerHour.empty())
+        {
+            focusDipHour_O = "Not enough data";
+        }
+        else
+        {
+            int    bestHour = 0;
+            double bestAvg  = -1.0;
+            for (const auto& [hr, counts] : switchesPerHour)
+            {
+                double avg = 0;
+                for (int c : counts) avg += c;
+                avg /= counts.size();
+                if (avg > bestAvg) { bestAvg = avg; bestHour = hr; }
+            }
+
+            int endHour = (bestHour + 1) % 24;
+            auto fmt12 = [](int h) -> std::string {
+                const char* ampm = h < 12 ? "AM" : "PM";
+                int h12 = h % 12;
+                if (h12 == 0) h12 = 12;
+                char tmp[16];
+                std::snprintf(tmp, sizeof(tmp), "%d%s", h12, ampm);
+                return tmp;
+            };
+            char buf[192];
+            std::string h1 = fmt12(bestHour);
+            std::string h2 = fmt12(endHour);
+            std::srand(static_cast<unsigned>(std::time(nullptr)) ^ 0x7A);
+            switch (pick(5))
+            {
+                case 0: std::snprintf(buf, sizeof(buf), "You lose focus almost every day between %s and %s", h1.c_str(), h2.c_str()); break;
+                case 1: std::snprintf(buf, sizeof(buf), "The %s-%s window is where your focus tends to collapse", h1.c_str(), h2.c_str()); break;
+                case 2: std::snprintf(buf, sizeof(buf), "Between %s and %s you're consistently at your most distracted", h1.c_str(), h2.c_str()); break;
+                case 3: std::snprintf(buf, sizeof(buf), "Most days around %s your concentration starts to slip", h1.c_str()); break;
+                default: std::snprintf(buf, sizeof(buf), "%s to %s is your daily distraction window", h1.c_str(), h2.c_str()); break;
+            }
+            focusDipHour_O = buf;
+        }
+    }
+
+    // Deep work before noon: % of days where longest session
+    //             starts before 12:00 local time
+    {
+        int daysChecked    = 0;
+        int daysBeforeNoon = 0;
+
+        for (const auto& day : multiDayData_)
+        {
+            auto sessions = buildSessions(day.switchHistory, minSessionMs);
+            if (sessions.empty()) continue;
+
+            // Find the longest session
+            auto best = std::max_element(sessions.begin(), sessions.end(),
+                [](const Session& a, const Session& b){ return a.duration < b.duration; });
+
+            ++daysChecked;
+            if (localHour(best->startTs) < 12)
+                ++daysBeforeNoon;
+        }
+
+        if (daysChecked == 0)
+        {
+            deepWorkBeforeNoon_O = "Not enough session data";
+        }
+        else
+        {
+            int pct = static_cast<int>(100.0 * daysBeforeNoon / daysChecked);
+            char buf[160];
+            std::srand(static_cast<unsigned>(std::time(nullptr)) ^ 0x8B);
+            switch (pick(5))
+            {
+                case 0: std::snprintf(buf, sizeof(buf), "%d%% of your longest focus sessions happen before noon", pct); break;
+                case 1: std::snprintf(buf, sizeof(buf), "Before noon is where %d%% of your best deep work lives", pct); break;
+                case 2: std::snprintf(buf, sizeof(buf), "Your peak sessions start before 12PM about %d%% of the time", pct); break;
+                case 3: std::snprintf(buf, sizeof(buf), "%d%% of the time your longest streak kicks off in the morning", pct); break;
+                default: std::snprintf(buf, sizeof(buf), "You do your deepest work before noon %d%% of days", pct); break;
+            }
+            deepWorkBeforeNoon_O = buf;
+        }
+    }
+
+    // Weekend vs. weekday usage of primary work app
+    {
+        uint64_t weekdayTotal = 0, weekendTotal = 0;
+        int      weekdayDays  = 0, weekendDays  = 0;
+
+        for (const auto& day : multiDayData_)
+        {
+            // Get a representative timestamp from any switch event
+            uint64_t repTs = 0;
+            for (const auto& [apps, vec] : day.switchHistory)
+            {
+                if (!vec.empty()) { repTs = vec.front(); break; }
+            }
+            if (repTs == 0) continue;
+
+            int dow = localDow(repTs);
+            bool isWeekend = (dow == 0 || dow == 6);
+
+            uint64_t appTime = 0;
+            if (!workApp.empty())
+            {
+                auto it = day.timePerApp.find(workApp);
+                if (it != day.timePerApp.end()) appTime = it->second;
+            }
+            else
+            {
+                // fallback: total screen time
+                for (const auto& [app, dur] : day.timePerApp)
+                    appTime += dur;
+            }
+
+            if (isWeekend) { weekendTotal += appTime; ++weekendDays;  }
+            else           { weekdayTotal += appTime; ++weekdayDays; }
+        }
+
+        if (weekdayDays == 0 || weekdayTotal == 0)
+        {
+            weekendVsWeekday_O = "Not enough weekday data yet";
+        }
+        else
+        {
+            double avgWeekday = static_cast<double>(weekdayTotal) / weekdayDays;
+            double avgWeekend = (weekendDays > 0)
+                                    ? static_cast<double>(weekendTotal) / weekendDays
+                                    : 0.0;
+
+            int pct = static_cast<int>(std::round(
+                std::abs(avgWeekday - avgWeekend) / avgWeekday * 100.0));
+
+            char buf[192];
+            std::srand(static_cast<unsigned>(std::time(nullptr)) ^ 0x9C);
+            if (avgWeekend < avgWeekday)
+            {
+                switch (pick(5))
+                {
+                    case 0: std::snprintf(buf, sizeof(buf), "On weekends you spend %d%% less time on %s than weekdays", pct, workAlias.c_str()); break;
+                    case 1: std::snprintf(buf, sizeof(buf), "Your %s usage drops %d%% on weekends", workAlias.c_str(), pct); break;
+                    case 2: std::snprintf(buf, sizeof(buf), "Weekends mean %d%% less %s for you", pct, workAlias.c_str()); break;
+                    case 3: std::snprintf(buf, sizeof(buf), "%s sees %d%% less of you on weekends than weekdays", workAlias.c_str(), pct); break;
+                    default: std::snprintf(buf, sizeof(buf), "You're %d%% less likely to use %s over the weekend", pct, workAlias.c_str()); break;
+                }
+            }
+            else
+            {
+                switch (pick(5))
+                {
+                    case 0: std::snprintf(buf, sizeof(buf), "On weekends you spend %d%% more time on %s than weekdays", pct, workAlias.c_str()); break;
+                    case 1: std::snprintf(buf, sizeof(buf), "Your %s usage actually goes up %d%% on weekends", workAlias.c_str(), pct); break;
+                    case 2: std::snprintf(buf, sizeof(buf), "Weekends bring %d%% more %s time for you", pct, workAlias.c_str()); break;
+                    case 3: std::snprintf(buf, sizeof(buf), "%s sees %d%% more of you on weekends than weekdays", workAlias.c_str(), pct); break;
+                    default: std::snprintf(buf, sizeof(buf), "You grind %d%% harder on %s over the weekend", pct, workAlias.c_str()); break;
+                }
+            }
+            weekendVsWeekday_O = buf;
+        }
+    }
+}
+
+
 std::string PatternAnalyzer::getMostUsed()
 {
     return mostUsed_O;
@@ -323,3 +1012,14 @@ std::string PatternAnalyzer::getMostProductiveHour()
 {
     return mostProductiveHour_O;
 }
+
+
+std::string PatternAnalyzer::getEscapePattern()      { return escapePattern_O;        }
+std::string PatternAnalyzer::getReturnRate()          { return returnRate_O;           }
+std::string PatternAnalyzer::getAvgFocusSession()     { return avgFocusSession_O;      }
+std::string PatternAnalyzer::getMostDistractedDay()   { return mostDistractedDay_O;    }
+std::string PatternAnalyzer::getProductiveDaysThisWeek() { return productiveDaysThisWeek_O; }
+std::string PatternAnalyzer::getScreenTimeVsAverage() { return screenTimeVsAverage_O;  }
+std::string PatternAnalyzer::getFocusDipHour()        { return focusDipHour_O;         }
+std::string PatternAnalyzer::getDeepWorkBeforeNoon()  { return deepWorkBeforeNoon_O;   }
+std::string PatternAnalyzer::getWeekendVsWeekday()    { return weekendVsWeekday_O;     }

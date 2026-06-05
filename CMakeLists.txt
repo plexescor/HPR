@@ -27,6 +27,7 @@ file(GLOB_RECURSE PATTERN src/pattern/*.cpp)
 file(GLOB_RECURSE TRAY src/tray/*.cpp)
 file(GLOB_RECURSE UI src/ui-cpp/*.cpp)
 file(GLOB_RECURSE WINDOW src/window/*.cpp)
+file(GLOB_RECURSE TIMELINE src/timeline/*.cpp)
 
 set(SOURCES
     src/main.cpp
@@ -39,6 +40,7 @@ set(SOURCES
     ${TRAY}
     ${UI}
     ${WINDOW}
+    ${TIMELINE}
     external/sqLite/sqlite3.c
 )
 

@@ -37,6 +37,7 @@ class DatabaseManager
         void loadDb_Singular(std::string date);
         void loadDb_Number(int days, std::string mode);
         void loadDb_Range(std::string dateFrom, std::string dateTo, std::string mode);
+        void loadPatternsData(int days);
 
     private:
         std::optional<sqlite::database> db;
@@ -64,6 +65,7 @@ class DatabaseManager
         size_t singular_DbLoadEventId;
         size_t number_DbLoadEventId;
         size_t range_DbLoadEventId;
+        size_t patterns_DbLoadEventId;
 
         //Lock
         #ifdef _WIN32
