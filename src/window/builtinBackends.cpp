@@ -590,7 +590,7 @@ void registerBuiltinBackends()
 
         [](const std::string& env)
         {
-            return env.contains("niri");
+            return (env.contains("niri") || env.contains("Niri"));
         },
 
         []() {},
