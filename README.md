@@ -157,7 +157,7 @@ VS Code puts the active project name directly in its window title in the format 
 
 The result goes into `timeLog_PerProject`, a separate time accumulator running in parallel with the normal per-app log. The UI has a dedicated Project View showing time broken down by project name for the day. Toggle between **Raw View** (unprocessed title substring) and the default parsed view which applies `projectAliases.csv`.
 
-This works on every supported platform — Hyprland, GNOME, KDE, Cinnamon, and Windows — because each backend already has a window title getter and VS Code puts the project name in the title on all of them.
+This works on every supported platform — Hyprland, GNOME, KDE, Cinnamon, niri, and Windows — because each backend already has a window title getter and VS Code puts the project name in the title on all of them.
 
 ---
 
@@ -338,6 +338,7 @@ Works with Waybar on Hyprland, KDE's system tray, and Cinnamon's panel out of th
 | GNOME (Wayland) | Custom GNOME Shell extension ([lol-another-window-extension](https://github.com/plexescor/lol-another-window-extension)) | One-time only — run the bundled install script, log out, log back in |
 | KDE Plasma 6+ (Wayland / X11) | KWin D-Bus scripting | None |
 | Cinnamon (X11 + Wayland) | `org.Cinnamon.Eval` D-Bus method | None |
+| niri (Wayland) | `niri msg` IPC | None |
 | Windows 10 / 11 | Win32 API | None |
 
 <details>
@@ -819,7 +820,7 @@ If HPR has been useful to you, a Ko-fi helps keep development going:
 <p align="center">
   <sub>
     Active development &nbsp;|&nbsp; v0.8 &nbsp;|&nbsp;
-    Hyprland · GNOME · KDE Plasma · Cinnamon · Windows 10/11 &nbsp;|&nbsp;
+    Hyprland · GNOME · KDE Plasma · Cinnamon · niri · Windows 10/11 &nbsp;|&nbsp;
     C++23 · Slint 1.16.1 · SQLite3 amalgamation · sqlite_modern_cpp · Lua 5.4 · sol2
   </sub>
 </p>
