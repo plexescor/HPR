@@ -269,7 +269,25 @@ std::string CurrentWindowManager::getCurrentTitle()
         if (!backend.matchesEnvironment(currentPlatform)) continue;
         Logger::log("Trying backend: " + backend.name);
         backend.initialize();
-        if (!backend.isUsable())
+        bool usable = false;
+        auto startTime = std::chrono::steady_clock::now();
+        while (true)
+        {
+            if (backend.isUsable())
+            {
+                usable = true;
+                break;
+            }
+            auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+                std::chrono::steady_clock::now() - startTime
+            ).count();
+            if (elapsed >= 7000)
+            {
+                break;
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        }
+        if (!usable)
         {
             Logger::log("Backend unusable: " + backend.name);
             continue;
