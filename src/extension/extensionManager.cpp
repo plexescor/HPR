@@ -492,21 +492,20 @@ void ExtensionManager::unloadExtension(std::string authorName, std::string exten
             std::thread t = std::move(ext->thread);
             if (t.joinable())
             {
-                bool joined = false;
-                std::thread joiner([&]() {
-                    t.join();
-                    joined = true;
+                auto joined = std::make_shared<std::atomic<bool>>(false);
+                std::thread joiner([threadToJoin = std::move(t), joined]() mutable {
+                    threadToJoin.join();
+                    *joined = true;
                 });
 
                 int reloadTimeout = AppState::configManager.getConfig("extension-reload-timeout", 450);
                 auto start = std::chrono::steady_clock::now();
-                while (!joined)
+                while (!*joined)
                 {
                     if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count() >= reloadTimeout)
                     {
                         std::cerr << "Extension reload/unload timed out, detaching thread to prevent hang\n";
                         Logger::log("[HPR] Extension reload/unload timed out, detaching thread to prevent hang");
-                        t.detach();
                         joiner.detach();
                         ext->detached = true;
                         std::unique_lock<std::recursive_mutex> lock(ext->luaMutex, std::defer_lock);
@@ -518,7 +517,7 @@ void ExtensionManager::unloadExtension(std::string authorName, std::string exten
                     }
                     std::this_thread::sleep_for(std::chrono::milliseconds(1));
                 }
-                if (joined)
+                if (*joined)
                 {
                     joiner.join();
                 }
@@ -589,21 +588,20 @@ void ExtensionManager::reloadAllExtensions()
         std::thread t = std::move(ext->thread);
         if (t.joinable())
         {
-            bool joined = false;
-            std::thread joiner([&]() {
-                t.join();
-                joined = true;
+            auto joined = std::make_shared<std::atomic<bool>>(false);
+            std::thread joiner([threadToJoin = std::move(t), joined]() mutable {
+                threadToJoin.join();
+                *joined = true;
             });
 
             int reloadTimeout = AppState::configManager.getConfig("extension-reload-timeout", 450);
             auto start = std::chrono::steady_clock::now();
-            while (!joined)
+            while (!*joined)
             {
                 if (std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - start).count() >= reloadTimeout)
                 {
                     std::cerr << "Extension reload timed out, detaching thread to prevent hang\n";
                     Logger::log("[HPR] Extension reload timed out, detaching thread to prevent hang");
-                    t.detach();
                     joiner.detach();
                     ext->detached = true;
                     std::unique_lock<std::recursive_mutex> lock(ext->luaMutex, std::defer_lock);
@@ -615,7 +613,7 @@ void ExtensionManager::reloadAllExtensions()
                 }
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));
             }
-            if (joined)
+            if (*joined)
             {
                 joiner.join();
             }

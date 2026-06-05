@@ -81,4 +81,6 @@ class DatabaseManager
 
         //Async tasks
         std::future<void> historyLoadTask_Singular;
+        std::future<void> historyLoadTask_Number;
+        std::future<void> historyLoadTask_Range;
 };
