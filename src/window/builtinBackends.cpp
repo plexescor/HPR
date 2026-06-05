@@ -597,9 +597,7 @@ void registerBuiltinBackends()
 
         []() -> bool
         {
-            std::string cmd = "niri msg --json focused-window 2>/dev/null";
-            std::string result = runSystemCommand_UNSAFE(cmd);
-            return !result.empty() && result.contains("app_id");
+            return true;
         },
 
         []() -> std::string

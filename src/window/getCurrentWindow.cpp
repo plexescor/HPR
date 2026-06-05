@@ -276,9 +276,24 @@ std::string CurrentWindowManager::getCurrentTitle()
 
     Logger::log("Detected environment: " + currentPlatform);
 
+    bool allowCustom = AppState::configManager.getConfig("allow-custom-backends", false);
+
     for (auto& backend : std::views::reverse(registeredBackends))
     {
         if (!backend.matchesEnvironment(currentPlatform)) continue;
+
+        bool isCustom = (backend.name != "GNOME" &&
+                         backend.name != "KDE" &&
+                         backend.name != "Hyprland" &&
+                         backend.name != "Windows" &&
+                         backend.name != "niri" &&
+                         backend.name != "Cinnamon");
+
+        if (isCustom && !allowCustom)
+        {
+            continue;
+        }
+
         Logger::log("Trying backend: " + backend.name);
         backend.initialize();
         bool usable = false;

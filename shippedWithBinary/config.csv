@@ -44,3 +44,6 @@ pattern-productive-switch-threshold,10
 
 # pattern-focus-min-session-ms -> minimum focus session length in ms counted as a real session (default 60s)
 pattern-focus-min-session-ms,60000
+
+# allow-custom-backends -> allow dynamic custom tracking backends registered via Lua extensions (default false)
+allow-custom-backends,false
