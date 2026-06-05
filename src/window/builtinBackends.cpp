@@ -586,6 +586,66 @@ void registerBuiltinBackends()
 
     registerBackend
     ({
+        "niri",
+
+        [](const std::string& env)
+        {
+            return env.contains("niri");
+        },
+
+        []() {},
+
+        []() -> bool
+        {
+            std::string cmd = "niri msg --json focused-window 2>/dev/null";
+            std::string result = runSystemCommand_UNSAFE(cmd);
+            return !result.empty() && result.contains("app_id");
+        },
+
+        []() -> std::string
+        {
+            std::string cmd = "niri msg --json focused-window 2>/dev/null";
+            std::string json = runSystemCommand_UNSAFE(cmd);
+            const std::string key = "\"app_id\":";
+            size_t keyPos = json.find(key);
+            if (keyPos == std::string::npos) return "";
+            size_t quoteStart = json.find('"', keyPos + key.size());
+            if (quoteStart == std::string::npos) return "";
+            size_t quoteEnd = json.find('"', quoteStart + 1);
+            if (quoteEnd == std::string::npos) return "";
+            return json.substr(quoteStart + 1, quoteEnd - quoteStart - 1);
+        },
+
+        []() -> std::string
+        {
+            std::string cmd = "niri msg --json focused-window 2>/dev/null";
+            std::string json = runSystemCommand_UNSAFE(cmd);
+            const std::string key = "\"title\":";
+            size_t keyPos = json.find(key);
+            if (keyPos == std::string::npos) return "";
+            size_t quoteStart = json.find('"', keyPos + key.size());
+            if (quoteStart == std::string::npos) return "";
+            size_t quoteEnd = json.find('"', quoteStart + 1);
+            if (quoteEnd == std::string::npos) return "";
+            return json.substr(quoteStart + 1, quoteEnd - quoteStart - 1);
+        },
+
+        []() -> std::string
+        {
+            std::string cmd = "niri msg --json focused-window 2>/dev/null";
+            std::string json = runSystemCommand_UNSAFE(cmd);
+            const std::string key = "\"pid\":";
+            size_t keyPos = json.find(key);
+            if (keyPos == std::string::npos) return "";
+            size_t numStart = json.find_first_not_of(" \t", keyPos + key.size());
+            if (numStart == std::string::npos) return "";
+            size_t numEnd = json.find_first_of(",}\n", numStart);
+            return json.substr(numStart, numEnd - numStart);
+        }
+    });
+
+    registerBackend
+    ({
         "Cinnamon",
 
         [](const std::string& env) 
