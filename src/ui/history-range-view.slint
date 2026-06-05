@@ -277,7 +277,7 @@ export component HistoryRangeView {
                     HorizontalLayout {
                         spacing: 8px;
                         ViewModeButton {
-                            text: "TOTAL/AGGREGATE VIEW";
+                            text: "TOTAL / AGGREGATE VIEW";
                             selected: root.selected-mode == "total";
                             clicked => { root.selected-mode = "total"; }
                         }
@@ -342,6 +342,27 @@ export component HistoryRangeView {
                                 selected: root.selected-days == 365;
                                 clicked => { root.selected-days = 365; root.start-date = ""; root.end-date = ""; }
                             }
+                        }
+                    }
+                }
+
+                // Custom days input
+                VerticalLayout {
+                    spacing: 6px;
+                    Text {
+                        text: "ENTER CUSTOM NUMBER OF DAYS TO LOAD";
+                        color: #ffffff40;
+                        font-size: 9px;
+                        font-weight: 700;
+                        letter-spacing: 1px;
+                    }
+                    LineEdit {
+                        placeholder-text: "e.g. 45";
+                        text: root.selected-days > 0 && root.selected-days != 7 && root.selected-days != 14 && root.selected-days != 30 && root.selected-days != 60 && root.selected-days != 90 && root.selected-days != 365 ? root.selected-days : "";
+                        edited(val) => {
+                            root.selected-days = val == "" ? -1 : val.to-float();
+                            root.start-date = "";
+                            root.end-date = "";
                         }
                     }
                 }
