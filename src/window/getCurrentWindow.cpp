@@ -137,6 +137,11 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 			project = "";
 		}
 
+		bool windowChanged = false;
+		std::string emitPrevWindow;
+		std::string emitCurrWindow;
+		std::string pid = getCurrentPid();
+
 		{
 			// Update current window in the AppState
 			std::lock_guard<std::mutex> lock(AppState::stateMutex);
@@ -149,7 +154,9 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 				// This means window was changed
 				// FromWindow = previousWindow, ToWindow = window
 
-				EventHub::emit(Event::WINDOW_CHANGED, WindowChangedData{previousWindow, window});
+				windowChanged = true;
+				emitPrevWindow = previousWindow;
+				emitCurrWindow = window;
 
 				auto nowSystem = std::chrono::system_clock::now();
 				uint64_t t = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -205,7 +212,12 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 					.count();
 			}
 
-			AppState::state.appNamePid[window] = getCurrentPid();
+			AppState::state.appNamePid[window] = pid;
+		}
+
+		if (windowChanged)
+		{
+			EventHub::emit(Event::WINDOW_CHANGED, WindowChangedData{emitPrevWindow, emitCurrWindow});
 		}
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(pollInterval));

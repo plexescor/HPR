@@ -90,15 +90,21 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow>& ui,  ExtensionM
     {
         ui->on_refreshExtensions([this]() 
         {
-            extManager->refresh();
+            std::thread([this]() {
+                extManager->refresh();
+            }).detach();
         });
         ui->on_disableExtension([this](slint::SharedString author, slint::SharedString name) 
         {
-            extManager->unloadExtension(std::string(author), std::string(name));
+            std::thread([this, auth = std::string(author), nm = std::string(name)]() {
+                extManager->unloadExtension(auth, nm);
+            }).detach();
         });
         ui->on_reloadExtension([this](slint::SharedString author, slint::SharedString name) 
         {
-            extManager->reloadExtension(std::string(author), std::string(name));
+            std::thread([this, auth = std::string(author), nm = std::string(name)]() {
+                extManager->reloadExtension(auth, nm);
+            }).detach();
         });
     }
 
@@ -287,7 +293,9 @@ UiEventBridge::UiEventBridge(
     {
         ui->set_callback("refreshExtensions", [this](auto args) -> slint::interpreter::Value
         {
-            extManager->refresh();
+            std::thread([this]() {
+                extManager->refresh();
+            }).detach();
             return slint::interpreter::Value();
         });
 
@@ -298,7 +306,11 @@ UiEventBridge::UiEventBridge(
                 auto opt_author = args[0].to_string();
                 auto opt_name = args[1].to_string();
                 if (opt_author.has_value() && opt_name.has_value())
-                    extManager->unloadExtension(std::string(opt_author.value()), std::string(opt_name.value()));
+                {
+                    std::thread([this, auth = std::string(opt_author.value()), nm = std::string(opt_name.value())]() {
+                        extManager->unloadExtension(auth, nm);
+                    }).detach();
+                }
             }
             return slint::interpreter::Value();
         });
@@ -310,7 +322,11 @@ UiEventBridge::UiEventBridge(
                 auto opt_author = args[0].to_string();
                 auto opt_name = args[1].to_string();
                 if (opt_author.has_value() && opt_name.has_value())
-                    extManager->reloadExtension(std::string(opt_author.value()), std::string(opt_name.value()));
+                {
+                    std::thread([this, auth = std::string(opt_author.value()), nm = std::string(opt_name.value())]() {
+                        extManager->reloadExtension(auth, nm);
+                    }).detach();
+                }
             }
             return slint::interpreter::Value();
         });
