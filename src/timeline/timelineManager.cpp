@@ -52,6 +52,14 @@ static std::string formatTime_HHMM(uint64_t ms)
     }
 }
 
+static bool isInvalidApp(const std::string& appName) {
+    if (appName.empty()) return true;
+    std::string lower = appName;
+    std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+    if (lower == "unknown" || lower == "unknow") return true;
+    return false;
+}
+
 void TimelineManager::updateTimeline(int presetHours, int startHour, int endHour)
 {
     std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> switchHistory;
@@ -85,10 +93,11 @@ void TimelineManager::updateTimeline(int presetHours, int startHour, int endHour
     {
         std::lock_guard<std::mutex> lock(AppState::timelineMutex);
         AppState::timelineEvents.clear();
+        AppState::timelineMarkers.clear();
         return;
     }
 
-    // 2. Flatten transitions
+    // 2. Flatten transitions (keep all transitions as boundaries)
     struct Transition {
         std::string fromApp;
         std::string toApp;
@@ -103,115 +112,122 @@ void TimelineManager::updateTimeline(int presetHours, int startHour, int endHour
         }
     }
 
+
+    if (transitions.empty())
+    {
+        std::lock_guard<std::mutex> lock(AppState::timelineMutex);
+        AppState::timelineEvents.clear();
+        AppState::timelineMarkers.clear();
+        return;
+    }
+
     // 3. Sort chronologically
     std::sort(transitions.begin(), transitions.end(), [](const Transition& a, const Transition& b) {
         return a.ts < b.ts;
     });
 
-    // 4. Reconstruct timeline segments
-    std::vector<AppState::TimelineEventInternal> rawSegments;
-    if (transitions.empty()) return;
 
-    // First transition: transitions[0].fromApp active before transitions[0].ts
-    // We assume it was active for a short default (e.g., 10 minutes) before the first switch
-    uint64_t firstStart = (transitions[0].ts > 600000) ? (transitions[0].ts - 600000) : 0;
-    rawSegments.push_back({
-        transitions[0].fromApp,
-        formatTime_HHMM(firstStart),
-        formatTime_HHMM(transitions[0].ts),
-        formatTime_HHMMSS(transitions[0].ts - firstStart),
-        static_cast<double>(transitions[0].ts - firstStart)
-    });
-
-    // Middle segments
-    for (size_t i = 0; i < transitions.size() - 1; ++i)
-    {
-        uint64_t start = transitions[i].ts;
-        uint64_t end = transitions[i+1].ts;
-        uint64_t duration = (end > start) ? (end - start) : 0;
-
-        rawSegments.push_back({
-            transitions[i].toApp,
-            formatTime_HHMM(start),
-            formatTime_HHMM(end),
-            formatTime_HHMMSS(duration),
-            static_cast<double>(duration)
-        });
-    }
-
-    // Last segment
-    uint64_t lastStart = transitions.back().ts;
-    uint64_t lastEnd = nowMs;
-    if (currentView != AppState::CurrentView::LIVE)
-    {
-        // For historical data, assume active for 10 minutes or until end of that calendar day
-        lastEnd = lastStart + 600000;
-    }
-    uint64_t lastDuration = (lastEnd > lastStart) ? (lastEnd - lastStart) : 0;
-    rawSegments.push_back({
-        transitions.back().toApp,
-        formatTime_HHMM(lastStart),
-        formatTime_HHMM(lastEnd),
-        formatTime_HHMMSS(lastDuration),
-        static_cast<double>(lastDuration)
-    });
-
-    // 5. Apply range and hour zoom filters
-    // Calculate reference time boundary for presets
-    uint64_t filterStartPresetMs = 0;
-    if (presetHours > 0)
-    {
-        uint64_t refTime = (currentView == AppState::CurrentView::LIVE) ? nowMs : lastEnd;
-        filterStartPresetMs = (refTime > (presetHours * 3600ULL * 1000ULL)) ? (refTime - (presetHours * 3600ULL * 1000ULL)) : 0;
-    }
-
-    // Calculate reference time boundary for custom hour zoom
-    // We obtain the day start of the first transition
-    std::time_t tt = static_cast<std::time_t>(transitions[0].ts / 1000);
-    std::tm tmStart = *std::localtime(&tt);
+    // 4. Calculate time range boundaries
+    // Get start/end based on current day boundaries
+    std::time_t tt_first = static_cast<std::time_t>(transitions[0].ts / 1000);
+    std::tm tmStart = *std::localtime(&tt_first);
     tmStart.tm_hour = 0; tmStart.tm_min = 0; tmStart.tm_sec = 0;
     uint64_t dayStartMs = static_cast<uint64_t>(std::mktime(&tmStart)) * 1000ULL;
 
-    uint64_t zoomStartMs = dayStartMs + (startHour * 3600ULL * 1000ULL);
-    uint64_t zoomEndMs = dayStartMs + (endHour * 3600ULL * 1000ULL);
+    uint64_t T_start = dayStartMs + (startHour * 3600ULL * 1000ULL);
+    uint64_t T_end = dayStartMs + (endHour * 3600ULL * 1000ULL);
 
-    std::vector<AppState::TimelineEventInternal> filteredSegments;
-    for (size_t i = 0; i < rawSegments.size(); ++i)
+    uint64_t lastEnd = transitions.back().ts + 600000; // Historical default active end
+    if (currentView == AppState::CurrentView::LIVE)
     {
-        // Calculate raw segment epoch timestamps
-        uint64_t segStart = (i == 0) ? firstStart : transitions[i-1].ts;
-        uint64_t segEnd = (i == rawSegments.size() - 1) ? lastEnd : transitions[i].ts;
+        lastEnd = nowMs;
+    }
 
-        // Apply Preset Filter
-        if (presetHours > 0 && segEnd < filterStartPresetMs)
+    uint64_t totalSpan = (T_end > T_start) ? (T_end - T_start) : 1;
+
+    // Generate dynamic hourly markers
+    std::vector<AppState::TimelineMarkerInternal> markers;
+    int hourStep = (presetHours == 24 || presetHours == 0) ? 3 : 1;
+    for (int h = startHour; h <= endHour; h += hourStep)
+    {
+        uint64_t ts = dayStartMs + (h * 3600ULL * 1000ULL);
+        double x = static_cast<double>(ts - T_start) / static_cast<double>(totalSpan);
+
+        int displayHour = h % 12;
+        if (displayHour == 0) displayHour = 12;
+        std::string suffix = " AM";
+        if (h >= 12 && h < 24) suffix = " PM";
+        std::string label = (displayHour < 10 ? "0" : "") + std::to_string(displayHour) + ":00" + suffix;
+
+        markers.push_back({x, label});
+    }
+
+    // 5. Reconstruct and filter segments with fractional boundaries
+    std::vector<AppState::TimelineEventInternal> filteredSegments;
+    
+    // First transition segment
+    uint64_t firstStart = (transitions[0].ts > 600000) ? (transitions[0].ts - 600000) : 0;
+    
+    auto processSegment = [&](const std::string& appName, uint64_t segStart, uint64_t segEnd) {
+        if (isInvalidApp(appName))
         {
-            continue;
+            return;
         }
 
-        // Apply Zoom hour filter (must overlap with the selected start/end range)
-        if (segEnd < zoomStartMs || segStart > zoomEndMs)
+        // Check if segment overlaps viewport range
+        if (segEnd <= T_start || segStart >= T_end)
         {
-            continue;
+            return;
         }
 
-        // Apply Alias mapping
-        std::string aliasedAppName = AppState::aliasManager.getAlias(rawSegments[i].appName);
+        // Clamp to viewport boundaries
+        uint64_t clampedStart = (std::max)(segStart, T_start);
+        uint64_t clampedEnd = (std::min)(segEnd, T_end);
+
+        if (clampedEnd <= clampedStart) return;
+
+        double x = static_cast<double>(clampedStart - T_start) / static_cast<double>(totalSpan);
+        double width = static_cast<double>(clampedEnd - clampedStart) / static_cast<double>(totalSpan);
+
+        std::string aliasedName = AppState::aliasManager.getAlias(appName);
+        std::string rangeStr = formatTime_HHMM(segStart) + " - " + formatTime_HHMM(segEnd);
+        std::string durationStr = formatTime_HHMMSS(segEnd - segStart);
 
         filteredSegments.push_back({
-            aliasedAppName,
-            rawSegments[i].startTime,
-            rawSegments[i].endTime,
-            rawSegments[i].duration,
-            rawSegments[i].durationMs
+            x,
+            width,
+            aliasedName,
+            durationStr,
+            rangeStr
         });
+    };
+
+    // Process Segment 0
+    processSegment(transitions[0].fromApp, firstStart, transitions[0].ts);
+
+    // Process Middle segments
+    for (size_t i = 0; i < transitions.size() - 1; ++i)
+    {
+        uint64_t segStart = transitions[i].ts;
+        uint64_t segEnd = transitions[i+1].ts;
+        if (isInvalidApp(transitions[i+1].fromApp))
+        {
+            segEnd = std::min<uint64_t>(segEnd, segStart + 60000ULL);
+        }
+        processSegment(transitions[i].toApp, segStart, segEnd);
     }
+
+    // Process Last segment
+    processSegment(transitions.back().toApp, transitions.back().ts, lastEnd);
 
     // 6. Thread-safely update cache
     {
         std::lock_guard<std::mutex> lock(AppState::timelineMutex);
         AppState::timelineEvents = std::move(filteredSegments);
+        AppState::timelineMarkers = std::move(markers);
     }
 }
+
 
 void TimelineManager::threadLoop()
 {

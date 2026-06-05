@@ -70,6 +70,8 @@ https://github.com/user-attachments/assets/07659d3d-0f3b-4bbc-8823-8b5d11bfd32f
 - [Browser Tab Tracking](#browser-tab-tracking)
 - [VS Code Project Tracking](#vs-code-project-tracking)
 - [App Limits and Goals](#app-limits-and-goals)
+- [Day Construction Timeline](#day-construction-timeline)
+- [Advanced Pattern Analysis](#advanced-pattern-analysis)
 - [Extensions](#extensions)
 - [System Tray](#system-tray)
 - [Data Storage](#data-storage)
@@ -191,6 +193,39 @@ Badges on each row show **remaining time live**. Limit rows have a red accent; g
 
 > [!NOTE]
 > Advanced users can intercept the limit-reached event via the [Function Overriding API](https://hpr-cpp.netlify.app/overrides.html) to run custom Lua logic — log it, send a webhook, suppress the notification, or anything else.
+
+---
+
+## Day Construction Timeline
+
+Rebuild your daily narrative with a visual, contiguous timeline of your system activity. Instead of just looking at raw accumulated numbers, the **Day Construction Timeline** maps your active window transitions chronologically onto a zoomable, scrollable canvas.
+
+<p align="center">
+  <img src="./assetsgithub/timeline.png" alt="HPR Day Construction Timeline" width="800"/>
+</p>
+
+### Key Timeline Features:
+- **Scrollable & Zoomable Viewports**: Focus on specific intervals or view the entire day. Click presets to zoom in to `1h`, `3h`, or `8h` views, or zoom out to `24h` and `All Day` views.
+- **Adaptive Hour Markers**: Timeline axis markers dynamically calculate and adjust. For zoomed modes (`1h`, `3h`, `8h`), they place markers at every 1-hour interval. For high-span modes (`24h` and `All Day`), they space markers every 3 hours (`00:00`, `03:00`, `06:00 AM/PM`, etc.) to prevent overlapping text and maintain an elegant, readable design.
+- **Continuity Gap Capping**: If HPR is closed (e.g. you shutdown your PC or close HPR and reopen it 5 hours later), a naive timeline would stretch the last active app across the entire 5-hour gap. HPR's timeline reconstruction engine detects focus gaps and transitions to `Unknown`/system downtime, capping the last active application segment to a maximum of **1 minute** duration to keep your logs accurate.
+- **Live HPR Tracking**: The tracking engine includes HPR itself as a tracked application, giving you visibility into the time you spend customizing goals, reviewing patterns, or managing extensions.
+- **Hover Micro-interactions**: Hover your cursor over any timeline block to view its details instantly. The status panel updates dynamically with the application's aliased name, exact active duration, and start/end time range, removing the need for manual clicks.
+
+---
+
+## Advanced Pattern Analysis
+
+Go beyond basic daily statistics with HPR's multi-day correlation engine. Under the **Insights** tab, HPR processes your historical database files to extract **9 advanced cross-day metrics** that help you understand your work habits, distractions, and focus zones over time:
+
+1. **Escape Pattern**: Calculates the average number of times you switch directly from a primary work application (e.g., VS Code) to distraction/browser apps per day.
+2. **Return Rate**: Computes the percentage of times you immediately bounce back to your work application after a browser escape, measuring your distraction recovery resilience.
+3. **Average Focus Session**: Analyzes your timeline to determine the average duration of uninterrupted focus stretches before switching windows.
+4. **Most Distracted Day**: Aggregates switches across all logged days to pinpoint the day of the week with the highest average multitasking frequency.
+5. **Productive Days**: Tracks the number of days during the current week where your hourly switch frequency remained below the focus threshold.
+6. **Screen Time vs Average**: Compares today's cumulative screen time against your N-day historical average to show whether you are overworking or taking it easy.
+7. **Focus Dip Hour**: Identifies the specific hour of the day where your application switches spike most consistently, identifying your daily energy crashes.
+8. **Deep Work Before Noon**: The percentage of days where your longest uninterrupted focus session kicks off in the morning (before 12:00 PM local time).
+9. **Weekend vs Weekday**: Measures the percentage difference in work-app usage between weekdays and weekends, showing how well you separate work from leisure.
 
 ---
 
@@ -695,19 +730,29 @@ All millisecond tracking accumulators and UI formatters use 64-bit integers (`ui
 
 ## Pattern Analysis Engine
 
-`PatternAnalyzer` runs behind the Insights view. Every 30 seconds inside `trackingLoop`, it acquires `stateMutex`, copies the current state, releases immediately, then runs seven analysis passes on the copy.
+`PatternAnalyzer` runs behind the Insights view, computing both real-time daily metrics and advanced cross-day trend analyses.
 
-**Patterns 1–5** are direct aggregations over `timeLog_PerApp` and `switchHistory`: most-used application, total tracked time, top switch pairs, switch frequency distribution.
+### Real-Time Daily Analysis (Patterns 1–7)
+Every 30 seconds inside `trackingLoop`, the engine acquires `stateMutex`, clones the active tracking data, and performs 7 analysis passes on the copy to avoid locking the main rendering threads.
 
-**Pattern 6: Longest Focus Session**
+- **Patterns 1–5 (Direct Aggregations)**: Scans `timeLog_PerApp` and `switchHistory` to find the most-used application, total tracked time, total switches, and the most switched-away-from/switched-to applications.
+- **Pattern 6 (Longest Focus Session)**: Uses a **Chronological Event-Matching Algorithm**. The raw `switchHistory` map is flattened into a unified event timeline of arrivals and departures, sorted globally by timestamp in $O(N \log N)$. One pass pairs each arrival with its next departure. Orphaned arrivals (from crashes, reboots, or force-quits) are discarded, preventing ghost sessions.
+- **Pattern 7 (Peak Productive Hour)**: Uses a **Sliding Window Heuristic**. A window constrained between 60 and 90 minutes slides across the consolidated timestamp list. The window containing the lowest switch frequency (lowest transitions per minute) is identified as the peak focus block.
 
-Uses a Chronological Event-Matching Algorithm. The raw `switchHistory` map is flattened into a unified event timeline of arrivals and departures, sorted globally by timestamp in O(N log N). One pass pairs each arrival with its next departure. Orphaned arrivals (from crashes or reboots) are overwritten by the next session start — no ghost sessions, no special crash-recovery logic.
+### Advanced Cross-Day Analysis (Multi-Day Engine)
+When the user switches to the Insights view, HPR asynchronously queries the historical SQLite database via `DatabaseManager`, streaming multiple daily records into a structured `std::vector<DayData>` and passing it to the `PatternAnalyzer`.
 
-**Pattern 7: Peak Productive Hour**
-
-Uses a Sliding Window Heuristic. A window constrained between 60 and 90 minutes slides across the complete timestamp timeline. The position with the fewest application switches is reported as Peak Productive Hour. Sustained low switch frequency is the strongest observable signal of deep focus without requiring the user to manually mark sessions.
-
-Both patterns filter out HPR itself, the Unknown state, and known system noise before running.
+#### Core Algorithms:
+1. **Config-Driven App Auto-Detection**:
+   If not explicitly set in `config.csv` (using `pattern-work-app` and `pattern-browser-app`), the engine scans all historical data, computing total duration per app. It automatically designates the highest-duration app categorized as `AppCategory::WORK` (e.g. IDEs like VS Code, CLion) as the primary work application, and the highest-duration app under `AppCategory::BROWSER` (e.g. Chrome, Firefox) as the primary browser.
+2. **Escape Pattern & Return Rate**:
+   The engine builds a chronological switch timeline for each day. It counts transitions from a `WORK` app directly to a `BROWSER` app to calculate the daily escape average. For the Return Rate, it analyzes the transition immediately following each browser escape; if the destination is a `WORK` app, it increments the return counter.
+3. **Focus Dip Hour**:
+   Builds hourly switch frequency buckets across all loaded days. By computing the mean switch count per hour slot (0–23) across the multi-day span, it isolates the hour block where multitasking and distraction spike most consistently.
+4. **Deep Work Before Noon**:
+   Runs the Chronological Event-Matching Algorithm on each day's switch history. It extracts the longest single focus session for each day, determines its local start time hour, and calculates the percentage of days where this peak session began before 12:00 PM local time.
+5. **Weekend vs Weekday Habits**:
+   Splits the loaded `DayData` based on calendar day-of-week (0=Sunday, 6=Saturday). It calculates the average time spent in the primary work app on weekdays versus weekends, computing the percentage difference to characterize the user's weekend habits.
 
 ---
 

@@ -25,7 +25,8 @@ UiModelManager::UiModelManager(slint::ComponentHandle<MainWindow> &ui_handle) : 
     switchHistoryModel = std::make_shared<slint::VectorModel<SwitchHistory>>();
     extensionsModel = std::make_shared<slint::VectorModel<LoadedExtension_S>>();
     rawAppsModel = std::make_shared<slint::VectorModel<AppGoalData>>();
-    timelineEventsModel = std::make_shared<slint::VectorModel<TimelineEvent>>();
+    timelineBlocksModel = std::make_shared<slint::VectorModel<TimelineBlock>>();
+    timelineMarkersModel = std::make_shared<slint::VectorModel<TimelineMarker>>();
 
     slint::ComponentWeakHandle<MainWindow> weak(ui.value());
     slint::invoke_from_event_loop([weak, this]()
@@ -38,7 +39,8 @@ UiModelManager::UiModelManager(slint::ComponentHandle<MainWindow> &ui_handle) : 
             (*handle)->set_switchHistory_S(switchHistoryModel);
             (*handle)->set_loadedExtensions_S(extensionsModel);
             (*handle)->set_rawApps_S(rawAppsModel);
-            (*handle)->set_timelineEvents_S(timelineEventsModel);
+            (*handle)->set_timelineBlocks_S(timelineBlocksModel);
+            (*handle)->set_timelineMarkers_S(timelineMarkersModel);
         } 
     });
 
@@ -53,7 +55,8 @@ UiModelManager::UiModelManager(slint::ComponentHandle<slint::interpreter::Compon
     switchHistoryModel_interp = std::make_shared<slint::VectorModel<slint::interpreter::Value>>();
     extensionsModel_interp = std::make_shared<slint::VectorModel<slint::interpreter::Value>>();
     rawAppsModel_interp = std::make_shared<slint::VectorModel<slint::interpreter::Value>>();
-    timelineEventsModel_interp = std::make_shared<slint::VectorModel<slint::interpreter::Value>>();
+    timelineBlocksModel_interp = std::make_shared<slint::VectorModel<slint::interpreter::Value>>();
+    timelineMarkersModel_interp = std::make_shared<slint::VectorModel<slint::interpreter::Value>>();
 
 
     slint::ComponentWeakHandle<slint::interpreter::ComponentInstance> weak(ui_interp.value());
@@ -67,7 +70,8 @@ UiModelManager::UiModelManager(slint::ComponentHandle<slint::interpreter::Compon
             (*handle)->set_property("switchHistory_S", slint::interpreter::Value(switchHistoryModel_interp));
             (*handle)->set_property("loadedExtensions_S", slint::interpreter::Value(extensionsModel_interp));
             (*handle)->set_property("rawApps_S", slint::interpreter::Value(rawAppsModel_interp));
-            (*handle)->set_property("timelineEvents_S", slint::interpreter::Value(timelineEventsModel_interp));
+            (*handle)->set_property("timelineBlocks_S", slint::interpreter::Value(timelineBlocksModel_interp));
+            (*handle)->set_property("timelineMarkers_S", slint::interpreter::Value(timelineMarkersModel_interp));
         }
     });
 
@@ -383,21 +387,36 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
 
                 TimelineManager::updateTimeline(preset, startH, endH);
 
-                std::vector<TimelineEvent> slintVec_Timeline;
+                auto getAppColor = [](const std::string& appName) -> slint::Color {
+                    float h = static_cast<float>((appName.length() * 47) % 360);
+                    return slint::Color::from_hsva(h, 0.75f, 0.85f, 1.0f);
+                };
+
+                std::vector<TimelineBlock> slintVec_Timeline;
+                std::vector<TimelineMarker> slintVec_TimelineMarkers;
                 {
                     std::lock_guard<std::mutex> lock(AppState::timelineMutex);
                     for (const auto& item : AppState::timelineEvents)
                     {
-                        slintVec_Timeline.push_back(TimelineEvent{
+                        slintVec_Timeline.push_back(TimelineBlock{
+                            static_cast<float>(item.x),
+                            static_cast<float>(item.width),
+                            getAppColor(item.appName),
                             slint::SharedString(item.appName),
-                            slint::SharedString(item.startTime),
-                            slint::SharedString(item.endTime),
                             slint::SharedString(item.duration),
-                            static_cast<float>(item.durationMs)
+                            slint::SharedString(item.timeRange)
+                        });
+                    }
+                    for (const auto& m : AppState::timelineMarkers)
+                    {
+                        slintVec_TimelineMarkers.push_back(TimelineMarker{
+                            static_cast<float>(m.x),
+                            slint::SharedString(m.label)
                         });
                     }
                 }
-                syncModel(timelineEventsModel, slintVec_Timeline);
+                syncModel(timelineBlocksModel, slintVec_Timeline);
+                syncModel(timelineMarkersModel, slintVec_TimelineMarkers);
             }
     });
 
@@ -724,21 +743,36 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
 
             TimelineManager::updateTimeline(preset, startH, endH);
 
+            auto getAppColor = [](const std::string& appName) -> slint::Color {
+                float h = static_cast<float>((appName.length() * 47) % 360);
+                return slint::Color::from_hsva(h, 0.75f, 0.85f, 1.0f);
+            };
+
             std::vector<slint::interpreter::Value> slintVec_Timeline;
+            std::vector<slint::interpreter::Value> slintVec_TimelineMarkers;
             {
                 std::lock_guard<std::mutex> lock(AppState::timelineMutex);
                 for (const auto& item : AppState::timelineEvents)
                 {
                     slint::interpreter::Struct entry;
+                    entry.set_field("x", slint::interpreter::Value(item.x));
+                    entry.set_field("width", slint::interpreter::Value(item.width));
+                    entry.set_field("color", slint::interpreter::Value(getAppColor(item.appName)));
                     entry.set_field("appName", slint::interpreter::Value(slint::SharedString(item.appName)));
-                    entry.set_field("startTime", slint::interpreter::Value(slint::SharedString(item.startTime)));
-                    entry.set_field("endTime", slint::interpreter::Value(slint::SharedString(item.endTime)));
                     entry.set_field("duration", slint::interpreter::Value(slint::SharedString(item.duration)));
-                    entry.set_field("duration_ms", slint::interpreter::Value(item.durationMs));
+                    entry.set_field("timeRange", slint::interpreter::Value(slint::SharedString(item.timeRange)));
                     slintVec_Timeline.push_back(slint::interpreter::Value(entry));
                 }
+                for (const auto& m : AppState::timelineMarkers)
+                {
+                    slint::interpreter::Struct entry;
+                    entry.set_field("x", slint::interpreter::Value(m.x));
+                    entry.set_field("label", slint::interpreter::Value(slint::SharedString(m.label)));
+                    slintVec_TimelineMarkers.push_back(slint::interpreter::Value(entry));
+                }
             }
-            syncModel(timelineEventsModel_interp, slintVec_Timeline);
+            syncModel(timelineBlocksModel_interp, slintVec_Timeline);
+            syncModel(timelineMarkersModel_interp, slintVec_TimelineMarkers);
         }
     });
 

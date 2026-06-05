@@ -31,10 +31,16 @@ export struct AppGoalData {
     goal_remaining: string,
 }
 
-export struct TimelineEvent {
+export struct TimelineBlock {
+    x: float,
+    width: float,
+    color: color,
     appName: string,
-    startTime: string,
-    endTime: string,
     duration: string,
-    duration_ms: float,
+    timeRange: string,
+}
+
+export struct TimelineMarker {
+    x: float,
+    label: string,
 }

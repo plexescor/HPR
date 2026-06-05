@@ -88,7 +88,8 @@ class UiModelManager
         std::shared_ptr<slint::VectorModel<SwitchHistory>> switchHistoryModel;
         std::shared_ptr<slint::VectorModel<LoadedExtension_S>> extensionsModel;
         std::shared_ptr<slint::VectorModel<AppGoalData>> rawAppsModel;
-        std::shared_ptr<slint::VectorModel<TimelineEvent>> timelineEventsModel;
+        std::shared_ptr<slint::VectorModel<TimelineBlock>> timelineBlocksModel;
+        std::shared_ptr<slint::VectorModel<TimelineMarker>> timelineMarkersModel;
 
         // Middle men
         // std::map<std::string, long> translatedTimeLog;
@@ -102,6 +103,7 @@ class UiModelManager
         std::shared_ptr<slint::VectorModel<slint::interpreter::Value>> switchHistoryModel_interp;
         std::shared_ptr<slint::VectorModel<slint::interpreter::Value>> extensionsModel_interp;
         std::shared_ptr<slint::VectorModel<slint::interpreter::Value>> rawAppsModel_interp;
-        std::shared_ptr<slint::VectorModel<slint::interpreter::Value>> timelineEventsModel_interp;
+        std::shared_ptr<slint::VectorModel<slint::interpreter::Value>> timelineBlocksModel_interp;
+        std::shared_ptr<slint::VectorModel<slint::interpreter::Value>> timelineMarkersModel_interp;
 
 };  

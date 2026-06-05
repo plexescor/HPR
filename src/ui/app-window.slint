@@ -12,7 +12,7 @@ import { HistoryRangeView } from "./history-range-view.slint";
 import { TimelineView } from "./timeline-view.slint";
 
 
-import { TimeLog, SwitchHistory, TimeLog_Tab, TimeLog_Project, AppGoalData, TimelineEvent } from "./types.slint";
+import { TimeLog, SwitchHistory, TimeLog_Tab, TimeLog_Project, AppGoalData, TimelineBlock, TimelineMarker } from "./types.slint";
 
 
 // ── Main Window ──────────────────────────────────────────────────────────────
@@ -50,10 +50,13 @@ export component MainWindow inherits Window {
     in property <[LoadedExtension_S]> loadedExtensions_S;
     in property <float>             trackedTime_Project_S;
     in property <[AppGoalData]>          rawApps_S;
-    in property <[TimelineEvent]>        timelineEvents_S;
+    in property <[TimelineBlock]>        timelineBlocks_S;
     in-out property <int>                timelinePresetHours: 24;
     in-out property <int>                timelineStartHour: 0;
     in-out property <int>                timelineEndHour: 24;
+    in property <[TimelineMarker]>       timelineMarkers_S;
+    in-out property <float>              timelineZoomFactor: 1.0;
+
 
 
 
@@ -308,10 +311,12 @@ export component MainWindow inherits Window {
             }
             if active-view == "TIMELINE" : TimelineView {
                 vertical-stretch: 1;
-                timelineEvents: root.timelineEvents_S;
+                timelineBlocks: root.timelineBlocks_S;
                 timelinePresetHours <=> root.timelinePresetHours;
                 timelineStartHour <=> root.timelineStartHour;
                 timelineEndHour <=> root.timelineEndHour;
+                timelineMarkers: root.timelineMarkers_S;
+                timelineZoomFactor <=> root.timelineZoomFactor;
             }
 
         }

@@ -73,11 +73,11 @@ namespace AppState {
     };
 
     struct TimelineEventInternal {
+        double x;
+        double width;
         std::string appName;
-        std::string startTime;
-        std::string endTime;
         std::string duration;
-        double durationMs;
+        std::string timeRange;
     };
 
     extern AppState state;
@@ -100,4 +100,11 @@ namespace AppState {
 
     extern std::vector<TimelineEventInternal> timelineEvents;
     extern std::mutex timelineMutex;
+
+    struct TimelineMarkerInternal {
+        double x;
+        std::string label;
+    };
+    extern std::vector<TimelineMarkerInternal> timelineMarkers;
 }
+

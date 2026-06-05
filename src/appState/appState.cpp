@@ -20,3 +20,5 @@ std::condition_variable AppState::historyLoadedCV;
 
 std::vector<AppState::TimelineEventInternal> AppState::timelineEvents;
 std::mutex AppState::timelineMutex;
+
+std::vector<AppState::TimelineMarkerInternal> AppState::timelineMarkers;
