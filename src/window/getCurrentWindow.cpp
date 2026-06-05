@@ -126,7 +126,8 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 		else if (lowerWindowName.contains("chrome") 
 		|| lowerWindowName.contains("edge")
 		|| lowerWindowName.contains("firefox")
-		|| lowerWindowName.contains("brave"))
+		|| lowerWindowName.contains("brave")
+		|| lowerWindowName.contains("zen"))
 		{
 			tab = getCurrentTitle();
 		}
@@ -198,7 +199,7 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 					return std::tolower(c); 
 				});
 
-			if (!tab.empty() && (lowerTabName.contains("chrome") || lowerTabName.contains("edge") || lowerTabName.contains("firefox") || lowerTabName.contains("brave")))
+			if (!tab.empty() && (lowerTabName.contains("chrome") || lowerTabName.contains("edge") || lowerTabName.contains("firefox") || lowerTabName.contains("brave") || lowerTabName.contains("zen")))
 			{
 				AppState::state.timeLog_PerTab[tab] +=
 				std::chrono::duration_cast<std::chrono::milliseconds>(elapsed)
