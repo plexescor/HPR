@@ -30,6 +30,13 @@
 
 ---
 
+<p align="center">
+  <em>"HPR is an excellent tool for time management on Linux! It far outweighs any other option available and is developing very quickly! I highly recommend it!"</em><br/>
+  <sub>— <a href="https://github.com/dotsupershow">@dotsupershow</a>, Niri user</sub>
+</p>
+
+---
+
 > [!IMPORTANT]
 > **HPR is fully free and open source.**
 > Every feature — current and future — is available to everyone at no cost. If HPR saves you time or you want to support continued development, a Ko-fi donation goes a long way.
