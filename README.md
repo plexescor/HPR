@@ -1,6 +1,3 @@
-<p align="center">
-  <img src="./assetsgithub/banner.png" alt="HPR Banner" width="800"/>
-</p>
 
 <p align="center">
   <a href="https://ko-fi.com/plexescor">
