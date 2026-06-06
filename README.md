@@ -5,7 +5,7 @@
   </a>
 </p>
 
->Consider supporting me so i can buy a macbook and support this app on macos also! :)
+> HPR is built solo by a 16-year-old developer(me) on a dying and freezing laptop. Every feature you see was designed, coded, and shipped by one person. A donation helps me replace my failing hardware and keep HPR alive, and if I hit my goal, I can add macOS support too.
 
 <p align="center">
   <img src="./assets/logo_1254png.png" alt="HPR Logo" width="300"/>
