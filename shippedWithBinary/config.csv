@@ -47,3 +47,6 @@ pattern-focus-min-session-ms,60000
 
 # allow-custom-backends -> allow dynamic custom tracking backends registered via Lua extensions (default false)
 allow-custom-backends,false
+
+# headless-mode -> start in the background without displaying the UI window initially (default false)
+headless-mode,false

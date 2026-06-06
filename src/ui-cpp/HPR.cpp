@@ -293,7 +293,11 @@ void HPR::run()
         });
     #endif
 
-    ui->show();
+    bool headless = AppState::configManager.getConfig("headless-mode", false);
+    if (!headless)
+    {
+        ui->show();
+    }
 
     #ifdef _WIN32
     // post to event loop so it runs AFTER the window is actually visible
