@@ -407,6 +407,15 @@ void HPRInterpreter::run()
     {
         inst->show();
     }
+    else
+    {
+        inst->show();
+        auto weak = slint::ComponentWeakHandle<slint::interpreter::ComponentInstance>(inst);
+        slint::invoke_from_event_loop([weak]() {
+            if (auto handle = weak.lock())
+                (*handle)->hide();
+        });
+    }
 
     #ifdef _WIN32
     // post to event loop so it runs AFTER the window is actually visible

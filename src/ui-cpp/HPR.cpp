@@ -296,7 +296,17 @@ void HPR::run()
     bool headless = AppState::configManager.getConfig("headless-mode", false);
     if (!headless)
     {
+        std::cout << "Showing ui\n";
         ui->show();
+    }
+    else
+    {
+        ui->show();
+        auto weak = slint::ComponentWeakHandle<MainWindow>(ui);
+        slint::invoke_from_event_loop([weak]() {
+            if (auto handle = weak.lock())
+                (*handle)->hide();
+        });
     }
 
     #ifdef _WIN32
