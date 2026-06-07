@@ -1,3 +1,12 @@
+> [!NOTE]
+> **A Rust rewrite ([hpr-rs](https://github.com/plexescor/hpr-rs)) is in progress.**
+> 
+> Honest context: HPR's C++ codebase has grown to ~14,000 lines in roughly a month of solo development. Around 40% of that was AI-assisted — specifically the more complex subsystems like the pattern analysis engine, EventHub, and parts of the extension manager. The code works and is stable, but I don't fully understand every line of it, and that's not something I'm comfortable with long-term.
+> 
+> The Rust rewrite exists to fix that. Every line of hpr-rs will be written and understood by me. No AI-generated logic, no load-bearing code I can't explain. Rust also fixes real issues the C++ build has — Slint's Rust API is its native home, the Windows build has a known Slint deadlock under specific conditions, and Cargo eliminates the CMake dependency hell entirely.
+> 
+> The C++ HPR is stable and will keep receiving bug fixes. Major new features are paused until hpr-rs reaches parity. If you want to follow the rewrite, watch [hpr-rs](https://github.com/plexescor/hpr-rs).
+
 
 <p align="center">
   <a href="https://ko-fi.com/plexescor">
