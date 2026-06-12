@@ -1,12 +1,11 @@
 > [!NOTE]
-> **A Rust rewrite ([HPR-RS](https://github.com/plexescor/HPR=RS)) is in progress.**
-> 
-> Honest context: HPR's C++ codebase has grown to ~14,000 lines in roughly a month of solo development. Around 40% of that was AI-assisted — specifically the more complex subsystems like the pattern analysis engine, EventHub, and parts of the extension manager. The code works and is stable, but I don't fully understand every line of it, and that's not something I'm comfortable with long-term.
-> 
-> The Rust rewrite exists to fix that. Every line of hpr-rs will be written and understood by me. No AI-generated logic, no load-bearing code I can't explain. Rust also fixes real issues the C++ build has — Slint's Rust API is its native home, the Windows build has a known Slint deadlock under specific conditions, and Cargo eliminates the CMake dependency hell entirely.
-> 
-> The C++ HPR is stable and will keep receiving bug fixes. Major new features are paused until hpr-rs reaches parity. If you want to follow the rewrite, watch [HPR-RS](https://github.com/plexescor/HPR-RS).
-
+> **HPR development is currently paused.**
+>
+> My only development machine has fully died — motherboard damage from years of electrical stress that progressively damaged the VRM and RAM. The repair costs 25k INR (~$300) which I can't afford right now. I'm a 16-year-old solo developer with no income. HPR is completely stalled until I can get the hardware situation resolved.
+>
+> A Rust rewrite (hpr-rs) was in progress before the machine died. The C++ codebase is stable and the last pushed version works, but no new features or bug fixes are possible until I have a working machine again.
+>
+> If HPR has been useful to you, a Ko-fi donation directly goes toward getting development back online. I'm not going to pretend otherwise.
 
 <p align="center">
   <a href="https://ko-fi.com/plexescor">
@@ -14,7 +13,7 @@
   </a>
 </p>
 
-> HPR is built solo by a 16-year-old developer(me) on a dying and freezing laptop. Every feature you see was designed, coded, and shipped by one person. A donation helps me replace my failing hardware and keep HPR alive, and if I hit my goal, I can add macOS support too.
+> HPR is built solo by a 16-year-old developer in India. My development laptop has fully died and I can't afford the repair. Every donation goes directly toward getting HPR back into active development.
 
 <p align="center">
   <img src="./assets/logo_1254png.png" alt="HPR Logo" width="300"/>
