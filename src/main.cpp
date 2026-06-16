@@ -11,16 +11,22 @@
 #include "appState.hpp"
 #include "limitsManager.hpp"
 #include "timelineManager.hpp"
+#include "singleInstance.hpp"
 
 #ifdef _WIN32
 	#include <windows.h>
 
 	int WINAPI WinMain(
     	HINSTANCE hInstance,
-   		HINSTANCE hPrevInstance,
+    	HINSTANCE hPrevInstance,
     	LPSTR lpCmdLine,
     	int nShowCmd)
 	{
+		if (!SingleInstance::getInstance().checkAndNotify())
+		{
+			return 0;
+		}
+
 		DatabaseManager dbm;
 		dbm.run();
 
@@ -61,6 +67,10 @@
 				app.hide();
 			};
 
+			SingleInstance::getInstance().onShow([&]() {
+				app.show();
+			});
+
 			//GIVE EXTENSION MANAGER FULL ACCESS TO EVERY OBJECT PRESENT
 			ext.dbManager = &dbm;
 			ext.trayManager = &tray;
@@ -89,6 +99,10 @@
 				app.hide();
 			};
 
+			SingleInstance::getInstance().onShow([&]() {
+				app.show();
+			});
+
 			//GIVE EXTENSION MANAGER FULL ACCESS TO EVERY OBJECT PRESENT
 			ext.dbManager = &dbm;
 			ext.trayManager = &tray;
@@ -102,12 +116,18 @@
 			app.run();//blocking call, run on main
 		}
 
+		SingleInstance::getInstance().shutdown();
 		return 0;
 	}
 
 #else
 	int main()
 	{
+		if (!SingleInstance::getInstance().checkAndNotify())
+		{
+			return 0;
+		}
+
 		//Check for hardware-acceleration flag
 		//DEV NOTE: if you are on hyprland, if HA is on, the ram usage of HPR in BTOP++ can be ~250mb
 		//Its not true, idk why but hyprland counts the memory used by libllvm, livnvidia and stuff
@@ -154,6 +174,10 @@
 				app.hide();
 			};
 
+			SingleInstance::getInstance().onShow([&]() {
+				app.show();
+			});
+
 			//GIVE EXTENSION MANAGER FULL ACCESS TO EVERY OBJECT PRESENT
 			ext.dbManager = &dbm;
 			ext.trayManager = &tray;
@@ -183,6 +207,10 @@
 				app.hide();
 			};
 
+			SingleInstance::getInstance().onShow([&]() {
+				app.show();
+			});
+
 			//GIVE EXTENSION MANAGER FULL ACCESS TO EVERY OBJECT PRESENT
 			ext.dbManager = &dbm;
 			ext.trayManager = &tray;
@@ -198,6 +226,7 @@
 			app.run();//blocking call, run on main
 		}
 
+		SingleInstance::getInstance().shutdown();
 		return 0;
 	}
 #endif

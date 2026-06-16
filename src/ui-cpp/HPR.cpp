@@ -45,24 +45,6 @@ HPR::~HPR()
 
 void HPR::show()
 {
-    // This sets the title bar icon on windows
-    // 🖕 windows and microslop
-    #ifdef _WIN32
-        HWND hwnd = FindWindowW(nullptr, L"HPR");
-        if (hwnd) {
-            HICON hIconBig = (HICON)LoadImage(
-                GetModuleHandle(NULL), MAKEINTRESOURCE(1),
-                IMAGE_ICON, 32, 32, LR_SHARED
-            );
-            HICON hIconSmall = (HICON)LoadImage(
-                GetModuleHandle(NULL), MAKEINTRESOURCE(1),
-                IMAGE_ICON, 16, 16, LR_SHARED
-            );
-            if (hIconBig)   SendMessage(hwnd, WM_SETICON, ICON_BIG,   (LPARAM)hIconBig);
-            if (hIconSmall) SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIconSmall);
-        }
-    #endif
-    
     auto weak = slint::ComponentWeakHandle<MainWindow>(ui);
 
     slint::invoke_from_event_loop([weak]()
@@ -70,6 +52,24 @@ void HPR::show()
         if (auto handle = weak.lock()) 
         {
             (*handle)->show();
+            #ifdef _WIN32
+                HWND hwnd = FindWindowW(nullptr, L"HPR");
+                if (hwnd) {
+                    HICON hIconBig = (HICON)LoadImage(
+                        GetModuleHandle(NULL), MAKEINTRESOURCE(1),
+                        IMAGE_ICON, 32, 32, LR_SHARED
+                    );
+                    HICON hIconSmall = (HICON)LoadImage(
+                        GetModuleHandle(NULL), MAKEINTRESOURCE(1),
+                        IMAGE_ICON, 16, 16, LR_SHARED
+                    );
+                    if (hIconBig)   SendMessage(hwnd, WM_SETICON, ICON_BIG,   (LPARAM)hIconBig);
+                    if (hIconSmall) SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIconSmall);
+                    ShowWindow(hwnd, SW_SHOW);
+                    ShowWindow(hwnd, SW_RESTORE);
+                    SetForegroundWindow(hwnd);
+                }
+            #endif
         } });
 }
 
