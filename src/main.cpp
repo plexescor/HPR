@@ -12,6 +12,7 @@
 #include "limitsManager.hpp"
 #include "timelineManager.hpp"
 #include "singleInstance.hpp"
+#include "autostartManager.hpp"
 
 #ifdef _WIN32
 	#include <windows.h>
@@ -26,6 +27,9 @@
 		{
 			return 0;
 		}
+
+		bool isAutostart = AutostartManager::isEnabled();
+		AppState::configManager.setConfig("autostart", isAutostart);
 
 		DatabaseManager dbm;
 		dbm.run();
@@ -127,6 +131,9 @@
 		{
 			return 0;
 		}
+
+		bool isAutostart = AutostartManager::isEnabled();
+		AppState::configManager.setConfig("autostart", isAutostart);
 
 		//Check for hardware-acceleration flag
 		//DEV NOTE: if you are on hyprland, if HA is on, the ram usage of HPR in BTOP++ can be ~250mb

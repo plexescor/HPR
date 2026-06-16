@@ -63,6 +63,8 @@ export component MainWindow inherits Window {
 
     // Theme properties
     in property <string>          themeMode_S;
+    in property <bool>            autostart_S;
+    in property <bool>            headless_S;
     in-out property <bool>        isDarkMode <=> Palette.is-dark;
 
     init => {
@@ -333,6 +335,8 @@ export component MainWindow inherits Window {
             }
             if active-view == "SETTINGS" : SettingsView {
                 themeMode_S: root.themeMode_S;
+                autostart_S: root.autostart_S;
+                headless_S: root.headless_S;
                 setConfig(param, val) => { root.setConfig(param, val); }
             }
 

@@ -12,6 +12,7 @@
 #endif
 
 #include "configManager.hpp"
+#include "autostartManager.hpp"
 
 ConfigManager::ConfigManager() { loadConfig(); }
 
@@ -159,6 +160,18 @@ void ConfigManager::setConfig(const std::string paramName, const T& value)
         config.push_back({paramName, valueStr});
     }
     saveConfig();
+
+    if (paramName == "autostart" || paramName == "headless-mode")
+    {
+        bool autostartVal = false;
+        bool headlessVal = false;
+        for (const auto& [param, val] : config)
+        {
+            if (param == "autostart") autostartVal = (val == "true");
+            if (param == "headless-mode") headlessVal = (val == "true");
+        }
+        AutostartManager::setEnabled(autostartVal, headlessVal);
+    }
 }
 
 // Explicit template instantiations

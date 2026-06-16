@@ -1,6 +1,7 @@
 import { Card } from "./card.slint";
 import { SectionHeader } from "./section-header.slint";
 import { Palette } from "./palette.slint";
+import { Switch } from "std-widgets.slint";
 
 component ThemeOptionButton inherits Rectangle {
     in property <string> label;
@@ -34,6 +35,8 @@ component ThemeOptionButton inherits Rectangle {
 
 export component SettingsView {
     in property <string> themeMode_S;
+    in property <bool> autostart_S;
+    in property <bool> headless_S;
     callback setConfig(string, string);
 
     VerticalLayout {
@@ -104,6 +107,82 @@ export component SettingsView {
                             clicked => {
                                 root.setConfig("theme", "light");
                             }
+                        }
+                    }
+                }
+            }
+        }
+
+        Card {
+            VerticalLayout {
+                padding: 24px;
+                spacing: 16px;
+
+                Text {
+                    text: "SYSTEM BEHAVIOR";
+                    font-size: 8px;
+                    font-weight: 700;
+                    letter-spacing: 2.5px;
+                    color: Palette.text-muted;
+                }
+
+                HorizontalLayout {
+                    alignment: space-between;
+                    spacing: 12px;
+
+                    VerticalLayout {
+                        alignment: center;
+                        spacing: 4px;
+                        Text {
+                            text: "Autostart on Boot";
+                            font-size: 13px;
+                            font-weight: 600;
+                            color: Palette.text-primary;
+                        }
+                        Text {
+                            text: "Automatically launch HPR when you log into your system";
+                            font-size: 11px;
+                            color: Palette.text-secondary;
+                        }
+                    }
+
+                    Switch {
+                        checked: root.autostart_S;
+                        toggled => {
+                            root.setConfig("autostart", self.checked ? "true" : "false");
+                        }
+                    }
+                }
+
+                Rectangle {
+                    height: 1px;
+                    background: Palette.divider;
+                }
+
+                HorizontalLayout {
+                    alignment: space-between;
+                    spacing: 12px;
+
+                    VerticalLayout {
+                        alignment: center;
+                        spacing: 4px;
+                        Text {
+                            text: "Start Headless";
+                            font-size: 13px;
+                            font-weight: 600;
+                            color: Palette.text-primary;
+                        }
+                        Text {
+                            text: "Start hidden in the system tray without opening the main window";
+                            font-size: 11px;
+                            color: Palette.text-secondary;
+                        }
+                    }
+
+                    Switch {
+                        checked: root.headless_S;
+                        toggled => {
+                            root.setConfig("headless-mode", self.checked ? "true" : "false");
                         }
                     }
                 }

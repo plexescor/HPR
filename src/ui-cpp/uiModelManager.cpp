@@ -324,8 +324,12 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
     {
 
         if (auto handle = weak.lock()) {
+                bool autostartVal = AppState::configManager.getConfig<bool>("autostart", false);
+                bool headlessVal = AppState::configManager.getConfig<bool>("headless-mode", false);
                 (*handle)->set_themeMode_S(slint::SharedString(theme));
                 (*handle)->set_isDarkMode(isDark);
+                (*handle)->set_autostart_S(autostartVal);
+                (*handle)->set_headless_S(headlessVal);
                 (*handle)->set_windowName_S(slint::SharedString(currentWindowName));
 
                 (*handle)->set_trackedTime_S((float)totalTrackedTime);
@@ -697,6 +701,8 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
     {
         if (auto handle = weak.lock())
         {
+            bool autostartVal = AppState::configManager.getConfig<bool>("autostart", false);
+            bool headlessVal = AppState::configManager.getConfig<bool>("headless-mode", false);
             (*handle)->set_property(
                 "themeMode_S",
                 slint::interpreter::Value(slint::SharedString(theme)));
@@ -704,6 +710,14 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
             (*handle)->set_property(
                 "isDarkMode",
                 slint::interpreter::Value(isDark));
+
+            (*handle)->set_property(
+                "autostart_S",
+                slint::interpreter::Value(autostartVal));
+
+            (*handle)->set_property(
+                "headless_S",
+                slint::interpreter::Value(headlessVal));
 
             (*handle)->set_property(
                 "windowName_S",
