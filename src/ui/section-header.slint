@@ -1,3 +1,5 @@
+import { Palette } from "./palette.slint";
+
 // ── Section header ───────────────────────────────────────────────────────────
 export component SectionHeader inherits Rectangle {
     in property <string> label;
@@ -14,13 +16,13 @@ export component SectionHeader inherits Rectangle {
             font-size: 9px;
             font-weight: 700;
             letter-spacing: 2.5px;
-            color: #ffffff40;
+            color: Palette.text-muted;
             vertical-alignment: center;
         }
 
         Rectangle {
             height: 1px;
-            background: #ffffff08;
+            background: Palette.divider;
             vertical-stretch: 0;
             y: parent.height / 2;
         }

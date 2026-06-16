@@ -1,3 +1,5 @@
+import { Palette } from "./palette.slint";
+
 // ── Switch row ───────────────────────────────────────────────────────────────
 export component SwitchRow inherits Rectangle {
     in property <string> from-window;
@@ -9,7 +11,7 @@ export component SwitchRow inherits Rectangle {
     border-radius: 5px;
     clip: true;
 
-    background: ta.has-hover ? #ffffff0e : (is-even ? #ffffff03 : transparent);
+    background: ta.has-hover ? Palette.row-bg-hover : (is-even ? Palette.row-bg-even : transparent);
     animate background { duration: 100ms; easing: ease-out; }
 
     Rectangle {
@@ -43,7 +45,7 @@ export component SwitchRow inherits Rectangle {
 
             Text {
                 text: "→";
-                color: #ffffff18;
+                color: Palette.text-muted;
                 font-size: 11px;
                 vertical-alignment: center;
             }
@@ -61,7 +63,7 @@ export component SwitchRow inherits Rectangle {
 
         Text {
             text: timestamp;
-            color: #ffffff38;
+            color: Palette.text-dim;
             font-size: 10px;
             letter-spacing: 0.3px;
             vertical-alignment: center;

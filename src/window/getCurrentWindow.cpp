@@ -110,9 +110,10 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 			continue;
 		}
 
+		std::string title = getCurrentTitle();
 		{
 			std::lock_guard<std::mutex> lock(AppState::stateMutex);
-			AppState::state.currentTitle = getCurrentTitle();
+			AppState::state.currentTitle = title;
 		}
 		
 		if (lowerWindowName.contains("code") 

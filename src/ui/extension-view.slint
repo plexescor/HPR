@@ -1,5 +1,6 @@
 import { Card } from "./card.slint";
 import { SectionHeader } from "./section-header.slint";
+import { Palette } from "./palette.slint";
 
 export struct LoadedExtension_S {
     author-name: string,
@@ -90,7 +91,7 @@ export component ExtensionsView {
                             font-size: 9px;
                             font-weight: 700;
                             letter-spacing: 2.5px;
-                            color: #ffffff40;
+                            color: Palette.text-muted;
                             vertical-alignment: center;
                         }
                     }

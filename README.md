@@ -1,19 +1,20 @@
-> [!NOTE]
-> **HPR development is currently paused.**
->
-> My only development machine has fully died — motherboard damage from years of electrical stress that progressively damaged the VRM and RAM. The repair costs 25k INR (~$300) which I can't afford right now. I'm a 16-year-old solo developer with no income. HPR is completely stalled until I can get the hardware situation resolved.
->
-> A Rust rewrite (hpr-rs) was in progress before the machine died. The C++ codebase is stable and the last pushed version works, but no new features or bug fixes are possible until I have a working machine again.
->
-> If HPR has been useful to you, a Ko-fi donation directly goes toward getting development back online. I'm not going to pretend otherwise.
-
 <p align="center">
   <a href="https://ko-fi.com/plexescor">
     <img src="https://ko-fi.com/img/githubbutton_sm.svg" alt="Support on Ko-fi" />
   </a>
 </p>
 
-> HPR is built solo by a 16-year-old developer in India. My development laptop has fully died and I can't afford the repair. Every donation goes directly toward getting HPR back into active development.
+> HPR is built solo by a 16-year-old developer in India. If HPR has been useful to you, a Ko-fi donation is highly appreciated to support continued development. A Rust rewrite (hpr-rs) is also currently in progress!
+
+---
+
+## Sponsors & Supporters
+
+A huge thank you to our supporters keeping HPR active!
+
+- **[Jesse Kramer](https://ko-fi.com/jessekramer)** ($20) — *First Supporter* 💖
+
+---
 
 <p align="center">
   <img src="./assets/logo_1254png.png" alt="HPR Logo" width="300"/>

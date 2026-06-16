@@ -315,11 +315,17 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
     if (!ui.has_value()) {
         return; //skip update if ui handle aint ready
     }
+
+    std::string theme = AppState::configManager.getConfig<std::string>("theme", "dark");
+    bool isDark = (theme != "light");
+
     slint::ComponentWeakHandle<MainWindow> weak(ui.value());
-    slint::invoke_from_event_loop([weak, slintVec_TimeLog, slintVec_TimeLog_Tab, slintVec_TimeLog_Project, slintVec_SwitchHistory, slintVec_RawApps, totalTrackedTime, totalTrackedTime_Tab, totalTrackedTime_Project, currentWindowName, this]()
+    slint::invoke_from_event_loop([weak, slintVec_TimeLog, slintVec_TimeLog_Tab, slintVec_TimeLog_Project, slintVec_SwitchHistory, slintVec_RawApps, totalTrackedTime, totalTrackedTime_Tab, totalTrackedTime_Project, currentWindowName, theme, isDark, this]()
     {
 
         if (auto handle = weak.lock()) {
+                (*handle)->set_themeMode_S(slint::SharedString(theme));
+                (*handle)->set_isDarkMode(isDark);
                 (*handle)->set_windowName_S(slint::SharedString(currentWindowName));
 
                 (*handle)->set_trackedTime_S((float)totalTrackedTime);
@@ -670,6 +676,8 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
         return;
     }
 
+    std::string theme = AppState::configManager.getConfig<std::string>("theme", "dark");
+    bool isDark = (theme != "light");
 
     slint::ComponentWeakHandle<slint::interpreter::ComponentInstance> weak(ui_interp.value());
     slint::invoke_from_event_loop(
@@ -683,10 +691,20 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
         totalTrackedTime_Tab,
         totalTrackedTime_Project,
         currentWindowName,
+        theme,
+        isDark,
         this]()
     {
         if (auto handle = weak.lock())
         {
+            (*handle)->set_property(
+                "themeMode_S",
+                slint::interpreter::Value(slint::SharedString(theme)));
+
+            (*handle)->set_property(
+                "isDarkMode",
+                slint::interpreter::Value(isDark));
+
             (*handle)->set_property(
                 "windowName_S",
                 slint::interpreter::Value(slint::SharedString(currentWindowName)));

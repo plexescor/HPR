@@ -1,3 +1,5 @@
+import { Palette } from "./palette.slint";
+
 // ── App row with horizontal bar ───────────────────────────────────────────────
 export component AppRow inherits Rectangle {
     in property <string> app-name;
@@ -12,7 +14,7 @@ export component AppRow inherits Rectangle {
     border-radius: 5px;
     clip: true;
 
-    background: ta.has-hover ? #ffffff0e : (is-even ? #ffffff03 : transparent);
+    background: ta.has-hover ? Palette.row-bg-hover : (is-even ? Palette.row-bg-even : transparent);
     animate background { duration: 100ms; easing: ease-out; }
 
     VerticalLayout {
@@ -27,7 +29,7 @@ export component AppRow inherits Rectangle {
 
             Text {
                 text: app-name;
-                color: ta.has-hover ? #e2e8f0 : #94a3b8;
+                color: ta.has-hover ? Palette.text-primary : Palette.text-secondary;
                 font-size: 12px;
                 vertical-alignment: center;
                 animate color { duration: 100ms; }
@@ -49,7 +51,7 @@ export component AppRow inherits Rectangle {
         Rectangle {
             height: 4px;
             border-radius: 2px;
-            background: #ffffff08;
+            background: Palette.divider;
 
             Rectangle {
                 x: 0;

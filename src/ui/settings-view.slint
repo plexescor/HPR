@@ -1,0 +1,113 @@
+import { Card } from "./card.slint";
+import { SectionHeader } from "./section-header.slint";
+import { Palette } from "./palette.slint";
+
+component ThemeOptionButton inherits Rectangle {
+    in property <string> label;
+    in property <bool> active;
+    callback clicked;
+
+    height: 32px;
+    border-radius: 6px;
+    border-width: 1px;
+    border-color: active ? #38bdf8 : Palette.card-border;
+    background: active ? #38bdf815 : (ta.has-hover ? Palette.row-bg-hover : transparent);
+    
+    animate background { duration: 150ms; }
+    animate border-color { duration: 150ms; }
+
+    Text {
+        text: label;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        color: active ? #38bdf8 : Palette.text-primary;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+
+    ta := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+export component SettingsView {
+    in property <string> themeMode_S;
+    callback setConfig(string, string);
+
+    VerticalLayout {
+        padding: 12px;
+        padding-top: 6px;
+        spacing: 10px;
+
+        HorizontalLayout {
+            alignment: start;
+            vertical-stretch: 0;
+            padding-top: 4px;
+
+            SectionHeader { label: "SETTINGS"; }
+        }
+
+        Card {
+            VerticalLayout {
+                padding: 24px;
+                spacing: 16px;
+
+                Text {
+                    text: "APPEARANCE";
+                    font-size: 8px;
+                    font-weight: 700;
+                    letter-spacing: 2.5px;
+                    color: Palette.text-muted;
+                }
+
+                HorizontalLayout {
+                    alignment: space-between;
+                    spacing: 12px;
+
+                    VerticalLayout {
+                        alignment: center;
+                        spacing: 4px;
+                        Text {
+                            text: "Theme Mode";
+                            font-size: 13px;
+                            font-weight: 600;
+                            color: Palette.text-primary;
+                        }
+                        Text {
+                            text: "Select your preferred visual style for HPR";
+                            font-size: 11px;
+                            color: Palette.text-secondary;
+                        }
+                    }
+
+                    HorizontalLayout {
+                        alignment: end;
+                        spacing: 8px;
+                        width: 180px;
+                        y: (parent.height - self.height) / 2;
+
+                        ThemeOptionButton {
+                            label: "DARK";
+                            active: themeMode_S == "dark";
+                            width: 80px;
+                            clicked => {
+                                root.setConfig("theme", "dark");
+                            }
+                        }
+
+                        ThemeOptionButton {
+                            label: "LIGHT";
+                            active: themeMode_S == "light";
+                            width: 80px;
+                            clicked => {
+                                root.setConfig("theme", "light");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

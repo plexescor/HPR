@@ -131,6 +131,11 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow>& ui,  ExtensionM
         LimitsManager::setGoal(std::string(appName), minutes);
     });
 
+    ui->on_setConfig([](slint::SharedString paramName, slint::SharedString value) 
+    {
+        AppState::configManager.setConfig(std::string(paramName), std::string(value));
+    });
+
     ui->on_loadInsights([this]()
     {
         int days = AppState::configManager.getConfig("pattern-days", 7);
@@ -363,6 +368,20 @@ UiEventBridge::UiEventBridge(
             if (opt_name.has_value() && opt_mins.has_value()) 
             {
                 LimitsManager::setGoal(std::string(opt_name.value()), (int)opt_mins.value());
+            }
+        }
+        return slint::interpreter::Value();
+    });
+
+    ui->set_callback("setConfig", [](auto args) -> slint::interpreter::Value 
+    {
+        if (args.size() > 1) 
+        {
+            auto opt_name = args[0].to_string();
+            auto opt_val = args[1].to_string();
+            if (opt_name.has_value() && opt_val.has_value()) 
+            {
+                AppState::configManager.setConfig(std::string(opt_name.value()), std::string(opt_val.value()));
             }
         }
         return slint::interpreter::Value();

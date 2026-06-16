@@ -1,6 +1,7 @@
 import { Card } from "./card.slint";
 import { SectionHeader } from "./section-header.slint";
 import { LineEdit, DatePickerPopup } from "std-widgets.slint";
+import { Palette } from "./palette.slint";
 
 component PresetButton inherits Rectangle {
     in property <string> text;
@@ -12,10 +13,10 @@ component PresetButton inherits Rectangle {
     border-width: 1px;
     background: selected 
         ? #c084fc25 
-        : (ta.pressed ? #ffffff10 : (ta.has-hover ? #ffffff0a : transparent));
+        : (ta.pressed ? Palette.input-bg-press : (ta.has-hover ? Palette.input-bg-hover : transparent));
     border-color: selected 
         ? #c084fcbb 
-        : (ta.pressed ? #ffffff25 : (ta.has-hover ? #ffffff1c : #ffffff10));
+        : (ta.pressed ? Palette.input-border-hover : (ta.has-hover ? Palette.input-border-hover : Palette.input-border));
 
     animate background { duration: 100ms; }
     animate border-color { duration: 100ms; }
@@ -24,7 +25,7 @@ component PresetButton inherits Rectangle {
         text: root.text;
         color: selected 
             ? #d8b4fe 
-            : (ta.has-hover ? #e2e8f0 : #94a3b8);
+            : (ta.has-hover ? Palette.text-primary : Palette.text-secondary);
         font-size: 11px;
         font-weight: 600;
         horizontal-alignment: center;
@@ -48,10 +49,10 @@ component ViewModeButton inherits Rectangle {
     border-width: 1px;
     background: selected 
         ? #38bdf825 
-        : (ta.pressed ? #ffffff10 : (ta.has-hover ? #ffffff0a : transparent));
+        : (ta.pressed ? Palette.input-bg-press : (ta.has-hover ? Palette.input-bg-hover : transparent));
     border-color: selected 
         ? #38bdf8bb 
-        : (ta.pressed ? #ffffff25 : (ta.has-hover ? #ffffff1c : #ffffff10));
+        : (ta.pressed ? Palette.input-border-hover : (ta.has-hover ? Palette.input-border-hover : Palette.input-border));
 
     animate background { duration: 100ms; }
     animate border-color { duration: 100ms; }
@@ -60,7 +61,7 @@ component ViewModeButton inherits Rectangle {
         text: root.text;
         color: selected 
             ? #7dd3fc 
-            : (ta.has-hover ? #e2e8f0 : #94a3b8);
+            : (ta.has-hover ? Palette.text-primary : Palette.text-secondary);
         font-size: 10px;
         font-weight: 600;
         horizontal-alignment: center;
@@ -79,9 +80,9 @@ component DateIconButton inherits Rectangle {
     width: 28px;
     height: 26px;
     border-radius: 4px;
-    background: ta.pressed ? #ffffff20 : (ta.has-hover ? #ffffff0e : #ffffff07);
+    background: ta.pressed ? Palette.input-bg-press : (ta.has-hover ? Palette.input-bg-hover : Palette.input-bg);
     border-width: 1px;
-    border-color: ta.has-hover ? #ffffff30 : #ffffff15;
+    border-color: ta.has-hover ? Palette.input-border-hover : Palette.input-border;
     animate background { duration: 100ms; }
     animate border-color { duration: 100ms; }
 
@@ -106,11 +107,11 @@ component ConfirmButton inherits Rectangle {
     height: 40px;
     border-radius: 6px;
     background: !enabled 
-        ? #ffffff05 
+        ? Palette.input-bg
         : (ta.pressed ? #10b98145 : (ta.has-hover ? #10b98125 : #10b98112));
     border-width: 1px;
     border-color: !enabled 
-        ? #ffffff10 
+        ? Palette.input-border
         : (ta.has-hover ? #10b98160 : #10b98135);
     animate background { duration: 100ms; }
     animate border-color { duration: 100ms; }
@@ -118,7 +119,7 @@ component ConfirmButton inherits Rectangle {
     Text {
         text: root.text;
         color: !enabled 
-            ? #ffffff20 
+            ? Palette.text-dim
             : (ta.has-hover ? #34d399 : #10b981);
         font-size: 12px;
         font-weight: 700;
@@ -226,7 +227,7 @@ export component HistoryRangeView {
                     spacing: 6px;
                     Text {
                         text: "SELECT SINGULAR DAY (DD-MM-YY)";
-                        color: #ffffff40;
+                        color: Palette.text-muted;
                         font-size: 9px;
                         font-weight: 700;
                         letter-spacing: 1px;
@@ -269,7 +270,7 @@ export component HistoryRangeView {
                     spacing: 6px;
                     Text {
                         text: "VIEW MODE";
-                        color: #ffffff40;
+                        color: Palette.text-muted;
                         font-size: 9px;
                         font-weight: 700;
                         letter-spacing: 1px;
@@ -292,7 +293,7 @@ export component HistoryRangeView {
                 // Divider line
                 Rectangle {
                     height: 1px;
-                    background: #ffffff08;
+                    background: Palette.divider;
                 }
 
                 // 2. Presets Selection
@@ -300,7 +301,7 @@ export component HistoryRangeView {
                     spacing: 6px;
                     Text {
                         text: "PRESET RANGES";
-                        color: #ffffff40;
+                        color: Palette.text-muted;
                         font-size: 9px;
                         font-weight: 700;
                         letter-spacing: 1px;
@@ -351,7 +352,7 @@ export component HistoryRangeView {
                     spacing: 6px;
                     Text {
                         text: "ENTER CUSTOM NUMBER OF DAYS TO LOAD";
-                        color: #ffffff40;
+                        color: Palette.text-muted;
                         font-size: 9px;
                         font-weight: 700;
                         letter-spacing: 1px;
@@ -370,7 +371,7 @@ export component HistoryRangeView {
                 // Divider line
                 Rectangle {
                     height: 1px;
-                    background: #ffffff08;
+                    background: Palette.divider;
                 }
 
                 // 3. Custom Date Range Selection
@@ -378,7 +379,7 @@ export component HistoryRangeView {
                     spacing: 6px;
                     Text {
                         text: "CUSTOM DATE RANGE (DD-MM-YY)";
-                        color: #ffffff40;
+                        color: Palette.text-muted;
                         font-size: 9px;
                         font-weight: 700;
                         letter-spacing: 1px;
@@ -389,7 +390,7 @@ export component HistoryRangeView {
                             spacing: 4px;
                             Text {
                                 text: "Start Date:";
-                                color: #94a3b8;
+                                color: Palette.text-secondary;
                                 font-size: 10px;
                             }
                             HorizontalLayout {
@@ -408,7 +409,7 @@ export component HistoryRangeView {
                             spacing: 4px;
                             Text {
                                 text: "End Date:";
-                                color: #94a3b8;
+                                color: Palette.text-secondary;
                                 font-size: 10px;
                             }
                             HorizontalLayout {

@@ -1,6 +1,7 @@
 import { Card } from "./card.slint";
 import { SectionHeader } from "./section-header.slint";
 import { TimeLog_Tab } from "./types.slint";
+import { Palette } from "./palette.slint";
 
 component TabRow inherits Rectangle {
     in property <string> tab-title;
@@ -14,7 +15,7 @@ component TabRow inherits Rectangle {
     border-radius: 5px;
     clip: true;
 
-    background: ta.has-hover ? #ffffff0e : (is-even ? #ffffff03 : transparent);
+    background: ta.has-hover ? Palette.row-bg-hover : (is-even ? Palette.row-bg-even : transparent);
     animate background { duration: 100ms; easing: ease-out; }
 
     HorizontalLayout {
@@ -24,7 +25,7 @@ component TabRow inherits Rectangle {
 
         Text {
             text: (row-index + 1) + ".";
-            color: #ffffff20;
+            color: Palette.row-number;
             font-size: 10px;
             font-weight: 600;
             vertical-alignment: center;
@@ -49,7 +50,7 @@ component TabRow inherits Rectangle {
             HorizontalLayout {
                 Text {
                     text: tab-title;
-                    color: ta.has-hover ? #e2e8f0 : #94a3b8;
+                    color: ta.has-hover ? Palette.text-primary : Palette.text-secondary;
                     font-size: 12px;
                     vertical-alignment: center;
                     animate color { duration: 100ms; }
@@ -70,7 +71,7 @@ component TabRow inherits Rectangle {
             Rectangle {
                 height: 4px;
                 border-radius: 2px;
-                background: #ffffff08;
+                background: Palette.bar-track;
 
                 Rectangle {
                     x: 0;

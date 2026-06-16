@@ -1,4 +1,4 @@
-import { DatePickerPopup } from "std-widgets.slint";
+import { DatePickerPopup, Palette as StdPalette } from "std-widgets.slint";
 import { LiveDot } from "./live-dot.slint";
 import { SidebarButton } from "./side-bar-button.slint";
 import { DataView } from "./data-view.slint";
@@ -10,6 +10,9 @@ import { AboutView } from "./about-view.slint";
 import { GoalsView } from "./goals-view.slint";
 import { HistoryRangeView } from "./history-range-view.slint";
 import { TimelineView } from "./timeline-view.slint";
+import { SettingsView } from "./settings-view.slint";
+import { Palette } from "./palette.slint";
+
 
 
 import { TimeLog, SwitchHistory, TimeLog_Tab, TimeLog_Project, AppGoalData, TimelineBlock, TimelineMarker } from "./types.slint";
@@ -32,6 +35,7 @@ export component MainWindow inherits Window {
     callback reloadUi;
     callback openReleases;
     callback openIssues;
+    callback setConfig(string, string);
 
     //PLS Donate and dont remove it!
     callback openKofi;
@@ -57,8 +61,17 @@ export component MainWindow inherits Window {
     in property <[TimelineMarker]>       timelineMarkers_S;
     in-out property <float>              timelineZoomFactor: 1.0;
 
+    // Theme properties
+    in property <string>          themeMode_S;
+    in-out property <bool>        isDarkMode <=> Palette.is-dark;
 
+    init => {
+        StdPalette.color-scheme = isDarkMode ? ColorScheme.dark : ColorScheme.light;
+    }
 
+    changed isDarkMode => {
+        StdPalette.color-scheme = isDarkMode ? ColorScheme.dark : ColorScheme.light;
+    }
 
     //Stuff for insights view: 
     in property <string>          mostUsedApp_S;
@@ -92,7 +105,7 @@ export component MainWindow inherits Window {
 
     title: "HPR";
     default-font-size: 13px;
-    background: #07090f;
+    background: Palette.background;
     preferred-width: 780px;
     preferred-height: 600px;
 
@@ -132,12 +145,12 @@ export component MainWindow inherits Window {
             // ── Topbar ───────────────────────────────────────────────────
             Rectangle {
                 height: 46px;
-                background: #07090f;
+                background: Palette.background;
 
                 Rectangle {
                     y: parent.height - 1px;
                     height: 1px;
-                    background: @linear-gradient(90deg, #ffffff00 0%, #ffffff12 40%, #ffffff12 60%, #ffffff00 100%);
+                    background: @linear-gradient(90deg, transparent 0%, Palette.divider 40%, Palette.divider 60%, transparent 100%);
                 }
 
                 HorizontalLayout {
@@ -151,7 +164,7 @@ export component MainWindow inherits Window {
 
                         Text {
                             text: "HPR";
-                            color: #f1f5f9;
+                            color: Palette.text-primary;
                             font-size: 12px;
                             font-weight: 700;
                             letter-spacing: 4px;
@@ -161,13 +174,13 @@ export component MainWindow inherits Window {
                         Rectangle {
                             width: 1px;
                             height: 12px;
-                            background: #ffffff12;
+                            background: Palette.divider;
                             y: (parent.height - self.height) / 2;
                         }
 
                         Text {
                             text: "Human Pattern Recorder";
-                            color: #ffffff40;
+                            color: Palette.text-muted;
                             font-size: 11px;
                             letter-spacing: 0.3px;
                             vertical-alignment: center;
@@ -197,9 +210,9 @@ export component MainWindow inherits Window {
                         height: 26px;
                         width: active-lbl.preferred-width + 30px;
                         border-radius: 13px;
-                        background: #ffffff07;
+                        background: Palette.sidebar-btn-bg;
                         border-width: 1px;
-                        border-color: #ffffff10;
+                        border-color: Palette.sidebar-btn-border;
                         y: (parent.height - self.height) / 2;
 
                         HorizontalLayout {
@@ -214,7 +227,7 @@ export component MainWindow inherits Window {
 
                             active-lbl := Text {
                                 text: windowName_S;
-                                color: #94a3b8;
+                                color: Palette.text-secondary;
                                 font-size: 11px;
                                 font-weight: 500;
                                 vertical-alignment: center;
@@ -318,6 +331,10 @@ export component MainWindow inherits Window {
                 timelineMarkers: root.timelineMarkers_S;
                 timelineZoomFactor <=> root.timelineZoomFactor;
             }
+            if active-view == "SETTINGS" : SettingsView {
+                themeMode_S: root.themeMode_S;
+                setConfig(param, val) => { root.setConfig(param, val); }
+            }
 
         }
 
@@ -335,14 +352,14 @@ export component MainWindow inherits Window {
                 width: 100%;
                 height: 100%;
 
-                background: sidebar-ta.has-hover ? #0d1117cc : transparent;
+                background: sidebar-ta.has-hover ? Palette.sidebar-bg : transparent;
                 animate background { duration: 240ms; easing: ease-in-out; }
 
                 Rectangle {
                     x: parent.width - 1px;
                     width: 1px;
                     height: parent.height;
-                    background: sidebar-ta.has-hover ? #ffffff08 : transparent;
+                    background: sidebar-ta.has-hover ? Palette.sidebar-border : transparent;
                     animate background { duration: 240ms; easing: ease-in-out; }
                 }
 
@@ -353,13 +370,13 @@ export component MainWindow inherits Window {
                     width: 14px;
                     height: 28px;
                     border-radius: 4.5px;
-                    background: #ffffff07;
+                    background: Palette.sidebar-btn-bg;
                     border-width: 1px;
-                    border-color: #ffffff10;
+                    border-color: Palette.sidebar-btn-border;
 
                     Text {
                         text: "›";
-                        color: #ffffff40;
+                        color: Palette.text-muted;
                         font-size: 16px;
                         horizontal-alignment: center;
                         vertical-alignment: center;
@@ -378,67 +395,84 @@ export component MainWindow inherits Window {
 
                     SidebarButton {
                         icon: @image-url("./images/reload.svg");
+                        icon-light: @image-url("./images/reload-light.svg");
                         tip: "Reload UI";
                         clicked => { root.reloadUi(); }
                     }
 
                     SidebarButton {
                         icon: @image-url("./images/goals.svg");
+                        icon-light: @image-url("./images/goals-light.svg");
                         tip: "Manage per app limits and goals";
                         clicked => { root.active-view = "LIMITS"; }
                     }
 
                     SidebarButton {
                         icon: @image-url("./images/calendar.svg");
+                        icon-light: @image-url("./images/calendar-light.svg");
                         tip: "View historical data";
                         clicked => { root.active-view = "HISTORY_RANGE"; }
                     }
 
                     SidebarButton {
                         icon: @image-url("./images/timeline.svg");
+                        icon-light: @image-url("./images/timeline-light.svg");
                         tip: "View day timeline";
                         clicked => { root.active-view = "TIMELINE"; }
                     }
 
                     SidebarButton {
                         icon: @image-url("./images/tab.svg");
+                        icon-light: @image-url("./images/tab-light.svg");
                         tip: "View usage per tab";
                         clicked => { root.active-view = "TAB"; }
                     }
 
                     SidebarButton {
                         icon: @image-url("./images/project.svg");
+                        icon-light: @image-url("./images/project-light.svg");
                         tip: "View usage per project";
                         clicked => { root.active-view = "PROJECT"; }
                     }
 
                     SidebarButton {
                         icon: @image-url("./images/insights.svg");
+                        icon-light: @image-url("./images/insights-light.svg");
                         tip: "View insights";
                         clicked => { root.active-view = "INSIGHTS"; root.loadInsights(); }
                     }
 
                     SidebarButton {
                         icon: @image-url("./images/live.svg");
+                        icon-light: @image-url("./images/live-light.svg");
                         tip: "Switch to live view";
                         clicked => { root.active-view = "DATA" }
                     }
 
                     SidebarButton {
                         icon: @image-url("./images/extension.svg");
+                        icon-light: @image-url("./images/extension-light.svg");
                         tip: "View loaded extensions";
                         clicked => { root.active-view = "EXTENSIONS"; }
                     }
 
+                    SidebarButton {
+                        icon: @image-url("./images/settings.svg");
+                        icon-light: @image-url("./images/settings-light.svg");
+                        tip: "Settings";
+                        clicked => { root.active-view = "SETTINGS"; }
+                    }
 
                     SidebarButton {
                         icon: @image-url("./images/ko-fi.svg");
+                        icon-light: @image-url("./images/ko-fi-light.svg");
                         tip: "Support on Ko-fi";
                         clicked => { root.openKofi(); }
                     }
 
                     SidebarButton {
                         icon: @image-url("./images/about.svg");
+                        icon-light: @image-url("./images/about-light.svg");
                         tip: "About";
                         clicked => { root.active-view = "ABOUT"; }
                     }

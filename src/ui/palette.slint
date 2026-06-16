@@ -1,0 +1,46 @@
+export global Palette {
+    in-out property <bool> is-dark: true;
+    
+    // Core Backgrounds
+    out property <color> background: is-dark ? #07090f : #f8fafc;
+    out property <color> card-background: is-dark ? #12181f : #ffffff;
+    out property <color> card-background-end: is-dark ? #0c1014 : #f1f5f9;
+    out property <color> card-border: is-dark ? #ffffff0c : #e2e8f0;
+    
+    // Text colors
+    out property <color> text-primary: is-dark ? #f1f5f9 : #0f172a;
+    out property <color> text-secondary: is-dark ? #94a3b8 : #475569;
+    out property <color> text-muted: is-dark ? #ffffff40 : #64748b;
+    out property <color> text-dim: is-dark ? #ffffff38 : #94a3b8;
+    out property <color> text-label: is-dark ? #ffffff25 : #00000040; // faint section category labels
+    
+    // Sidebar colors
+    out property <color> sidebar-bg: is-dark ? #0d1117cc : #e2e8f0cc;
+    out property <color> sidebar-border: is-dark ? #ffffff08 : #cbd5e1;
+    out property <color> sidebar-btn-bg: is-dark ? #ffffff0a : #0000000a;
+    out property <color> sidebar-btn-bg-hover: is-dark ? #ffffff18 : #00000018;
+    out property <color> sidebar-btn-border: is-dark ? #ffffff10 : #00000010;
+    out property <color> sidebar-btn-border-hover: is-dark ? #ffffff22 : #00000022;
+
+    // Tooltip colors
+    out property <color> tooltip-bg: is-dark ? #1e293b : #f1f5f9;
+    out property <color> tooltip-border: is-dark ? #ffffff18 : #cbd5e1;
+    
+    // Row/list colors
+    out property <color> row-bg-even: is-dark ? #ffffff03 : #00000003;
+    out property <color> row-bg-hover: is-dark ? #ffffff0e : #0000000a;
+    out property <color> divider: is-dark ? #ffffff10 : #e2e8f0;
+
+    // Interactive element colors (buttons, inputs)
+    out property <color> input-bg: is-dark ? #ffffff07 : #0000000a;
+    out property <color> input-bg-hover: is-dark ? #ffffff0e : #0000001a;
+    out property <color> input-bg-press: is-dark ? #ffffff20 : #00000026;
+    out property <color> input-border: is-dark ? #ffffff15 : #00000015;
+    out property <color> input-border-hover: is-dark ? #ffffff30 : #00000030;
+
+    // Misc
+    out property <color> row-number: is-dark ? #ffffff20 : #00000025;   // row index numbers
+    out property <color> bar-track: is-dark ? #ffffff08 : #0000000e;    // progress bar tracks
+    out property <color> timeline-bar-bg: is-dark ? #0d1117 : #e8edf2;  // timeline bar container bg
+    out property <color> timeline-marker: is-dark ? #ffffff20 : #00000030; // hour marker text
+}

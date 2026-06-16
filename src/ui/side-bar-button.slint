@@ -1,19 +1,22 @@
+import { Palette } from "./palette.slint";
+
 // ── Sidebar button with tooltip ──────────────────────────────────────────────
 export component SidebarButton inherits Rectangle {
     in property <image> icon;
+    in property <image> icon-light;
     in property <string> tip;
     callback clicked;
 
     height: 35px;
     width: 38px;
     border-radius: 6px;
-    background: ta.has-hover ? #ffffff18 : #ffffff0a;
+    background: ta.has-hover ? Palette.sidebar-btn-bg-hover : Palette.sidebar-btn-bg;
     border-width: 1px;
-    border-color: ta.has-hover ? #ffffff22 : #ffffff10;
+    border-color: ta.has-hover ? Palette.sidebar-btn-border-hover : Palette.sidebar-btn-border;
     animate background { duration: 100ms; easing: ease-out; }
 
     Image {
-        source: icon;
+        source: Palette.is-dark ? icon : icon-light;
         width: 20px; 
         height: 20px;
         horizontal-alignment: center;
@@ -32,15 +35,15 @@ export component SidebarButton inherits Rectangle {
         height: tip-text.preferred-height + 8px;
         width: tip-text.preferred-width + 14px;
         border-radius: 4px;
-        background: #1e293b;
+        background: Palette.tooltip-bg;
         border-width: 1px;
-        border-color: #ffffff18;
+        border-color: Palette.tooltip-border;
 
         tip-text := Text {
             x: 7px;
             y: 4px;
             text: tip;
-            color: #94a3b8;
+            color: Palette.text-secondary;
             font-size: 11px;
             font-weight: 500;
         }

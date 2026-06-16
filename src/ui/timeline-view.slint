@@ -1,6 +1,7 @@
 import { Card } from "./card.slint";
 import { SectionHeader } from "./section-header.slint";
 import { TimelineBlock, TimelineMarker } from "./types.slint";
+import { Palette } from "./palette.slint";
 
 component PresetBtn inherits Rectangle {
     in property <string> text;
@@ -12,10 +13,10 @@ component PresetBtn inherits Rectangle {
     border-width: 1px;
     background: selected 
         ? #38bdf825 
-        : (ta.pressed ? #ffffff10 : (ta.has-hover ? #ffffff0a : transparent));
+        : (ta.pressed ? Palette.input-bg-press : (ta.has-hover ? Palette.input-bg-hover : transparent));
     border-color: selected 
         ? #38bdf8bb 
-        : (ta.pressed ? #ffffff25 : (ta.has-hover ? #ffffff1c : #ffffff10));
+        : (ta.pressed ? Palette.input-border-hover : (ta.has-hover ? Palette.input-border-hover : Palette.input-border));
 
     animate background { duration: 100ms; }
     animate border-color { duration: 100ms; }
@@ -24,7 +25,7 @@ component PresetBtn inherits Rectangle {
         text: root.text;
         color: selected 
             ? #7dd3fc 
-            : (ta.has-hover ? #e2e8f0 : #94a3b8);
+            : (ta.has-hover ? Palette.text-primary : Palette.text-secondary);
         font-size: 10px;
         font-weight: 600;
         horizontal-alignment: center;
@@ -45,9 +46,9 @@ component AdjustBtn inherits Rectangle {
     width: 24px;
     height: 24px;
     border-radius: 4px;
-    background: ta.pressed ? #ffffff20 : (ta.has-hover ? #ffffff0e : #ffffff07);
+    background: ta.pressed ? Palette.input-bg-press : (ta.has-hover ? Palette.input-bg-hover : Palette.input-bg);
     border-width: 1px;
-    border-color: ta.has-hover ? #ffffff30 : #ffffff15;
+    border-color: ta.has-hover ? Palette.input-border-hover : Palette.input-border;
     animate background { duration: 100ms; }
     animate border-color { duration: 100ms; }
 
@@ -55,7 +56,7 @@ component AdjustBtn inherits Rectangle {
         text: root.text;
         font-size: 12px;
         font-weight: 800;
-        color: #e2e8f0;
+        color: Palette.text-primary;
         horizontal-alignment: center;
         vertical-alignment: center;
     }
@@ -108,7 +109,7 @@ export component TimelineView {
 
                     Text {
                         text: "PRESET:";
-                        color: #ffffff40;
+                        color: Palette.text-muted;
                         font-size: 9px;
                         font-weight: 700;
                         letter-spacing: 1px;
@@ -155,7 +156,7 @@ export component TimelineView {
 
                     Text {
                         text: "ZOOM TIME:";
-                        color: #ffffff40;
+                        color: Palette.text-muted;
                         font-size: 9px;
                         font-weight: 700;
                         letter-spacing: 1px;
@@ -166,7 +167,7 @@ export component TimelineView {
                     // Start Hour
                     Text {
                         text: "Start Hour:";
-                        color: #94a3b8;
+                        color: Palette.text-secondary;
                         font-size: 10px;
                         vertical-alignment: center;
                     }
@@ -176,7 +177,7 @@ export component TimelineView {
                     }
                     Text {
                         text: (root.timelineStartHour < 10 ? "0" : "") + root.timelineStartHour + ":00";
-                        color: #e2e8f0;
+                        color: Palette.text-primary;
                         font-size: 11px;
                         font-weight: 600;
                         vertical-alignment: center;
@@ -193,7 +194,7 @@ export component TimelineView {
                     // End Hour
                     Text {
                         text: "End Hour:";
-                        color: #94a3b8;
+                        color: Palette.text-secondary;
                         font-size: 10px;
                         vertical-alignment: center;
                     }
@@ -203,7 +204,7 @@ export component TimelineView {
                     }
                     Text {
                         text: (root.timelineEndHour < 10 ? "0" : "") + root.timelineEndHour + ":00";
-                        color: #e2e8f0;
+                        color: Palette.text-primary;
                         font-size: 11px;
                         font-weight: 600;
                         vertical-alignment: center;
@@ -223,7 +224,7 @@ export component TimelineView {
 
                     Text {
                         text: "ZOOM VIEW:";
-                        color: #ffffff40;
+                        color: Palette.text-muted;
                         font-size: 9px;
                         font-weight: 700;
                         letter-spacing: 1px;
@@ -237,7 +238,7 @@ export component TimelineView {
                     }
                     Text {
                         text: Math.round(root.timelineZoomFactor * 100) + "%";
-                        color: #e2e8f0;
+                        color: Palette.text-primary;
                         font-size: 11px;
                         font-weight: 600;
                         vertical-alignment: center;
@@ -275,15 +276,15 @@ export component TimelineView {
                         // 24 Hour Bar Container
                         Rectangle {
                             height: 36px;
-                            background: #0d1117;
+                            background: Palette.timeline-bar-bg;
                             border-radius: 6px;
                             border-width: 1px;
-                            border-color: #ffffff0e;
+                            border-color: Palette.divider;
                             clip: true;
 
                             if timelineBlocks.length == 0 : Text {
                                 text: "NO ACTIVITY RECORDED";
-                                color: #ffffff1f;
+                                color: Palette.text-muted;
                                 font-size: 10px;
                                 font-weight: 700;
                                 horizontal-alignment: center;
@@ -326,7 +327,7 @@ export component TimelineView {
                             for marker in timelineMarkers : Text {
                                 x: marker.x * parent.width - self.preferred-width / 2;
                                 text: marker.label;
-                                color: #ffffff20;
+                                color: Palette.timeline-marker;
                                 font-size: 10px;
                                 font-weight: 600;
                             }
@@ -361,7 +362,7 @@ export component TimelineView {
 
                     Text {
                         text: root.selected-app;
-                        color: #e2e8f0;
+                        color: Palette.text-primary;
                         font-size: 16px;
                         font-weight: 700;
                         vertical-alignment: center;
@@ -374,7 +375,7 @@ export component TimelineView {
 
                     Text {
                         text: "Time: " + root.selected-range;
-                        color: #94a3b8;
+                        color: Palette.text-secondary;
                         font-size: 13px;
                         font-weight: 500;
                         horizontal-alignment: center;
@@ -391,7 +392,7 @@ export component TimelineView {
 
                 if root.selected-duration == "" : Text {
                     text: root.selected-app;
-                    color: #475569;
+                    color: Palette.text-dim;
                     font-size: 12px;
                     font-weight: 600;
                     horizontal-alignment: center;
