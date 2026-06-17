@@ -63,9 +63,10 @@ void TelemetryManager::init()
 void TelemetryManager::checkAndSend()
 {
     try {
-        std::string choice = AppState::configManager.getConfig<std::string>("anonymous-telemetry", "unset");
-        if (choice != "true") {
-            return; // Telemetry is disabled or not set yet
+        // Bail out if user hasn't opted in (default is false)
+        bool enabled = AppState::configManager.getConfig<bool>("anonymous-telemetry", false);
+        if (!enabled) {
+            return;
         }
 
         // Get or generate UUID
@@ -76,8 +77,9 @@ void TelemetryManager::checkAndSend()
         }
 
         // 1. Report User Registration (Total User Count)
-        bool userReported = AppState::configManager.getConfig<bool>("telemetry-user-reported", false);
-        if (!userReported) {
+        // Only send on the very first launch — isFirstLaunch() is true when HPR.lock
+        // was created this session (i.e. it didn't exist before this run).
+        if (AppState::configManager.isFirstLaunch()) {
             auto now = std::chrono::system_clock::now();
             uint64_t ts = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
 
@@ -88,7 +90,6 @@ void TelemetryManager::checkAndSend()
 
             auto response = NativeNet::httpPost(FIREBASE_HOST, "/telemetry/users.json", body, true, headers);
             if (response.second >= 200 && response.second < 300) {
-                AppState::configManager.setConfig("telemetry-user-reported", true);
                 Logger::log("[Telemetry] User registered successfully");
             } else {
                 Logger::log("[Telemetry] User registration failed with code: " + std::to_string(response.second));

@@ -33,8 +33,9 @@ void ConfigManager::loadConfig()
     std::filesystem::create_directories(tempPath);
     filePath = tempPath + fileName;
 
-    std::string lockPath = tempPath + "HPR.lock";
-    if (!std::filesystem::exists(lockPath))
+    std::filesystem::path lockPath = std::filesystem::path(tempPath) / "HPR.lock";
+    bool lockExists = std::filesystem::exists(lockPath);
+    if (!lockExists)
     {
         firstLaunch = true;
         std::ofstream lockFile(lockPath);
@@ -48,6 +49,7 @@ void ConfigManager::loadConfig()
     {
         firstLaunch = false;
     }
+    Logger::log("[ConfigManager] First launch: " + std::string(firstLaunch ? "yes" : "no"));
 
     std::ifstream file(filePath);
     if (!file.is_open())
