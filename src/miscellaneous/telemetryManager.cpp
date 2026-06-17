@@ -88,7 +88,9 @@ void TelemetryManager::checkAndSend()
                 {"Content-Type", "application/json"}
             };
 
-            auto response = NativeNet::httpPost(FIREBASE_HOST, "/telemetry/users.json", body, true, headers);
+            // PUT with userId as key → same user can never produce duplicate entries
+            std::string regPath = "/telemetry/users/" + userId + ".json";
+            auto response = NativeNet::httpPut(FIREBASE_HOST, regPath, body, true, headers);
             if (response.second >= 200 && response.second < 300) {
                 Logger::log("[Telemetry] User registered successfully");
             } else {
@@ -164,8 +166,9 @@ void TelemetryManager::checkAndSend()
                     {"Content-Type", "application/json"}
                 };
 
-                std::string path = "/telemetry/weekly_active/" + week_id + ".json";
-                auto response = NativeNet::httpPost(FIREBASE_HOST, path, body, true, headers);
+                // PUT with userId as key under week_id → same user same week = same path = no duplicate
+                std::string path = "/telemetry/weekly_active/" + week_id + "/" + userId + ".json";
+                auto response = NativeNet::httpPut(FIREBASE_HOST, path, body, true, headers);
                 if (response.second >= 200 && response.second < 300) {
                     AppState::configManager.setConfig("last-reported-week", week_id);
                     Logger::log("[Telemetry] Weekly active reported successfully for week: " + week_id);

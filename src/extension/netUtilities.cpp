@@ -280,6 +280,130 @@ namespace NativeNet
         return { response, statusCode };
     }
 
+    std::pair<std::string, int> httpPut(const std::string& host, const std::string& path, const std::string& body, bool secure, const std::map<std::string, std::string>& headers)
+    {
+        std::string response;
+        int statusCode = 0;
+
+#ifdef _WIN32
+        HINTERNET hSession = WinHttpOpen(L"HPR/1.0",
+                                         WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
+                                         WINHTTP_NO_PROXY_NAME,
+                                         WINHTTP_NO_PROXY_BYPASS, 0);
+        if (!hSession) return { "", 0 };
+
+        std::string hostname = host;
+        INTERNET_PORT port = secure ? INTERNET_DEFAULT_HTTPS_PORT : INTERNET_DEFAULT_HTTP_PORT;
+
+        size_t colonPos = host.rfind(':');
+        if (colonPos != std::string::npos) {
+            hostname = host.substr(0, colonPos);
+            port = static_cast<INTERNET_PORT>(std::stoi(host.substr(colonPos + 1)));
+        }
+
+        std::wstring wHost(hostname.begin(), hostname.end());
+        HINTERNET hConnect = WinHttpConnect(hSession, wHost.c_str(), port, 0);
+        if (!hConnect) {
+            WinHttpCloseHandle(hSession);
+            return { "", 0 };
+        }
+
+        std::wstring wPath(path.begin(), path.end());
+        DWORD flags = secure ? WINHTTP_FLAG_SECURE : 0;
+
+        HINTERNET hRequest = WinHttpOpenRequest(hConnect, L"PUT", wPath.c_str(),
+                                                NULL, WINHTTP_NO_REFERER,
+                                                WINHTTP_DEFAULT_ACCEPT_TYPES, flags);
+        if (!hRequest) {
+            WinHttpCloseHandle(hConnect);
+            WinHttpCloseHandle(hSession);
+            return { "", 0 };
+        }
+
+        bool hasContentType = false;
+        for (const auto& [k, v] : headers) {
+            std::string lowerK = k;
+            std::transform(lowerK.begin(), lowerK.end(), lowerK.begin(), [](unsigned char c) { return std::tolower(c); });
+            if (lowerK == "content-type") hasContentType = true;
+
+            std::string headerLine = k + ": " + v + "\r\n";
+            std::wstring wHeaderLine(headerLine.begin(), headerLine.end());
+            WinHttpAddRequestHeaders(hRequest, wHeaderLine.c_str(), -1L, WINHTTP_ADDREQ_FLAG_ADD | WINHTTP_ADDREQ_FLAG_REPLACE);
+        }
+        if (!hasContentType) {
+            WinHttpAddRequestHeaders(hRequest, L"Content-Type: application/json\r\n", -1L, WINHTTP_ADDREQ_FLAG_ADD | WINHTTP_ADDREQ_FLAG_REPLACE);
+        }
+
+        if (WinHttpSendRequest(hRequest, WINHTTP_NO_ADDITIONAL_HEADERS, 0,
+                               (LPVOID)body.c_str(), body.size(), body.size(), 0) &&
+            WinHttpReceiveResponse(hRequest, NULL))
+        {
+            DWORD dwStatusCode = 0;
+            DWORD dwSize = sizeof(dwStatusCode);
+            if (WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
+                                    WINHTTP_HEADER_NAME_BY_INDEX, &dwStatusCode, &dwSize, WINHTTP_NO_HEADER_INDEX))
+            {
+                statusCode = static_cast<int>(dwStatusCode);
+            }
+
+            DWORD dwSizeData = 0;
+            do {
+                if (WinHttpQueryDataAvailable(hRequest, &dwSizeData) && dwSizeData > 0) {
+                    std::vector<char> buffer(dwSizeData + 1);
+                    DWORD dwDownloaded = 0;
+                    if (WinHttpReadData(hRequest, &buffer[0], dwSizeData, &dwDownloaded)) {
+                        response.append(&buffer[0], dwDownloaded);
+                    }
+                }
+            } while (dwSizeData > 0);
+        }
+
+        WinHttpCloseHandle(hRequest);
+        WinHttpCloseHandle(hConnect);
+        WinHttpCloseHandle(hSession);
+
+#else
+        CURL* curl = curl_easy_init();
+        if (curl) {
+            std::string url = (secure ? "https://" : "http://") + host + path;
+            curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+            curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "PUT");
+            curl_easy_setopt(curl, CURLOPT_POSTFIELDS, body.c_str());
+            curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, body.size());
+            curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+            curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+            curl_easy_setopt(curl, CURLOPT_USERAGENT, "HPR/1.0");
+
+            struct curl_slist* curlHeaders = nullptr;
+            bool hasContentType = false;
+            for (const auto& [k, v] : headers) {
+                std::string lowerK = k;
+                std::transform(lowerK.begin(), lowerK.end(), lowerK.begin(), [](unsigned char c) { return std::tolower(c); });
+                if (lowerK == "content-type") hasContentType = true;
+                std::string headerStr = k + ": " + v;
+                curlHeaders = curl_slist_append(curlHeaders, headerStr.c_str());
+            }
+            if (!hasContentType) {
+                curlHeaders = curl_slist_append(curlHeaders, "Content-Type: application/json");
+            }
+            curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curlHeaders);
+
+            CURLcode res = curl_easy_perform(curl);
+            if (res == CURLE_OK) {
+                long responseCode = 0;
+                curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &responseCode);
+                statusCode = static_cast<int>(responseCode);
+            } else {
+                Logger::log("[HPR] curl PUT failed: " + std::string(curl_easy_strerror(res)));
+            }
+            curl_slist_free_all(curlHeaders);
+            curl_easy_cleanup(curl);
+        }
+#endif
+        return { response, statusCode };
+    }
+
     namespace
     {
 #ifdef _WIN32
