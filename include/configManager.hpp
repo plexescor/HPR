@@ -15,6 +15,9 @@ class ConfigManager
         template <typename T>
         void setConfig(const std::string paramName, const T& value);
 
+    public:
+        bool isFirstLaunch() const { return firstLaunch; }
+
     private:
         void loadConfig();
         void saveConfig();
@@ -23,4 +26,5 @@ class ConfigManager
         std::vector<std::pair<std::string, std::string>> config; 
         std::string fileName = "config.csv";
         std::string filePath;
+        bool firstLaunch = false;
 };

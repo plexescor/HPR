@@ -33,6 +33,22 @@ void ConfigManager::loadConfig()
     std::filesystem::create_directories(tempPath);
     filePath = tempPath + fileName;
 
+    std::string lockPath = tempPath + "HPR.lock";
+    if (!std::filesystem::exists(lockPath))
+    {
+        firstLaunch = true;
+        std::ofstream lockFile(lockPath);
+        if (lockFile.is_open())
+        {
+            lockFile << "HPR Installed";
+            lockFile.close();
+        }
+    }
+    else
+    {
+        firstLaunch = false;
+    }
+
     std::ifstream file(filePath);
     if (!file.is_open())
     {

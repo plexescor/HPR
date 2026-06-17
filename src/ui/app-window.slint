@@ -12,6 +12,7 @@ import { HistoryRangeView } from "./history-range-view.slint";
 import { TimelineView } from "./timeline-view.slint";
 import { SettingsView } from "./settings-view.slint";
 import { Palette } from "./palette.slint";
+import { Card } from "./card.slint";
 
 
 
@@ -488,7 +489,7 @@ export component MainWindow inherits Window {
         }
 
         if showTelemetryPrompt_S : Rectangle {
-            background: #000000a0;
+            background: #000000cc;
             z: 100;
             width: 100%;
             height: 100%;
@@ -497,31 +498,43 @@ export component MainWindow inherits Window {
                 // block click through
             }
 
-            Rectangle {
+            Card {
                 width: 440px;
-                height: 240px;
-                background: Palette.card-background;
-                border-radius: 12px;
-                border-width: 1px;
-                border-color: Palette.card-border;
+                height: 250px;
                 x: (parent.width - self.width) / 2;
                 y: (parent.height - self.height) / 2;
 
                 VerticalLayout {
                     padding: 24px;
                     spacing: 16px;
+                    alignment: space-between;
 
-                    Text {
-                        text: "Enable Anonymous Analytics?";
-                        font-size: 15px;
-                        font-weight: 700;
-                        color: Palette.text-primary;
-                        horizontal-alignment: center;
+                    VerticalLayout {
+                        spacing: 6px;
+
+                        Text {
+                            text: "PRIVACY & ANALYTICS";
+                            font-size: 8px;
+                            font-weight: 800;
+                            letter-spacing: 2.5px;
+                            color: #38bdf8;
+                            horizontal-alignment: center;
+                        }
+
+                        Text {
+                            text: "Help Improve HPR?";
+                            font-size: 18px;
+                            font-weight: 800;
+                            letter-spacing: 0.5px;
+                            color: Palette.text-primary;
+                            horizontal-alignment: center;
+                        }
                     }
 
                     Text {
                         text: "HPR is local-first. We would like to collect two anonymous numbers: total unique installations and the frequency of regular weekly users. No window titles, websites, or personal data ever leave your machine.";
                         font-size: 11px;
+                        font-weight: 500;
                         color: Palette.text-secondary;
                         wrap: word-wrap;
                         horizontal-alignment: center;
@@ -532,52 +545,61 @@ export component MainWindow inherits Window {
                         alignment: center;
 
                         // Decline
-                        Rectangle {
-                            width: 120px;
+                        decl-btn := Rectangle {
+                            width: 130px;
                             height: 32px;
                             border-radius: 6px;
                             border-width: 1px;
                             border-color: Palette.card-border;
-                            background: ta-dec.has-hover ? Palette.row-bg-hover : transparent;
+                            background: ta-decl.pressed ? Palette.input-bg-press : 
+                                        ta-decl.has-hover ? Palette.input-bg-hover : 
+                                        Palette.input-bg;
 
-                            Text {
-                                text: "No thanks";
-                                font-size: 12px;
-                                font-weight: 600;
-                                color: Palette.text-primary;
-                                horizontal-alignment: center;
-                                vertical-alignment: center;
-                            }
+                            animate background { duration: 100ms; }
+                            animate border-color { duration: 100ms; }
 
-                            ta-dec := TouchArea {
+                            ta-decl := TouchArea {
                                 mouse-cursor: pointer;
                                 clicked => {
                                     root.setConfig("anonymous-telemetry", "false");
                                 }
                             }
-                        }
-
-                        // Agree
-                        Rectangle {
-                            width: 120px;
-                            height: 32px;
-                            border-radius: 6px;
-                            background: ta-acc.has-hover ? #0ea5e9 : #0284c7;
 
                             Text {
-                                text: "Agree";
-                                font-size: 12px;
-                                font-weight: 600;
-                                color: #ffffff;
+                                text: "NO THANKS";
+                                font-size: 9px;
+                                font-weight: 800;
+                                letter-spacing: 1.5px;
+                                color: Palette.text-primary;
                                 horizontal-alignment: center;
                                 vertical-alignment: center;
                             }
+                        }
 
-                            ta-acc := TouchArea {
+                        // Agree
+                        agree-btn := Rectangle {
+                            width: 130px;
+                            height: 32px;
+                            border-radius: 6px;
+                            background: ta-agree.pressed ? @linear-gradient(135deg, #0284c7 0%, #0369a1 100%) : 
+                                        ta-agree.has-hover ? @linear-gradient(135deg, #7dd3fc 0%, #38bdf8 100%) : 
+                                        @linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+
+                            ta-agree := TouchArea {
                                 mouse-cursor: pointer;
                                 clicked => {
                                     root.setConfig("anonymous-telemetry", "true");
                                 }
+                            }
+
+                            Text {
+                                text: "I AGREE";
+                                font-size: 9px;
+                                font-weight: 800;
+                                letter-spacing: 1.5px;
+                                color: #ffffff;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
                             }
                         }
                     }
