@@ -514,7 +514,7 @@ To help measure HPR's adoption, HPR includes a built-in anonymous analytics logg
 | Binary size | ~5 MB | 200 MB+ | Cloud app | Cloud app |
 | RAM (real footprint) | ~27 MB private / ~47 MB reported (Linux), ~13 MB (Windows) | 200 MB+ | N/A | N/A |
 | Account required | No | No | Yes | Yes |
-| Data leaves your machine | Never | Never | Yes | Yes |
+| Data leaves your machine | Never (unless opted-in) | Never | Yes | Yes |
 | Automatic tracking | Yes | Yes | Yes | No |
 | Native Wayland | Yes | Partial | N/A | N/A |
 | System tray | Yes (native, no libs) | Yes | Yes | Yes |
