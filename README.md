@@ -4,7 +4,7 @@
   </a>
 </p>
 
-> HPR is built solo by a 16-year-old developer in India. If HPR has been useful to you, a Ko-fi donation is highly appreciated to support continued development. A Rust rewrite (hpr-rs) is also currently in progress!
+> HPR is built solo by a 16-year-old developer in India. If HPR has been useful to you, a Ko-fi donation is highly appreciated to support continued development HPR is full, free, forever.
 
 ---
 
