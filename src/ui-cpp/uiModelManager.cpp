@@ -302,9 +302,11 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
     // create a vector of slint's switch History struct
     // Use pretty names
     std::vector<SwitchHistory> slintVec_SwitchHistory;
+    size_t switchHistoryLimit = std::min(tempSwitchVec.size(), size_t(100));
 
-    for (const auto &item : tempSwitchVec)
+    for (size_t i = 0; i < switchHistoryLimit; ++i)
     {
+        const auto &item = tempSwitchVec[i];
         slintVec_SwitchHistory.push_back(
             SwitchHistory{
                 slint::SharedString(aliasManager.getAlias(item.from)),
@@ -328,18 +330,30 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
                 bool autostartVal = AppState::configManager.getConfig<bool>("autostart", false);
                 bool headlessVal = AppState::configManager.getConfig<bool>("headless-mode", false);
                 bool telemetryVal = AppState::configManager.getConfig<bool>("anonymous-telemetry", false);
-                bool showPromptVal = AppState::configManager.isFirstLaunch() && !AppState::configManager.isTelemetryPromptAnswered();
-                (*handle)->set_themeMode_S(slint::SharedString(theme));
-                (*handle)->set_isDarkMode(isDark);
-                (*handle)->set_autostart_S(autostartVal);
-                (*handle)->set_headless_S(headlessVal);
-                (*handle)->set_telemetry_S(telemetryVal);
-                (*handle)->set_showTelemetryPrompt_S(showPromptVal);
-                (*handle)->set_windowName_S(slint::SharedString(currentWindowName));
+                bool showPromptVal = AppState::configManager.isFirstLaunch();
+                
+                if ((*handle)->get_themeMode_S() != slint::SharedString(theme))
+                    (*handle)->set_themeMode_S(slint::SharedString(theme));
+                if ((*handle)->get_isDarkMode() != isDark)
+                    (*handle)->set_isDarkMode(isDark);
+                if ((*handle)->get_autostart_S() != autostartVal)
+                    (*handle)->set_autostart_S(autostartVal);
+                if ((*handle)->get_headless_S() != headlessVal)
+                    (*handle)->set_headless_S(headlessVal);
+                if ((*handle)->get_telemetry_S() != telemetryVal)
+                    (*handle)->set_telemetry_S(telemetryVal);
+                if ((*handle)->get_showTelemetryPrompt_S() != showPromptVal)
+                    (*handle)->set_showTelemetryPrompt_S(showPromptVal);
+                if ((*handle)->get_windowName_S() != slint::SharedString(currentWindowName))
+                    (*handle)->set_windowName_S(slint::SharedString(currentWindowName));
 
-                (*handle)->set_trackedTime_S((float)totalTrackedTime);
-                (*handle)->set_trackedTime_Tab_S((float)totalTrackedTime_Tab);
-                (*handle)->set_trackedTime_Project_S((float)totalTrackedTime_Project);
+                if ((*handle)->get_trackedTime_S() != (float)totalTrackedTime)
+                    (*handle)->set_trackedTime_S((float)totalTrackedTime);
+                if ((*handle)->get_trackedTime_Tab_S() != (float)totalTrackedTime_Tab)
+                    (*handle)->set_trackedTime_Tab_S((float)totalTrackedTime_Tab);
+                if ((*handle)->get_trackedTime_Project_S() != (float)totalTrackedTime_Project)
+                    (*handle)->set_trackedTime_Project_S((float)totalTrackedTime_Project);
+
                 // Surgical update to prevent layout panics during resize/maximize
                 auto syncModel = [](auto model, const auto& vec) 
                 {
@@ -347,9 +361,16 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
                     size_t new_count = vec.size();
                     size_t min_count = (std::min)(existing_count, new_count);
 
-                    // Update existing rows
+                    // Update existing rows only if they changed
                     for (size_t i = 0; i < min_count; ++i) 
                     {
+                        if (auto existing = model->row_data(i)) 
+                        {
+                            if (*existing == vec[i]) 
+                            {
+                                continue;
+                            }
+                        }
                         model->set_row_data(i, vec[i]);
                     }
 
@@ -380,6 +401,13 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
 
                     for (size_t i = 0; i < min_count; ++i) 
                     {
+                        if (auto existing = model->row_data(i)) 
+                        {
+                            if (*existing == vec[i]) 
+                            {
+                                continue;
+                            }
+                        }
                         model->set_row_data(i, vec[i]);
                     }
 
@@ -400,7 +428,23 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
                 int startH = (*handle)->get_timelineStartHour();
                 int endH = (*handle)->get_timelineEndHour();
 
-                TimelineManager::updateTimeline(preset, startH, endH);
+                static int lastPreset = -1;
+                static int lastStartH = -1;
+                static int lastEndH = -1;
+                static auto lastTimelineUpdate = std::chrono::steady_clock::now();
+
+                auto now = std::chrono::steady_clock::now();
+                bool valuesChanged = (preset != lastPreset || startH != lastStartH || endH != lastEndH);
+                bool timeElapsed = (std::chrono::duration_cast<std::chrono::milliseconds>(now - lastTimelineUpdate).count() >= 1000);
+
+                if (valuesChanged || timeElapsed)
+                {
+                    TimelineManager::updateTimeline(preset, startH, endH);
+                    lastPreset = preset;
+                    lastStartH = startH;
+                    lastEndH = endH;
+                    lastTimelineUpdate = now;
+                }
 
                 auto getAppColor = [](const std::string& appName) -> slint::Color {
                     float h = static_cast<float>((appName.length() * 47) % 360);
@@ -668,9 +712,11 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
         { return a.maxVal > b.maxVal; });
 
     std::vector<slint::interpreter::Value> slintVec_SwitchHistory;
+    size_t switchHistoryLimit = std::min(tempSwitchVec.size(), size_t(100));
 
-    for (const auto &item : tempSwitchVec)
+    for (size_t i = 0; i < switchHistoryLimit; ++i)
     {
+        const auto &item = tempSwitchVec[i];
         slint::interpreter::Struct entry;
         entry.set_field("fromWindow",      slint::interpreter::Value(slint::SharedString(aliasManager.getAlias(item.from))));
         entry.set_field("toWindow",        slint::interpreter::Value(slint::SharedString(aliasManager.getAlias(item.to))));
@@ -709,46 +755,31 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
             bool autostartVal = AppState::configManager.getConfig<bool>("autostart", false);
             bool headlessVal = AppState::configManager.getConfig<bool>("headless-mode", false);
             bool telemetryVal = AppState::configManager.getConfig<bool>("anonymous-telemetry", false);
-            bool showPromptVal = AppState::configManager.isFirstLaunch() && !AppState::configManager.isTelemetryPromptAnswered();
-            (*handle)->set_property(
-                "themeMode_S",
-                slint::interpreter::Value(slint::SharedString(theme)));
+            bool showPromptVal = AppState::configManager.isFirstLaunch();
 
-            (*handle)->set_property(
-                "isDarkMode",
-                slint::interpreter::Value(isDark));
+            auto getProp = [&](const char* name) {
+                return (*handle)->get_property(name);
+            };
 
-            (*handle)->set_property(
-                "autostart_S",
-                slint::interpreter::Value(autostartVal));
+            auto setPropIfChanged = [&](const char* name, const slint::interpreter::Value& val) {
+                if (auto current = getProp(name)) {
+                    if (*current == val) {
+                        return;
+                    }
+                }
+                (*handle)->set_property(name, val);
+            };
 
-            (*handle)->set_property(
-                "headless_S",
-                slint::interpreter::Value(headlessVal));
-
-            (*handle)->set_property(
-                "telemetry_S",
-                slint::interpreter::Value(telemetryVal));
-
-            (*handle)->set_property(
-                "showTelemetryPrompt_S",
-                slint::interpreter::Value(showPromptVal));
-
-            (*handle)->set_property(
-                "windowName_S",
-                slint::interpreter::Value(slint::SharedString(currentWindowName)));
-
-            (*handle)->set_property(
-                "trackedTime_S",
-                slint::interpreter::Value((double)totalTrackedTime));
-
-            (*handle)->set_property(
-                "trackedTime_Tab_S",
-                slint::interpreter::Value((double)totalTrackedTime_Tab));
-
-            (*handle)->set_property(
-                "trackedTime_Project_S",
-                slint::interpreter::Value((double)totalTrackedTime_Project));
+            setPropIfChanged("themeMode_S", slint::interpreter::Value(slint::SharedString(theme)));
+            setPropIfChanged("isDarkMode", slint::interpreter::Value(isDark));
+            setPropIfChanged("autostart_S", slint::interpreter::Value(autostartVal));
+            setPropIfChanged("headless_S", slint::interpreter::Value(headlessVal));
+            setPropIfChanged("telemetry_S", slint::interpreter::Value(telemetryVal));
+            setPropIfChanged("showTelemetryPrompt_S", slint::interpreter::Value(showPromptVal));
+            setPropIfChanged("windowName_S", slint::interpreter::Value(slint::SharedString(currentWindowName)));
+            setPropIfChanged("trackedTime_S", slint::interpreter::Value((double)totalTrackedTime));
+            setPropIfChanged("trackedTime_Tab_S", slint::interpreter::Value((double)totalTrackedTime_Tab));
+            setPropIfChanged("trackedTime_Project_S", slint::interpreter::Value((double)totalTrackedTime_Project));
 
             auto syncModel = [](
                 std::shared_ptr<slint::VectorModel<slint::interpreter::Value>> model,
@@ -758,9 +789,16 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
                 size_t new_count = vec.size();
                 size_t min_count = (std::min)(existing_count, new_count);
 
-                // Update existing rows
+                // Update existing rows only if they changed
                 for (size_t i = 0; i < min_count; ++i)
                 {
+                    if (auto existing = model->row_data(i)) 
+                    {
+                        if (*existing == vec[i]) 
+                        {
+                            continue;
+                        }
+                    }
                     model->set_row_data(i, vec[i]);
                 }
 
@@ -788,7 +826,23 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
             int startH = (*handle)->get_property("timelineStartHour").value_or(slint::interpreter::Value(0.0)).to_number().value_or(0.0);
             int endH = (*handle)->get_property("timelineEndHour").value_or(slint::interpreter::Value(24.0)).to_number().value_or(24.0);
 
-            TimelineManager::updateTimeline(preset, startH, endH);
+            static int lastPreset = -1;
+            static int lastStartH = -1;
+            static int lastEndH = -1;
+            static auto lastTimelineUpdate = std::chrono::steady_clock::now();
+
+            auto now = std::chrono::steady_clock::now();
+            bool valuesChanged = (preset != lastPreset || startH != lastStartH || endH != lastEndH);
+            bool timeElapsed = (std::chrono::duration_cast<std::chrono::milliseconds>(now - lastTimelineUpdate).count() >= 1000);
+
+            if (valuesChanged || timeElapsed)
+            {
+                TimelineManager::updateTimeline(preset, startH, endH);
+                lastPreset = preset;
+                lastStartH = startH;
+                lastEndH = endH;
+                lastTimelineUpdate = now;
+            }
 
             auto getAppColor = [](const std::string& appName) -> slint::Color {
                 float h = static_cast<float>((appName.length() * 47) % 360);
@@ -851,22 +905,22 @@ void UiModelManager::showInsights(const std::string mostUsed,
     {
         if (auto handle = weak.lock())
         {
-            (*handle)->set_mostUsedApp_S(slint::SharedString(mostUsed));
-            (*handle)->set_totalTrackedTime_S(slint::SharedString(totalTrackedTime));
-            (*handle)->set_totalSwitches_S(slint::SharedString(switchCount));
-            (*handle)->set_mostSwitchedFrom_S(slint::SharedString(mostSwitchedFrom));
-            (*handle)->set_mostSwitchedTo_S(slint::SharedString(mostSwitchedTo));
-            (*handle)->set_longestFocus_S(slint::SharedString(mostFocusedSession));
-            (*handle)->set_peakHour_S(slint::SharedString(mostProductiveHour));
-            (*handle)->set_escapePattern_S(slint::SharedString(escapePattern));
-            (*handle)->set_returnRate_S(slint::SharedString(returnRate));
-            (*handle)->set_avgFocusSession_S(slint::SharedString(avgFocusSession));
-            (*handle)->set_mostDistractedDay_S(slint::SharedString(mostDistractedDay));
-            (*handle)->set_productiveDays_S(slint::SharedString(productiveDays));
-            (*handle)->set_screenTimeVsAvg_S(slint::SharedString(screenTimeVsAvg));
-            (*handle)->set_focusDipHour_S(slint::SharedString(focusDipHour));
-            (*handle)->set_deepWorkBeforeNoon_S(slint::SharedString(deepWorkBeforeNoon));
-            (*handle)->set_weekendVsWeekday_S(slint::SharedString(weekendVsWeekday));
+            if ((*handle)->get_mostUsedApp_S() != slint::SharedString(mostUsed)) (*handle)->set_mostUsedApp_S(slint::SharedString(mostUsed));
+            if ((*handle)->get_totalTrackedTime_S() != slint::SharedString(totalTrackedTime)) (*handle)->set_totalTrackedTime_S(slint::SharedString(totalTrackedTime));
+            if ((*handle)->get_totalSwitches_S() != slint::SharedString(switchCount)) (*handle)->set_totalSwitches_S(slint::SharedString(switchCount));
+            if ((*handle)->get_mostSwitchedFrom_S() != slint::SharedString(mostSwitchedFrom)) (*handle)->set_mostSwitchedFrom_S(slint::SharedString(mostSwitchedFrom));
+            if ((*handle)->get_mostSwitchedTo_S() != slint::SharedString(mostSwitchedTo)) (*handle)->set_mostSwitchedTo_S(slint::SharedString(mostSwitchedTo));
+            if ((*handle)->get_longestFocus_S() != slint::SharedString(mostFocusedSession)) (*handle)->set_longestFocus_S(slint::SharedString(mostFocusedSession));
+            if ((*handle)->get_peakHour_S() != slint::SharedString(mostProductiveHour)) (*handle)->set_peakHour_S(slint::SharedString(mostProductiveHour));
+            if ((*handle)->get_escapePattern_S() != slint::SharedString(escapePattern)) (*handle)->set_escapePattern_S(slint::SharedString(escapePattern));
+            if ((*handle)->get_returnRate_S() != slint::SharedString(returnRate)) (*handle)->set_returnRate_S(slint::SharedString(returnRate));
+            if ((*handle)->get_avgFocusSession_S() != slint::SharedString(avgFocusSession)) (*handle)->set_avgFocusSession_S(slint::SharedString(avgFocusSession));
+            if ((*handle)->get_mostDistractedDay_S() != slint::SharedString(mostDistractedDay)) (*handle)->set_mostDistractedDay_S(slint::SharedString(mostDistractedDay));
+            if ((*handle)->get_productiveDays_S() != slint::SharedString(productiveDays)) (*handle)->set_productiveDays_S(slint::SharedString(productiveDays));
+            if ((*handle)->get_screenTimeVsAvg_S() != slint::SharedString(screenTimeVsAvg)) (*handle)->set_screenTimeVsAvg_S(slint::SharedString(screenTimeVsAvg));
+            if ((*handle)->get_focusDipHour_S() != slint::SharedString(focusDipHour)) (*handle)->set_focusDipHour_S(slint::SharedString(focusDipHour));
+            if ((*handle)->get_deepWorkBeforeNoon_S() != slint::SharedString(deepWorkBeforeNoon)) (*handle)->set_deepWorkBeforeNoon_S(slint::SharedString(deepWorkBeforeNoon));
+            if ((*handle)->get_weekendVsWeekday_S() != slint::SharedString(weekendVsWeekday)) (*handle)->set_weekendVsWeekday_S(slint::SharedString(weekendVsWeekday));
         }
     });
 }
@@ -894,22 +948,35 @@ void UiModelManager::showInsights_Interpreted(const std::string mostUsed,
     {
         if (auto handle = weak.lock())
         {
-            (*handle)->set_property("mostUsedApp_S",        slint::interpreter::Value(slint::SharedString(mostUsed)));
-            (*handle)->set_property("totalTrackedTime_S",   slint::interpreter::Value(slint::SharedString(totalTrackedTime)));
-            (*handle)->set_property("totalSwitches_S",      slint::interpreter::Value(slint::SharedString(switchCount)));
-            (*handle)->set_property("mostSwitchedFrom_S",   slint::interpreter::Value(slint::SharedString(mostSwitchedFrom)));
-            (*handle)->set_property("mostSwitchedTo_S",     slint::interpreter::Value(slint::SharedString(mostSwitchedTo)));
-            (*handle)->set_property("longestFocus_S",       slint::interpreter::Value(slint::SharedString(mostFocusedSession)));
-            (*handle)->set_property("peakHour_S",           slint::interpreter::Value(slint::SharedString(mostProductiveHour)));
-            (*handle)->set_property("escapePattern_S",      slint::interpreter::Value(slint::SharedString(escapePattern)));
-            (*handle)->set_property("returnRate_S",         slint::interpreter::Value(slint::SharedString(returnRate)));
-            (*handle)->set_property("avgFocusSession_S",    slint::interpreter::Value(slint::SharedString(avgFocusSession)));
-            (*handle)->set_property("mostDistractedDay_S",  slint::interpreter::Value(slint::SharedString(mostDistractedDay)));
-            (*handle)->set_property("productiveDays_S",     slint::interpreter::Value(slint::SharedString(productiveDays)));
-            (*handle)->set_property("screenTimeVsAvg_S",    slint::interpreter::Value(slint::SharedString(screenTimeVsAvg)));
-            (*handle)->set_property("focusDipHour_S",       slint::interpreter::Value(slint::SharedString(focusDipHour)));
-            (*handle)->set_property("deepWorkBeforeNoon_S", slint::interpreter::Value(slint::SharedString(deepWorkBeforeNoon)));
-            (*handle)->set_property("weekendVsWeekday_S",   slint::interpreter::Value(slint::SharedString(weekendVsWeekday)));
+            auto getProp = [&](const char* name) {
+                return (*handle)->get_property(name);
+            };
+
+            auto setPropIfChanged = [&](const char* name, const slint::interpreter::Value& val) {
+                if (auto current = getProp(name)) {
+                    if (*current == val) {
+                        return;
+                    }
+                }
+                (*handle)->set_property(name, val);
+            };
+
+            setPropIfChanged("mostUsedApp_S",        slint::interpreter::Value(slint::SharedString(mostUsed)));
+            setPropIfChanged("totalTrackedTime_S",   slint::interpreter::Value(slint::SharedString(totalTrackedTime)));
+            setPropIfChanged("totalSwitches_S",      slint::interpreter::Value(slint::SharedString(switchCount)));
+            setPropIfChanged("mostSwitchedFrom_S",   slint::interpreter::Value(slint::SharedString(mostSwitchedFrom)));
+            setPropIfChanged("mostSwitchedTo_S",     slint::interpreter::Value(slint::SharedString(mostSwitchedTo)));
+            setPropIfChanged("longestFocus_S",       slint::interpreter::Value(slint::SharedString(mostFocusedSession)));
+            setPropIfChanged("peakHour_S",           slint::interpreter::Value(slint::SharedString(mostProductiveHour)));
+            setPropIfChanged("escapePattern_S",      slint::interpreter::Value(slint::SharedString(escapePattern)));
+            setPropIfChanged("returnRate_S",         slint::interpreter::Value(slint::SharedString(returnRate)));
+            setPropIfChanged("avgFocusSession_S",    slint::interpreter::Value(slint::SharedString(avgFocusSession)));
+            setPropIfChanged("mostDistractedDay_S",  slint::interpreter::Value(slint::SharedString(mostDistractedDay)));
+            setPropIfChanged("productiveDays_S",     slint::interpreter::Value(slint::SharedString(productiveDays)));
+            setPropIfChanged("screenTimeVsAvg_S",    slint::interpreter::Value(slint::SharedString(screenTimeVsAvg)));
+            setPropIfChanged("focusDipHour_S",       slint::interpreter::Value(slint::SharedString(focusDipHour)));
+            setPropIfChanged("deepWorkBeforeNoon_S", slint::interpreter::Value(slint::SharedString(deepWorkBeforeNoon)));
+            setPropIfChanged("weekendVsWeekday_S",   slint::interpreter::Value(slint::SharedString(weekendVsWeekday)));
         }
     });
 }
@@ -970,10 +1037,10 @@ void UiModelManager::showFunStats(const std::string& cpu, const std::string& ram
     {
         if (auto handle = weak.lock())
         {
-            (*handle)->set_cpuUsage(slint::SharedString(cpu));
-            (*handle)->set_ramUsage(slint::SharedString(ram));
-            (*handle)->set_loadedExtensions(slint::SharedString(ext));
-            (*handle)->set_activeThreads(slint::SharedString(threads));
+            if ((*handle)->get_cpuUsage() != slint::SharedString(cpu)) (*handle)->set_cpuUsage(slint::SharedString(cpu));
+            if ((*handle)->get_ramUsage() != slint::SharedString(ram)) (*handle)->set_ramUsage(slint::SharedString(ram));
+            if ((*handle)->get_loadedExtensions() != slint::SharedString(ext)) (*handle)->set_loadedExtensions(slint::SharedString(ext));
+            if ((*handle)->get_activeThreads() != slint::SharedString(threads)) (*handle)->set_activeThreads(slint::SharedString(threads));
         }
     });
 }
@@ -986,10 +1053,23 @@ void UiModelManager::showFunStats_Interpreted(const std::string& cpu, const std:
     {
         if (auto handle = weak.lock())
         {
-            (*handle)->set_property("cpuUsage", slint::interpreter::Value(slint::SharedString(cpu)));
-            (*handle)->set_property("ramUsage", slint::interpreter::Value(slint::SharedString(ram)));
-            (*handle)->set_property("loadedExtensions", slint::interpreter::Value(slint::SharedString(ext)));
-            (*handle)->set_property("activeThreads", slint::interpreter::Value(slint::SharedString(threads)));
+            auto getProp = [&](const char* name) {
+                return (*handle)->get_property(name);
+            };
+
+            auto setPropIfChanged = [&](const char* name, const slint::interpreter::Value& val) {
+                if (auto current = getProp(name)) {
+                    if (*current == val) {
+                        return;
+                    }
+                }
+                (*handle)->set_property(name, val);
+            };
+
+            setPropIfChanged("cpuUsage", slint::interpreter::Value(slint::SharedString(cpu)));
+            setPropIfChanged("ramUsage", slint::interpreter::Value(slint::SharedString(ram)));
+            setPropIfChanged("loadedExtensions", slint::interpreter::Value(slint::SharedString(ext)));
+            setPropIfChanged("activeThreads", slint::interpreter::Value(slint::SharedString(threads)));
         }
     });
 }

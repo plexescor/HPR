@@ -182,6 +182,7 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow>& ui,  ExtensionM
             int lol = system("xdg-open https://github.com/plexescor/HPR/issues &");
         #endif
     });
+
 }
 
 //CONSTRUCTOR FOR **INTERPRETED** UI
@@ -442,6 +443,7 @@ UiEventBridge::UiEventBridge(
         #endif
         return slint::interpreter::Value(); // void return
     });
+
 }
 
 

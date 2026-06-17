@@ -264,7 +264,7 @@ void HPR::trackingLoop()
         else
         {
             //Chunked sleep based on ui-update-interval
-            int uiUpdateInterval = AppState::configManager.getConfig("ui-update-interval", 200);
+            int uiUpdateInterval = AppState::configManager.getConfig("ui-update-interval", 600);
             int remaining = uiUpdateInterval;
             while (remaining > 0 && running)
             {
