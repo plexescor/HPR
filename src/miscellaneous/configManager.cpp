@@ -190,6 +190,11 @@ void ConfigManager::setConfig(const std::string paramName, const T& value)
         }
         AutostartManager::setEnabled(autostartVal, headlessVal);
     }
+
+    if (paramName == "anonymous-telemetry")
+    {
+        telemetryPromptAnswered = true;
+    }
 }
 
 // Explicit template instantiations

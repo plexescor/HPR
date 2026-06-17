@@ -328,7 +328,7 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
                 bool autostartVal = AppState::configManager.getConfig<bool>("autostart", false);
                 bool headlessVal = AppState::configManager.getConfig<bool>("headless-mode", false);
                 bool telemetryVal = AppState::configManager.getConfig<bool>("anonymous-telemetry", false);
-                bool showPromptVal = AppState::configManager.isFirstLaunch();
+                bool showPromptVal = AppState::configManager.isFirstLaunch() && !AppState::configManager.isTelemetryPromptAnswered();
                 (*handle)->set_themeMode_S(slint::SharedString(theme));
                 (*handle)->set_isDarkMode(isDark);
                 (*handle)->set_autostart_S(autostartVal);
@@ -709,7 +709,7 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
             bool autostartVal = AppState::configManager.getConfig<bool>("autostart", false);
             bool headlessVal = AppState::configManager.getConfig<bool>("headless-mode", false);
             bool telemetryVal = AppState::configManager.getConfig<bool>("anonymous-telemetry", false);
-            bool showPromptVal = AppState::configManager.isFirstLaunch();
+            bool showPromptVal = AppState::configManager.isFirstLaunch() && !AppState::configManager.isTelemetryPromptAnswered();
             (*handle)->set_property(
                 "themeMode_S",
                 slint::interpreter::Value(slint::SharedString(theme)));

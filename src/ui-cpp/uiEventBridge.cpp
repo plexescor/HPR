@@ -4,6 +4,8 @@
 #include "extensionManager.hpp"
 #include "HPRInterpreter.hpp"
 #include "limitsManager.hpp"
+#include "telemetryManager.hpp"
+#include <thread>
 
 // Slint stuff
 #include "app-window.h"
@@ -133,7 +135,12 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow>& ui,  ExtensionM
 
     ui->on_setConfig([](slint::SharedString paramName, slint::SharedString value) 
     {
-        AppState::configManager.setConfig(std::string(paramName), std::string(value));
+        std::string param = std::string(paramName);
+        std::string val   = std::string(value);
+        AppState::configManager.setConfig(param, val);
+        if (param == "anonymous-telemetry" && val == "true") {
+            std::thread([]() { TelemetryManager::checkAndSend(); }).detach();
+        }
     });
 
     ui->on_loadInsights([this]()
@@ -381,7 +388,12 @@ UiEventBridge::UiEventBridge(
             auto opt_val = args[1].to_string();
             if (opt_name.has_value() && opt_val.has_value()) 
             {
-                AppState::configManager.setConfig(std::string(opt_name.value()), std::string(opt_val.value()));
+                std::string param = std::string(opt_name.value());
+                std::string val   = std::string(opt_val.value());
+                AppState::configManager.setConfig(param, val);
+                if (param == "anonymous-telemetry" && val == "true") {
+                    std::thread([]() { TelemetryManager::checkAndSend(); }).detach();
+                }
             }
         }
         return slint::interpreter::Value();

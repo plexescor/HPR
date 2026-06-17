@@ -17,6 +17,8 @@ class ConfigManager
 
     public:
         bool isFirstLaunch() const { return firstLaunch; }
+        bool isTelemetryPromptAnswered() const { return telemetryPromptAnswered; }
+        void markTelemetryPromptAnswered() { telemetryPromptAnswered = true; }
 
     private:
         void loadConfig();
@@ -27,4 +29,5 @@ class ConfigManager
         std::string fileName = "config.csv";
         std::string filePath;
         bool firstLaunch = false;
+        bool telemetryPromptAnswered = false;
 };
