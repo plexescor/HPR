@@ -21,6 +21,11 @@ import { TimeLog, SwitchHistory, TimeLog_Tab, TimeLog_Project, AppGoalData, Time
 
 // ── Main Window ──────────────────────────────────────────────────────────────
 export component MainWindow inherits Window {
+    no-frame: root.no-title-bar-enabled;
+    callback start_drag();
+    callback minimize_window();
+    callback close_window();
+
     callback loadHistoricalData_Singular(string);
     callback loadHistoricalData_Number(int, string);
     callback loadHistoricalData_Range(string, string, string);
@@ -67,6 +72,7 @@ export component MainWindow inherits Window {
     in property <bool>            autostart_S;
     in property <bool>            headless_S;
     in property <bool>            telemetry_S;
+    in property <bool>            no-title-bar-enabled;
     in property <bool>            showTelemetryPrompt_S;
     in-out property <bool>        isDarkMode <=> Palette.is-dark;
 
@@ -148,9 +154,21 @@ export component MainWindow inherits Window {
             spacing: 0px;
 
             // ── Topbar ───────────────────────────────────────────────────
-            Rectangle {
+            topbar := Rectangle {
                 height: 46px;
                 background: Palette.background;
+
+                if root.no-title-bar-enabled : TouchArea {
+                    x: 0px;
+                    y: 0px;
+                    width: parent.width - 100px;
+                    height: 46px;
+                    pointer-event(event) => {
+                        if (event.button == PointerEventButton.left && event.kind == PointerEventKind.down) {
+                            root.start_drag();
+                        }
+                    }
+                }
 
                 Rectangle {
                     y: parent.height - 1px;
@@ -211,34 +229,93 @@ export component MainWindow inherits Window {
                         }
                     }
 
-                    Rectangle {
-                        height: 26px;
-                        width: active-lbl.preferred-width + 30px;
-                        border-radius: 13px;
-                        background: Palette.sidebar-btn-bg;
-                        border-width: 1px;
-                        border-color: Palette.sidebar-btn-border;
-                        y: (parent.height - self.height) / 2;
+                    HorizontalLayout {
+                        spacing: 12px;
+                        alignment: end;
 
-                        HorizontalLayout {
-                            padding-left: 9px;
-                            spacing: 6px;
-                            alignment: start;
+                        if !root.no-title-bar-enabled : Rectangle {
+                            height: 26px;
+                            width: active-lbl.preferred-width + 30px;
+                            border-radius: 13px;
+                            background: Palette.sidebar-btn-bg;
+                            border-width: 1px;
+                            border-color: Palette.sidebar-btn-border;
+                            y: (parent.height - self.height) / 2;
 
-                            LiveDot {
-                                y: (parent.height - self.height) / 2;
-                                is-alert: windowName_S.character-count > 84;
+                            HorizontalLayout {
+                                padding-left: 9px;
+                                spacing: 6px;
+                                alignment: start;
+
+                                LiveDot {
+                                    y: (parent.height - self.height) / 2;
+                                    is-alert: windowName_S.character-count > 84;
+                                }
+
+                                active-lbl := Text {
+                                    text: windowName_S;
+                                    color: Palette.text-secondary;
+                                    font-size: 11px;
+                                    font-weight: 500;
+                                    vertical-alignment: center;
+                                    wrap: no-wrap;
+                                    overflow: elide;
+                                    max-width: 550px;
+                                }
+                            }
+                        }
+
+                        if root.no-title-bar-enabled : HorizontalLayout {
+                            spacing: 8px;
+                            alignment: end;
+                            y: (parent.height - self.height) / 2;
+
+                            // Minimize Button
+                            Rectangle {
+                                width: 24px;
+                                height: 24px;
+                                border-radius: 12px;
+                                background: ta-min.pressed ? Palette.sidebar-btn-bg : (ta-min.has-hover ? Palette.sidebar-btn-bg : transparent);
+                                border-width: 1px;
+                                border-color: ta-min.has-hover ? Palette.sidebar-btn-border : transparent;
+
+                                ta-min := TouchArea {
+                                    mouse-cursor: pointer;
+                                    clicked => { root.minimize_window(); }
+                                }
+                                
+                                Rectangle {
+                                    width: 10px;
+                                    height: 1.5px;
+                                    background: Palette.text-secondary;
+                                    y: (parent.height - self.height) / 2;
+                                    x: (parent.width - self.width) / 2;
+                                }
                             }
 
-                            active-lbl := Text {
-                                text: windowName_S;
-                                color: Palette.text-secondary;
-                                font-size: 11px;
-                                font-weight: 500;
-                                vertical-alignment: center;
-                                wrap: no-wrap;
-                                overflow: elide;
-                                max-width: 550px;
+                            // Close Button
+                            Rectangle {
+                                width: 24px;
+                                height: 24px;
+                                border-radius: 12px;
+                                background: ta-close.pressed ? Palette.sidebar-btn-bg : (ta-close.has-hover ? Palette.sidebar-btn-bg : transparent);
+                                border-width: 1px;
+                                border-color: ta-close.has-hover ? Palette.sidebar-btn-border : transparent;
+
+                                ta-close := TouchArea {
+                                    mouse-cursor: pointer;
+                                    clicked => { root.close_window(); }
+                                }
+
+                                Text {
+                                    text: "×";
+                                    font-size: 18px;
+                                    font-weight: 500;
+                                    color: Palette.text-secondary;
+                                    horizontal-alignment: center;
+                                    vertical-alignment: center;
+                                    y: -1px;
+                                }
                             }
                         }
                     }
@@ -341,6 +418,7 @@ export component MainWindow inherits Window {
                 autostart_S: root.autostart_S;
                 headless_S: root.headless_S;
                 telemetry_S: root.telemetry_S;
+                noTitleBar_S: root.no-title-bar-enabled;
                 setConfig(param, val) => { root.setConfig(param, val); }
             }
 

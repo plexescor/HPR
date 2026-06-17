@@ -38,6 +38,7 @@ export component SettingsView {
     in property <bool> autostart_S;
     in property <bool> headless_S;
     in property <bool> telemetry_S;
+    in property <bool> noTitleBar_S;
     callback setConfig(string, string);
 
     VerticalLayout {
@@ -108,6 +109,39 @@ export component SettingsView {
                             clicked => {
                                 root.setConfig("theme", "light");
                             }
+                        }
+                    }
+                }
+
+                Rectangle {
+                    height: 1px;
+                    background: Palette.divider;
+                }
+
+                HorizontalLayout {
+                    alignment: space-between;
+                    spacing: 12px;
+
+                    VerticalLayout {
+                        alignment: center;
+                        spacing: 4px;
+                        Text {
+                            text: "No Title Bar";
+                            font-size: 13px;
+                            font-weight: 600;
+                            color: Palette.text-primary;
+                        }
+                        Text {
+                            text: "Remove standard OS frame & title bar for a borderless window";
+                            font-size: 11px;
+                            color: Palette.text-secondary;
+                        }
+                    }
+
+                    Switch {
+                        checked: root.noTitleBar_S;
+                        toggled => {
+                            root.setConfig("no-title-bar", self.checked ? "true" : "false");
                         }
                     }
                 }

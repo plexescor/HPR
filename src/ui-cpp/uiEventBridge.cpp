@@ -183,6 +183,28 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow>& ui,  ExtensionM
         #endif
     });
 
+    ui->on_start_drag([]() {
+        #ifdef _WIN32
+            HWND hwnd = FindWindowW(nullptr, L"HPR");
+            if (hwnd) {
+                ReleaseCapture();
+                SendMessage(hwnd, WM_NCLBUTTONDOWN, HTCAPTION, 0);
+            }
+        #endif
+    });
+
+    slint::ComponentWeakHandle<MainWindow> weak_ui(ui);
+    ui->on_minimize_window([weak_ui]() {
+        if (auto handle = weak_ui.lock()) {
+            (*handle)->hide();
+        }
+    });
+
+    ui->on_close_window([weak_ui]() {
+        if (auto handle = weak_ui.lock()) {
+            (*handle)->hide();
+        }
+    });
 }
 
 //CONSTRUCTOR FOR **INTERPRETED** UI
@@ -442,6 +464,32 @@ UiEventBridge::UiEventBridge(
             int idc = system("xdg-open https://github.com/plexescor/HPR/issues &");
         #endif
         return slint::interpreter::Value(); // void return
+    });
+
+    ui->set_callback("start_drag", [](auto args) -> slint::interpreter::Value {
+        #ifdef _WIN32
+            HWND hwnd = FindWindowW(nullptr, L"HPR");
+            if (hwnd) {
+                ReleaseCapture();
+                SendMessage(hwnd, WM_NCLBUTTONDOWN, HTCAPTION, 0);
+            }
+        #endif
+        return slint::interpreter::Value();
+    });
+
+    slint::ComponentWeakHandle<slint::interpreter::ComponentInstance> weak_ui(ui);
+    ui->set_callback("minimize_window", [weak_ui](auto args) -> slint::interpreter::Value {
+        if (auto handle = weak_ui.lock()) {
+            (*handle)->hide();
+        }
+        return slint::interpreter::Value();
+    });
+
+    ui->set_callback("close_window", [weak_ui](auto args) -> slint::interpreter::Value {
+        if (auto handle = weak_ui.lock()) {
+            (*handle)->hide();
+        }
+        return slint::interpreter::Value();
     });
 
 }

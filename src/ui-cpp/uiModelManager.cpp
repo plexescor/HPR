@@ -325,11 +325,11 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
     slint::ComponentWeakHandle<MainWindow> weak(ui.value());
     slint::invoke_from_event_loop([weak, slintVec_TimeLog, slintVec_TimeLog_Tab, slintVec_TimeLog_Project, slintVec_SwitchHistory, slintVec_RawApps, totalTrackedTime, totalTrackedTime_Tab, totalTrackedTime_Project, currentWindowName, theme, isDark, this]()
     {
-
         if (auto handle = weak.lock()) {
                 bool autostartVal = AppState::configManager.getConfig<bool>("autostart", false);
                 bool headlessVal = AppState::configManager.getConfig<bool>("headless-mode", false);
                 bool telemetryVal = AppState::configManager.getConfig<bool>("anonymous-telemetry", false);
+                bool noTitleBarVal = AppState::configManager.getConfig<bool>("no-title-bar", false);
                 bool showPromptVal = AppState::configManager.isFirstLaunch();
                 
                 if ((*handle)->get_themeMode_S() != slint::SharedString(theme))
@@ -342,6 +342,8 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
                     (*handle)->set_headless_S(headlessVal);
                 if ((*handle)->get_telemetry_S() != telemetryVal)
                     (*handle)->set_telemetry_S(telemetryVal);
+                if ((*handle)->get_no_title_bar_enabled() != noTitleBarVal)
+                    (*handle)->set_no_title_bar_enabled(noTitleBarVal);
                 if ((*handle)->get_showTelemetryPrompt_S() != showPromptVal)
                     (*handle)->set_showTelemetryPrompt_S(showPromptVal);
                 if ((*handle)->get_windowName_S() != slint::SharedString(currentWindowName))
@@ -755,6 +757,7 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
             bool autostartVal = AppState::configManager.getConfig<bool>("autostart", false);
             bool headlessVal = AppState::configManager.getConfig<bool>("headless-mode", false);
             bool telemetryVal = AppState::configManager.getConfig<bool>("anonymous-telemetry", false);
+            bool noTitleBarVal = AppState::configManager.getConfig<bool>("no-title-bar", false);
             bool showPromptVal = AppState::configManager.isFirstLaunch();
 
             auto getProp = [&](const char* name) {
@@ -775,6 +778,7 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
             setPropIfChanged("autostart_S", slint::interpreter::Value(autostartVal));
             setPropIfChanged("headless_S", slint::interpreter::Value(headlessVal));
             setPropIfChanged("telemetry_S", slint::interpreter::Value(telemetryVal));
+            setPropIfChanged("no_title_bar_enabled", slint::interpreter::Value(noTitleBarVal));
             setPropIfChanged("showTelemetryPrompt_S", slint::interpreter::Value(showPromptVal));
             setPropIfChanged("windowName_S", slint::interpreter::Value(slint::SharedString(currentWindowName)));
             setPropIfChanged("trackedTime_S", slint::interpreter::Value((double)totalTrackedTime));
