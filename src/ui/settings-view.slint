@@ -37,6 +37,7 @@ export component SettingsView {
     in property <string> themeMode_S;
     in property <bool> autostart_S;
     in property <bool> headless_S;
+    in property <bool> telemetry_S;
     callback setConfig(string, string);
 
     VerticalLayout {
@@ -183,6 +184,49 @@ export component SettingsView {
                         checked: root.headless_S;
                         toggled => {
                             root.setConfig("headless-mode", self.checked ? "true" : "false");
+                        }
+                    }
+                }
+            }
+        }
+
+        Card {
+            VerticalLayout {
+                padding: 24px;
+                spacing: 16px;
+
+                Text {
+                    text: "PRIVACY & ANALYTICS";
+                    font-size: 8px;
+                    font-weight: 700;
+                    letter-spacing: 2.5px;
+                    color: Palette.text-muted;
+                }
+
+                HorizontalLayout {
+                    alignment: space-between;
+                    spacing: 12px;
+
+                    VerticalLayout {
+                        alignment: center;
+                        spacing: 4px;
+                        Text {
+                            text: "Anonymous Analytics";
+                            font-size: 13px;
+                            font-weight: 600;
+                            color: Palette.text-primary;
+                        }
+                        Text {
+                            text: "Send anonymous telemetry to help improve HPR (only reports total users and weekly active counts)";
+                            font-size: 11px;
+                            color: Palette.text-secondary;
+                        }
+                    }
+
+                    Switch {
+                        checked: root.telemetry_S;
+                        toggled => {
+                            root.setConfig("anonymous-telemetry", self.checked ? "true" : "false");
                         }
                     }
                 }

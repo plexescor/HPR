@@ -13,6 +13,7 @@
 #include "timelineManager.hpp"
 #include "singleInstance.hpp"
 #include "autostartManager.hpp"
+#include "telemetryManager.hpp"
 
 #ifdef _WIN32
 	#include <windows.h>
@@ -39,6 +40,8 @@
 
 		TimelineManager tlm;
 		tlm.run();
+
+		TelemetryManager::init();
 
 		ExtensionManager ext;
 		AppState::extManager = &ext;
@@ -153,6 +156,8 @@
 
 		TimelineManager tlm;
 		tlm.run();
+
+		TelemetryManager::init();
 
 
 		ExtensionManager ext;

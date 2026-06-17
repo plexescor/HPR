@@ -487,14 +487,19 @@ The 2.6% L1 data miss rate is entirely inside Slint's font rendering pipeline. N
 
 ```
 No accounts.
-No telemetry.
-No analytics.
-100% offline core.
+No telemetry (unless opted-in).
+No analytics (unless opted-in).
+100% offline core by default.
 ```
 
-**Let's be completely upfront:** Networking code (`WinHTTP` on Windows, `libcurl` on Linux) **is compiled into the HPR binary**. However, **HPR itself never makes network calls and never phones home.**
+**Let's be completely upfront:** Networking code (`WinHTTP` on Windows, `libcurl` on Linux) **is compiled into the HPR binary**. However, **HPR itself never makes network calls and never phones home by default.**
 
-The networking libraries are bundled solely to power the Lua extension engine. By default HPR runs entirely offline. Only when you explicitly install or write a Lua extension that invokes `HPR.httpGet_E` will HPR touch the internet.
+The networking libraries are bundled solely to power the Lua extension engine and the opt-in anonymous analytics. By default HPR runs entirely offline. Only when you explicitly enable anonymous analytics, or install/write a Lua extension that invokes `HPR.httpGet_E` will HPR touch the internet.
+
+### Anonymous Analytics (Opt-in)
+To help measure HPR's adoption, HPR includes a built-in anonymous analytics logger:
+* **What is sent:** Only two completely anonymous numbers: a registration ping (to count total unique installations) and a weekly active ping (triggered only if you use HPR 4 or more days in a single week). No window titles, website URLs, project names, or personal logs ever leave your machine.
+* **Control:** Telemetry is disabled by default. On first launch, HPR will ask for your consent, and you can toggle it on or off at any time under the **Settings** view.
 
 > [!WARNING]
 > **Extension Security Warning:**

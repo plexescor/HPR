@@ -326,10 +326,15 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
         if (auto handle = weak.lock()) {
                 bool autostartVal = AppState::configManager.getConfig<bool>("autostart", false);
                 bool headlessVal = AppState::configManager.getConfig<bool>("headless-mode", false);
+                std::string telemetryChoice = AppState::configManager.getConfig<std::string>("anonymous-telemetry", "unset");
+                bool telemetryVal = (telemetryChoice == "true");
+                bool showPromptVal = (telemetryChoice == "unset");
                 (*handle)->set_themeMode_S(slint::SharedString(theme));
                 (*handle)->set_isDarkMode(isDark);
                 (*handle)->set_autostart_S(autostartVal);
                 (*handle)->set_headless_S(headlessVal);
+                (*handle)->set_telemetry_S(telemetryVal);
+                (*handle)->set_showTelemetryPrompt_S(showPromptVal);
                 (*handle)->set_windowName_S(slint::SharedString(currentWindowName));
 
                 (*handle)->set_trackedTime_S((float)totalTrackedTime);
@@ -703,6 +708,9 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
         {
             bool autostartVal = AppState::configManager.getConfig<bool>("autostart", false);
             bool headlessVal = AppState::configManager.getConfig<bool>("headless-mode", false);
+            std::string telemetryChoice = AppState::configManager.getConfig<std::string>("anonymous-telemetry", "unset");
+            bool telemetryVal = (telemetryChoice == "true");
+            bool showPromptVal = (telemetryChoice == "unset");
             (*handle)->set_property(
                 "themeMode_S",
                 slint::interpreter::Value(slint::SharedString(theme)));
@@ -718,6 +726,14 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
             (*handle)->set_property(
                 "headless_S",
                 slint::interpreter::Value(headlessVal));
+
+            (*handle)->set_property(
+                "telemetry_S",
+                slint::interpreter::Value(telemetryVal));
+
+            (*handle)->set_property(
+                "showTelemetryPrompt_S",
+                slint::interpreter::Value(showPromptVal));
 
             (*handle)->set_property(
                 "windowName_S",
