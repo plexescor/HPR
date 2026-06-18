@@ -19,14 +19,14 @@ export component AboutView {
         viewport-height: aboutContent.preferred-height;
 
         aboutContent := VerticalLayout {
-            padding: 12px;
-            padding-top: 6px;
-            spacing: 10px;
+            padding: 12px * Palette.scale;
+            padding-top: 6px * Palette.scale;
+            spacing: 10px * Palette.scale;
 
             HorizontalLayout {
                 alignment: start;
                 vertical-stretch: 0;
-                padding-top: 4px;
+                padding-top: 4px * Palette.scale;
 
                 SectionHeader { label: "ABOUT"; }
             }
@@ -34,28 +34,28 @@ export component AboutView {
             // ── Card 1: Author ────────────────────────────────────────────────
             Card {
                 VerticalLayout {
-                    padding: 28px;
-                    spacing: 16px;
+                    padding: 28px * Palette.scale;
+                    spacing: 16px * Palette.scale;
 
                     HorizontalLayout {
-                        spacing: 32px;
+                        spacing: 32px * Palette.scale;
                         alignment: start;
 
                         // ── Avatar ────────────────────────────────────────────────
                         Rectangle {
-                            width: 180px;
-                            height: 180px;
-                            border-radius: 90px;
+                            width: 180px * Palette.scale;
+                            height: 180px * Palette.scale;
+                            border-radius: 90px * Palette.scale;
                             clip: true;
                             background: @linear-gradient(135deg, #c084fc18 0%, #38bdf818 100%);
-                            border-width: 1.5px;
+                            border-width: 1.5px * Palette.scale;
                             border-color: #c084fc30;
                             y: (parent.height - self.height) / 2;
 
                             Image {
                                 source: @image-url("./images/sonic.png");
-                                width: 180px;
-                                height: 180px;
+                                width: 180px * Palette.scale;
+                                height: 180px * Palette.scale;
                                 x: 0px;
                                 y: 0px;
                                 image-fit: cover;
@@ -65,54 +65,54 @@ export component AboutView {
                         // ── Info ──────────────────────────────────────────────────
                         VerticalLayout {
                             alignment: center;
-                            spacing: 20px;
+                            spacing: 20px * Palette.scale;
                             vertical-stretch: 1;
                             y: (parent.height - self.height) / 2;
 
                             // Name + tagline
                             VerticalLayout {
-                                spacing: 8px;
+                                spacing: 8px * Palette.scale;
 
                                 Text {
                                     text: "PLEXESCOR";
-                                    font-size: 24px;
+                                    font-size: 24px * Palette.scale;
                                     font-weight: 800;
-                                    letter-spacing: 5px;
+                                    letter-spacing: 5px * Palette.scale;
                                     color: Palette.text-primary;
                                 }
 
                                 Text {
                                     text: "The one you have to thank for being provided with HPR";
-                                    font-size: 13px;
+                                    font-size: 13px * Palette.scale;
                                     font-weight: 400;
                                     color: Palette.text-secondary;
-                                    letter-spacing: 0.2px;
+                                    letter-spacing: 0.2px * Palette.scale;
                                     wrap: word-wrap;
                                 }
                             }
 
                             // ── Meta rows ────────────────────────────────────────
                             VerticalLayout {
-                                spacing: 10px;
+                                spacing: 10px * Palette.scale;
 
                                 // Email
                                 HorizontalLayout {
-                                    spacing: 10px;
+                                    spacing: 10px * Palette.scale;
                                     alignment: start;
 
                                     Text {
                                         text: "EMAIL";
-                                        font-size: 9px;
+                                        font-size: 9px * Palette.scale;
                                         font-weight: 700;
-                                        letter-spacing: 2px;
+                                        letter-spacing: 2px * Palette.scale;
                                         color: #c084fc80;
                                         vertical-alignment: center;
-                                        width: 64px;
+                                        width: 64px * Palette.scale;
                                     }
 
                                     Text {
                                         text: "saraswal2010@gmail.com";
-                                        font-size: 13px;
+                                        font-size: 13px * Palette.scale;
                                         font-weight: 500;
                                         color: #c084fc;
                                         vertical-alignment: center;
@@ -121,22 +121,22 @@ export component AboutView {
 
                                 // GitHub
                                 HorizontalLayout {
-                                    spacing: 10px;
+                                    spacing: 10px * Palette.scale;
                                     alignment: start;
 
                                     Text {
                                         text: "GITHUB";
-                                        font-size: 9px;
+                                        font-size: 9px * Palette.scale;
                                         font-weight: 700;
-                                        letter-spacing: 2px;
+                                        letter-spacing: 2px * Palette.scale;
                                         color: #a3e63580;
                                         vertical-alignment: center;
-                                        width: 64px;
+                                        width: 64px * Palette.scale;
                                     }
 
                                     Text {
                                         text: "github.com/plexescor";
-                                        font-size: 13px;
+                                        font-size: 13px * Palette.scale;
                                         font-weight: 500;
                                         color: #a3e635;
                                         vertical-alignment: center;
@@ -145,22 +145,22 @@ export component AboutView {
 
                                 // Website
                                 HorizontalLayout {
-                                    spacing: 10px;
+                                    spacing: 10px * Palette.scale;
                                     alignment: start;
 
                                     Text {
                                         text: "WEBSITE";
-                                        font-size: 9px;
+                                        font-size: 9px * Palette.scale;
                                         font-weight: 700;
-                                        letter-spacing: 2px;
+                                        letter-spacing: 2px * Palette.scale;
                                         color: #38bdf880;
                                         vertical-alignment: center;
-                                        width: 64px;
+                                        width: 64px * Palette.scale;
                                     }
 
                                     Text {
                                         text: "hpr-cpp.netlify.app";
-                                        font-size: 13px;
+                                        font-size: 13px * Palette.scale;
                                         font-weight: 500;
                                         color: #38bdf8;
                                         vertical-alignment: center;
@@ -170,15 +170,15 @@ export component AboutView {
 
                             // ── Bottom row: version + ko-fi ────────
                             HorizontalLayout {
-                                spacing: 10px;
+                                spacing: 10px * Palette.scale;
                                 alignment: start;
 
                                 // Version pill
                                 version-btn := Rectangle {
-                                    width: version-lbl.preferred-width + 20px;
-                                    height: 28px;
-                                    border-radius: 6px;
-                                    border-width: 1px;
+                                    width: version-lbl.preferred-width + 20px * Palette.scale;
+                                    height: 28px * Palette.scale;
+                                    border-radius: 6px * Palette.scale;
+                                    border-width: 1px * Palette.scale;
 
                                     animate background   { duration: 100ms; }
                                     animate border-color { duration: 100ms; }
@@ -205,9 +205,9 @@ export component AboutView {
 
                                     version-lbl := Text {
                                         text: "v0.9";
-                                        font-size: 9px;
+                                        font-size: 9px * Palette.scale;
                                         font-weight: 700;
-                                        letter-spacing: 2px;
+                                        letter-spacing: 2px * Palette.scale;
                                         color: ta-version.pressed ? #d9f99d : ta-version.has-hover ? #bef264 : #a3e635;
                                         horizontal-alignment: center;
                                         vertical-alignment: center;
@@ -219,10 +219,10 @@ export component AboutView {
 
                                 // Ko-fi button
                                 kofi-btn := Rectangle {
-                                    width: kofi-lbl.preferred-width + 24px;
-                                    height: 28px;
-                                    border-radius: 6px;
-                                    border-width: 1px;
+                                    width: kofi-lbl.preferred-width + 24px * Palette.scale;
+                                    height: 28px * Palette.scale;
+                                    border-radius: 6px * Palette.scale;
+                                    border-width: 1px * Palette.scale;
 
                                     animate background   { duration: 100ms; }
                                     animate border-color { duration: 100ms; }
@@ -249,9 +249,9 @@ export component AboutView {
 
                                     kofi-lbl := Text {
                                         text: "KO-FI";
-                                        font-size: 9px;
+                                        font-size: 9px * Palette.scale;
                                         font-weight: 700;
-                                        letter-spacing: 2px;
+                                        letter-spacing: 2px * Palette.scale;
                                         color: ta-kofi.pressed ? #ff9997 : ta-kofi.has-hover ? #ff7572 : #ff5e5b;
                                         horizontal-alignment: center;
                                         vertical-alignment: center;
@@ -267,21 +267,21 @@ export component AboutView {
                     // ── Now Watching row (shown only when data is present) ──
                     if root.now-playing-title != "" : HorizontalLayout {
                         alignment: center;
-                        spacing: 12px;
+                        spacing: 12px * Palette.scale;
 
                         Text {
                             text: "Plexescor is watching: ";
-                            font-size: 11px;
+                            font-size: 11px * Palette.scale;
                             font-weight: 700;
                             color: Palette.text-secondary;
                             vertical-alignment: center;
                         }
 
                         Rectangle {
-                            height: 34px;
+                            height: 34px * Palette.scale;
                             width: now-watch-row.preferred-width;
-                            border-radius: 6px;
-                            border-width: 1px;
+                            border-radius: 6px * Palette.scale;
+                            border-width: 1px * Palette.scale;
                             border-color: ta-now.has-hover ? #38bdf880 : #38bdf840;
                             background: ta-now.pressed ? #38bdf835 : (ta-now.has-hover ? #38bdf820 : #38bdf810);
                             animate background   { duration: 100ms; }
@@ -299,13 +299,13 @@ export component AboutView {
 
                                 title-txt := Text {
                                     text: root.now-playing-title;
-                                    font-size: 11px;
+                                    font-size: 11px * Palette.scale;
                                     font-weight: 700;
-                                    letter-spacing: 0.5px;
+                                    letter-spacing: 0.5px * Palette.scale;
                                     color: #38bdf8;
                                     vertical-alignment: center;
                                     overflow: elide;
-                                    max-width: 450px;
+                                    max-width: 450px * Palette.scale;
                                 }
                             }
                         }
@@ -316,40 +316,40 @@ export component AboutView {
             // ── Card 2: Stack + Open Source ───────────────────────────────────
             Card {
                 HorizontalLayout {
-                    padding: 20px;
-                    spacing: 32px;
+                    padding: 20px * Palette.scale;
+                    spacing: 32px * Palette.scale;
                     alignment: start;
 
                     // Built with
                     VerticalLayout {
-                        spacing: 10px;
+                        spacing: 10px * Palette.scale;
                         horizontal-stretch: 1;
 
                         Text {
                             text: "BUILT WITH";
-                            font-size: 8px;
+                            font-size: 8px * Palette.scale;
                             font-weight: 700;
-                            letter-spacing: 2.5px;
+                            letter-spacing: 2.5px * Palette.scale;
                             color: Palette.text-muted;
                         }
 
                         HorizontalLayout {
-                            spacing: 6px;
+                            spacing: 6px * Palette.scale;
                             alignment: start;
 
                             for tech in ["C++23", "Slint 1.16.1", "SQLite3", "WinToast", "sol2", "Lua"] : Rectangle {
-                                width: tech-lbl.preferred-width + 16px;
-                                height: 24px;
-                                border-radius: 5px;
+                                width: tech-lbl.preferred-width + 16px * Palette.scale;
+                                height: 24px * Palette.scale;
+                                border-radius: 5px * Palette.scale;
                                 background: #38bdf810;
-                                border-width: 1px;
+                                border-width: 1px * Palette.scale;
                                 border-color: #38bdf825;
 
                                 tech-lbl := Text {
                                     text: tech;
-                                    font-size: 9px;
+                                    font-size: 9px * Palette.scale;
                                     font-weight: 600;
-                                    letter-spacing: 0.5px;
+                                    letter-spacing: 0.5px * Palette.scale;
                                     color: #38bdf8;
                                     horizontal-alignment: center;
                                     vertical-alignment: center;
@@ -362,32 +362,32 @@ export component AboutView {
 
                     // Divider
                     Rectangle {
-                        width: 1px;
+                        width: 1px * Palette.scale;
                         background: Palette.divider;
                         // no fixed height — stretches to parent height naturally
                     }
 
                     // Open source + contributors — all on same row, centered
                     HorizontalLayout {
-                        spacing: 16px;
+                        spacing: 16px * Palette.scale;
                         alignment: center;
-                        width: 200px;
+                        width: 200px * Palette.scale;
 
                         // Open source badge
                         Rectangle {
-                            width: oss-lbl.preferred-width + 24px;
-                            height: 26px;
-                            border-radius: 6px;
+                            width: oss-lbl.preferred-width + 24px * Palette.scale;
+                            height: 26px * Palette.scale;
+                            border-radius: 6px * Palette.scale;
                             background: #a3e63512;
-                            border-width: 1px;
+                            border-width: 1px * Palette.scale;
                             border-color: #a3e63535;
                             y: (parent.height - self.height) / 2;
 
                             oss-lbl := Text {
                                 text: "OPEN SOURCE";
-                                font-size: 8px;
+                                font-size: 8px * Palette.scale;
                                 font-weight: 700;
-                                letter-spacing: 2px;
+                                letter-spacing: 2px * Palette.scale;
                                 color: #a3e635;
                                 horizontal-alignment: center;
                                 vertical-alignment: center;
@@ -398,29 +398,29 @@ export component AboutView {
 
                         // Divider
                         Rectangle {
-                            width: 1px;
-                            height: 16px;
+                            width: 1px * Palette.scale;
+                            height: 16px * Palette.scale;
                             background: #ffffff15;
                             y: (parent.height - self.height) / 2;
                         }
 
                         // Contributors
                         HorizontalLayout {
-                            spacing: 6px;
+                            spacing: 6px * Palette.scale;
                             alignment: center;
 
                             Text {
                                 text: "CONTRIBUTORS";
-                                font-size: 8px;
+                                font-size: 8px * Palette.scale;
                                 font-weight: 700;
-                                letter-spacing: 2px;
+                                letter-spacing: 2px * Palette.scale;
                                 color: Palette.text-muted;
                                 vertical-alignment: center;
                             }
 
                             Text {
                                 text: "1";
-                                font-size: 13px;
+                                font-size: 13px * Palette.scale;
                                 font-weight: 700;
                                 color: Palette.text-primary;
                                 vertical-alignment: center;
@@ -433,91 +433,91 @@ export component AboutView {
             // ── Card 3: Stats + Bug report + Easter egg ───────────────────────
             Card {
                 VerticalLayout {
-                    padding: 20px;
-                    spacing: 14px;
+                    padding: 20px * Palette.scale;
+                    spacing: 14px * Palette.scale;
 
                     // ── Header ────────────────────────────────────────────────
                     Text {
                         text: "FUN STATS";
-                        font-size: 8px;
+                        font-size: 8px * Palette.scale;
                         font-weight: 700;
-                        letter-spacing: 2.5px;
+                        letter-spacing: 2.5px * Palette.scale;
                         color: Palette.text-muted;
                     }
 
                     // ── HPR Runtime Stats (Placeholders) ──────────────────────
                     HorizontalLayout {
-                        spacing: 16px;
+                        spacing: 16px * Palette.scale;
                         alignment: space-between;
 
                         // CPU
                         VerticalLayout {
-                            spacing: 4px;
+                            spacing: 4px * Palette.scale;
                             Text {
                                 text: root.cpu-usage;
-                                font-size: 18px;
+                                font-size: 18px * Palette.scale;
                                 font-weight: 800;
                                 color: #38bdf8;
                             }
                             Text {
                                 text: "CPU USAGE";
-                                font-size: 8px;
+                                font-size: 8px * Palette.scale;
                                 font-weight: 700;
-                                letter-spacing: 1.5px;
+                                letter-spacing: 1.5px * Palette.scale;
                                 color: Palette.text-muted;
                             }
                         }
 
                         // RAM
                         VerticalLayout {
-                            spacing: 4px;
+                            spacing: 4px * Palette.scale;
                             Text {
                                 text: root.ram-usage;
-                                font-size: 18px;
+                                font-size: 18px * Palette.scale;
                                 font-weight: 800;
                                 color: #c084fc;
                             }
                             Text {
                                 text: "RAM";
-                                font-size: 8px;
+                                font-size: 8px * Palette.scale;
                                 font-weight: 700;
-                                letter-spacing: 1.5px;
+                                letter-spacing: 1.5px * Palette.scale;
                                 color: Palette.text-muted;
                             }
                         }
 
                         // Extensions
                         VerticalLayout {
-                            spacing: 4px;
+                            spacing: 4px * Palette.scale;
                             Text {
                                 text: root.loaded-extensions;
-                                font-size: 18px;
+                                font-size: 18px * Palette.scale;
                                 font-weight: 800;
                                 color: #a3e635;
                             }
                             Text {
                                 text: "EXTENSIONS";
-                                font-size: 8px;
+                                font-size: 8px * Palette.scale;
                                 font-weight: 700;
-                                letter-spacing: 1.5px;
+                                letter-spacing: 1.5px * Palette.scale;
                                 color: Palette.text-muted;
                             }
                         }
 
                         // Threads
                         VerticalLayout {
-                            spacing: 4px;
+                            spacing: 4px * Palette.scale;
                             Text {
                                 text: root.active-threads;
-                                font-size: 18px;
+                                font-size: 18px * Palette.scale;
                                 font-weight: 800;
                                 color: #fb923c;
                             }
                             Text {
                                 text: "THREADS";
-                                font-size: 8px;
+                                font-size: 8px * Palette.scale;
                                 font-weight: 700;
-                                letter-spacing: 1.5px;
+                                letter-spacing: 1.5px * Palette.scale;
                                 color: Palette.text-muted;
                             }
                         }
@@ -525,130 +525,130 @@ export component AboutView {
 
                     // ── Small spacer/divider ──
                     Rectangle {
-                        height: 1px;
+                        height: 1px * Palette.scale;
                         background: Palette.divider;
                     }
 
                     // ── Stats row: left (LOC) | divider | right (coffee) ─────
                     HorizontalLayout {
-                        spacing: 24px;
+                        spacing: 24px * Palette.scale;
                         alignment: start;
 
                         // Left: total lines + per-lang breakdown
                         VerticalLayout {
-                            spacing: 10px;
-                            width: 160px;
+                            spacing: 10px * Palette.scale;
+                            width: 160px * Palette.scale;
 
                             // Total
                             VerticalLayout {
-                                spacing: 3px;
+                                spacing: 3px * Palette.scale;
                                 Text {
                                     text: "~17.1K";
-                                    font-size: 22px;
+                                    font-size: 22px * Palette.scale;
                                     font-weight: 800;
                                     color: Palette.text-primary;
-                                    letter-spacing: 1px;
+                                    letter-spacing: 1px * Palette.scale;
                                 }
                                 Text {
                                     text: "TOTAL LINES";
-                                    font-size: 8px;
+                                    font-size: 8px * Palette.scale;
                                     font-weight: 700;
-                                    letter-spacing: 2px;
+                                    letter-spacing: 2px * Palette.scale;
                                     color: Palette.text-muted;
                                 }
                             }
 
                             // Per-lang
                             VerticalLayout {
-                                spacing: 5px;
+                                spacing: 5px * Palette.scale;
 
                                 HorizontalLayout {
-                                    spacing: 8px;
+                                    spacing: 8px * Palette.scale;
                                     alignment: start;
-                                    Text { text: "C++"; font-size: 8px; font-weight: 700; letter-spacing: 1.5px; color: #38bdf870; vertical-alignment: center; width: 52px; }
-                                    Text { text: "10818"; font-size: 11px; font-weight: 600; color: #38bdf8; vertical-alignment: center; }
+                                    Text { text: "C++"; font-size: 8px * Palette.scale; font-weight: 700; letter-spacing: 1.5px * Palette.scale; color: #38bdf870; vertical-alignment: center; width: 52px * Palette.scale; }
+                                    Text { text: "10818"; font-size: 11px * Palette.scale; font-weight: 600; color: #38bdf8; vertical-alignment: center; }
                                 }
                                 HorizontalLayout {
-                                    spacing: 8px;
+                                    spacing: 8px * Palette.scale;
                                     alignment: start;
-                                    Text { text: "SLINT"; font-size: 8px; font-weight: 700; letter-spacing: 1.5px; color: #c084fc70; vertical-alignment: center; width: 52px; }
-                                    Text { text: "4032"; font-size: 11px; font-weight: 600; color: #c084fc; vertical-alignment: center; }
+                                    Text { text: "SLINT"; font-size: 8px * Palette.scale; font-weight: 700; letter-spacing: 1.5px * Palette.scale; color: #c084fc70; vertical-alignment: center; width: 52px * Palette.scale; }
+                                    Text { text: "4032"; font-size: 11px * Palette.scale; font-weight: 600; color: #c084fc; vertical-alignment: center; }
                                 }
                                 HorizontalLayout {
-                                    spacing: 8px;
+                                    spacing: 8px * Palette.scale;
                                     alignment: start;
-                                    Text { text: "HEADERS"; font-size: 8px; font-weight: 700; letter-spacing: 1.5px; color: #fb923c70; vertical-alignment: center; width: 52px; }
-                                    Text { text: "1043"; font-size: 11px; font-weight: 600; color: #fb923c; vertical-alignment: center; }
+                                    Text { text: "HEADERS"; font-size: 8px * Palette.scale; font-weight: 700; letter-spacing: 1.5px * Palette.scale; color: #fb923c70; vertical-alignment: center; width: 52px * Palette.scale; }
+                                    Text { text: "1043"; font-size: 11px * Palette.scale; font-weight: 600; color: #fb923c; vertical-alignment: center; }
                                 }
                             }
                         }
 
                         // Divider
                         Rectangle {
-                            width: 1px;
+                            width: 1px * Palette.scale;
                             background: Palette.divider;
                             horizontal-stretch: 0;
                         }
 
                         // Right: coffee
                         VerticalLayout {
-                            spacing: 3px;
-                            width: 160px;
-                            padding-left: 24px;
+                            spacing: 3px * Palette.scale;
+                            width: 160px * Palette.scale;
+                            padding-left: 24px * Palette.scale;
 
                             HorizontalLayout {
-                                spacing: 6px;
+                                spacing: 6px * Palette.scale;
                                 alignment: start;
-                                Text { text: "☕"; font-size: 18px; vertical-alignment: center; }
+                                Text { text: "☕"; font-size: 18px * Palette.scale; vertical-alignment: center; }
                                 Text {
                                     text: "4";
-                                    font-size: 22px;
+                                    font-size: 22px * Palette.scale;
                                     font-weight: 800;
                                     color: Palette.text-primary;
-                                    letter-spacing: 1px;
+                                    letter-spacing: 1px * Palette.scale;
                                     vertical-alignment: center;
                                 }
                             }
                             Text {
                                 text: "CUPS OF COFFEE";
-                                font-size: 8px;
+                                font-size: 8px * Palette.scale;
                                 font-weight: 700;
-                                letter-spacing: 2px;
+                                letter-spacing: 2px * Palette.scale;
                                 color: Palette.text-muted;
                             }
                         }
 
                         // Divider
                         Rectangle {
-                            width: 1px;
+                            width: 1px * Palette.scale;
                             background: Palette.divider;
                             horizontal-stretch: 0;
                         }
 
                         // Rightmost: donations
                         VerticalLayout {
-                            spacing: 3px;
-                            width: 160px;
-                            padding-left: 24px;
+                            spacing: 3px * Palette.scale;
+                            width: 160px * Palette.scale;
+                            padding-left: 24px * Palette.scale;
 
                             HorizontalLayout {
-                                spacing: 6px;
+                                spacing: 6px * Palette.scale;
                                 alignment: start;
-                                Text { text: "💖"; font-size: 18px; vertical-alignment: center; }
+                                Text { text: "💖"; font-size: 18px * Palette.scale; vertical-alignment: center; }
                                 Text {
                                     text: "$20";
-                                    font-size: 22px;
+                                    font-size: 22px * Palette.scale;
                                     font-weight: 800;
                                     color: #a3e635;
-                                    letter-spacing: 1px;
+                                    letter-spacing: 1px * Palette.scale;
                                     vertical-alignment: center;
                                 }
                             }
                             Text {
                                 text: "TOTAL DONATIONS";
-                                font-size: 8px;
+                                font-size: 8px * Palette.scale;
                                 font-weight: 700;
-                                letter-spacing: 2px;
+                                letter-spacing: 2px * Palette.scale;
                                 color: Palette.text-muted;
                             }
                         }
@@ -656,7 +656,7 @@ export component AboutView {
 
                     // ── Divider ───────────────────────────────────────────────
                     Rectangle {
-                        height: 1px;
+                        height: 1px * Palette.scale;
                         background: @linear-gradient(90deg, #ffffff00 0%, #ffffff12 40%, #ffffff12 60%, #ffffff00 100%);
                     }
 
@@ -666,10 +666,10 @@ export component AboutView {
                         alignment: space-between;
 
                         bug-btn := Rectangle {
-                            width: bug-lbl.preferred-width + 24px;
-                            height: 26px;
-                            border-radius: 6px;
-                            border-width: 1px;
+                            width: bug-lbl.preferred-width + 24px * Palette.scale;
+                            height: 26px * Palette.scale;
+                            border-radius: 6px * Palette.scale;
+                            border-width: 1px * Palette.scale;
 
                             animate background   { duration: 100ms; }
                             animate border-color { duration: 100ms; }
@@ -687,9 +687,9 @@ export component AboutView {
 
                             bug-lbl := Text {
                                 text: "REPORT A BUG";
-                                font-size: 8px;
+                                font-size: 8px * Palette.scale;
                                 font-weight: 700;
-                                letter-spacing: 2px;
+                                letter-spacing: 2px * Palette.scale;
                                 color: ta-bug.pressed ? #fed7aa : ta-bug.has-hover ? #fdba74 : #fb923c;
                                 horizontal-alignment: center;
                                 vertical-alignment: center;
@@ -700,15 +700,15 @@ export component AboutView {
                         }
 
                         HorizontalLayout {
-                            spacing: 8px;
+                            spacing: 8px * Palette.scale;
                             alignment: end;
-                            Text { text: "💨"; font-size: 14px; vertical-alignment: center; }
+                            Text { text: "💨"; font-size: 14px * Palette.scale; vertical-alignment: center; }
                             Text {
                                 text: "If this crashed, must've been the wind ahh";
-                                font-size: 11px;
+                                font-size: 11px * Palette.scale;
                                 font-weight: 500;
                                 color: Palette.text-secondary;
-                                letter-spacing: 0.3px;
+                                letter-spacing: 0.3px * Palette.scale;
                                 vertical-alignment: center;
                                 font-italic: true;
                             }

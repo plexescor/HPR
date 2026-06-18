@@ -1,4 +1,4 @@
-﻿import { Card } from "./card.slint";
+import { Card } from "./card.slint";
 import { SectionHeader } from "./section-header.slint";
 import { Palette } from "./palette.slint";
 
@@ -25,22 +25,22 @@ export component InsightsView {
     callback load-insights;
 
     VerticalLayout {
-        padding: 12px;
+        padding: 12px * Palette.scale;
         padding-top: 0px;
-        spacing: 10px;
+        spacing: 10px * Palette.scale;
 
         HorizontalLayout {
             alignment: space-between;
             vertical-stretch: 0;
-            padding-top: 4px;
+            padding-top: 4px * Palette.scale;
 
             SectionHeader { label: "INSIGHTS"; }
 
             refreshBtn := Rectangle {
-                width: 72px;
-                height: 26px;
-                border-radius: 6px;
-                border-width: 1px;
+                width: 72px * Palette.scale;
+                height: 26px * Palette.scale;
+                border-radius: 6px * Palette.scale;
+                border-width: 1px * Palette.scale;
 
                 animate background { duration: 100ms; }
                 animate border-color { duration: 100ms; }
@@ -67,9 +67,9 @@ export component InsightsView {
 
                 Text {
                     text: "REFRESH";
-                    font-size: 8px;
+                    font-size: 8px * Palette.scale;
                     font-weight: 700;
-                    letter-spacing: 2px;
+                    letter-spacing: 2px * Palette.scale;
                     color: ta-refresh.pressed ? #a7f3d0 : ta-refresh.has-hover ? #6ee7b7 : #34d399;
                     horizontal-alignment: center;
                     vertical-alignment: center;
@@ -85,34 +85,34 @@ export component InsightsView {
 
             insightContent := VerticalLayout {
                 width: 100%;
-                spacing: 8px;
+                spacing: 8px * Palette.scale;
 
                 // â”€â”€ TODAY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 Text {
                     text: "TODAY";
-                    font-size: 8px;
+                    font-size: 8px * Palette.scale;
                     font-weight: 700;
-                    letter-spacing: 3px;
+                    letter-spacing: 3px * Palette.scale;
                     color: Palette.text-label;
-                    x: 4px;
+                    x: 4px * Palette.scale;
                 }
 
                 Card {
-                    height: 64px;
+                    height: 64px * Palette.scale;
                     HorizontalLayout {
-                        padding: 16px;
+                        padding: 16px * Palette.scale;
                         alignment: space-between;
                         Text {
                             text: "MOST USED APP";
-                            font-size: 9px;
+                            font-size: 9px * Palette.scale;
                             font-weight: 700;
-                            letter-spacing: 2.5px;
+                            letter-spacing: 2.5px * Palette.scale;
                             color: Palette.text-muted;
                             vertical-alignment: center;
                         }
                         Text {
                             text: mostUsedApp_S;
-                            font-size: 15px;
+                            font-size: 15px * Palette.scale;
                             font-weight: 600;
                             color: #a3e635;
                             vertical-alignment: center;
@@ -121,21 +121,21 @@ export component InsightsView {
                 }
 
                 Card {
-                    height: 64px;
+                    height: 64px * Palette.scale;
                     HorizontalLayout {
-                        padding: 16px;
+                        padding: 16px * Palette.scale;
                         alignment: space-between;
                         Text {
                             text: "TOTAL TRACKED TIME";
-                            font-size: 9px;
+                            font-size: 9px * Palette.scale;
                             font-weight: 700;
-                            letter-spacing: 2.5px;
+                            letter-spacing: 2.5px * Palette.scale;
                             color: Palette.text-muted;
                             vertical-alignment: center;
                         }
                         Text {
                             text: totalTrackedTime_S;
-                            font-size: 15px;
+                            font-size: 15px * Palette.scale;
                             font-weight: 600;
                             color: #38bdf8;
                             vertical-alignment: center;
@@ -144,21 +144,21 @@ export component InsightsView {
                 }
 
                 Card {
-                    height: 64px;
+                    height: 64px * Palette.scale;
                     HorizontalLayout {
-                        padding: 16px;
+                        padding: 16px * Palette.scale;
                         alignment: space-between;
                         Text {
                             text: "TOTAL APP SWITCHES";
-                            font-size: 9px;
+                            font-size: 9px * Palette.scale;
                             font-weight: 700;
-                            letter-spacing: 2.5px;
+                            letter-spacing: 2.5px * Palette.scale;
                             color: Palette.text-muted;
                             vertical-alignment: center;
                         }
                         Text {
                             text: totalSwitches_S;
-                            font-size: 15px;
+                            font-size: 15px * Palette.scale;
                             font-weight: 600;
                             color: #f472b6;
                             vertical-alignment: center;
@@ -167,21 +167,21 @@ export component InsightsView {
                 }
 
                 Card {
-                    height: 64px;
+                    height: 64px * Palette.scale;
                     HorizontalLayout {
-                        padding: 16px;
+                        padding: 16px * Palette.scale;
                         alignment: space-between;
                         Text {
                             text: "MOST SWITCHED FROM";
-                            font-size: 9px;
+                            font-size: 9px * Palette.scale;
                             font-weight: 700;
-                            letter-spacing: 2.5px;
+                            letter-spacing: 2.5px * Palette.scale;
                             color: Palette.text-muted;
                             vertical-alignment: center;
                         }
                         Text {
                             text: mostSwitchedFrom_S;
-                            font-size: 15px;
+                            font-size: 15px * Palette.scale;
                             font-weight: 600;
                             color: #fb923c;
                             vertical-alignment: center;
@@ -190,21 +190,21 @@ export component InsightsView {
                 }
 
                 Card {
-                    height: 64px;
+                    height: 64px * Palette.scale;
                     HorizontalLayout {
-                        padding: 16px;
+                        padding: 16px * Palette.scale;
                         alignment: space-between;
                         Text {
                             text: "MOST SWITCHED TO";
-                            font-size: 9px;
+                            font-size: 9px * Palette.scale;
                             font-weight: 700;
-                            letter-spacing: 2.5px;
+                            letter-spacing: 2.5px * Palette.scale;
                             color: Palette.text-muted;
                             vertical-alignment: center;
                         }
                         Text {
                             text: mostSwitchedTo_S;
-                            font-size: 15px;
+                            font-size: 15px * Palette.scale;
                             font-weight: 600;
                             color: #fb923c;
                             vertical-alignment: center;
@@ -213,21 +213,21 @@ export component InsightsView {
                 }
 
                 Card {
-                    height: 64px;
+                    height: 64px * Palette.scale;
                     HorizontalLayout {
-                        padding: 16px;
+                        padding: 16px * Palette.scale;
                         alignment: space-between;
                         Text {
                             text: "LONGEST FOCUS SESSION";
-                            font-size: 9px;
+                            font-size: 9px * Palette.scale;
                             font-weight: 700;
-                            letter-spacing: 2.5px;
+                            letter-spacing: 2.5px * Palette.scale;
                             color: Palette.text-muted;
                             vertical-alignment: center;
                         }
                         Text {
                             text: longestFocus_S;
-                            font-size: 15px;
+                            font-size: 15px * Palette.scale;
                             font-weight: 600;
                             color: #34d399;
                             vertical-alignment: center;
@@ -236,21 +236,21 @@ export component InsightsView {
                 }
 
                 Card {
-                    height: 64px;
+                    height: 64px * Palette.scale;
                     HorizontalLayout {
-                        padding: 16px;
+                        padding: 16px * Palette.scale;
                         alignment: space-between;
                         Text {
                             text: "PEAK PRODUCTIVE HOUR";
-                            font-size: 9px;
+                            font-size: 9px * Palette.scale;
                             font-weight: 700;
-                            letter-spacing: 2.5px;
+                            letter-spacing: 2.5px * Palette.scale;
                             color: Palette.text-muted;
                             vertical-alignment: center;
                         }
                         Text {
                             text: peakHour_S;
-                            font-size: 15px;
+                            font-size: 15px * Palette.scale;
                             font-weight: 600;
                             color: #c084fc;
                             vertical-alignment: center;
@@ -259,35 +259,35 @@ export component InsightsView {
                 }
 
                 // â”€â”€ PATTERNS (multi-day) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-                Rectangle { height: 8px; }
+                Rectangle { height: 8px * Palette.scale; }
 
                 Text {
                     text: "PATTERNS";
-                    font-size: 8px;
+                    font-size: 8px * Palette.scale;
                     font-weight: 700;
-                    letter-spacing: 3px;
+                    letter-spacing: 3px * Palette.scale;
                     color: Palette.text-label;
-                    x: 4px;
+                    x: 4px * Palette.scale;
                 }
 
                 // Full-width natural-language cards
                 Card {
-                    height: 64px;
+                    height: 64px * Palette.scale;
                     VerticalLayout {
-                        padding-left: 16px;
-                        padding-right: 16px;
+                        padding-left: 16px * Palette.scale;
+                        padding-right: 16px * Palette.scale;
                         alignment: center;
-                        spacing: 2px;
+                        spacing: 2px * Palette.scale;
                         Text {
                             text: "ESCAPE PATTERN";
-                            font-size: 9px;
+                            font-size: 9px * Palette.scale;
                             font-weight: 700;
-                            letter-spacing: 2.5px;
+                            letter-spacing: 2.5px * Palette.scale;
                             color: Palette.text-muted;
                         }
                         Text {
                             text: escapePattern_S;
-                            font-size: 14px;
+                            font-size: 14px * Palette.scale;
                             font-weight: 700;
                             color: #f472b6;
                             wrap: word-wrap;
@@ -296,22 +296,22 @@ export component InsightsView {
                 }
 
                 Card {
-                    height: 64px;
+                    height: 64px * Palette.scale;
                     VerticalLayout {
-                        padding-left: 16px;
-                        padding-right: 16px;
+                        padding-left: 16px * Palette.scale;
+                        padding-right: 16px * Palette.scale;
                         alignment: center;
-                        spacing: 2px;
+                        spacing: 2px * Palette.scale;
                         Text {
                             text: "RETURN RATE";
-                            font-size: 9px;
+                            font-size: 9px * Palette.scale;
                             font-weight: 700;
-                            letter-spacing: 2.5px;
+                            letter-spacing: 2.5px * Palette.scale;
                             color: Palette.text-muted;
                         }
                         Text {
                             text: returnRate_S;
-                            font-size: 14px;
+                            font-size: 14px * Palette.scale;
                             font-weight: 700;
                             color: #fb923c;
                             wrap: word-wrap;
@@ -320,22 +320,22 @@ export component InsightsView {
                 }
 
                 Card {
-                    height: 64px;
+                    height: 64px * Palette.scale;
                     VerticalLayout {
-                        padding-left: 16px;
-                        padding-right: 16px;
+                        padding-left: 16px * Palette.scale;
+                        padding-right: 16px * Palette.scale;
                         alignment: center;
-                        spacing: 2px;
+                        spacing: 2px * Palette.scale;
                         Text {
                             text: "AVERAGE FOCUS SESSION";
-                            font-size: 9px;
+                            font-size: 9px * Palette.scale;
                             font-weight: 700;
-                            letter-spacing: 2.5px;
+                            letter-spacing: 2.5px * Palette.scale;
                             color: Palette.text-muted;
                         }
                         Text {
                             text: avgFocusSession_S;
-                            font-size: 14px;
+                            font-size: 14px * Palette.scale;
                             font-weight: 700;
                             color: #34d399;
                             wrap: word-wrap;
@@ -344,22 +344,22 @@ export component InsightsView {
                 }
 
                 Card {
-                    height: 64px;
+                    height: 64px * Palette.scale;
                     VerticalLayout {
-                        padding-left: 16px;
-                        padding-right: 16px;
+                        padding-left: 16px * Palette.scale;
+                        padding-right: 16px * Palette.scale;
                         alignment: center;
-                        spacing: 2px;
+                        spacing: 2px * Palette.scale;
                         Text {
                             text: "MOST DISTRACTED DAY";
-                            font-size: 9px;
+                            font-size: 9px * Palette.scale;
                             font-weight: 700;
-                            letter-spacing: 2.5px;
+                            letter-spacing: 2.5px * Palette.scale;
                             color: Palette.text-muted;
                         }
                         Text {
                             text: mostDistractedDay_S;
-                            font-size: 14px;
+                            font-size: 14px * Palette.scale;
                             font-weight: 700;
                             color: #f87171;
                             wrap: word-wrap;
@@ -368,22 +368,22 @@ export component InsightsView {
                 }
 
                 Card {
-                    height: 64px;
+                    height: 64px * Palette.scale;
                     VerticalLayout {
-                        padding-left: 16px;
-                        padding-right: 16px;
+                        padding-left: 16px * Palette.scale;
+                        padding-right: 16px * Palette.scale;
                         alignment: center;
-                        spacing: 2px;
+                        spacing: 2px * Palette.scale;
                         Text {
                             text: "PRODUCTIVE DAYS";
-                            font-size: 9px;
+                            font-size: 9px * Palette.scale;
                             font-weight: 700;
-                            letter-spacing: 2.5px;
+                            letter-spacing: 2.5px * Palette.scale;
                             color: Palette.text-muted;
                         }
                         Text {
                             text: productiveDays_S;
-                            font-size: 14px;
+                            font-size: 14px * Palette.scale;
                             font-weight: 700;
                             color: #a3e635;
                             wrap: word-wrap;
@@ -392,22 +392,22 @@ export component InsightsView {
                 }
 
                 Card {
-                    height: 64px;
+                    height: 64px * Palette.scale;
                     VerticalLayout {
-                        padding-left: 16px;
-                        padding-right: 16px;
+                        padding-left: 16px * Palette.scale;
+                        padding-right: 16px * Palette.scale;
                         alignment: center;
-                        spacing: 2px;
+                        spacing: 2px * Palette.scale;
                         Text {
                             text: "SCREEN TIME VS AVERAGE";
-                            font-size: 9px;
+                            font-size: 9px * Palette.scale;
                             font-weight: 700;
-                            letter-spacing: 2.5px;
+                            letter-spacing: 2.5px * Palette.scale;
                             color: Palette.text-muted;
                         }
                         Text {
                             text: screenTimeVsAvg_S;
-                            font-size: 14px;
+                            font-size: 14px * Palette.scale;
                             font-weight: 700;
                             color: #38bdf8;
                             wrap: word-wrap;
@@ -416,22 +416,22 @@ export component InsightsView {
                 }
 
                 Card {
-                    height: 64px;
+                    height: 64px * Palette.scale;
                     VerticalLayout {
-                        padding-left: 16px;
-                        padding-right: 16px;
+                        padding-left: 16px * Palette.scale;
+                        padding-right: 16px * Palette.scale;
                         alignment: center;
-                        spacing: 2px;
+                        spacing: 2px * Palette.scale;
                         Text {
                             text: "DAILY FOCUS DIP";
-                            font-size: 9px;
+                            font-size: 9px * Palette.scale;
                             font-weight: 700;
-                            letter-spacing: 2.5px;
+                            letter-spacing: 2.5px * Palette.scale;
                             color: Palette.text-muted;
                         }
                         Text {
                             text: focusDipHour_S;
-                            font-size: 14px;
+                            font-size: 14px * Palette.scale;
                             font-weight: 700;
                             color: #fbbf24;
                             wrap: word-wrap;
@@ -440,22 +440,22 @@ export component InsightsView {
                 }
 
                 Card {
-                    height: 64px;
+                    height: 64px * Palette.scale;
                     VerticalLayout {
-                        padding-left: 16px;
-                        padding-right: 16px;
+                        padding-left: 16px * Palette.scale;
+                        padding-right: 16px * Palette.scale;
                         alignment: center;
-                        spacing: 2px;
+                        spacing: 2px * Palette.scale;
                         Text {
                             text: "PEAK DEEP WORK WINDOW";
-                            font-size: 9px;
+                            font-size: 9px * Palette.scale;
                             font-weight: 700;
-                            letter-spacing: 2.5px;
+                            letter-spacing: 2.5px * Palette.scale;
                             color: Palette.text-muted;
                         }
                         Text {
                             text: deepWorkBeforeNoon_S;
-                            font-size: 14px;
+                            font-size: 14px * Palette.scale;
                             font-weight: 700;
                             color: #c084fc;
                             wrap: word-wrap;
@@ -464,22 +464,22 @@ export component InsightsView {
                 }
 
                 Card {
-                    height: 64px;
+                    height: 64px * Palette.scale;
                     VerticalLayout {
-                        padding-left: 16px;
-                        padding-right: 16px;
+                        padding-left: 16px * Palette.scale;
+                        padding-right: 16px * Palette.scale;
                         alignment: center;
-                        spacing: 2px;
+                        spacing: 2px * Palette.scale;
                         Text {
                             text: "WEEKEND VS WEEKDAY";
-                            font-size: 9px;
+                            font-size: 9px * Palette.scale;
                             font-weight: 700;
-                            letter-spacing: 2.5px;
+                            letter-spacing: 2.5px * Palette.scale;
                             color: Palette.text-muted;
                         }
                         Text {
                             text: weekendVsWeekday_S;
-                            font-size: 14px;
+                            font-size: 14px * Palette.scale;
                             font-weight: 700;
                             color: #818cf8;
                             wrap: word-wrap;

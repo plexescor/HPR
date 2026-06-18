@@ -1,10 +1,11 @@
 // ── Animated live dot ────────────────────────────────────────────────────────
 
+import { Palette } from "./palette.slint";
 export component LiveDot inherits Rectangle {
     in property <bool> is-alert: false;
-    width: 7px;
-    height: 7px;
-    border-radius: 3.5px;
+    width: 7px * Palette.scale;
+    height: 7px * Palette.scale;
+    border-radius: 3.5px * Palette.scale;
     background: is-alert
         ? #ef4444.mix(#450a0a, 0.6 + 0.4 * Math.sin(animation-tick() / 2.1s * 1turn)) 
         : #22c55e.mix(#052e16, 0.5 + 0.5 * Math.sin(animation-tick() / 1.4s * 1turn)); 

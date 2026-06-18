@@ -11,47 +11,47 @@ component TabRow inherits Rectangle {
     in property <int>    row-index;
     in property <color>  bar-color;
 
-    height: 48px;
-    border-radius: 5px;
+    height: 48px * Palette.scale;
+    border-radius: 5px * Palette.scale;
     clip: true;
 
     background: ta.has-hover ? Palette.row-bg-hover : (is-even ? Palette.row-bg-even : transparent);
     animate background { duration: 100ms; easing: ease-out; }
 
     HorizontalLayout {
-        padding-left: 16px;
-        padding-right: 14px;
-        spacing: 12px;
+        padding-left: 16px * Palette.scale;
+        padding-right: 14px * Palette.scale;
+        spacing: 12px * Palette.scale;
 
         Text {
             text: (row-index + 1) + ".";
             color: Palette.row-number;
-            font-size: 10px;
+            font-size: 10px * Palette.scale;
             font-weight: 600;
             vertical-alignment: center;
-            width: 18px;
+            width: 18px * Palette.scale;
         }
 
         Rectangle {
-            width: 3px;
-            height: 20px;
-            border-radius: 2px;
+            width: 3px * Palette.scale;
+            height: 20px * Palette.scale;
+            border-radius: 2px * Palette.scale;
             background: ta.has-hover ? bar-color : bar-color.mix(#00000000, 0.45);
             animate background { duration: 100ms; }
             y: (parent.height - self.height) / 2;
         }
 
         VerticalLayout {
-            padding-top: 8px;
-            padding-bottom: 8px;
-            spacing: 5px;
+            padding-top: 8px * Palette.scale;
+            padding-bottom: 8px * Palette.scale;
+            spacing: 5px * Palette.scale;
             horizontal-stretch: 1;
 
             HorizontalLayout {
                 Text {
                     text: tab-title;
                     color: ta.has-hover ? Palette.text-primary : Palette.text-secondary;
-                    font-size: 12px;
+                    font-size: 12px * Palette.scale;
                     vertical-alignment: center;
                     animate color { duration: 100ms; }
                     overflow: elide;
@@ -61,7 +61,7 @@ component TabRow inherits Rectangle {
                 Text {
                     text: duration;
                     color: ta.has-hover ? bar-color : bar-color.mix(#00000000, 0.45);
-                    font-size: 10px;
+                    font-size: 10px * Palette.scale;
                     font-weight: 600;
                     vertical-alignment: center;
                     animate color { duration: 100ms; }
@@ -69,14 +69,14 @@ component TabRow inherits Rectangle {
             }
 
             Rectangle {
-                height: 4px;
-                border-radius: 2px;
+                height: 4px * Palette.scale;
+                border-radius: 2px * Palette.scale;
                 background: Palette.bar-track;
 
                 Rectangle {
                     x: 0;
-                    height: 4px;
-                    border-radius: 2px;
+                    height: 4px * Palette.scale;
+                    border-radius: 2px * Palette.scale;
                     width: parent.width * ratio;
                     background: ta.has-hover
                         ? @linear-gradient(90deg, bar-color 0%, bar-color.mix(#ffffff, 0.3) 100%)
@@ -106,10 +106,10 @@ component ViewToggleButton inherits Rectangle {
 
     callback clicked;
 
-    width: 60px;
-    height: 24px;
-    border-radius: 5px;
-    border-width: 1px;
+    width: 60px * Palette.scale;
+    height: 24px * Palette.scale;
+    border-radius: 5px * Palette.scale;
+    border-width: 1px * Palette.scale;
 
     animate background { duration: 100ms; }
     animate border-color { duration: 100ms; }
@@ -131,7 +131,7 @@ component ViewToggleButton inherits Rectangle {
 
     Text {
         text: label;
-        font-size: 10px;
+        font-size: 10px * Palette.scale;
         font-weight: 600;
         color: ta.pressed ? pressed-color : ta.has-hover ? hover-color : base-color;
         horizontal-alignment: center;
@@ -152,9 +152,9 @@ export component TabView {
     callback per-site-clicked;
 
     VerticalLayout {
-        padding: 12px;
+        padding: 12px * Palette.scale;
         padding-top: 0px;
-        spacing: 10px;
+        spacing: 10px * Palette.scale;
         height: 100%;
 
         HorizontalLayout {
@@ -166,7 +166,7 @@ export component TabView {
             }
 
             HorizontalLayout {
-                spacing: 4px;
+                spacing: 4px * Palette.scale;
                 alignment: end;
 
                 ViewToggleButton {

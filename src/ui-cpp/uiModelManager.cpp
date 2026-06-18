@@ -331,6 +331,7 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
                 bool telemetryVal = AppState::configManager.getConfig<bool>("anonymous-telemetry", false);
                 bool noTitleBarVal = AppState::configManager.getConfig<bool>("no-title-bar", false);
                 float cornerRoundnessVal = AppState::configManager.getConfig<float>("corner-roundness", 0.5f);
+                float uiScaleVal = AppState::configManager.getConfig<float>("ui-scale", 0.5f);
                 bool showPromptVal = AppState::configManager.isFirstLaunch();
                 
                 bool killAppsVal = AppState::configManager.getConfig<bool>("kill-apps", true);
@@ -360,6 +361,8 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
                     (*handle)->set_no_title_bar_enabled(noTitleBarVal);
                 if ((*handle)->get_cornerRoundness_S() != cornerRoundnessVal)
                     (*handle)->set_cornerRoundness_S(cornerRoundnessVal);
+                if ((*handle)->get_uiScale_S() != uiScaleVal)
+                    (*handle)->set_uiScale_S(uiScaleVal);
                 if ((*handle)->get_showTelemetryPrompt_S() != showPromptVal)
                     (*handle)->set_showTelemetryPrompt_S(showPromptVal);
                 if ((*handle)->get_windowName_S() != slint::SharedString(currentWindowName))
@@ -789,6 +792,7 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
             bool telemetryVal = AppState::configManager.getConfig<bool>("anonymous-telemetry", false);
             bool noTitleBarVal = AppState::configManager.getConfig<bool>("no-title-bar", false);
             float cornerRoundnessVal = AppState::configManager.getConfig<float>("corner-roundness", 0.5f);
+            float uiScaleVal = AppState::configManager.getConfig<float>("ui-scale", 0.5f);
             bool showPromptVal = AppState::configManager.isFirstLaunch();
 
             bool killAppsVal = AppState::configManager.getConfig<bool>("kill-apps", true);
@@ -824,6 +828,7 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
             setPropIfChanged("telemetry_S", slint::interpreter::Value(telemetryVal));
             setPropIfChanged("no_title_bar_enabled", slint::interpreter::Value(noTitleBarVal));
             setPropIfChanged("cornerRoundness_S", slint::interpreter::Value((double)cornerRoundnessVal));
+            setPropIfChanged("uiScale_S", slint::interpreter::Value((double)uiScaleVal));
             setPropIfChanged("showTelemetryPrompt_S", slint::interpreter::Value(showPromptVal));
             setPropIfChanged("windowName_S", slint::interpreter::Value(slint::SharedString(currentWindowName)));
             setPropIfChanged("trackedTime_S", slint::interpreter::Value((double)totalTrackedTime));

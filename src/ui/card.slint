@@ -2,8 +2,8 @@ import { Palette } from "./palette.slint";
 
 // ── Card ─────────────────────────────────────────────────────────────────────
 export component Card inherits Rectangle {
-    border-radius: 8px;
+    border-radius: 8px * Palette.scale;
     background: @linear-gradient(150deg, Palette.card-background 0%, Palette.card-background-end 100%);
-    border-width: 1px;
+    border-width: 1px * Palette.scale;
     border-color: Palette.card-border;
 }

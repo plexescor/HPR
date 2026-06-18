@@ -8,9 +8,9 @@ component PresetButton inherits Rectangle {
     in property <bool> selected;
     callback clicked;
 
-    height: 36px;
-    border-radius: 6px;
-    border-width: 1px;
+    height: 36px * Palette.scale;
+    border-radius: 6px * Palette.scale;
+    border-width: 1px * Palette.scale;
     background: selected 
         ? #c084fc25 
         : (ta.pressed ? Palette.input-bg-press : (ta.has-hover ? Palette.input-bg-hover : transparent));
@@ -26,7 +26,7 @@ component PresetButton inherits Rectangle {
         color: selected 
             ? #d8b4fe 
             : (ta.has-hover ? Palette.text-primary : Palette.text-secondary);
-        font-size: 11px;
+        font-size: 11px * Palette.scale;
         font-weight: 600;
         horizontal-alignment: center;
         vertical-alignment: center;
@@ -44,9 +44,9 @@ component ViewModeButton inherits Rectangle {
     in property <bool> selected;
     callback clicked;
 
-    height: 30px;
-    border-radius: 5px;
-    border-width: 1px;
+    height: 30px * Palette.scale;
+    border-radius: 5px * Palette.scale;
+    border-width: 1px * Palette.scale;
     background: selected 
         ? #38bdf825 
         : (ta.pressed ? Palette.input-bg-press : (ta.has-hover ? Palette.input-bg-hover : transparent));
@@ -62,7 +62,7 @@ component ViewModeButton inherits Rectangle {
         color: selected 
             ? #7dd3fc 
             : (ta.has-hover ? Palette.text-primary : Palette.text-secondary);
-        font-size: 10px;
+        font-size: 10px * Palette.scale;
         font-weight: 600;
         horizontal-alignment: center;
         vertical-alignment: center;
@@ -77,18 +77,18 @@ component ViewModeButton inherits Rectangle {
 
 component DateIconButton inherits Rectangle {
     callback clicked;
-    width: 28px;
-    height: 26px;
-    border-radius: 4px;
+    width: 28px * Palette.scale;
+    height: 26px * Palette.scale;
+    border-radius: 4px * Palette.scale;
     background: ta.pressed ? Palette.input-bg-press : (ta.has-hover ? Palette.input-bg-hover : Palette.input-bg);
-    border-width: 1px;
+    border-width: 1px * Palette.scale;
     border-color: ta.has-hover ? Palette.input-border-hover : Palette.input-border;
     animate background { duration: 100ms; }
     animate border-color { duration: 100ms; }
 
     Text {
         text: "📅";
-        font-size: 12px;
+        font-size: 12px * Palette.scale;
         horizontal-alignment: center;
         vertical-alignment: center;
     }
@@ -104,12 +104,12 @@ component ConfirmButton inherits Rectangle {
     in property <bool> enabled: true;
     callback clicked;
 
-    height: 40px;
-    border-radius: 6px;
+    height: 40px * Palette.scale;
+    border-radius: 6px * Palette.scale;
     background: !enabled 
         ? Palette.input-bg
         : (ta.pressed ? #10b98145 : (ta.has-hover ? #10b98125 : #10b98112));
-    border-width: 1px;
+    border-width: 1px * Palette.scale;
     border-color: !enabled 
         ? Palette.input-border
         : (ta.has-hover ? #10b98160 : #10b98135);
@@ -121,9 +121,9 @@ component ConfirmButton inherits Rectangle {
         color: !enabled 
             ? Palette.text-dim
             : (ta.has-hover ? #34d399 : #10b981);
-        font-size: 12px;
+        font-size: 12px * Palette.scale;
         font-weight: 700;
-        letter-spacing: 1.5px;
+        letter-spacing: 1.5px * Palette.scale;
         horizontal-alignment: center;
         vertical-alignment: center;
         animate color { duration: 100ms; }
@@ -190,28 +190,28 @@ export component HistoryRangeView {
     }
 
     VerticalLayout {
-        padding: 12px;
+        padding: 12px * Palette.scale;
         padding-top: 0px;
-        spacing: 15px;
+        spacing: 15px * Palette.scale;
         height: 100%;
 
         SectionHeader { label: "HISTORICAL QUERY CONFIGURATION"; }
 
         // Tab Selector
         HorizontalLayout {
-            spacing: 8px;
+            spacing: 8px * Palette.scale;
             alignment: start;
             ViewModeButton {
                 text: "SINGULAR DAY";
                 selected: root.active-tab == "singular";
                 clicked => { root.active-tab = "singular"; }
-                width: 130px;
+                width: 130px * Palette.scale;
             }
             ViewModeButton {
                 text: "RANGE / PRESETS";
                 selected: root.active-tab == "range";
                 clicked => { root.active-tab = "range"; }
-                width: 130px;
+                width: 130px * Palette.scale;
             }
         }
 
@@ -219,27 +219,27 @@ export component HistoryRangeView {
             vertical-stretch: 1;
             
             if root.active-tab == "singular" : VerticalLayout {
-                padding: 16px;
-                spacing: 16px;
+                padding: 16px * Palette.scale;
+                spacing: 16px * Palette.scale;
                 alignment: start;
 
                 VerticalLayout {
-                    spacing: 6px;
+                    spacing: 6px * Palette.scale;
                     Text {
                         text: "SELECT SINGULAR DAY (DD-MM-YY)";
                         color: Palette.text-muted;
-                        font-size: 9px;
+                        font-size: 9px * Palette.scale;
                         font-weight: 700;
-                        letter-spacing: 1px;
+                        letter-spacing: 1px * Palette.scale;
                     }
                     HorizontalLayout {
-                        spacing: 8px;
+                        spacing: 8px * Palette.scale;
                         alignment: start;
                         LineEdit {
                             text: root.singular-date;
                             edited(val) => { root.singular-date = val; }
                             placeholder-text: "DD-MM-YY";
-                            width: 180px;
+                            width: 180px * Palette.scale;
                         }
                         DateIconButton {
                             clicked => { singular-date-picker.show(); }
@@ -261,22 +261,22 @@ export component HistoryRangeView {
             }
 
             if root.active-tab == "range" : VerticalLayout {
-                padding: 16px;
-                spacing: 16px;
+                padding: 16px * Palette.scale;
+                spacing: 16px * Palette.scale;
                 alignment: start;
 
                 // 1. Mode Selection
                 VerticalLayout {
-                    spacing: 6px;
+                    spacing: 6px * Palette.scale;
                     Text {
                         text: "VIEW MODE";
                         color: Palette.text-muted;
-                        font-size: 9px;
+                        font-size: 9px * Palette.scale;
                         font-weight: 700;
-                        letter-spacing: 1px;
+                        letter-spacing: 1px * Palette.scale;
                     }
                     HorizontalLayout {
-                        spacing: 8px;
+                        spacing: 8px * Palette.scale;
                         ViewModeButton {
                             text: "TOTAL / AGGREGATE VIEW";
                             selected: root.selected-mode == "total";
@@ -292,24 +292,24 @@ export component HistoryRangeView {
 
                 // Divider line
                 Rectangle {
-                    height: 1px;
+                    height: 1px * Palette.scale;
                     background: Palette.divider;
                 }
 
                 // 2. Presets Selection
                 VerticalLayout {
-                    spacing: 6px;
+                    spacing: 6px * Palette.scale;
                     Text {
                         text: "PRESET RANGES";
                         color: Palette.text-muted;
-                        font-size: 9px;
+                        font-size: 9px * Palette.scale;
                         font-weight: 700;
-                        letter-spacing: 1px;
+                        letter-spacing: 1px * Palette.scale;
                     }
                     VerticalLayout {
-                        spacing: 8px;
+                        spacing: 8px * Palette.scale;
                         HorizontalLayout {
-                            spacing: 8px;
+                            spacing: 8px * Palette.scale;
                             PresetButton {
                                 text: "7 Days";
                                 selected: root.selected-days == 7;
@@ -327,7 +327,7 @@ export component HistoryRangeView {
                             }
                         }
                         HorizontalLayout {
-                            spacing: 8px;
+                            spacing: 8px * Palette.scale;
                             PresetButton {
                                 text: "60 Days";
                                 selected: root.selected-days == 60;
@@ -349,13 +349,13 @@ export component HistoryRangeView {
 
                 // Custom days input
                 VerticalLayout {
-                    spacing: 6px;
+                    spacing: 6px * Palette.scale;
                     Text {
                         text: "ENTER CUSTOM NUMBER OF DAYS TO LOAD";
                         color: Palette.text-muted;
-                        font-size: 9px;
+                        font-size: 9px * Palette.scale;
                         font-weight: 700;
-                        letter-spacing: 1px;
+                        letter-spacing: 1px * Palette.scale;
                     }
                     LineEdit {
                         placeholder-text: "e.g. 45";
@@ -370,31 +370,31 @@ export component HistoryRangeView {
 
                 // Divider line
                 Rectangle {
-                    height: 1px;
+                    height: 1px * Palette.scale;
                     background: Palette.divider;
                 }
 
                 // 3. Custom Date Range Selection
                 VerticalLayout {
-                    spacing: 6px;
+                    spacing: 6px * Palette.scale;
                     Text {
                         text: "CUSTOM DATE RANGE (DD-MM-YY)";
                         color: Palette.text-muted;
-                        font-size: 9px;
+                        font-size: 9px * Palette.scale;
                         font-weight: 700;
-                        letter-spacing: 1px;
+                        letter-spacing: 1px * Palette.scale;
                     }
                     HorizontalLayout {
-                        spacing: 12px;
+                        spacing: 12px * Palette.scale;
                         VerticalLayout {
-                            spacing: 4px;
+                            spacing: 4px * Palette.scale;
                             Text {
                                 text: "Start Date:";
                                 color: Palette.text-secondary;
-                                font-size: 10px;
+                                font-size: 10px * Palette.scale;
                             }
                             HorizontalLayout {
-                                spacing: 4px;
+                                spacing: 4px * Palette.scale;
                                 LineEdit {
                                     text: root.start-date;
                                     edited(val) => { root.start-date = val; root.selected-days = -1; }
@@ -406,14 +406,14 @@ export component HistoryRangeView {
                             }
                         }
                         VerticalLayout {
-                            spacing: 4px;
+                            spacing: 4px * Palette.scale;
                             Text {
                                 text: "End Date:";
                                 color: Palette.text-secondary;
-                                font-size: 10px;
+                                font-size: 10px * Palette.scale;
                             }
                             HorizontalLayout {
-                                spacing: 4px;
+                                spacing: 4px * Palette.scale;
                                 LineEdit {
                                     text: root.end-date;
                                     edited(val) => { root.end-date = val; root.selected-days = -1; }

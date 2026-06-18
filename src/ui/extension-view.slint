@@ -15,22 +15,22 @@ export component ExtensionsView {
     callback reload-extension(string, string);
 
     VerticalLayout {
-        padding: 12px;
-        padding-top: 6px;
-        spacing: 10px;
+        padding: 12px * Palette.scale;
+        padding-top: 6px * Palette.scale;
+        spacing: 10px * Palette.scale;
 
         HorizontalLayout {
             alignment: space-between;
             vertical-stretch: 0;
-            padding-top: 4px;
+            padding-top: 4px * Palette.scale;
 
             SectionHeader { label: "EXTENSIONS"; }
 
             refreshBtn := Rectangle {
-                width: 72px;
-                height: 26px;
-                border-radius: 6px;
-                border-width: 1px;
+                width: 72px * Palette.scale;
+                height: 26px * Palette.scale;
+                border-radius: 6px * Palette.scale;
+                border-width: 1px * Palette.scale;
 
                 animate background { duration: 100ms; }
                 animate border-color { duration: 100ms; }
@@ -61,9 +61,9 @@ export component ExtensionsView {
                     //though all the code still treats as "REFRSH" button for refrencing functions
                     //and i didnt want to do any refactors
                     text: "RESCAN";
-                    font-size: 8px;
+                    font-size: 8px * Palette.scale;
                     font-weight: 700;
-                    letter-spacing: 2px;
+                    letter-spacing: 2px * Palette.scale;
                     color: ta-refresh.pressed ? #a7f3d0 : ta-refresh.has-hover ? #6ee7b7 : #34d399;
                     horizontal-alignment: center;
                     vertical-alignment: center;
@@ -79,18 +79,18 @@ export component ExtensionsView {
 
             extContent := VerticalLayout {
                 width: 100%;
-                spacing: 8px;
+                spacing: 8px * Palette.scale;
 
                 if loadedExtensions_S.length == 0 : Card {
-                    height: 64px;
+                    height: 64px * Palette.scale;
                     HorizontalLayout {
-                        padding: 16px;
+                        padding: 16px * Palette.scale;
                         alignment: center;
                         Text {
                             text: "NO EXTENSIONS LOADED";
-                            font-size: 9px;
+                            font-size: 9px * Palette.scale;
                             font-weight: 700;
-                            letter-spacing: 2.5px;
+                            letter-spacing: 2.5px * Palette.scale;
                             color: Palette.text-muted;
                             vertical-alignment: center;
                         }
@@ -98,11 +98,11 @@ export component ExtensionsView {
                 }
 
                 for ext in loadedExtensions_S : Card {
-                    height: 72px;
+                    height: 72px * Palette.scale;
 
                     HorizontalLayout {
-                        padding: 14px;
-                        spacing: 12px;
+                        padding: 14px * Palette.scale;
+                        spacing: 12px * Palette.scale;
                         alignment: space-between;
 
                         VerticalLayout {
@@ -111,15 +111,15 @@ export component ExtensionsView {
 
                             Text {
                                 text: ext.author-name;
-                                font-size: 10px;
+                                font-size: 10px * Palette.scale;
                                 font-weight: 700;
-                                letter-spacing: 1.5px;
+                                letter-spacing: 1.5px * Palette.scale;
                                 color: #c084fc;
                             }
 
                             Text {
                                 text: ext.extension-name;
-                                font-size: 13px;
+                                font-size: 13px * Palette.scale;
                                 font-weight: 600;
                                 color: #a3e635;
                             }
@@ -128,14 +128,14 @@ export component ExtensionsView {
                         
                         HorizontalLayout {
                             alignment: center;
-                            spacing: 6px;
+                            spacing: 6px * Palette.scale;
                             y: (parent.height - self.height) / 1.5;
 
                             disableBtn := Rectangle {
-                                width: 66px;
-                                height: 28px;
-                                border-radius: 6px;
-                                border-width: 1px;
+                                width: 66px * Palette.scale;
+                                height: 28px * Palette.scale;
+                                border-radius: 6px * Palette.scale;
+                                border-width: 1px * Palette.scale;
 
                                 animate background { duration: 100ms; }
                                 animate border-color { duration: 100ms; }
@@ -162,9 +162,9 @@ export component ExtensionsView {
 
                                 Text {
                                     text: "DISABLE";
-                                    font-size: 8px;
+                                    font-size: 8px * Palette.scale;
                                     font-weight: 700;
-                                    letter-spacing: 1.5px;
+                                    letter-spacing: 1.5px * Palette.scale;
                                     color: ta-disable.pressed ? #ff8582 : ta-disable.has-hover ? #ff7572 : #ff605c;
                                     horizontal-alignment: center;
                                     vertical-alignment: center;
@@ -173,10 +173,10 @@ export component ExtensionsView {
                             }
 
                             reloadBtn := Rectangle {
-                                width: 66px;
-                                height: 28px;
-                                border-radius: 6px;
-                                border-width: 1px;
+                                width: 66px * Palette.scale;
+                                height: 28px * Palette.scale;
+                                border-radius: 6px * Palette.scale;
+                                border-width: 1px * Palette.scale;
 
                                 animate background { duration: 100ms; }
                                 animate border-color { duration: 100ms; }
@@ -203,9 +203,9 @@ export component ExtensionsView {
 
                                 Text {
                                     text: "RELOAD";
-                                    font-size: 8px;
+                                    font-size: 8px * Palette.scale;
                                     font-weight: 700;
-                                    letter-spacing: 1.5px;
+                                    letter-spacing: 1.5px * Palette.scale;
                                     color: ta-reload.pressed ? #7dd8fb : ta-reload.has-hover ? #5dcffa : #38bdf8;
                                     horizontal-alignment: center;
                                     vertical-alignment: center;

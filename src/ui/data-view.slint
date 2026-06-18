@@ -1,3 +1,4 @@
+import { Palette } from "./palette.slint";
 import { Card } from "./card.slint";
 import { SectionHeader } from "./section-header.slint";
 import { AppRow } from "./app-row.slint";
@@ -20,10 +21,10 @@ component ViewToggleButton inherits Rectangle {
 
     callback clicked;
 
-    width: 115px;
-    height: 24px;
-    border-radius: 5px;
-    border-width: 1px;
+    width: 115px * Palette.scale;
+    height: 24px * Palette.scale;
+    border-radius: 5px * Palette.scale;
+    border-width: 1px * Palette.scale;
 
     animate background { duration: 100ms; }
     animate border-color { duration: 100ms; }
@@ -45,7 +46,7 @@ component ViewToggleButton inherits Rectangle {
 
     Text {
         text: label;
-        font-size: 10px;
+        font-size: 10px * Palette.scale;
         font-weight: 600;
         color: ta.pressed ? pressed-color : ta.has-hover ? hover-color : base-color;
         horizontal-alignment: center;
@@ -67,9 +68,9 @@ export component DataView {
     callback switch-to-live-clicked;
 
     VerticalLayout {
-        padding: 12px;
+        padding: 12px * Palette.scale;
         padding-top: 0px;
-        spacing: 10px;
+        spacing: 10px * Palette.scale;
 
         HorizontalLayout {
             vertical-stretch: 0;
@@ -80,7 +81,7 @@ export component DataView {
             }
 
             HorizontalLayout {
-                spacing: 4px;
+                spacing: 4px * Palette.scale;
                 alignment: end;
 
                 ViewToggleButton {

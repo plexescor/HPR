@@ -77,6 +77,7 @@ export component MainWindow inherits Window {
     in property <bool>            no-title-bar-enabled;
     in property <float>           cornerRoundness_S;
     in property <bool>            showTelemetryPrompt_S;
+    in-out property <float>       uiScale_S <=> Palette.ui-scale;
     in-out property <bool>        isDarkMode <=> Palette.is-dark;
 
     in property <bool>            killApps_S;
@@ -126,9 +127,9 @@ export component MainWindow inherits Window {
     property <string> current-view-mode: "Live";
 
     title: "HPR";
-    default-font-size: 13px;
-    preferred-width: 780px;
-    preferred-height: 600px;
+    default-font-size: 13px * Palette.scale;
+    preferred-width: 780px * Palette.scale;
+    preferred-height: 600px * Palette.scale;
 
     date-picker := DatePickerPopup {
         x: (root.width - self.width) / 2;
@@ -154,7 +155,7 @@ export component MainWindow inherits Window {
         width: parent.width;
         height: parent.height;
         background: Palette.background;
-        border-radius: root.no-title-bar-enabled ? root.cornerRoundness_S * 16px : 0px;
+        border-radius: root.no-title-bar-enabled ? root.cornerRoundness_S * 16px * Palette.scale : 0px;
         clip: true;
 
         // ── Main content ──────────────────────────────────────────────────
@@ -168,37 +169,37 @@ export component MainWindow inherits Window {
 
             // ── Topbar ───────────────────────────────────────────────────
             topbar := Rectangle {
-            height: 46px;
+            height: 46px * Palette.scale;
             background: Palette.background;
 
 
                 Rectangle {
-                    y: parent.height - 1px;
-                    height: 1px;
+                    y: parent.height - 1px * Palette.scale;
+                    height: 1px * Palette.scale;
                     background: @linear-gradient(90deg, transparent 0%, Palette.divider 40%, Palette.divider 60%, transparent 100%);
                 }
 
                 HorizontalLayout {
-                    padding-left: 18px;
-                    padding-right: 18px;
+                    padding-left: 18px * Palette.scale;
+                    padding-right: 18px * Palette.scale;
                     alignment: space-between;
 
                     HorizontalLayout {
-                        spacing: 10px;
+                        spacing: 10px * Palette.scale;
                         alignment: start;
 
                         Text {
                             text: "HPR";
                             color: Palette.text-primary;
-                            font-size: 12px;
+                            font-size: 12px * Palette.scale;
                             font-weight: 700;
-                            letter-spacing: 4px;
+                            letter-spacing: 4px * Palette.scale;
                             vertical-alignment: center;
                         }
 
                         Rectangle {
-                            width: 1px;
-                            height: 12px;
+                            width: 1px * Palette.scale;
+                            height: 12px * Palette.scale;
                             background: Palette.divider;
                             y: (parent.height - self.height) / 2;
                         }
@@ -206,24 +207,24 @@ export component MainWindow inherits Window {
                         Text {
                             text: "Human Pattern Recorder";
                             color: Palette.text-muted;
-                            font-size: 11px;
-                            letter-spacing: 0.3px;
+                            font-size: 11px * Palette.scale;
+                            letter-spacing: 0.3px * Palette.scale;
                             vertical-alignment: center;
                         }
 
                         if current-view-mode != "" : Rectangle {
                             background: current-view-mode == "Live" ? #22c55e15 : #ef444415;
                             border-color: current-view-mode == "Live" ? #22c55e60 : #ef444460;
-                            border-width: 1px;
-                            border-radius: 4px;
-                            height: 18px;
-                            width: mode-text.preferred-width + 12px;
+                            border-width: 1px * Palette.scale;
+                            border-radius: 4px * Palette.scale;
+                            height: 18px * Palette.scale;
+                            width: mode-text.preferred-width + 12px * Palette.scale;
                             y: (parent.height - self.height) / 2;
 
                             mode-text := Text {
                                 text: root.current-view-mode;
                                 color: current-view-mode == "Live" ? #4ade80 : #f87171;
-                                font-size: 10px;
+                                font-size: 10px * Palette.scale;
                                 font-weight: 700;
                                 horizontal-alignment: center;
                                 vertical-alignment: center;
@@ -238,17 +239,17 @@ export component MainWindow inherits Window {
                         // Active-window pill — shown only in native title-bar mode
                         Rectangle {
                             visible: !root.no-title-bar-enabled;
-                            height: !root.no-title-bar-enabled ? 26px : 0px;
-                            width: !root.no-title-bar-enabled ? (active-lbl.preferred-width + 30px) : 0px;
-                            border-radius: 13px;
+                            height: !root.no-title-bar-enabled ? 26px * Palette.scale : 0px;
+                            width: !root.no-title-bar-enabled ? (active-lbl.preferred-width + 30px * Palette.scale) : 0px;
+                            border-radius: 13px * Palette.scale;
                             background: Palette.sidebar-btn-bg;
-                            border-width: 1px;
+                            border-width: 1px * Palette.scale;
                             border-color: Palette.sidebar-btn-border;
                             y: (parent.height - self.height) / 2;
 
                             HorizontalLayout {
-                                padding-left: 9px;
-                                spacing: 6px;
+                                padding-left: 9px * Palette.scale;
+                                spacing: 6px * Palette.scale;
                                 alignment: start;
 
                                 LiveDot {
@@ -259,12 +260,12 @@ export component MainWindow inherits Window {
                                 active-lbl := Text {
                                     text: windowName_S;
                                     color: Palette.text-secondary;
-                                    font-size: 11px;
+                                    font-size: 11px * Palette.scale;
                                     font-weight: 500;
                                     vertical-alignment: center;
                                     wrap: no-wrap;
                                     overflow: elide;
-                                    max-width: 550px;
+                                    max-width: 550px * Palette.scale;
                                 }
                             }
                         }
@@ -274,13 +275,13 @@ export component MainWindow inherits Window {
                 // Close Button — shown only in frameless mode
                 Rectangle {
                     visible: root.no-title-bar-enabled;
-                    x: parent.width - self.width - 18px;
+                    x: parent.width - self.width - 18px * Palette.scale;
                     y: (parent.height - self.height) / 2;
-                    width: 24px;
-                    height: 24px;
-                    border-radius: 12px;
+                    width: 24px * Palette.scale;
+                    height: 24px * Palette.scale;
+                    border-radius: 12px * Palette.scale;
                     background: ta-close.pressed ? Palette.sidebar-btn-bg : (ta-close.has-hover ? Palette.sidebar-btn-bg : transparent);
-                    border-width: 1px;
+                    border-width: 1px * Palette.scale;
                     border-color: ta-close.has-hover ? Palette.sidebar-btn-border : transparent;
 
                     ta-close := TouchArea {
@@ -290,7 +291,7 @@ export component MainWindow inherits Window {
 
                     Text {
                         text: "×";
-                        font-size: 18px;
+                        font-size: 18px * Palette.scale;
                         font-weight: 500;
                         color: Palette.text-secondary;
                         horizontal-alignment: center;
@@ -400,6 +401,7 @@ export component MainWindow inherits Window {
                 telemetry_S: root.telemetry_S;
                 noTitleBar_S: root.no-title-bar-enabled;
                 cornerRoundness_S: root.cornerRoundness_S;
+                uiScale_S: root.uiScale_S;
                 killApps_S: root.killApps_S;
                 hardwareAccel_S: root.hardwareAccel_S;
                 allowCustomBackends_S: root.allowCustomBackends_S;
@@ -417,7 +419,7 @@ export component MainWindow inherits Window {
             y: 0px;
             z: 5;
             width: root.no-title-bar-enabled ? root.width * 0.87 : 0px;
-            height: root.no-title-bar-enabled ? 25.2px : 0px;
+            height: root.no-title-bar-enabled ? 25.2px * Palette.scale : 0px;
             enabled: root.no-title-bar-enabled;
             pointer-event(event) => {
                 if (event.button == PointerEventButton.left && event.kind == PointerEventKind.down) {
@@ -431,7 +433,7 @@ export component MainWindow inherits Window {
             x: 0px;
             y: 0px;
             z: 10;
-            width: self.has-hover ? 54px : 14px;
+            width: self.has-hover ? 54px * Palette.scale : 14px * Palette.scale;
             height: parent.height;
             animate width { duration: 180ms; easing: ease-in-out; }
 
@@ -444,8 +446,8 @@ export component MainWindow inherits Window {
                 animate background { duration: 240ms; easing: ease-in-out; }
 
                 Rectangle {
-                    x: parent.width - 1px;
-                    width: 1px;
+                    x: parent.width - 1px * Palette.scale;
+                    width: 1px * Palette.scale;
                     height: parent.height;
                     background: sidebar-ta.has-hover ? Palette.sidebar-border : transparent;
                     animate background { duration: 240ms; easing: ease-in-out; }
@@ -455,17 +457,17 @@ export component MainWindow inherits Window {
                     visible: !sidebar-ta.has-hover;
                     x: 0px;
                     y: (parent.height - self.height) / 2;
-                    width: 14px;
-                    height: 28px;
-                    border-radius: 4.5px;
+                    width: 14px * Palette.scale;
+                    height: 28px * Palette.scale;
+                    border-radius: 4.5px * Palette.scale;
                     background: Palette.sidebar-btn-bg;
-                    border-width: 1px;
+                    border-width: 1px * Palette.scale;
                     border-color: Palette.sidebar-btn-border;
 
                     Text {
                         text: "›";
                         color: Palette.text-muted;
-                        font-size: 16px;
+                        font-size: 16px * Palette.scale;
                         horizontal-alignment: center;
                         vertical-alignment: center;
                         width: 100%;
@@ -475,8 +477,8 @@ export component MainWindow inherits Window {
 
                 VerticalLayout {
                     visible: sidebar-ta.has-hover;
-                    padding: 2px;
-                    spacing: 8px;
+                    padding: 2px * Palette.scale;
+                    spacing: 8px * Palette.scale;
                     alignment: center;
                     width: 75%;
                     height: 100%;
@@ -579,33 +581,33 @@ export component MainWindow inherits Window {
             }
 
             Card {
-                width: 440px;
-                height: 250px;
+                width: 440px * Palette.scale;
+                height: 250px * Palette.scale;
                 x: (parent.width - self.width) / 2;
                 y: (parent.height - self.height) / 2;
 
                 VerticalLayout {
-                    padding: 24px;
-                    spacing: 16px;
+                    padding: 24px * Palette.scale;
+                    spacing: 16px * Palette.scale;
                     alignment: space-between;
 
                     VerticalLayout {
-                        spacing: 6px;
+                        spacing: 6px * Palette.scale;
 
                         Text {
                             text: "PRIVACY & ANALYTICS";
-                            font-size: 8px;
+                            font-size: 8px * Palette.scale;
                             font-weight: 800;
-                            letter-spacing: 2.5px;
+                            letter-spacing: 2.5px * Palette.scale;
                             color: #38bdf8;
                             horizontal-alignment: center;
                         }
 
                         Text {
                             text: "Help Improve HPR?";
-                            font-size: 18px;
+                            font-size: 18px * Palette.scale;
                             font-weight: 800;
-                            letter-spacing: 0.5px;
+                            letter-spacing: 0.5px * Palette.scale;
                             color: Palette.text-primary;
                             horizontal-alignment: center;
                         }
@@ -613,7 +615,7 @@ export component MainWindow inherits Window {
 
                     Text {
                         text: "HPR is local-first. We would like to collect two anonymous numbers: total unique installations and the frequency of regular weekly users. No window titles, websites, or personal data ever leave your machine.";
-                        font-size: 11px;
+                        font-size: 11px * Palette.scale;
                         font-weight: 500;
                         color: Palette.text-secondary;
                         wrap: word-wrap;
@@ -621,15 +623,15 @@ export component MainWindow inherits Window {
                     }
 
                     HorizontalLayout {
-                        spacing: 16px;
+                        spacing: 16px * Palette.scale;
                         alignment: center;
 
                         // Decline
                         decl-btn := Rectangle {
-                            width: 130px;
-                            height: 32px;
-                            border-radius: 6px;
-                            border-width: 1px;
+                            width: 130px * Palette.scale;
+                            height: 32px * Palette.scale;
+                            border-radius: 6px * Palette.scale;
+                            border-width: 1px * Palette.scale;
                             border-color: Palette.card-border;
                             background: ta-decl.pressed ? Palette.input-bg-press : 
                                         ta-decl.has-hover ? Palette.input-bg-hover : 
@@ -647,9 +649,9 @@ export component MainWindow inherits Window {
 
                             Text {
                                 text: "NO THANKS";
-                                font-size: 9px;
+                                font-size: 9px * Palette.scale;
                                 font-weight: 800;
-                                letter-spacing: 1.5px;
+                                letter-spacing: 1.5px * Palette.scale;
                                 color: Palette.text-primary;
                                 horizontal-alignment: center;
                                 vertical-alignment: center;
@@ -658,9 +660,9 @@ export component MainWindow inherits Window {
 
                         // Agree
                         agree-btn := Rectangle {
-                            width: 130px;
-                            height: 32px;
-                            border-radius: 6px;
+                            width: 130px * Palette.scale;
+                            height: 32px * Palette.scale;
+                            border-radius: 6px * Palette.scale;
                             background: ta-agree.pressed ? @linear-gradient(135deg, #0284c7 0%, #0369a1 100%) : 
                                         ta-agree.has-hover ? @linear-gradient(135deg, #7dd3fc 0%, #38bdf8 100%) : 
                                         @linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
@@ -674,9 +676,9 @@ export component MainWindow inherits Window {
 
                             Text {
                                 text: "I AGREE";
-                                font-size: 9px;
+                                font-size: 9px * Palette.scale;
                                 font-weight: 800;
-                                letter-spacing: 1.5px;
+                                letter-spacing: 1.5px * Palette.scale;
                                 color: #ffffff;
                                 horizontal-alignment: center;
                                 vertical-alignment: center;

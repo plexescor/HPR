@@ -3,25 +3,25 @@ import { Palette } from "./palette.slint";
 // ── Section header ───────────────────────────────────────────────────────────
 export component SectionHeader inherits Rectangle {
     in property <string> label;
-    height: 30px;
+    height: 30px * Palette.scale;
     background: transparent;
 
     HorizontalLayout {
-        spacing: 10px;
-        padding-left: 2px;
+        spacing: 10px * Palette.scale;
+        padding-left: 2px * Palette.scale;
         alignment: start;
 
         Text {
             text: root.label;
-            font-size: 9px;
+            font-size: 9px * Palette.scale;
             font-weight: 700;
-            letter-spacing: 2.5px;
+            letter-spacing: 2.5px * Palette.scale;
             color: Palette.text-muted;
             vertical-alignment: center;
         }
 
         Rectangle {
-            height: 1px;
+            height: 1px * Palette.scale;
             background: Palette.divider;
             vertical-stretch: 0;
             y: parent.height / 2;

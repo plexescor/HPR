@@ -8,9 +8,9 @@ component PresetBtn inherits Rectangle {
     in property <bool> selected;
     callback clicked;
 
-    height: 26px;
-    border-radius: 5px;
-    border-width: 1px;
+    height: 26px * Palette.scale;
+    border-radius: 5px * Palette.scale;
+    border-width: 1px * Palette.scale;
     background: selected 
         ? #38bdf825 
         : (ta.pressed ? Palette.input-bg-press : (ta.has-hover ? Palette.input-bg-hover : transparent));
@@ -26,7 +26,7 @@ component PresetBtn inherits Rectangle {
         color: selected 
             ? #7dd3fc 
             : (ta.has-hover ? Palette.text-primary : Palette.text-secondary);
-        font-size: 10px;
+        font-size: 10px * Palette.scale;
         font-weight: 600;
         horizontal-alignment: center;
         vertical-alignment: center;
@@ -43,18 +43,18 @@ component AdjustBtn inherits Rectangle {
     in property <string> text;
     callback clicked;
 
-    width: 24px;
-    height: 24px;
-    border-radius: 4px;
+    width: 24px * Palette.scale;
+    height: 24px * Palette.scale;
+    border-radius: 4px * Palette.scale;
     background: ta.pressed ? Palette.input-bg-press : (ta.has-hover ? Palette.input-bg-hover : Palette.input-bg);
-    border-width: 1px;
+    border-width: 1px * Palette.scale;
     border-color: ta.has-hover ? Palette.input-border-hover : Palette.input-border;
     animate background { duration: 100ms; }
     animate border-color { duration: 100ms; }
 
     Text {
         text: root.text;
-        font-size: 12px;
+        font-size: 12px * Palette.scale;
         font-weight: 800;
         color: Palette.text-primary;
         horizontal-alignment: center;
@@ -85,90 +85,90 @@ export component TimelineView {
     property <color> selected-color: transparent;
 
     VerticalLayout {
-        padding: 12px;
+        padding: 12px * Palette.scale;
         padding-top: 0px;
-        spacing: 12px;
+        spacing: 12px * Palette.scale;
         height: 100%;
 
         SectionHeader { label: "DAY CONSTRUCTION TIMELINE"; }
 
         // Controls Card
         Card {
-            height: 116px;
+            height: 116px * Palette.scale;
             vertical-stretch: 0;
             
             VerticalLayout {
-                padding: 10px;
-                spacing: 8px;
+                padding: 10px * Palette.scale;
+                spacing: 8px * Palette.scale;
                 alignment: center;
 
                 // Row 1: Presets
                 HorizontalLayout {
-                    spacing: 8px;
+                    spacing: 8px * Palette.scale;
                     alignment: start;
 
                     Text {
                         text: "PRESET:";
                         color: Palette.text-muted;
-                        font-size: 9px;
+                        font-size: 9px * Palette.scale;
                         font-weight: 700;
-                        letter-spacing: 1px;
+                        letter-spacing: 1px * Palette.scale;
                         vertical-alignment: center;
-                        width: 75px;
+                        width: 75px * Palette.scale;
                     }
 
                     PresetBtn {
                         text: "1 HOUR";
                         selected: root.timelinePresetHours == 1;
                         clicked => { root.timelinePresetHours = 1; root.timelineStartHour = 0; root.timelineEndHour = 24; root.timelineZoomFactor = 24.0; }
-                        width: 75px;
+                        width: 75px * Palette.scale;
                     }
                     PresetBtn {
                         text: "3 HOURS";
                         selected: root.timelinePresetHours == 3;
                         clicked => { root.timelinePresetHours = 3; root.timelineStartHour = 0; root.timelineEndHour = 24; root.timelineZoomFactor = 8.0; }
-                        width: 75px;
+                        width: 75px * Palette.scale;
                     }
                     PresetBtn {
                         text: "8 HOURS";
                         selected: root.timelinePresetHours == 8;
                         clicked => { root.timelinePresetHours = 8; root.timelineStartHour = 0; root.timelineEndHour = 24; root.timelineZoomFactor = 3.0; }
-                        width: 75px;
+                        width: 75px * Palette.scale;
                     }
                     PresetBtn {
                         text: "24 HOURS";
                         selected: root.timelinePresetHours == 24;
                         clicked => { root.timelinePresetHours = 24; root.timelineStartHour = 0; root.timelineEndHour = 24; root.timelineZoomFactor = 1.0; }
-                        width: 75px;
+                        width: 75px * Palette.scale;
                     }
                     PresetBtn {
                         text: "ALL DAY";
                         selected: root.timelinePresetHours == 0;
                         clicked => { root.timelinePresetHours = 0; root.timelineStartHour = 0; root.timelineEndHour = 24; root.timelineZoomFactor = 1.0; }
-                        width: 75px;
+                        width: 75px * Palette.scale;
                     }
                 }
 
                 // Row 2: Hour Zoom Range
                 HorizontalLayout {
-                    spacing: 8px;
+                    spacing: 8px * Palette.scale;
                     alignment: start;
 
                     Text {
                         text: "ZOOM TIME:";
                         color: Palette.text-muted;
-                        font-size: 9px;
+                        font-size: 9px * Palette.scale;
                         font-weight: 700;
-                        letter-spacing: 1px;
+                        letter-spacing: 1px * Palette.scale;
                         vertical-alignment: center;
-                        width: 75px;
+                        width: 75px * Palette.scale;
                     }
 
                     // Start Hour
                     Text {
                         text: "Start Hour:";
                         color: Palette.text-secondary;
-                        font-size: 10px;
+                        font-size: 10px * Palette.scale;
                         vertical-alignment: center;
                     }
                     AdjustBtn {
@@ -178,10 +178,10 @@ export component TimelineView {
                     Text {
                         text: (root.timelineStartHour < 10 ? "0" : "") + root.timelineStartHour + ":00";
                         color: Palette.text-primary;
-                        font-size: 11px;
+                        font-size: 11px * Palette.scale;
                         font-weight: 600;
                         vertical-alignment: center;
-                        width: 42px;
+                        width: 42px * Palette.scale;
                         horizontal-alignment: center;
                     }
                     AdjustBtn {
@@ -189,13 +189,13 @@ export component TimelineView {
                         clicked => { if (root.timelineStartHour < root.timelineEndHour - 1) { root.timelineStartHour += 1; root.timelinePresetHours = -1; } }
                     }
 
-                    Rectangle { width: 12px; }
+                    Rectangle { width: 12px * Palette.scale; }
 
                     // End Hour
                     Text {
                         text: "End Hour:";
                         color: Palette.text-secondary;
-                        font-size: 10px;
+                        font-size: 10px * Palette.scale;
                         vertical-alignment: center;
                     }
                     AdjustBtn {
@@ -205,10 +205,10 @@ export component TimelineView {
                     Text {
                         text: (root.timelineEndHour < 10 ? "0" : "") + root.timelineEndHour + ":00";
                         color: Palette.text-primary;
-                        font-size: 11px;
+                        font-size: 11px * Palette.scale;
                         font-weight: 600;
                         vertical-alignment: center;
-                        width: 42px;
+                        width: 42px * Palette.scale;
                         horizontal-alignment: center;
                     }
                     AdjustBtn {
@@ -219,17 +219,17 @@ export component TimelineView {
 
                 // Row 3: Horizontal Zoom Factor
                 HorizontalLayout {
-                    spacing: 8px;
+                    spacing: 8px * Palette.scale;
                     alignment: start;
 
                     Text {
                         text: "ZOOM VIEW:";
                         color: Palette.text-muted;
-                        font-size: 9px;
+                        font-size: 9px * Palette.scale;
                         font-weight: 700;
-                        letter-spacing: 1px;
+                        letter-spacing: 1px * Palette.scale;
                         vertical-alignment: center;
-                        width: 75px;
+                        width: 75px * Palette.scale;
                     }
 
                     AdjustBtn {
@@ -239,10 +239,10 @@ export component TimelineView {
                     Text {
                         text: Math.round(root.timelineZoomFactor * 100) + "%";
                         color: Palette.text-primary;
-                        font-size: 11px;
+                        font-size: 11px * Palette.scale;
                         font-weight: 600;
                         vertical-alignment: center;
-                        width: 42px;
+                        width: 42px * Palette.scale;
                         horizontal-alignment: center;
                     }
                     AdjustBtn {
@@ -256,36 +256,36 @@ export component TimelineView {
 
         // Timeline Bar Visualization Card
         Card {
-            height: 120px;
+            height: 120px * Palette.scale;
             vertical-stretch: 0;
 
             VerticalLayout {
-                padding: 16px;
+                padding: 16px * Palette.scale;
                 spacing: 0px;
                 alignment: center;
 
                 Flickable {
                     viewport-width: parent.width * root.timelineZoomFactor;
-                    height: 64px;
+                    height: 64px * Palette.scale;
 
                     VerticalLayout {
                         width: parent.viewport-width;
                         height: 100%;
-                        spacing: 12px;
+                        spacing: 12px * Palette.scale;
 
                         // 24 Hour Bar Container
                         Rectangle {
-                            height: 36px;
+                            height: 36px * Palette.scale;
                             background: Palette.timeline-bar-bg;
-                            border-radius: 6px;
-                            border-width: 1px;
+                            border-radius: 6px * Palette.scale;
+                            border-width: 1px * Palette.scale;
                             border-color: Palette.divider;
                             clip: true;
 
                             if timelineBlocks.length == 0 : Text {
                                 text: "NO ACTIVITY RECORDED";
                                 color: Palette.text-muted;
-                                font-size: 10px;
+                                font-size: 10px * Palette.scale;
                                 font-weight: 700;
                                 horizontal-alignment: center;
                                 vertical-alignment: center;
@@ -313,7 +313,7 @@ export component TimelineView {
                                 Rectangle {
                                     width: 100%;
                                     height: 100%;
-                                    border-width: ta.has-hover ? 2px : 0px;
+                                    border-width: ta.has-hover ? 2px * Palette.scale : 0px;
                                     border-color: #ffffff;
                                     background: transparent;
                                 }
@@ -322,13 +322,13 @@ export component TimelineView {
 
                         // Hour Markers Row
                         Rectangle {
-                            height: 16px;
+                            height: 16px * Palette.scale;
                             
                             for marker in timelineMarkers : Text {
                                 x: marker.x * parent.width - self.preferred-width / 2;
                                 text: marker.label;
                                 color: Palette.timeline-marker;
-                                font-size: 10px;
+                                font-size: 10px * Palette.scale;
                                 font-weight: 600;
                             }
                         }
@@ -343,19 +343,19 @@ export component TimelineView {
             vertical-stretch: 1;
 
             VerticalLayout {
-                padding: 24px;
-                spacing: 12px;
+                padding: 24px * Palette.scale;
+                spacing: 12px * Palette.scale;
                 alignment: center;
 
                 if root.selected-duration != "" : HorizontalLayout {
-                    spacing: 12px;
+                    spacing: 12px * Palette.scale;
                     alignment: center;
 
                     // App Color indicator block
                     Rectangle {
-                        width: 12px;
-                        height: 24px;
-                        border-radius: 3px;
+                        width: 12px * Palette.scale;
+                        height: 24px * Palette.scale;
+                        border-radius: 3px * Palette.scale;
                         background: root.selected-color;
                         y: (parent.height - self.height) / 2;
                     }
@@ -363,20 +363,20 @@ export component TimelineView {
                     Text {
                         text: root.selected-app;
                         color: Palette.text-primary;
-                        font-size: 16px;
+                        font-size: 16px * Palette.scale;
                         font-weight: 700;
                         vertical-alignment: center;
                     }
                 }
 
                 if root.selected-duration != "" : VerticalLayout {
-                    spacing: 6px;
+                    spacing: 6px * Palette.scale;
                     alignment: center;
 
                     Text {
                         text: "Time: " + root.selected-range;
                         color: Palette.text-secondary;
-                        font-size: 13px;
+                        font-size: 13px * Palette.scale;
                         font-weight: 500;
                         horizontal-alignment: center;
                     }
@@ -384,7 +384,7 @@ export component TimelineView {
                     Text {
                         text: "Duration: " + root.selected-duration;
                         color: #38bdf8;
-                        font-size: 13px;
+                        font-size: 13px * Palette.scale;
                         font-weight: 600;
                         horizontal-alignment: center;
                     }
@@ -393,7 +393,7 @@ export component TimelineView {
                 if root.selected-duration == "" : Text {
                     text: root.selected-app;
                     color: Palette.text-dim;
-                    font-size: 12px;
+                    font-size: 12px * Palette.scale;
                     font-weight: 600;
                     horizontal-alignment: center;
                     vertical-alignment: center;

@@ -7,8 +7,8 @@ export component SwitchRow inherits Rectangle {
     in property <string> timestamp;
     in property <bool>   is-even;
 
-    height: 48px;
-    border-radius: 5px;
+    height: 48px * Palette.scale;
+    border-radius: 5px * Palette.scale;
     clip: true;
 
     background: ta.has-hover ? Palette.row-bg-hover : (is-even ? Palette.row-bg-even : transparent);
@@ -16,56 +16,56 @@ export component SwitchRow inherits Rectangle {
 
     Rectangle {
         x: 0;
-        width: 2px;
+        width: 2px * Palette.scale;
         height: parent.height;
         background: ta.has-hover ? #818cf8cc : #00000000;
         animate background { duration: 120ms; easing: ease-out; }
     }
 
     VerticalLayout {
-        padding-left: 16px;
-        padding-right: 12px;
-        padding-top: 8px;
-        padding-bottom: 8px;
-        spacing: 3px;
+        padding-left: 16px * Palette.scale;
+        padding-right: 12px * Palette.scale;
+        padding-top: 8px * Palette.scale;
+        padding-bottom: 8px * Palette.scale;
+        spacing: 3px * Palette.scale;
 
         HorizontalLayout {
-            spacing: 5px;
+            spacing: 5px * Palette.scale;
             alignment: start;
 
             Text {
                 text: from-window;
                 color: #fb7185;
-                font-size: 11px;
+                font-size: 11px * Palette.scale;
                 font-weight: 600;
                 vertical-alignment: center;
                 overflow: elide;
-                max-width: 120px;
+                max-width: 120px * Palette.scale;
             }
 
             Text {
                 text: "→";
                 color: Palette.text-muted;
-                font-size: 11px;
+                font-size: 11px * Palette.scale;
                 vertical-alignment: center;
             }
 
             Text {
                 text: to-window;
                 color: #34d399;
-                font-size: 11px;
+                font-size: 11px * Palette.scale;
                 font-weight: 600;
                 vertical-alignment: center;
                 overflow: elide;
-                max-width: 120px;
+                max-width: 120px * Palette.scale;
             }
         }
 
         Text {
             text: timestamp;
             color: Palette.text-dim;
-            font-size: 10px;
-            letter-spacing: 0.3px;
+            font-size: 10px * Palette.scale;
+            letter-spacing: 0.3px * Palette.scale;
             vertical-alignment: center;
         }
     }

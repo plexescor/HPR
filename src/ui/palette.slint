@@ -1,5 +1,7 @@
 export global Palette {
     in-out property <bool> is-dark: true;
+    in-out property <float> ui-scale: 0.5;
+    out property <float> scale: ui-scale / 0.5;
     
     // Core Backgrounds
     out property <color> background: is-dark ? #07090f : #f8fafc;

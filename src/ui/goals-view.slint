@@ -16,9 +16,9 @@ export component GoalsView {
     property <int> input-minutes: 30;
 
     VerticalLayout {
-        padding: 12px;
+        padding: 12px * Palette.scale;
         padding-top: 0px;
-        spacing: 10px;
+        spacing: 10px * Palette.scale;
         height: 100%;
 
         SectionHeader { label: "MANAGE APP LIMITS & GOALS"; }
@@ -33,24 +33,24 @@ export component GoalsView {
 
                 appContent := VerticalLayout {
                     width: 100%;
-                    padding-bottom: 20px;
+                    padding-bottom: 20px * Palette.scale;
                     
                     if raw-apps.length == 0 : Rectangle {
-                        height: 100px;
+                        height: 100px * Palette.scale;
                         Text {
                             text: "NO RAW APPS TRACKED YET";
                             color: Palette.text-muted;
-                            font-size: 11px;
+                            font-size: 11px * Palette.scale;
                             font-weight: 700;
-                            letter-spacing: 2px;
+                            letter-spacing: 2px * Palette.scale;
                             horizontal-alignment: center;
                             vertical-alignment: center;
                         }
                     }
 
                     for app-goal-data[i] in raw-apps : Rectangle {
-                        height: active-edit-index == i ? 98px : 48px;
-                        border-radius: 5px;
+                        height: active-edit-index == i ? 98px * Palette.scale : 48px * Palette.scale;
+                        border-radius: 5px * Palette.scale;
                         clip: true;
                         
                         // Premium gradient & subtle tint if limit/goal exists
@@ -82,9 +82,9 @@ export component GoalsView {
                         Rectangle {
                             x: 0px;
                             y: (parent.height - self.height) / 2;
-                            width: 3px;
-                            height: parent.height - 16px;
-                            border-radius: 1.5px;
+                            width: 3px * Palette.scale;
+                            height: parent.height - 16px * Palette.scale;
+                            border-radius: 1.5px * Palette.scale;
                             background: app-goal-data.limit_mins > 0 
                                 ? (ta.has-hover ? #ef4444 : #ef4444bb)
                                 : (app-goal-data.goal_mins > 0 
@@ -94,24 +94,24 @@ export component GoalsView {
                         }
 
                         VerticalLayout {
-                            padding-left: 16px;
-                            padding-right: 14px;
-                            padding-top: 8px;
-                            padding-bottom: 8px;
-                            spacing: 8px;
+                            padding-left: 16px * Palette.scale;
+                            padding-right: 14px * Palette.scale;
+                            padding-top: 8px * Palette.scale;
+                            padding-bottom: 8px * Palette.scale;
+                            spacing: 8px * Palette.scale;
 
                             // Top row showing the App Name and current state indication
                             HorizontalLayout {
                                 alignment: space-between;
 
                                 HorizontalLayout {
-                                    spacing: 8px;
+                                    spacing: 8px * Palette.scale;
                                     alignment: start;
 
                                     Text {
                                         text: app-goal-data.name;
                                         color: ta.has-hover ? Palette.text-primary : Palette.text-secondary;
-                                        font-size: 13px;
+                                        font-size: 13px * Palette.scale;
                                         font-weight: (app-goal-data.limit_mins > 0 || app-goal-data.goal_mins > 0) ? 600 : 400;
                                         vertical-alignment: center;
                                         animate color { duration: 100ms; }
@@ -121,16 +121,16 @@ export component GoalsView {
                                     if app-goal-data.limit_mins > 0 : Rectangle {
                                         background: #ef444428;
                                         border-color: #ef444460;
-                                        border-width: 1px;
-                                        border-radius: 4px;
-                                        height: 20px;
-                                        width: limit-text.preferred-width + 12px;
+                                        border-width: 1px * Palette.scale;
+                                        border-radius: 4px * Palette.scale;
+                                        height: 20px * Palette.scale;
+                                        width: limit-text.preferred-width + 12px * Palette.scale;
                                         y: (parent.height - self.height) / 2;
 
                                         limit-text := Text {
                                             text: "Limit: " + app-goal-data.limit_mins + "m" + (app-goal-data.limit_remaining != "" ? " (" + app-goal-data.limit_remaining + " left)" : "");
                                             color: #f87171;
-                                            font-size: 11px;
+                                            font-size: 11px * Palette.scale;
                                             font-weight: 700;
                                             horizontal-alignment: center;
                                             vertical-alignment: center;
@@ -140,16 +140,16 @@ export component GoalsView {
                                     if app-goal-data.goal_mins > 0 : Rectangle {
                                         background: #10b98128;
                                         border-color: #10b98160;
-                                        border-width: 1px;
-                                        border-radius: 4px;
-                                        height: 20px;
-                                        width: goal-text.preferred-width + 12px;
+                                        border-width: 1px * Palette.scale;
+                                        border-radius: 4px * Palette.scale;
+                                        height: 20px * Palette.scale;
+                                        width: goal-text.preferred-width + 12px * Palette.scale;
                                         y: (parent.height - self.height) / 2;
 
                                         goal-text := Text {
                                             text: "Goal: " + app-goal-data.goal_mins + "m" + (app-goal-data.goal_remaining != "" ? " (" + app-goal-data.goal_remaining + " left)" : "");
                                             color: #34d399;
-                                            font-size: 11px;
+                                            font-size: 11px * Palette.scale;
                                             font-weight: 700;
                                             horizontal-alignment: center;
                                             vertical-alignment: center;
@@ -160,7 +160,7 @@ export component GoalsView {
                                 if active-edit-index != i : Text {
                                     text: "Configure (Click)";
                                     color: Palette.text-label;
-                                    font-size: 10px;
+                                    font-size: 10px * Palette.scale;
                                     vertical-alignment: center;
                                 }
                             }
@@ -169,27 +169,27 @@ export component GoalsView {
                             if active-edit-index == i : HorizontalLayout {
 
                                 alignment: space-between;
-                                spacing: 12px;
+                                spacing: 12px * Palette.scale;
 
                                 // Minutes adjustment layout
                                 HorizontalLayout {
-                                    spacing: 8px;
+                                    spacing: 8px * Palette.scale;
                                     alignment: start;
 
                                     Text {
                                         text: "Minutes:";
                                         color: #94a3b8;
-                                        font-size: 11px;
+                                        font-size: 11px * Palette.scale;
                                         vertical-alignment: center;
                                     }
 
                                     // Minus button
                                     Rectangle {
-                                        width: 24px;
-                                        height: 24px;
-                                        border-radius: 4px;
+                                        width: 24px * Palette.scale;
+                                        height: 24px * Palette.scale;
+                                        border-radius: 4px * Palette.scale;
                                         background: ta-minus.has-hover ? #ef444430 : #ef444410;
-                                        border-width: 1px;
+                                        border-width: 1px * Palette.scale;
                                         border-color: ta-minus.has-hover ? #ef444480 : #ef444430;
                                         animate background { duration: 100ms; }
                                         animate border-color { duration: 100ms; }
@@ -205,7 +205,7 @@ export component GoalsView {
                                         Text {
                                             text: "-";
                                             color: #f87171;
-                                            font-size: 14px;
+                                            font-size: 14px * Palette.scale;
                                             font-weight: 700;
                                             horizontal-alignment: center;
                                             vertical-alignment: center;
@@ -213,8 +213,8 @@ export component GoalsView {
                                     }
 
                                     LineEdit {
-                                        width: 72px;
-                                        height: 26px;
+                                        width: 72px * Palette.scale;
+                                        height: 26px * Palette.scale;
                                         text: input-minutes;
                                         edited(text) => {
                                             input-minutes = text.to-float();
@@ -224,11 +224,11 @@ export component GoalsView {
 
                                     // Plus button
                                     Rectangle {
-                                        width: 24px;
-                                        height: 24px;
-                                        border-radius: 4px;
+                                        width: 24px * Palette.scale;
+                                        height: 24px * Palette.scale;
+                                        border-radius: 4px * Palette.scale;
                                         background: ta-plus.has-hover ? #10b98130 : #10b98110;
-                                        border-width: 1px;
+                                        border-width: 1px * Palette.scale;
                                         border-color: ta-plus.has-hover ? #10b98180 : #10b98130;
                                         animate background { duration: 100ms; }
                                         animate border-color { duration: 100ms; }
@@ -242,7 +242,7 @@ export component GoalsView {
                                         Text {
                                             text: "+";
                                             color: Palette.text-primary;
-                                            font-size: 14px;
+                                            font-size: 14px * Palette.scale;
                                             font-weight: 700;
                                             horizontal-alignment: center;
                                             vertical-alignment: center;
@@ -252,16 +252,16 @@ export component GoalsView {
 
                                 // Set Limit / Set Goal buttons
                                 HorizontalLayout {
-                                    spacing: 8px;
+                                    spacing: 8px * Palette.scale;
                                     alignment: end;
 
                                     // Reset Button
                                     Rectangle {
-                                        width: 82px;
-                                        height: 26px;
-                                        border-radius: 5px;
+                                        width: 82px * Palette.scale;
+                                        height: 26px * Palette.scale;
+                                        border-radius: 5px * Palette.scale;
                                         background: ta-reset.pressed ? #e2e8f045 : (ta-reset.has-hover ? #e2e8f025 : #e2e8f012);
-                                        border-width: 1px;
+                                        border-width: 1px * Palette.scale;
                                         border-color: ta-reset.has-hover ? #e2e8f060 : #e2e8f035;
 
                                         ta-reset := TouchArea {
@@ -276,9 +276,9 @@ export component GoalsView {
                                         Text {
                                             text: "RESET";
                                             color: ta-reset.has-hover ? #ffffff : #94a3b8;
-                                            font-size: 9px;
+                                            font-size: 9px * Palette.scale;
                                             font-weight: 700;
-                                            letter-spacing: 1px;
+                                            letter-spacing: 1px * Palette.scale;
                                             horizontal-alignment: center;
                                             vertical-alignment: center;
                                         }
@@ -286,11 +286,11 @@ export component GoalsView {
 
                                     // Limit Button
                                     Rectangle {
-                                        width: 82px;
-                                        height: 26px;
-                                        border-radius: 5px;
+                                        width: 82px * Palette.scale;
+                                        height: 26px * Palette.scale;
+                                        border-radius: 5px * Palette.scale;
                                         background: ta-limit.pressed ? #ef444445 : (ta-limit.has-hover ? #ef444425 : #ef444412);
-                                        border-width: 1px;
+                                        border-width: 1px * Palette.scale;
                                         border-color: ta-limit.has-hover ? #ef444460 : #ef444435;
 
                                         ta-limit := TouchArea {
@@ -304,9 +304,9 @@ export component GoalsView {
                                         Text {
                                             text: "SET LIMIT";
                                             color: ta-limit.has-hover ? #f87171 : #ef4444;
-                                            font-size: 9px;
+                                            font-size: 9px * Palette.scale;
                                             font-weight: 700;
-                                            letter-spacing: 1px;
+                                            letter-spacing: 1px * Palette.scale;
                                             horizontal-alignment: center;
                                             vertical-alignment: center;
                                         }
@@ -314,11 +314,11 @@ export component GoalsView {
 
                                     // Goal Button
                                     Rectangle {
-                                        width: 82px;
-                                        height: 26px;
-                                        border-radius: 5px;
+                                        width: 82px * Palette.scale;
+                                        height: 26px * Palette.scale;
+                                        border-radius: 5px * Palette.scale;
                                         background: ta-goal.pressed ? #10b98145 : (ta-goal.has-hover ? #10b98125 : #10b98112);
-                                        border-width: 1px;
+                                        border-width: 1px * Palette.scale;
                                         border-color: ta-goal.has-hover ? #10b98160 : #10b98135;
 
                                         ta-goal := TouchArea {
@@ -332,9 +332,9 @@ export component GoalsView {
                                         Text {
                                             text: "SET GOAL";
                                             color: ta-goal.has-hover ? #34d399 : #10b981;
-                                            font-size: 9px;
+                                            font-size: 9px * Palette.scale;
                                             font-weight: 700;
-                                            letter-spacing: 1px;
+                                            letter-spacing: 1px * Palette.scale;
                                             horizontal-alignment: center;
                                             vertical-alignment: center;
                                         }

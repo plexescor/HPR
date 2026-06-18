@@ -9,9 +9,9 @@ component ThemeOptionButton inherits Rectangle {
     in property <bool> active;
     callback clicked;
 
-    height: 32px;
-    border-radius: 6px;
-    border-width: 1px;
+    height: 32px * Palette.scale;
+    border-radius: 6px * Palette.scale;
+    border-width: 1px * Palette.scale;
     border-color: active ? #38bdf8 : Palette.card-border;
     background: active ? #38bdf815 : (ta.has-hover ? Palette.row-bg-hover : transparent);
     
@@ -20,9 +20,9 @@ component ThemeOptionButton inherits Rectangle {
 
     Text {
         text: label;
-        font-size: 11px;
+        font-size: 11px * Palette.scale;
         font-weight: 700;
-        letter-spacing: 1.5px;
+        letter-spacing: 1.5px * Palette.scale;
         color: active ? #38bdf8 : Palette.text-primary;
         horizontal-alignment: center;
         vertical-alignment: center;
@@ -36,7 +36,7 @@ component ThemeOptionButton inherits Rectangle {
 
 // Divider helper
 component Divider inherits Rectangle {
-    height: 1px;
+    height: 1px * Palette.scale;
     background: Palette.divider;
 }
 
@@ -49,26 +49,26 @@ component ToggleSetting inherits HorizontalLayout {
     callback toggled(bool);
 
     alignment: space-between;
-    spacing: 12px;
+    spacing: 12px * Palette.scale;
 
     VerticalLayout {
         alignment: center;
-        spacing: 4px;
+        spacing: 4px * Palette.scale;
         Text {
             text: label;
-            font-size: 13px;
+            font-size: 13px * Palette.scale;
             font-weight: 600;
             color: Palette.text-primary;
         }
         Text {
             text: description;
-            font-size: 11px;
+            font-size: 11px * Palette.scale;
             color: Palette.text-secondary;
             wrap: word-wrap;
         }
         if warning-text != "" : Text {
             text: warning-text;
-            font-size: 13px;
+            font-size: 13px * Palette.scale;
             font-weight: 700;
             color: #ff5c5c;
             wrap: word-wrap;
@@ -88,6 +88,7 @@ export component SettingsView {
     in property <bool> telemetry_S;
     in property <bool> noTitleBar_S;
     in property <float> cornerRoundness_S;
+    in property <float> uiScale_S;
     in property <bool> killApps_S;
     in property <bool> hardwareAccel_S;
     in property <bool> allowCustomBackends_S;
@@ -99,14 +100,14 @@ export component SettingsView {
 
         settingsContent := VerticalLayout {
 
-            padding: 12px;
-            padding-top: 6px;
-            spacing: 10px;
+            padding: 12px * Palette.scale;
+            padding-top: 6px * Palette.scale;
+            spacing: 10px * Palette.scale;
 
             HorizontalLayout {
                 alignment: start;
                 vertical-stretch: 0;
-                padding-top: 4px;
+                padding-top: 4px * Palette.scale;
 
                 SectionHeader { label: "SETTINGS"; }
             }
@@ -114,47 +115,47 @@ export component SettingsView {
             // ── APPEARANCE ────────────────────────────────────────────────
             Card {
                 VerticalLayout {
-                    padding: 24px;
-                    spacing: 16px;
+                    padding: 24px * Palette.scale;
+                    spacing: 16px * Palette.scale;
 
                     Text {
                         text: "APPEARANCE";
-                        font-size: 8px;
+                        font-size: 8px * Palette.scale;
                         font-weight: 700;
-                        letter-spacing: 2.5px;
+                        letter-spacing: 2.5px * Palette.scale;
                         color: Palette.text-muted;
                     }
 
                     HorizontalLayout {
                         alignment: space-between;
-                        spacing: 12px;
+                        spacing: 12px * Palette.scale;
 
                         VerticalLayout {
                             alignment: center;
-                            spacing: 4px;
+                            spacing: 4px * Palette.scale;
                             Text {
                                 text: "Theme Mode";
-                                font-size: 13px;
+                                font-size: 13px * Palette.scale;
                                 font-weight: 600;
                                 color: Palette.text-primary;
                             }
                             Text {
                                 text: "Select your preferred visual style for HPR";
-                                font-size: 11px;
+                                font-size: 11px * Palette.scale;
                                 color: Palette.text-secondary;
                             }
                         }
 
                         HorizontalLayout {
                             alignment: end;
-                            spacing: 8px;
-                            width: 180px;
+                            spacing: 8px * Palette.scale;
+                            width: 180px * Palette.scale;
                             y: (parent.height - self.height) / 2;
 
                             ThemeOptionButton {
                                 label: "DARK";
                                 active: themeMode_S == "dark";
-                                width: 80px;
+                                width: 80px * Palette.scale;
                                 clicked => {
                                     root.setConfig("theme", "dark");
                                 }
@@ -163,10 +164,51 @@ export component SettingsView {
                             ThemeOptionButton {
                                 label: "LIGHT";
                                 active: themeMode_S == "light";
-                                width: 80px;
+                                width: 80px * Palette.scale;
                                 clicked => {
                                     root.setConfig("theme", "light");
                                 }
+                            }
+                        }
+                    }
+
+                    Divider {}
+
+                    VerticalLayout {
+                        spacing: 8px * Palette.scale;
+                        padding-top: 8px * Palette.scale;
+                        padding-bottom: 8px * Palette.scale;
+
+                        HorizontalLayout {
+                            alignment: space-between;
+                            VerticalLayout {
+                                spacing: 4px * Palette.scale;
+                                Text {
+                                    text: "UI Scale";
+                                    font-size: 13px * Palette.scale;
+                                    font-weight: 600;
+                                    color: Palette.text-primary;
+                                }
+                                Text {
+                                    text: "Adjust the size of the interface elements";
+                                    font-size: 11px * Palette.scale;
+                                    color: Palette.text-secondary;
+                                }
+                            }
+                            Text {
+                                text: Math.round(root.uiScale_S * 100) + "%";
+                                font-size: 13px * Palette.scale;
+                                font-weight: 600;
+                                color: Palette.text-secondary;
+                            }
+                        }
+
+                        Slider {
+                            minimum: 0.01;
+                            maximum: 1.0;
+                            value: root.uiScale_S;
+                            changed(v) => {
+                                root.setConfig("ui-scale", "\{v}");
                             }
                         }
                     }
@@ -182,22 +224,22 @@ export component SettingsView {
                     }
 
                     if root.noTitleBar_S : VerticalLayout {
-                        spacing: 8px;
-                        padding-top: 8px;
-                        padding-bottom: 8px;
+                        spacing: 8px * Palette.scale;
+                        padding-top: 8px * Palette.scale;
+                        padding-bottom: 8px * Palette.scale;
 
                         HorizontalLayout {
                             alignment: space-between;
                             Text {
                                 text: "Window Corner Roundness";
                                 
-                                font-size: 13px;
+                                font-size: 13px * Palette.scale;
                                 font-weight: 600;
                                 color: Palette.text-primary;
                             }
                             Text {
                                 text: Math.round(root.cornerRoundness_S * 100) + "%";
-                                font-size: 13px;
+                                font-size: 13px * Palette.scale;
                                 font-weight: 600;
                                 color: Palette.text-secondary;
                             }
@@ -218,14 +260,14 @@ export component SettingsView {
             // ── SYSTEM BEHAVIOR ───────────────────────────────────────────
             Card {
                 VerticalLayout {
-                    padding: 24px;
-                    spacing: 16px;
+                    padding: 24px * Palette.scale;
+                    spacing: 16px * Palette.scale;
 
                     Text {
                         text: "SYSTEM BEHAVIOR";
-                        font-size: 8px;
+                        font-size: 8px * Palette.scale;
                         font-weight: 700;
-                        letter-spacing: 2.5px;
+                        letter-spacing: 2.5px * Palette.scale;
                         color: Palette.text-muted;
                     }
 
@@ -250,14 +292,14 @@ export component SettingsView {
             // ── TRACKING ─────────────────────────────────────────────────
             Card {
                 VerticalLayout {
-                    padding: 24px;
-                    spacing: 16px;
+                    padding: 24px * Palette.scale;
+                    spacing: 16px * Palette.scale;
 
                     Text {
                         text: "TRACKING";
-                        font-size: 8px;
+                        font-size: 8px * Palette.scale;
                         font-weight: 700;
-                        letter-spacing: 2.5px;
+                        letter-spacing: 2.5px * Palette.scale;
                         color: Palette.text-muted;
                     }
 
@@ -273,14 +315,14 @@ export component SettingsView {
             // ── EXTENSIONS ───────────────────────────────────────────────
             Card {
                 VerticalLayout {
-                    padding: 24px;
-                    spacing: 16px;
+                    padding: 24px * Palette.scale;
+                    spacing: 16px * Palette.scale;
 
                     Text {
                         text: "EXTENSIONS";
-                        font-size: 8px;
+                        font-size: 8px * Palette.scale;
                         font-weight: 700;
-                        letter-spacing: 2.5px;
+                        letter-spacing: 2.5px * Palette.scale;
                         color: Palette.text-muted;
                     }
 
@@ -296,14 +338,14 @@ export component SettingsView {
             // ── PERFORMANCE ───────────────────────────────────────────────
             Card {
                 VerticalLayout {
-                    padding: 24px;
-                    spacing: 16px;
+                    padding: 24px * Palette.scale;
+                    spacing: 16px * Palette.scale;
 
                     Text {
                         text: "PERFORMANCE";
-                        font-size: 8px;
+                        font-size: 8px * Palette.scale;
                         font-weight: 700;
-                        letter-spacing: 2.5px;
+                        letter-spacing: 2.5px * Palette.scale;
                         color: Palette.text-muted;
                     }
 
@@ -319,14 +361,14 @@ export component SettingsView {
             // ── PRIVACY & ANALYTICS ───────────────────────────────────────
             Card {
                 VerticalLayout {
-                    padding: 24px;
-                    spacing: 16px;
+                    padding: 24px * Palette.scale;
+                    spacing: 16px * Palette.scale;
 
                     Text {
                         text: "PRIVACY & ANALYTICS";
-                        font-size: 8px;
+                        font-size: 8px * Palette.scale;
                         font-weight: 700;
-                        letter-spacing: 2.5px;
+                        letter-spacing: 2.5px * Palette.scale;
                         color: Palette.text-muted;
                     }
 
@@ -342,14 +384,14 @@ export component SettingsView {
             // ── NETWORK ───────────────────────────────────────────────────
             Card {
                 VerticalLayout {
-                    padding: 24px;
-                    spacing: 16px;
+                    padding: 24px * Palette.scale;
+                    spacing: 16px * Palette.scale;
 
                     Text {
                         text: "NETWORK";
-                        font-size: 8px;
+                        font-size: 8px * Palette.scale;
                         font-weight: 700;
-                        letter-spacing: 2.5px;
+                        letter-spacing: 2.5px * Palette.scale;
                         color: Palette.text-muted;
                     }
 
