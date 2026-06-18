@@ -494,12 +494,12 @@ No analytics (unless opted-in).
 
 **Let's be completely upfront:** Networking code (`WinHTTP` on Windows, `libcurl` on Linux) **is compiled into the HPR binary**. However, **HPR itself never makes network calls and never phones home by default.**
 
-The networking libraries are bundled to power the Lua extension engine, opt-in anonymous analytics, and the YouTube Now Playing feature. By default, HPR runs entirely offline. Only when you explicitly enable anonymous analytics, use the YouTube Now Playing feature, or run a Lua extension that invokes `HPR.httpGet_E` will HPR touch the internet.
+The networking libraries are bundled to power the Lua extension engine, opt-in anonymous analytics, and the developer's YouTube Now Playing display sync. By default, HPR runs entirely offline. Only when you explicitly enable anonymous analytics, sync the developer's YouTube Now Playing status, or run a Lua extension that invokes `HPR.httpGet_E` will HPR touch the internet.
 
 ### Network Activity & Controls
 HPR provides granular controls over its network capabilities:
 * **Allow Network Activity Settings:** You can disable all outgoing network calls globally under the **Settings** view (unchecking **Allow Network Activity**). When disabled, HPR's HTTP client completely skips all outgoing GET/POST/PUT requests.
-* **YouTube Now Playing:** When enabled, HPR checks if you are watching a YouTube video. It updates the current playing video metadata to a Firebase Realtime Database (`humanpatternrecorder-default-rtdb.firebaseio.com`) so the UI and About page display what you are currently watching. You can disable this by turning off network activity or custom config.
+* **YouTube Now Playing:** When enabled, the developer's client updates the currently playing video metadata from their machine to a Firebase Realtime Database (`humanpatternrecorder-default-rtdb.firebaseio.com`). Normal users' clients do not upload their own YouTube activity (which is rejected by the database's rules due to a lack of password authentication). Instead, normal users' clients read from this database to display what the developer is currently watching in the application's **About** page. You can completely disable this network retrieval by turning off network activity or custom config.
 * **Anonymous Analytics (Opt-in):** To help measure HPR's adoption, HPR includes a built-in anonymous analytics logger:
   * **What is sent:** Only two completely anonymous numbers: a registration ping (to count total unique installations) and a weekly active ping (triggered only if you use HPR 4 or more days in a single week). No window titles, website URLs, project names, or personal logs ever leave your machine.
   * **Control:** Telemetry is disabled by default. On first launch, HPR will ask for your consent, and you can toggle it on or off at any time under the **Settings** view.
