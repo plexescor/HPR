@@ -50,3 +50,6 @@ allow-custom-backends,false
 
 # headless-mode -> start in the background without displaying the UI window initially (default false)
 headless-mode,false
+
+# allow-network-activity -> allow or block all outgoing HTTP requests (default true)
+allow-network-activity,true

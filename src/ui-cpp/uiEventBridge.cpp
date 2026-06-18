@@ -182,13 +182,13 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow>& ui,  ExtensionM
             int lol = system("xdg-open https://github.com/plexescor/HPR/issues &");
         #endif
     });
-
     ui->on_start_drag([]() {
         #ifdef _WIN32
             HWND hwnd = FindWindowW(nullptr, L"HPR");
             if (hwnd) {
                 ReleaseCapture();
-                SendMessage(hwnd, WM_NCLBUTTONDOWN, HTCAPTION, 0);
+                SendMessage(hwnd, WM_SYSCOMMAND, 0xF012, 0);
+                PostMessage(hwnd, WM_LBUTTONUP, 0, 0);
             }
         #endif
     });
@@ -204,6 +204,16 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow>& ui,  ExtensionM
         if (auto handle = weak_ui.lock()) {
             (*handle)->hide();
         }
+    });
+
+    ui->on_openUrl([](slint::SharedString url) {
+        std::string urlStr = std::string(url);
+        #ifdef _WIN32
+            ShellExecuteA(nullptr, "open", urlStr.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+        #else
+            std::string cmd = "xdg-open " + urlStr + " &";
+            int idc = system(cmd.c_str());
+        #endif
     });
 }
 
@@ -465,13 +475,13 @@ UiEventBridge::UiEventBridge(
         #endif
         return slint::interpreter::Value(); // void return
     });
-
     ui->set_callback("start_drag", [](auto args) -> slint::interpreter::Value {
         #ifdef _WIN32
             HWND hwnd = FindWindowW(nullptr, L"HPR");
             if (hwnd) {
                 ReleaseCapture();
-                SendMessage(hwnd, WM_NCLBUTTONDOWN, HTCAPTION, 0);
+                SendMessage(hwnd, WM_SYSCOMMAND, 0xF012, 0);
+                PostMessage(hwnd, WM_LBUTTONUP, 0, 0);
             }
         #endif
         return slint::interpreter::Value();
@@ -488,6 +498,22 @@ UiEventBridge::UiEventBridge(
     ui->set_callback("close_window", [weak_ui](auto args) -> slint::interpreter::Value {
         if (auto handle = weak_ui.lock()) {
             (*handle)->hide();
+        }
+        return slint::interpreter::Value();
+    });
+
+    ui->set_callback("openUrl", [](auto args) -> slint::interpreter::Value {
+        if (args.size() > 0) {
+            auto opt_url = args[0].to_string();
+            if (opt_url.has_value()) {
+                std::string urlStr = std::string(opt_url.value());
+                #ifdef _WIN32
+                    ShellExecuteA(nullptr, "open", urlStr.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+                #else
+                    std::string cmd = "xdg-open " + urlStr + " &";
+                    int idc = system(cmd.c_str());
+                #endif
+            }
         }
         return slint::interpreter::Value();
     });

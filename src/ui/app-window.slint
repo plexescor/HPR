@@ -22,6 +22,7 @@ import { TimeLog, SwitchHistory, TimeLog_Tab, TimeLog_Project, AppGoalData, Time
 // ── Main Window ──────────────────────────────────────────────────────────────
 export component MainWindow inherits Window {
     no-frame: root.no-title-bar-enabled;
+    background: root.no-title-bar-enabled ? transparent : Palette.background;
     callback start_drag();
     callback minimize_window();
     callback close_window();
@@ -42,6 +43,7 @@ export component MainWindow inherits Window {
     callback openReleases;
     callback openIssues;
     callback setConfig(string, string);
+    callback openUrl(string);
 
     //PLS Donate and dont remove it!
     callback openKofi;
@@ -73,8 +75,17 @@ export component MainWindow inherits Window {
     in property <bool>            headless_S;
     in property <bool>            telemetry_S;
     in property <bool>            no-title-bar-enabled;
+    in property <float>           cornerRoundness_S;
     in property <bool>            showTelemetryPrompt_S;
     in-out property <bool>        isDarkMode <=> Palette.is-dark;
+
+    in property <bool>            killApps_S;
+    in property <bool>            hardwareAccel_S;
+    in property <bool>            allowCustomBackends_S;
+    in property <bool>            allowNetworkActivity_S;
+
+    in property <string>          nowPlayingTitle_S;
+    in property <string>          nowPlayingUrl_S;
 
     init => {
         StdPalette.color-scheme = isDarkMode ? ColorScheme.dark : ColorScheme.light;
@@ -116,7 +127,6 @@ export component MainWindow inherits Window {
 
     title: "HPR";
     default-font-size: 13px;
-    background: Palette.background;
     preferred-width: 780px;
     preferred-height: 600px;
 
@@ -143,6 +153,9 @@ export component MainWindow inherits Window {
     Rectangle {
         width: parent.width;
         height: parent.height;
+        background: Palette.background;
+        border-radius: root.no-title-bar-enabled ? root.cornerRoundness_S * 16px : 0px;
+        clip: true;
 
         // ── Main content ──────────────────────────────────────────────────
         VerticalLayout {
@@ -155,20 +168,9 @@ export component MainWindow inherits Window {
 
             // ── Topbar ───────────────────────────────────────────────────
             topbar := Rectangle {
-                height: 46px;
-                background: Palette.background;
+            height: 46px;
+            background: Palette.background;
 
-                if root.no-title-bar-enabled : TouchArea {
-                    x: 0px;
-                    y: 0px;
-                    width: parent.width - 100px;
-                    height: 46px;
-                    pointer-event(event) => {
-                        if (event.button == PointerEventButton.left && event.kind == PointerEventKind.down) {
-                            root.start_drag();
-                        }
-                    }
-                }
 
                 Rectangle {
                     y: parent.height - 1px;
@@ -230,12 +232,14 @@ export component MainWindow inherits Window {
                     }
 
                     HorizontalLayout {
-                        spacing: 12px;
+                        spacing: 0px;
                         alignment: end;
 
-                        if !root.no-title-bar-enabled : Rectangle {
-                            height: 26px;
-                            width: active-lbl.preferred-width + 30px;
+                        // Active-window pill — shown only in native title-bar mode
+                        Rectangle {
+                            visible: !root.no-title-bar-enabled;
+                            height: !root.no-title-bar-enabled ? 26px : 0px;
+                            width: !root.no-title-bar-enabled ? (active-lbl.preferred-width + 30px) : 0px;
                             border-radius: 13px;
                             background: Palette.sidebar-btn-bg;
                             border-width: 1px;
@@ -264,60 +268,33 @@ export component MainWindow inherits Window {
                                 }
                             }
                         }
+                    }
+                }
 
-                        if root.no-title-bar-enabled : HorizontalLayout {
-                            spacing: 8px;
-                            alignment: end;
-                            y: (parent.height - self.height) / 2;
+                // Close Button — shown only in frameless mode
+                Rectangle {
+                    visible: root.no-title-bar-enabled;
+                    x: parent.width - self.width - 18px;
+                    y: (parent.height - self.height) / 2;
+                    width: 24px;
+                    height: 24px;
+                    border-radius: 12px;
+                    background: ta-close.pressed ? Palette.sidebar-btn-bg : (ta-close.has-hover ? Palette.sidebar-btn-bg : transparent);
+                    border-width: 1px;
+                    border-color: ta-close.has-hover ? Palette.sidebar-btn-border : transparent;
 
-                            // Minimize Button
-                            Rectangle {
-                                width: 24px;
-                                height: 24px;
-                                border-radius: 12px;
-                                background: ta-min.pressed ? Palette.sidebar-btn-bg : (ta-min.has-hover ? Palette.sidebar-btn-bg : transparent);
-                                border-width: 1px;
-                                border-color: ta-min.has-hover ? Palette.sidebar-btn-border : transparent;
+                    ta-close := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => { root.close_window(); }
+                    }
 
-                                ta-min := TouchArea {
-                                    mouse-cursor: pointer;
-                                    clicked => { root.minimize_window(); }
-                                }
-                                
-                                Rectangle {
-                                    width: 10px;
-                                    height: 1.5px;
-                                    background: Palette.text-secondary;
-                                    y: (parent.height - self.height) / 2;
-                                    x: (parent.width - self.width) / 2;
-                                }
-                            }
-
-                            // Close Button
-                            Rectangle {
-                                width: 24px;
-                                height: 24px;
-                                border-radius: 12px;
-                                background: ta-close.pressed ? Palette.sidebar-btn-bg : (ta-close.has-hover ? Palette.sidebar-btn-bg : transparent);
-                                border-width: 1px;
-                                border-color: ta-close.has-hover ? Palette.sidebar-btn-border : transparent;
-
-                                ta-close := TouchArea {
-                                    mouse-cursor: pointer;
-                                    clicked => { root.close_window(); }
-                                }
-
-                                Text {
-                                    text: "×";
-                                    font-size: 18px;
-                                    font-weight: 500;
-                                    color: Palette.text-secondary;
-                                    horizontal-alignment: center;
-                                    vertical-alignment: center;
-                                    y: -1px;
-                                }
-                            }
-                        }
+                    Text {
+                        text: "×";
+                        font-size: 18px;
+                        font-weight: 500;
+                        color: Palette.text-secondary;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
                     }
                 }
             }
@@ -385,9 +362,12 @@ export component MainWindow inherits Window {
                 ram-usage: root.ramUsage;
                 loaded-extensions: root.loadedExtensions;
                 active-threads: root.activeThreads;
+                now-playing-title: root.nowPlayingTitle_S;
+                now-playing-url: root.nowPlayingUrl_S;
                 open-kofi => { root.openKofi(); } 
                 open-releases => { root.openReleases(); }
                 open-issues => { root.openIssues(); }
+                open-now-playing(url) => { root.openUrl(url); }
             }
             if active-view == "HISTORY_RANGE" : HistoryRangeView {
                 vertical-stretch: 1;
@@ -419,9 +399,31 @@ export component MainWindow inherits Window {
                 headless_S: root.headless_S;
                 telemetry_S: root.telemetry_S;
                 noTitleBar_S: root.no-title-bar-enabled;
+                cornerRoundness_S: root.cornerRoundness_S;
+                killApps_S: root.killApps_S;
+                hardwareAccel_S: root.hardwareAccel_S;
+                allowCustomBackends_S: root.allowCustomBackends_S;
+                allowNetworkActivity_S: root.allowNetworkActivity_S;
                 setConfig(param, val) => { root.setConfig(param, val); }
             }
 
+        }
+
+        // ── Drag handle ───────────────────────────────────────────────────
+        // Outside the VerticalLayout so the layout engine cannot override its
+        // width. 85% wide × 12px tall, pinned to top-left of the root Rectangle.
+        drag-ta := TouchArea {
+            x: 0px;
+            y: 0px;
+            z: 5;
+            width: root.no-title-bar-enabled ? root.width * 0.87 : 0px;
+            height: root.no-title-bar-enabled ? 25.2px : 0px;
+            enabled: root.no-title-bar-enabled;
+            pointer-event(event) => {
+                if (event.button == PointerEventButton.left && event.kind == PointerEventKind.down) {
+                    root.start_drag();
+                }
+            }
         }
 
         // ── Floating Sidebar ──────────────────────────────────────────────

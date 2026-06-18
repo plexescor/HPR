@@ -14,6 +14,7 @@
 #include "singleInstance.hpp"
 #include "autostartManager.hpp"
 #include "telemetryManager.hpp"
+#include "nowPlayingManager.hpp"
 
 #ifdef _WIN32
 	#include <windows.h>
@@ -42,6 +43,7 @@
 		tlm.run();
 
 		TelemetryManager::init();
+		NowPlayingManager::init();
 
 		ExtensionManager ext;
 		AppState::extManager = &ext;

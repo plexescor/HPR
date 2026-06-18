@@ -8,6 +8,7 @@
 #include "logger.hpp"
 #include "netUtilities.hpp"
 #include "extensionManager.hpp"
+#include "appState.hpp"
 #include <vector>
 #include <iostream>
 #include <map>
@@ -41,6 +42,10 @@ namespace NativeNet
 
     std::pair<std::string, int> httpGet(const std::string& host, const std::string& path, bool secure, const std::map<std::string, std::string>& headers)
     {
+        if (!AppState::configManager.getConfig<bool>("allow-network-activity", true))
+        {
+            return { "", 0 };
+        }
         std::string response;
         int statusCode = 0;
 
@@ -154,6 +159,10 @@ namespace NativeNet
 
     std::pair<std::string, int> httpPost(const std::string& host, const std::string& path, const std::string& body, bool secure, const std::map<std::string, std::string>& headers)
     {
+        if (!AppState::configManager.getConfig<bool>("allow-network-activity", true))
+        {
+            return { "", 0 };
+        }
         std::string response;
         int statusCode = 0;
 
@@ -282,6 +291,10 @@ namespace NativeNet
 
     std::pair<std::string, int> httpPut(const std::string& host, const std::string& path, const std::string& body, bool secure, const std::map<std::string, std::string>& headers)
     {
+        if (!AppState::configManager.getConfig<bool>("allow-network-activity", true))
+        {
+            return { "", 0 };
+        }
         std::string response;
         int statusCode = 0;
 

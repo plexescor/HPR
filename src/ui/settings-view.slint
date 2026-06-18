@@ -1,7 +1,8 @@
 import { Card } from "./card.slint";
 import { SectionHeader } from "./section-header.slint";
 import { Palette } from "./palette.slint";
-import { Switch } from "std-widgets.slint";
+import { Switch, Slider } from "std-widgets.slint";
+
 
 component ThemeOptionButton inherits Rectangle {
     in property <string> label;
@@ -33,235 +34,330 @@ component ThemeOptionButton inherits Rectangle {
     }
 }
 
+// Divider helper
+component Divider inherits Rectangle {
+    height: 1px;
+    background: Palette.divider;
+}
+
+// A standard label+description row paired with a Switch
+component ToggleSetting inherits HorizontalLayout {
+    in property <string> label;
+    in property <string> description;
+    in property <string> warning-text: "";
+    in property <bool> checked;
+    callback toggled(bool);
+
+    alignment: space-between;
+    spacing: 12px;
+
+    VerticalLayout {
+        alignment: center;
+        spacing: 4px;
+        Text {
+            text: label;
+            font-size: 13px;
+            font-weight: 600;
+            color: Palette.text-primary;
+        }
+        Text {
+            text: description;
+            font-size: 11px;
+            color: Palette.text-secondary;
+            wrap: word-wrap;
+        }
+        if warning-text != "" : Text {
+            text: warning-text;
+            font-size: 13px;
+            font-weight: 700;
+            color: #ff5c5c;
+            wrap: word-wrap;
+        }
+    }
+
+    Switch {
+        checked: root.checked;
+        toggled => { root.toggled(self.checked); }
+    }
+}
+
 export component SettingsView {
     in property <string> themeMode_S;
     in property <bool> autostart_S;
     in property <bool> headless_S;
     in property <bool> telemetry_S;
     in property <bool> noTitleBar_S;
+    in property <float> cornerRoundness_S;
+    in property <bool> killApps_S;
+    in property <bool> hardwareAccel_S;
+    in property <bool> allowCustomBackends_S;
+    in property <bool> allowNetworkActivity_S;
     callback setConfig(string, string);
 
-    VerticalLayout {
-        padding: 12px;
-        padding-top: 6px;
-        spacing: 10px;
+    Flickable {
+        viewport-height: settingsContent.preferred-height;
 
-        HorizontalLayout {
-            alignment: start;
-            vertical-stretch: 0;
-            padding-top: 4px;
+        settingsContent := VerticalLayout {
 
-            SectionHeader { label: "SETTINGS"; }
-        }
+            padding: 12px;
+            padding-top: 6px;
+            spacing: 10px;
 
-        Card {
-            VerticalLayout {
-                padding: 24px;
-                spacing: 16px;
+            HorizontalLayout {
+                alignment: start;
+                vertical-stretch: 0;
+                padding-top: 4px;
 
-                Text {
-                    text: "APPEARANCE";
-                    font-size: 8px;
-                    font-weight: 700;
-                    letter-spacing: 2.5px;
-                    color: Palette.text-muted;
-                }
+                SectionHeader { label: "SETTINGS"; }
+            }
 
-                HorizontalLayout {
-                    alignment: space-between;
-                    spacing: 12px;
+            // ── APPEARANCE ────────────────────────────────────────────────
+            Card {
+                VerticalLayout {
+                    padding: 24px;
+                    spacing: 16px;
 
-                    VerticalLayout {
-                        alignment: center;
-                        spacing: 4px;
-                        Text {
-                            text: "Theme Mode";
-                            font-size: 13px;
-                            font-weight: 600;
-                            color: Palette.text-primary;
-                        }
-                        Text {
-                            text: "Select your preferred visual style for HPR";
-                            font-size: 11px;
-                            color: Palette.text-secondary;
-                        }
+                    Text {
+                        text: "APPEARANCE";
+                        font-size: 8px;
+                        font-weight: 700;
+                        letter-spacing: 2.5px;
+                        color: Palette.text-muted;
                     }
 
                     HorizontalLayout {
-                        alignment: end;
-                        spacing: 8px;
-                        width: 180px;
-                        y: (parent.height - self.height) / 2;
+                        alignment: space-between;
+                        spacing: 12px;
 
-                        ThemeOptionButton {
-                            label: "DARK";
-                            active: themeMode_S == "dark";
-                            width: 80px;
-                            clicked => {
-                                root.setConfig("theme", "dark");
+                        VerticalLayout {
+                            alignment: center;
+                            spacing: 4px;
+                            Text {
+                                text: "Theme Mode";
+                                font-size: 13px;
+                                font-weight: 600;
+                                color: Palette.text-primary;
+                            }
+                            Text {
+                                text: "Select your preferred visual style for HPR";
+                                font-size: 11px;
+                                color: Palette.text-secondary;
                             }
                         }
 
-                        ThemeOptionButton {
-                            label: "LIGHT";
-                            active: themeMode_S == "light";
-                            width: 80px;
-                            clicked => {
-                                root.setConfig("theme", "light");
+                        HorizontalLayout {
+                            alignment: end;
+                            spacing: 8px;
+                            width: 180px;
+                            y: (parent.height - self.height) / 2;
+
+                            ThemeOptionButton {
+                                label: "DARK";
+                                active: themeMode_S == "dark";
+                                width: 80px;
+                                clicked => {
+                                    root.setConfig("theme", "dark");
+                                }
+                            }
+
+                            ThemeOptionButton {
+                                label: "LIGHT";
+                                active: themeMode_S == "light";
+                                width: 80px;
+                                clicked => {
+                                    root.setConfig("theme", "light");
+                                }
                             }
                         }
                     }
-                }
 
-                Rectangle {
-                    height: 1px;
-                    background: Palette.divider;
-                }
+                    Divider {}
 
-                HorizontalLayout {
-                    alignment: space-between;
-                    spacing: 12px;
-
-                    VerticalLayout {
-                        alignment: center;
-                        spacing: 4px;
-                        Text {
-                            text: "No Title Bar";
-                            font-size: 13px;
-                            font-weight: 600;
-                            color: Palette.text-primary;
-                        }
-                        Text {
-                            text: "Remove standard OS frame & title bar for a borderless window";
-                            font-size: 11px;
-                            color: Palette.text-secondary;
-                        }
-                    }
-
-                    Switch {
+                    ToggleSetting {
+                        label: "No Title Bar";
+                        description: "Remove standard OS frame & title bar for a borderless window.";
+                        warning-text: "WARNING: This setting is EXTREMELY experimental and unstable; you may not be able to resize or full-screen HPR's window when enabled.";
                         checked: root.noTitleBar_S;
-                        toggled => {
-                            root.setConfig("no-title-bar", self.checked ? "true" : "false");
+                        toggled(v) => { root.setConfig("no-title-bar", v ? "true" : "false"); }
+                    }
+
+                    if root.noTitleBar_S : VerticalLayout {
+                        spacing: 8px;
+                        padding-top: 8px;
+                        padding-bottom: 8px;
+
+                        HorizontalLayout {
+                            alignment: space-between;
+                            Text {
+                                text: "Window Corner Roundness";
+                                
+                                font-size: 13px;
+                                font-weight: 600;
+                                color: Palette.text-primary;
+                            }
+                            Text {
+                                text: Math.round(root.cornerRoundness_S * 100) + "%";
+                                font-size: 13px;
+                                font-weight: 600;
+                                color: Palette.text-secondary;
+                            }
+                        }
+
+                        Slider {
+                            minimum: 0.0;
+                            maximum: 1.0;
+                            value: root.cornerRoundness_S;
+                            changed(v) => {
+                                root.setConfig("corner-roundness", "\{v}");
+                            }
                         }
                     }
                 }
             }
-        }
 
-        Card {
-            VerticalLayout {
-                padding: 24px;
-                spacing: 16px;
+            // ── SYSTEM BEHAVIOR ───────────────────────────────────────────
+            Card {
+                VerticalLayout {
+                    padding: 24px;
+                    spacing: 16px;
 
-                Text {
-                    text: "SYSTEM BEHAVIOR";
-                    font-size: 8px;
-                    font-weight: 700;
-                    letter-spacing: 2.5px;
-                    color: Palette.text-muted;
-                }
-
-                HorizontalLayout {
-                    alignment: space-between;
-                    spacing: 12px;
-
-                    VerticalLayout {
-                        alignment: center;
-                        spacing: 4px;
-                        Text {
-                            text: "Autostart on Boot";
-                            font-size: 13px;
-                            font-weight: 600;
-                            color: Palette.text-primary;
-                        }
-                        Text {
-                            text: "Automatically launch HPR when you log into your system";
-                            font-size: 11px;
-                            color: Palette.text-secondary;
-                        }
+                    Text {
+                        text: "SYSTEM BEHAVIOR";
+                        font-size: 8px;
+                        font-weight: 700;
+                        letter-spacing: 2.5px;
+                        color: Palette.text-muted;
                     }
 
-                    Switch {
+                    ToggleSetting {
+                        label: "Autostart on Boot";
+                        description: "Automatically launch HPR when you log into your system";
                         checked: root.autostart_S;
-                        toggled => {
-                            root.setConfig("autostart", self.checked ? "true" : "false");
-                        }
-                    }
-                }
-
-                Rectangle {
-                    height: 1px;
-                    background: Palette.divider;
-                }
-
-                HorizontalLayout {
-                    alignment: space-between;
-                    spacing: 12px;
-
-                    VerticalLayout {
-                        alignment: center;
-                        spacing: 4px;
-                        Text {
-                            text: "Start Headless";
-                            font-size: 13px;
-                            font-weight: 600;
-                            color: Palette.text-primary;
-                        }
-                        Text {
-                            text: "Start hidden in the system tray without opening the main window";
-                            font-size: 11px;
-                            color: Palette.text-secondary;
-                        }
+                        toggled(v) => { root.setConfig("autostart", v ? "true" : "false"); }
                     }
 
-                    Switch {
+                    Divider {}
+
+                    ToggleSetting {
+                        label: "Start Headless";
+                        description: "Start hidden in the system tray without opening the main window";
                         checked: root.headless_S;
-                        toggled => {
-                            root.setConfig("headless-mode", self.checked ? "true" : "false");
-                        }
+                        toggled(v) => { root.setConfig("headless-mode", v ? "true" : "false"); }
                     }
                 }
             }
-        }
 
-        Card {
-            VerticalLayout {
-                padding: 24px;
-                spacing: 16px;
+            // ── TRACKING ─────────────────────────────────────────────────
+            Card {
+                VerticalLayout {
+                    padding: 24px;
+                    spacing: 16px;
 
-                Text {
-                    text: "PRIVACY & ANALYTICS";
-                    font-size: 8px;
-                    font-weight: 700;
-                    letter-spacing: 2.5px;
-                    color: Palette.text-muted;
-                }
-
-                HorizontalLayout {
-                    alignment: space-between;
-                    spacing: 12px;
-
-                    VerticalLayout {
-                        alignment: center;
-                        spacing: 4px;
-                        Text {
-                            text: "Anonymous Analytics";
-                            font-size: 13px;
-                            font-weight: 600;
-                            color: Palette.text-primary;
-                        }
-                        Text {
-                            text: "Send anonymous telemetry to help improve HPR (only reports total users and weekly active counts)";
-                            font-size: 11px;
-                            color: Palette.text-secondary;
-                        }
+                    Text {
+                        text: "TRACKING";
+                        font-size: 8px;
+                        font-weight: 700;
+                        letter-spacing: 2.5px;
+                        color: Palette.text-muted;
                     }
 
-                    Switch {
+                    ToggleSetting {
+                        label: "Kill Apps on Limit";
+                        description: "Automatically terminate applications when their configured daily time limit is exceeded";
+                        checked: root.killApps_S;
+                        toggled(v) => { root.setConfig("kill-apps", v ? "true" : "false"); }
+                    }
+                }
+            }
+
+            // ── EXTENSIONS ───────────────────────────────────────────────
+            Card {
+                VerticalLayout {
+                    padding: 24px;
+                    spacing: 16px;
+
+                    Text {
+                        text: "EXTENSIONS";
+                        font-size: 8px;
+                        font-weight: 700;
+                        letter-spacing: 2.5px;
+                        color: Palette.text-muted;
+                    }
+
+                    ToggleSetting {
+                        label: "Allow Custom Backends";
+                        description: "Let Lua extensions register dynamic tracking backends to replace or supplement the built-in window tracker";
+                        checked: root.allowCustomBackends_S;
+                        toggled(v) => { root.setConfig("allow-custom-backends", v ? "true" : "false"); }
+                    }
+                }
+            }
+
+            // ── PERFORMANCE ───────────────────────────────────────────────
+            Card {
+                VerticalLayout {
+                    padding: 24px;
+                    spacing: 16px;
+
+                    Text {
+                        text: "PERFORMANCE";
+                        font-size: 8px;
+                        font-weight: 700;
+                        letter-spacing: 2.5px;
+                        color: Palette.text-muted;
+                    }
+
+                    ToggleSetting {
+                        label: "Hardware Acceleration";
+                        description: "Use GPU-accelerated rendering for the UI. Disable only if you see visual glitches. Requires restart";
+                        checked: root.hardwareAccel_S;
+                        toggled(v) => { root.setConfig("hardware-acceleration", v ? "true" : "false"); }
+                    }
+                }
+            }
+
+            // ── PRIVACY & ANALYTICS ───────────────────────────────────────
+            Card {
+                VerticalLayout {
+                    padding: 24px;
+                    spacing: 16px;
+
+                    Text {
+                        text: "PRIVACY & ANALYTICS";
+                        font-size: 8px;
+                        font-weight: 700;
+                        letter-spacing: 2.5px;
+                        color: Palette.text-muted;
+                    }
+
+                    ToggleSetting {
+                        label: "Anonymous Analytics";
+                        description: "Send anonymous telemetry to help improve HPR (only reports total users and weekly active counts)";
                         checked: root.telemetry_S;
-                        toggled => {
-                            root.setConfig("anonymous-telemetry", self.checked ? "true" : "false");
-                        }
+                        toggled(v) => { root.setConfig("anonymous-telemetry", v ? "true" : "false"); }
+                    }
+                }
+            }
+
+            // ── NETWORK ───────────────────────────────────────────────────
+            Card {
+                VerticalLayout {
+                    padding: 24px;
+                    spacing: 16px;
+
+                    Text {
+                        text: "NETWORK";
+                        font-size: 8px;
+                        font-weight: 700;
+                        letter-spacing: 2.5px;
+                        color: Palette.text-muted;
+                    }
+
+                    ToggleSetting {
+                        label: "Allow Network Activity";
+                        description: "Enable or disable all outgoing HTTP requests (YouTube Now Playing & Telemetry & Extensions' network activities).";
+                        checked: root.allowNetworkActivity_S;
+                        toggled(v) => { root.setConfig("allow-network-activity", v ? "true" : "false"); }
                     }
                 }
             }

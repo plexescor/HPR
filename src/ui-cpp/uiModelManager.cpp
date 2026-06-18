@@ -330,7 +330,21 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
                 bool headlessVal = AppState::configManager.getConfig<bool>("headless-mode", false);
                 bool telemetryVal = AppState::configManager.getConfig<bool>("anonymous-telemetry", false);
                 bool noTitleBarVal = AppState::configManager.getConfig<bool>("no-title-bar", false);
+                float cornerRoundnessVal = AppState::configManager.getConfig<float>("corner-roundness", 0.5f);
                 bool showPromptVal = AppState::configManager.isFirstLaunch();
+                
+                bool killAppsVal = AppState::configManager.getConfig<bool>("kill-apps", true);
+                bool hwAccelVal = AppState::configManager.getConfig<bool>("hardware-acceleration", true);
+                bool allowCustomVal = AppState::configManager.getConfig<bool>("allow-custom-backends", false);
+                bool allowNetworkVal = AppState::configManager.getConfig<bool>("allow-network-activity", true);
+
+                std::string nowPlayingTitleVal;
+                std::string nowPlayingUrlVal;
+                {
+                    std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                    nowPlayingTitleVal = AppState::state.nowPlayingTitle;
+                    nowPlayingUrlVal = AppState::state.nowPlayingUrl;
+                }
                 
                 if ((*handle)->get_themeMode_S() != slint::SharedString(theme))
                     (*handle)->set_themeMode_S(slint::SharedString(theme));
@@ -344,6 +358,8 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
                     (*handle)->set_telemetry_S(telemetryVal);
                 if ((*handle)->get_no_title_bar_enabled() != noTitleBarVal)
                     (*handle)->set_no_title_bar_enabled(noTitleBarVal);
+                if ((*handle)->get_cornerRoundness_S() != cornerRoundnessVal)
+                    (*handle)->set_cornerRoundness_S(cornerRoundnessVal);
                 if ((*handle)->get_showTelemetryPrompt_S() != showPromptVal)
                     (*handle)->set_showTelemetryPrompt_S(showPromptVal);
                 if ((*handle)->get_windowName_S() != slint::SharedString(currentWindowName))
@@ -355,6 +371,20 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
                     (*handle)->set_trackedTime_Tab_S((float)totalTrackedTime_Tab);
                 if ((*handle)->get_trackedTime_Project_S() != (float)totalTrackedTime_Project)
                     (*handle)->set_trackedTime_Project_S((float)totalTrackedTime_Project);
+
+                if ((*handle)->get_killApps_S() != killAppsVal)
+                    (*handle)->set_killApps_S(killAppsVal);
+                if ((*handle)->get_hardwareAccel_S() != hwAccelVal)
+                    (*handle)->set_hardwareAccel_S(hwAccelVal);
+                if ((*handle)->get_allowCustomBackends_S() != allowCustomVal)
+                    (*handle)->set_allowCustomBackends_S(allowCustomVal);
+                if ((*handle)->get_allowNetworkActivity_S() != allowNetworkVal)
+                    (*handle)->set_allowNetworkActivity_S(allowNetworkVal);
+
+                if ((*handle)->get_nowPlayingTitle_S() != slint::SharedString(nowPlayingTitleVal))
+                    (*handle)->set_nowPlayingTitle_S(slint::SharedString(nowPlayingTitleVal));
+                if ((*handle)->get_nowPlayingUrl_S() != slint::SharedString(nowPlayingUrlVal))
+                    (*handle)->set_nowPlayingUrl_S(slint::SharedString(nowPlayingUrlVal));
 
                 // Surgical update to prevent layout panics during resize/maximize
                 auto syncModel = [](auto model, const auto& vec) 
@@ -758,7 +788,21 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
             bool headlessVal = AppState::configManager.getConfig<bool>("headless-mode", false);
             bool telemetryVal = AppState::configManager.getConfig<bool>("anonymous-telemetry", false);
             bool noTitleBarVal = AppState::configManager.getConfig<bool>("no-title-bar", false);
+            float cornerRoundnessVal = AppState::configManager.getConfig<float>("corner-roundness", 0.5f);
             bool showPromptVal = AppState::configManager.isFirstLaunch();
+
+            bool killAppsVal = AppState::configManager.getConfig<bool>("kill-apps", true);
+            bool hwAccelVal = AppState::configManager.getConfig<bool>("hardware-acceleration", true);
+            bool allowCustomVal = AppState::configManager.getConfig<bool>("allow-custom-backends", false);
+            bool allowNetworkVal = AppState::configManager.getConfig<bool>("allow-network-activity", true);
+
+            std::string nowPlayingTitleVal;
+            std::string nowPlayingUrlVal;
+            {
+                std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                nowPlayingTitleVal = AppState::state.nowPlayingTitle;
+                nowPlayingUrlVal = AppState::state.nowPlayingUrl;
+            }
 
             auto getProp = [&](const char* name) {
                 return (*handle)->get_property(name);
@@ -779,11 +823,20 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
             setPropIfChanged("headless_S", slint::interpreter::Value(headlessVal));
             setPropIfChanged("telemetry_S", slint::interpreter::Value(telemetryVal));
             setPropIfChanged("no_title_bar_enabled", slint::interpreter::Value(noTitleBarVal));
+            setPropIfChanged("cornerRoundness_S", slint::interpreter::Value((double)cornerRoundnessVal));
             setPropIfChanged("showTelemetryPrompt_S", slint::interpreter::Value(showPromptVal));
             setPropIfChanged("windowName_S", slint::interpreter::Value(slint::SharedString(currentWindowName)));
             setPropIfChanged("trackedTime_S", slint::interpreter::Value((double)totalTrackedTime));
             setPropIfChanged("trackedTime_Tab_S", slint::interpreter::Value((double)totalTrackedTime_Tab));
             setPropIfChanged("trackedTime_Project_S", slint::interpreter::Value((double)totalTrackedTime_Project));
+
+            setPropIfChanged("killApps_S", slint::interpreter::Value(killAppsVal));
+            setPropIfChanged("hardwareAccel_S", slint::interpreter::Value(hwAccelVal));
+            setPropIfChanged("allowCustomBackends_S", slint::interpreter::Value(allowCustomVal));
+            setPropIfChanged("allowNetworkActivity_S", slint::interpreter::Value(allowNetworkVal));
+
+            setPropIfChanged("nowPlayingTitle_S", slint::interpreter::Value(slint::SharedString(nowPlayingTitleVal)));
+            setPropIfChanged("nowPlayingUrl_S", slint::interpreter::Value(slint::SharedString(nowPlayingUrlVal)));
 
             auto syncModel = [](
                 std::shared_ptr<slint::VectorModel<slint::interpreter::Value>> model,
