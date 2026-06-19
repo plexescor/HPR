@@ -98,7 +98,7 @@ https://github.com/user-attachments/assets/07659d3d-0f3b-4bbc-8823-8b5d11bfd32f
 - [Comparison With Other Trackers](#comparison-with-other-trackers)
 - [Aliases](#aliases)
 - [Config](#config)
-- [Customizing the UI](#customizing-the-ui-advanced)
+- [Customizing the UI](#custom-themes--customizing-the-ui-advanced)
 - [Roadmap](#roadmap)
 - [Architecture Overview](#architecture-overview)
 - [Shared State and Synchronization](#shared-state-and-synchronization)
