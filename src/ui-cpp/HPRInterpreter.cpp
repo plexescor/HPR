@@ -400,8 +400,11 @@ void HPRInterpreter::run()
     uiEventBridge.emplace(inst, extManager, this);
 
     #ifdef _WIN32
-        inst->window().on_close_requested([this, inst]() -> slint::CloseRequestResponse {
-            inst->hide();
+        auto weak_inst = slint::ComponentWeakHandle<slint::interpreter::ComponentInstance>(inst);
+        inst->window().on_close_requested([this, weak_inst]() -> slint::CloseRequestResponse {
+            if (auto locked = weak_inst.lock()) {
+                (*locked)->hide();
+            }
             return slint::CloseRequestResponse::KeepWindowShown;
         });
     #else

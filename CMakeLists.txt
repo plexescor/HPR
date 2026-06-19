@@ -55,14 +55,17 @@ elseif(LINUX)
     add_executable(HPR ${SOURCES})
 endif()
 
-if (MSVC)
-    target_compile_options(HPR PRIVATE /MP)
-endif()
-
 # Lua static lib
 file(GLOB_RECURSE LUA_SOURCES "external/lua/*.c")
 list(FILTER LUA_SOURCES EXCLUDE REGEX ".*(lua|luac)\\.c$")
 add_library(lua_static STATIC ${LUA_SOURCES})
+
+if (MSVC)
+    target_compile_options(HPR PRIVATE /MP $<$<CONFIG:Release,MinSizeRel>:/O1 /GL /Gy /Gw>)
+    target_link_options(HPR PRIVATE $<$<CONFIG:Release,MinSizeRel>:/LTCG /OPT:REF /OPT:ICF>)
+    target_compile_options(lua_static PRIVATE /MP $<$<CONFIG:Release,MinSizeRel>:/O1 /GL /Gy /Gw>)
+endif()
+
 target_include_directories(lua_static PUBLIC external/lua/)
 if(LINUX)
     target_compile_definitions(lua_static PRIVATE LUA_USE_LINUX)

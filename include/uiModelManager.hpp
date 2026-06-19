@@ -108,6 +108,7 @@ class UiModelManager
         std::shared_ptr<slint::VectorModel<slint::interpreter::Value>> timelineMarkersModel_interp;
         
         std::string currentSelectedTheme;
+        std::shared_ptr<std::string> lastLoadedPreviewThemePtr;
         std::shared_ptr<slint::VectorModel<slint::interpreter::Value>> themesListModel_interp;
         std::shared_ptr<slint::VectorModel<slint::interpreter::Value>> themePreviewsModel_interp;
 };  

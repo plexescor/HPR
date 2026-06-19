@@ -62,6 +62,7 @@ UiModelManager::UiModelManager(slint::ComponentHandle<slint::interpreter::Compon
     themePreviewsModel_interp = std::make_shared<slint::VectorModel<slint::interpreter::Value>>();
 
     currentSelectedTheme = AppState::configManager.getConfig("custom-theme", std::string("default"));
+    lastLoadedPreviewThemePtr = std::make_shared<std::string>("");
 
     slint::ComponentWeakHandle<slint::interpreter::ComponentInstance> weak(ui_interp.value());
     slint::invoke_from_event_loop([weak, this]()
@@ -1065,18 +1066,52 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
             }
             (*handle)->set_property("themeVersion_S", slint::interpreter::Value(slint::SharedString(themeVersionStr)));
 
-            // Sync current theme's image previews
-            std::vector<slint::interpreter::Value> slintVec_Previews;
-            if (AppState::themeManager.themePreview.contains(currentSelectedTheme))
+            // Check if themes tab is open in Slint UI to unload preview images when not in use
+            std::string activeView = "";
+            if (auto optActive = (*handle)->get_property("active-view"))
             {
-                for (const auto& path : AppState::themeManager.themePreview[currentSelectedTheme])
+                if (auto strVal = optActive->to_string())
                 {
-                    auto img = slint::Image::load_from_path(slint::SharedString(path));
-                    slintVec_Previews.push_back(slint::interpreter::Value(img));
+                    activeView = std::string(*strVal);
                 }
             }
-            syncModel(themePreviewsModel_interp, slintVec_Previews);
-            (*handle)->set_property("themePreviewImageCount_S", slint::interpreter::Value(static_cast<double>(slintVec_Previews.size())));
+
+            if (activeView != "THEMES")
+            {
+                // Unload theme preview images from memory when user is not viewing the themes page
+                if (themePreviewsModel_interp->row_count() > 0)
+                {
+                    themePreviewsModel_interp->clear();
+                    (*handle)->set_property("themePreviewImageCount_S", slint::interpreter::Value(0.0));
+                    if (lastLoadedPreviewThemePtr)
+                    {
+                        *lastLoadedPreviewThemePtr = ""; // force reload when navigating back
+                    }
+                }
+            }
+            else
+            {
+                // If on themes page, sync previews only when theme changes or was cleared
+                bool themeChanged = (lastLoadedPreviewThemePtr && *lastLoadedPreviewThemePtr != currentSelectedTheme);
+                if (themeChanged || themePreviewsModel_interp->row_count() == 0)
+                {
+                    if (lastLoadedPreviewThemePtr)
+                    {
+                        *lastLoadedPreviewThemePtr = currentSelectedTheme;
+                    }
+                    std::vector<slint::interpreter::Value> slintVec_Previews;
+                    if (AppState::themeManager.themePreview.contains(currentSelectedTheme))
+                    {
+                        for (const auto& path : AppState::themeManager.themePreview[currentSelectedTheme])
+                        {
+                            auto img = slint::Image::load_from_path(slint::SharedString(path));
+                            slintVec_Previews.push_back(slint::interpreter::Value(img));
+                        }
+                    }
+                    syncModel(themePreviewsModel_interp, slintVec_Previews);
+                    (*handle)->set_property("themePreviewImageCount_S", slint::interpreter::Value(static_cast<double>(slintVec_Previews.size())));
+                }
+            }
         }
     });
 
