@@ -1023,6 +1023,9 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
             (*handle)->set_property("themesAvailable_S", slint::interpreter::Value(AppState::themeManager.areThemesAvailable));
             (*handle)->set_property("currentTheme_S", slint::interpreter::Value(slint::SharedString(currentSelectedTheme)));
 
+            std::string activeTheme = AppState::configManager.getConfig("custom-theme", std::string("default"));
+            (*handle)->set_property("activeTheme_S", slint::interpreter::Value(slint::SharedString(activeTheme)));
+
             // Sync themes list to drop-down model
             std::vector<slint::interpreter::Value> slintVec_ThemesList;
             slintVec_ThemesList.push_back(slint::interpreter::Value(slint::SharedString("default")));

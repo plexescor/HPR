@@ -575,28 +575,36 @@ Windows: %APPDATA%\HPR\HPR_Config\config.csv
 
 ---
 
-## Customizing the UI (Advanced)
+## Custom Themes & Customizing the UI (Advanced)
 
-> [!IMPORTANT]
-> This section is for people who want to modify HPR's visual design without touching C++ or recompiling.
+HPR's UI is written in [Slint](https://slint.dev/). You can easily load custom themes and visual designs without modifying the C++ codebase or compiling anything. HPR handles dynamic hot-reloading at runtime when you select and apply a theme.
 
-HPR's UI is written in [Slint](https://slint.dev/). By default it is compiled into the binary at build time. Enabling interpreted mode tells HPR to load `.slint` files from disk at runtime instead.
-
-**Enable interpreted mode:**
+### Enabling Themes Mode
+Themes and interpreted UI customization require enabling interpreter mode in `config.csv`:
 ```csv
 use-interpreter,true
 ```
 
-**Your UI files live at:**
-```
-Linux:   ~/.config/HPR/ui/app-window.slint
-Windows: %APPDATA%\HPR\HPR_Config\ui\app-window.slint
-```
+### How Themes Work
+Themes are loaded dynamically from:
+* **Windows**: `%APPDATA%\HPR\HPR_Config\themes\`
+* **Linux**: `~/.config/HPR/themes/`
+
+Each theme is stored in its own sub-directory (e.g. `themes/my-awesome-theme/`) and should contain:
+1. **`metadata.csv`**: A CSV file containing properties like `name,My Awesome Theme` and `version,0.9.2`.
+2. **`app-window.slint`**: The root layout file of your theme, loaded at runtime.
+3. **Previews**: Up to 9 screenshots or designs (`1.png`, `2.png`, ..., `9.png`) to display in HPR's Themes tab preview container.
+
+### Restoring Default Layout
+If you wish to restore the default layout, select **default** in the dropdown. HPR will fall back to the reference layouts located in:
+* **Windows**: `%APPDATA%\HPR\HPR_Config\ui\app-window.slint`
+* **Linux**: `~/.config/HPR/ui/app-window.slint`
+
+> [!NOTE]
+> **Detailed Theme Tutorial:** A comprehensive, step-by-step tutorial on theme creation is currently being written.
 
 > [!WARNING]
-> **Do not rename structs, properties, or callbacks.** HPR's C++ backend references these by exact name. Renaming them breaks the connection silently and the UI stops updating. Read `READ_ME_BEFORE_MODIFYING_UI.txt` inside your `ui/` folder before touching anything.
-
-`ui-REFERENCEONLY/` in your config directory always holds the unmodified defaults for the current version. If you break something, diff against it.
+> **Do not rename structs, properties, or callbacks.** HPR's C++ backend references these by their exact name (e.g. `MainWindow`, `useThemesEnabled_S`, etc.). Renaming them will break C++ bindings silently. If a theme breaks, copy the reference layouts from `ui-REFERENCEONLY/` to diff against.
 
 ---
 

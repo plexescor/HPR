@@ -12,6 +12,7 @@ export component ThemesView {
     in property <string> themeVersion;
     in property <bool> useThemesEnabled;
     in-out property <string> currentTheme;
+    in property <string> activeTheme;
 
     callback themeSelected(string);
     callback themeApply(string);
@@ -118,7 +119,7 @@ export component ThemesView {
                 spacing: 8px * Palette.scale;
 
                 Text {
-                    text: "THEMES CONFIGURATION";
+                    text: "CHOOSE YOUR THEME:";
                     font-size: 8px * Palette.scale;
                     font-weight: 700;
                     letter-spacing: 2.5px * Palette.scale;
@@ -251,6 +252,13 @@ export component ThemesView {
                                 horizontal-alignment: center;
                                 vertical-alignment: center;
                             }
+                        }
+
+                        Text {
+                            text: "Current theme: " + root.activeTheme;
+                            font-size: 11px * Palette.scale;
+                            color: Palette.text-secondary;
+                            vertical-alignment: center;
                         }
                     }
 
