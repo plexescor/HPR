@@ -296,6 +296,7 @@ end
 | Function Overriding API | [hpr-cpp.netlify.app/overrides.html](https://hpr-cpp.netlify.app/overrides.html) |
 | Building a Custom Window Backend | [hpr-cpp.netlify.app/custom-app-extension.html](https://hpr-cpp.netlify.app/custom-app-extension.html) |
 | EventHub & Extension Communication | [hpr-cpp.netlify.app/comm-bw-extension.html](https://hpr-cpp.netlify.app/comm-bw-extension.html) |
+| Custom Themes & UI Hacking | [hpr-cpp.netlify.app/themes.html](https://hpr-cpp.netlify.app/themes.html) |
 | Full API Reference | [hpr-cpp.netlify.app/api.html](https://hpr-cpp.netlify.app/api.html) |
 
 ---
@@ -605,7 +606,7 @@ If you wish to restore the default layout, select **default** in the dropdown. H
 * **Linux**: `~/.config/HPR/ui/app-window.slint`
 
 > [!NOTE]
-> **Detailed Theme Tutorial:** A comprehensive, step-by-step tutorial on theme creation is currently being written.
+> **Detailed Theme Tutorial:** For a comprehensive, step-by-step walkthrough on creating layout files, sequential preview logic, and Slint contract bindings, see the [HPR Custom Themes Guide](https://hpr-cpp.netlify.app/themes.html).
 
 > [!WARNING]
 > **Do not rename structs, properties, or callbacks.** HPR's C++ backend references these by their exact name (e.g. `MainWindow`, `useThemesEnabled_S`, etc.). Renaming them will break C++ bindings silently. If a theme breaks, copy the reference layouts from `ui-REFERENCEONLY/` to diff against.
