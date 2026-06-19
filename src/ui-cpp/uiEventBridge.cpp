@@ -235,6 +235,22 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow>& ui,  ExtensionM
         }
     });
 
+    // ui->on_themeSelected([this](slint::SharedString themeName)
+    // {
+    //     themeName = std::string(themeName);
+    //     std::string path;
+    //     path = AppState::themeManager.getPathByName(opt_name.value());
+    //     this->interpreter->reload();
+    // });
+
+    // ui->on_themeApply([this](slint::SharedString themeName)
+    // {
+    //     themeName = std::string(themeName);
+    //     std::string path;
+    //     path = AppState::themeManager.getPathByName(opt_name.value());
+    //     this->interpreter->reload();
+    // });
+
     ui->on_openUrl([](slint::SharedString url) {
         std::string urlStr = std::string(url);
         #ifdef _WIN32
@@ -411,7 +427,13 @@ UiEventBridge::UiEventBridge(
         {   
             slint::invoke_from_event_loop([this]() 
             {
-                this->interpreter->reload();
+                std::string savedTheme = AppState::configManager.getConfig("custom-theme", std::string("default"));
+                std::string path = "";
+                if (savedTheme != "default" && AppState::themeManager.availableThemes_Bare.contains(savedTheme))
+                {
+                    path = AppState::themeManager.availableThemes_Bare[savedTheme];
+                }
+                this->interpreter->reload(path);
             });
             return slint::interpreter::Value(); // void return
         });
@@ -516,6 +538,60 @@ UiEventBridge::UiEventBridge(
         return slint::interpreter::Value();
     });
 
+    ui->set_callback("refreshThemes", [this](auto args) -> slint::interpreter::Value 
+    {
+        AppState::themeManager.reload();
+        return slint::interpreter::Value();
+    });
+
+    ui->set_callback("themeSelected", [this](auto args) -> slint::interpreter::Value 
+    {
+        if (args.size() > 0) 
+        {
+            auto opt_name = args[0].to_string();
+            if (opt_name.has_value() && this->interpreter) 
+            {
+                std::string themeName = std::string(opt_name.value());
+                if (auto mm = this->interpreter->getModelManager())
+                {
+                    mm->setSelectedTheme(themeName);
+                }
+            }
+        }
+        return slint::interpreter::Value();
+    });
+
+    ui->set_callback("themeApply", [this](auto args) -> slint::interpreter::Value 
+    {
+        if (args.size() > 0) 
+        {
+            auto opt_name = args[0].to_string();
+            if (opt_name.has_value() && this->interpreter) 
+            {
+                std::string themeName = std::string(opt_name.value());
+                std::string themePath = "";
+                for (const auto& [key, path] : AppState::themeManager.availableThemes)
+                {
+                    if (key.first == themeName)
+                    {
+                        themePath = path;
+                        break;
+                    }
+                }
+                if (!themePath.empty())
+                {
+                    this->interpreter->reload(themePath);
+                    AppState::configManager.setConfig("custom-theme", themeName);
+                }
+                else if (themeName == "default")
+                {
+                    this->interpreter->reload("");
+                    AppState::configManager.setConfig("custom-theme", std::string("default"));
+                }
+            }
+        }
+        return slint::interpreter::Value();
+    });
 
     ui->set_callback("openKofi", [this](auto args) -> slint::interpreter::Value
 

@@ -19,9 +19,10 @@ class HPRInterpreter {
         ~HPRInterpreter();
         void show();
         void hide();
-        void reload();
+        void reload(std::string path);
         void run();
         void quit();
+        UiModelManager* getModelManager() { return modelManager.has_value() ? &modelManager.value() : nullptr; }
 
     private:
         void trackingLoop(); // runs on separate thread so that it polls shit continously (correct spelling?)

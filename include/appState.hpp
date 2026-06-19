@@ -2,6 +2,7 @@
 #include "aliasManager.hpp"
 #include "patternAnalyzer.hpp"
 #include "configManager.hpp"
+#include "themeManager.hpp"
 #include <string>
 #include <atomic>
 #include <mutex>
@@ -92,6 +93,7 @@ namespace AppState {
 
     extern AliasManager aliasManager;
     extern PatternAnalyzer patternAnalyzer;
+    extern ThemeManager themeManager;
 
     extern ExtensionManager* extManager;
 

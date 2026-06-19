@@ -104,7 +104,7 @@ T ConfigManager::getConfig(const std::string requestedParam, const T& defaultVal
 {
     for (const auto &[param, value] : config)
     {
-        if (requestedParam.contains(param))
+        if (param == requestedParam)
         {
             if constexpr (std::is_same_v<T, bool>)
             {

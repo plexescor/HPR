@@ -109,6 +109,7 @@ export component SettingsView {
     in property <bool> hideSidebarFeedback_S;
     in property <bool> hideSidebarAbout_S;
     in property <bool> hideSidebarThemes_S;
+    in property <bool> useInterpreter_S;
 
     Flickable {
         viewport-height: settingsContent.preferred-height;
@@ -140,6 +141,15 @@ export component SettingsView {
                         letter-spacing: 2.5px * Palette.scale;
                         color: Palette.text-muted;
                     }
+
+                    ToggleSetting {
+                        label: "Enable Custom UI Themes";
+                        description: "Load UI dynamically from config directory at runtime instead of using compiled-in UI.";
+                        checked: root.useInterpreter_S;
+                        toggled(v) => { root.setConfig("use-interpreter", v ? "true" : "false"); }
+                    }
+
+                    Divider {}
 
                     HorizontalLayout {
                         alignment: space-between;

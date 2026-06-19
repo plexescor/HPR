@@ -7,6 +7,8 @@ AppState::HistoricalData_Full AppState::historicalData_Full_State;
 
 AliasManager AppState::aliasManager;
 ConfigManager AppState::configManager;
+ThemeManager AppState::themeManager;
+
 const std::string AppState::APP_VERSION = "0.9.2";
 PatternAnalyzer AppState::patternAnalyzer;
 

@@ -34,8 +34,15 @@ HPRInterpreter::HPRInterpreter(ExtensionManager* extMgr)
 
     if (!initialiseSlintUiPath()) exit(1);
 
+    std::string savedTheme = AppState::configManager.getConfig("custom-theme", std::string("default"));
+    std::string pathToLoad = filePath + fileName;
+    if (savedTheme != "default" && AppState::themeManager.availableThemes_Bare.contains(savedTheme))
+    {
+        pathToLoad = AppState::themeManager.availableThemes_Bare[savedTheme];
+    }
+
     compiler = std::make_unique<slint::interpreter::ComponentCompiler>();
-    definition = compiler->build_from_path(filePath + fileName);
+    definition = compiler->build_from_path(pathToLoad);
 
     if (!definition.has_value()) 
     {
@@ -68,11 +75,15 @@ HPRInterpreter::~HPRInterpreter()
     EventHub::disconnect(Event::APP_ERROR, errorId);
 }
 
-void HPRInterpreter::reload()
+void HPRInterpreter::reload(std::string path)
 {
     // local compiler, no need to store it — just swap definition + instance
     slint::interpreter::ComponentCompiler newCompiler;
-    auto newDef = newCompiler.build_from_path(filePath + fileName);
+
+    std::optional<slint::interpreter::ComponentDefinition> newDef;
+
+    if (path == "") newDef = newCompiler.build_from_path(filePath + fileName);
+    else newDef = newCompiler.build_from_path(path);
 
     if (!newDef.has_value())
     {
@@ -87,7 +98,6 @@ void HPRInterpreter::reload()
 
     // grab old geometry before touching anything
     auto oldPos  = instance.value()->window().position();
-    auto oldSize = instance.value()->window().size();
 
     // lock so trackingLoop doesn't touch modelManager mid-swap
     {
@@ -99,15 +109,14 @@ void HPRInterpreter::reload()
     // re-wire UI event callbacks on new instance
     uiEventBridge.emplace(newInst, extManager, this);
 
+    // show new BEFORE hiding oldanti-flicker
+    newInst->show();
+    instance.value()->hide();
+
     // restore geometry
     //this shit already runs on event thread
     //so this is fine
     const_cast<slint::Window&>(newInst->window()).set_position(oldPos);
-    const_cast<slint::Window&>(newInst->window()).set_size(oldSize);
-
-    // show new BEFORE hiding oldanti-flicker
-    newInst->show();
-    instance.value()->hide();
 
     // swap
     {

@@ -56,6 +56,7 @@ export component MainWindow inherits Window {
 
     callback themeSelected(string);
     callback themeApply(string);
+    callback refreshThemes();
 
     in-out property <bool> is-sending-feedback: false;
     in-out property <bool> showFeedbackResultPrompt: false;
@@ -116,6 +117,10 @@ export component MainWindow inherits Window {
     in property <[string]>        themesList_S;
     in property <[image]>         themePreviewImages_S;
     in property <int>             themePreviewImageCount_S;
+    in property <string>          hprVersion_S;
+    in property <string>          themeVersion_S;
+    in property <bool>            useThemesEnabled_S;
+    in property <string>          currentTheme_S;
 
     in property <string>          nowPlayingTitle_S;
     in property <string>          nowPlayingUrl_S;
@@ -160,8 +165,8 @@ export component MainWindow inherits Window {
 
     title: "HPR";
     default-font-size: 13px * Palette.scale;
-    preferred-width: 780px * Palette.scale;
-    preferred-height: 612px * Palette.scale;
+    width: 780px * Palette.scale;
+    height: 612px * Palette.scale;
 
     date-picker := DatePickerPopup {
         x: (root.width - self.width) / 2;
@@ -432,9 +437,14 @@ export component MainWindow inherits Window {
                 themesList: root.themesList_S;
                 themePreviewImages: root.themePreviewImages_S;
                 themePreviewImageCount: root.themePreviewImageCount_S;
+                currentTheme: root.currentTheme_S;
+                appVersion: root.hprVersion_S;
+                themeVersion: root.themeVersion_S;
+                useThemesEnabled: root.useThemesEnabled_S;
 
                 themeSelected(theme) => { root.themeSelected(theme); }
                 themeApply(theme) => { root.themeApply(theme); }
+                refresh-themes => { root.refreshThemes(); }
             }
             if active-view == "SETTINGS" : SettingsView {
                 themeMode_S: root.themeMode_S;
@@ -448,6 +458,7 @@ export component MainWindow inherits Window {
                 hardwareAccel_S: root.hardwareAccel_S;
                 allowCustomBackends_S: root.allowCustomBackends_S;
                 allowNetworkActivity_S: root.allowNetworkActivity_S;
+                useInterpreter_S: root.useThemesEnabled_S;
                 setConfig(param, val) => { root.setConfig(param, val); }
                 allowSidebarCustomization_S: root.allowSidebarCustomization_S;
                 hideSidebarReload_S: root.hideSidebarReload_S;

@@ -76,6 +76,7 @@ class UiModelManager
         
         void showFunStats(const std::string& cpu, const std::string& ram, const std::string& ext, const std::string& threads);
         void showFunStats_Interpreted(const std::string& cpu, const std::string& ram, const std::string& ext, const std::string& threads);
+        void setSelectedTheme(const std::string& themeName);
     
     private: 
         std::optional<slint::ComponentHandle<MainWindow>> ui;
@@ -105,5 +106,8 @@ class UiModelManager
         std::shared_ptr<slint::VectorModel<slint::interpreter::Value>> rawAppsModel_interp;
         std::shared_ptr<slint::VectorModel<slint::interpreter::Value>> timelineBlocksModel_interp;
         std::shared_ptr<slint::VectorModel<slint::interpreter::Value>> timelineMarkersModel_interp;
-
+        
+        std::string currentSelectedTheme;
+        std::shared_ptr<slint::VectorModel<slint::interpreter::Value>> themesListModel_interp;
+        std::shared_ptr<slint::VectorModel<slint::interpreter::Value>> themePreviewsModel_interp;
 };  

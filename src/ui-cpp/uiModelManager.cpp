@@ -58,7 +58,10 @@ UiModelManager::UiModelManager(slint::ComponentHandle<slint::interpreter::Compon
     rawAppsModel_interp = std::make_shared<slint::VectorModel<slint::interpreter::Value>>();
     timelineBlocksModel_interp = std::make_shared<slint::VectorModel<slint::interpreter::Value>>();
     timelineMarkersModel_interp = std::make_shared<slint::VectorModel<slint::interpreter::Value>>();
+    themesListModel_interp = std::make_shared<slint::VectorModel<slint::interpreter::Value>>();
+    themePreviewsModel_interp = std::make_shared<slint::VectorModel<slint::interpreter::Value>>();
 
+    currentSelectedTheme = AppState::configManager.getConfig("custom-theme", std::string("default"));
 
     slint::ComponentWeakHandle<slint::interpreter::ComponentInstance> weak(ui_interp.value());
     slint::invoke_from_event_loop([weak, this]()
@@ -73,6 +76,8 @@ UiModelManager::UiModelManager(slint::ComponentHandle<slint::interpreter::Compon
             (*handle)->set_property("rawApps_S", slint::interpreter::Value(rawAppsModel_interp));
             (*handle)->set_property("timelineBlocks_S", slint::interpreter::Value(timelineBlocksModel_interp));
             (*handle)->set_property("timelineMarkers_S", slint::interpreter::Value(timelineMarkersModel_interp));
+            (*handle)->set_property("themesList_S", slint::interpreter::Value(themesListModel_interp));
+            (*handle)->set_property("themePreviewImages_S", slint::interpreter::Value(themePreviewsModel_interp));
         }
     });
 
@@ -1010,9 +1015,68 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
             }
             syncModel(timelineBlocksModel_interp, slintVec_Timeline);
             syncModel(timelineMarkersModel_interp, slintVec_TimelineMarkers);
+
+            // Sync theme configuration details (interpreted only)
+            bool useThemes = AppState::configManager.getConfig("use-interpreter", false);
+            (*handle)->set_property("useThemesEnabled_S", slint::interpreter::Value(useThemes));
+            (*handle)->set_property("hprVersion_S", slint::interpreter::Value(slint::SharedString(AppState::APP_VERSION)));
+            (*handle)->set_property("themesAvailable_S", slint::interpreter::Value(AppState::themeManager.areThemesAvailable));
+            (*handle)->set_property("currentTheme_S", slint::interpreter::Value(slint::SharedString(currentSelectedTheme)));
+
+            // Sync themes list to drop-down model
+            std::vector<slint::interpreter::Value> slintVec_ThemesList;
+            slintVec_ThemesList.push_back(slint::interpreter::Value(slint::SharedString("default")));
+            for (const auto& [key, path] : AppState::themeManager.availableThemes)
+            {
+                slint::interpreter::Value themeNameVal(slint::SharedString(key.first));
+                bool found = false;
+                for (const auto& val : slintVec_ThemesList)
+                {
+                    if (std::string(val.to_string().value_or("")) == key.first)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found)
+                {
+                    slintVec_ThemesList.push_back(themeNameVal);
+                }
+            }
+            syncModel(themesListModel_interp, slintVec_ThemesList);
+
+            // Sync currently selected theme's compatibility version
+            std::string themeVersionStr = "";
+            for (const auto& [key, path] : AppState::themeManager.availableThemes)
+            {
+                if (key.first == currentSelectedTheme)
+                {
+                    themeVersionStr = key.second;
+                    break;
+                }
+            }
+            (*handle)->set_property("themeVersion_S", slint::interpreter::Value(slint::SharedString(themeVersionStr)));
+
+            // Sync current theme's image previews
+            std::vector<slint::interpreter::Value> slintVec_Previews;
+            if (AppState::themeManager.themePreview.contains(currentSelectedTheme))
+            {
+                for (const auto& path : AppState::themeManager.themePreview[currentSelectedTheme])
+                {
+                    auto img = slint::Image::load_from_path(slint::SharedString(path));
+                    slintVec_Previews.push_back(slint::interpreter::Value(img));
+                }
+            }
+            syncModel(themePreviewsModel_interp, slintVec_Previews);
+            (*handle)->set_property("themePreviewImageCount_S", slint::interpreter::Value(static_cast<double>(slintVec_Previews.size())));
         }
     });
 
+}
+
+void UiModelManager::setSelectedTheme(const std::string& themeName)
+{
+    currentSelectedTheme = themeName;
 }
 
 void UiModelManager::showInsights(const std::string mostUsed,
