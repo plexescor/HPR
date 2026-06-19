@@ -95,6 +95,20 @@ export component SettingsView {
     in property <bool> allowNetworkActivity_S;
     callback setConfig(string, string);
 
+    in property <bool> allowSidebarCustomization_S;
+    in property <bool> hideSidebarReload_S;
+    in property <bool> hideSidebarLimits_S;
+    in property <bool> hideSidebarHistory_S;
+    in property <bool> hideSidebarTimeline_S;
+    in property <bool> hideSidebarTab_S;
+    in property <bool> hideSidebarProject_S;
+    in property <bool> hideSidebarInsights_S;
+    in property <bool> hideSidebarLive_S;
+    in property <bool> hideSidebarExtensions_S;
+    in property <bool> hideSidebarKofi_S;
+    in property <bool> hideSidebarFeedback_S;
+    in property <bool> hideSidebarAbout_S;
+
     Flickable {
         viewport-height: settingsContent.preferred-height;
 
@@ -252,6 +266,127 @@ export component SettingsView {
                             changed(v) => {
                                 root.setConfig("corner-roundness", "\{v}");
                             }
+                        }
+                    }
+
+                    Divider {}
+
+                    ToggleSetting {
+                        label: "Customize Sidebar Buttons";
+                        description: "Enable this to hide specific sidebar buttons you don't use";
+                        checked: root.allowSidebarCustomization_S;
+                        toggled(v) => { root.setConfig("allow-sidebar-customization", v ? "true" : "false"); }
+                    }
+
+                    if root.allowSidebarCustomization_S : VerticalLayout {
+                        spacing: 16px * Palette.scale;
+
+                        Divider {}
+
+                        ToggleSetting {
+                            label: "Show Reload UI Button";
+                            description: "Toggle visibility of the Reload UI button in the sidebar";
+                            checked: !root.hideSidebarReload_S;
+                            toggled(v) => { root.setConfig("hide-sidebar-reload", (!v) ? "true" : "false"); }
+                        }
+
+                        Divider {}
+
+                        ToggleSetting {
+                            label: "Show Limits Button";
+                            description: "Toggle visibility of the Limits and Goals button in the sidebar";
+                            checked: !root.hideSidebarLimits_S;
+                            toggled(v) => { root.setConfig("hide-sidebar-limits", (!v) ? "true" : "false"); }
+                        }
+
+                        Divider {}
+
+                        ToggleSetting {
+                            label: "Show History Button";
+                            description: "Toggle visibility of the Historical Data button in the sidebar";
+                            checked: !root.hideSidebarHistory_S;
+                            toggled(v) => { root.setConfig("hide-sidebar-history", (!v) ? "true" : "false"); }
+                        }
+
+                        Divider {}
+
+                        ToggleSetting {
+                            label: "Show Timeline Button";
+                            description: "Toggle visibility of the Day Timeline button in the sidebar";
+                            checked: !root.hideSidebarTimeline_S;
+                            toggled(v) => { root.setConfig("hide-sidebar-timeline", (!v) ? "true" : "false"); }
+                        }
+
+                        Divider {}
+
+                        ToggleSetting {
+                            label: "Show Tab Usage Button";
+                            description: "Toggle visibility of the Usage per Tab button in the sidebar";
+                            checked: !root.hideSidebarTab_S;
+                            toggled(v) => { root.setConfig("hide-sidebar-tab", (!v) ? "true" : "false"); }
+                        }
+
+                        Divider {}
+
+                        ToggleSetting {
+                            label: "Show Project Usage Button";
+                            description: "Toggle visibility of the Usage per Project button in the sidebar";
+                            checked: !root.hideSidebarProject_S;
+                            toggled(v) => { root.setConfig("hide-sidebar-project", (!v) ? "true" : "false"); }
+                        }
+
+                        Divider {}
+
+                        ToggleSetting {
+                            label: "Show Insights Button";
+                            description: "Toggle visibility of the Insights button in the sidebar";
+                            checked: !root.hideSidebarInsights_S;
+                            toggled(v) => { root.setConfig("hide-sidebar-insights", (!v) ? "true" : "false"); }
+                        }
+
+                        Divider {}
+
+                        ToggleSetting {
+                            label: "Show Live View Button";
+                            description: "Toggle visibility of the Live/Data View button in the sidebar";
+                            checked: !root.hideSidebarLive_S;
+                            toggled(v) => { root.setConfig("hide-sidebar-live", (!v) ? "true" : "false"); }
+                        }
+
+                        Divider {}
+
+                        ToggleSetting {
+                            label: "Show Extensions Button";
+                            description: "Toggle visibility of the Extensions button in the sidebar";
+                            checked: !root.hideSidebarExtensions_S;
+                            toggled(v) => { root.setConfig("hide-sidebar-extensions", (!v) ? "true" : "false"); }
+                        }
+
+                        Divider {}
+
+                        ToggleSetting {
+                            label: "Show Support on Ko-fi Button";
+                            description: "Toggle visibility of the Ko-fi support button in the sidebar";
+                            checked: !root.hideSidebarKofi_S;
+                            toggled(v) => { root.setConfig("hide-sidebar-kofi", (!v) ? "true" : "false"); }
+                        }
+
+                        Divider {}
+
+                        ToggleSetting {
+                            label: "Show Feedback Button";
+                            description: "Toggle visibility of the Send Feedback button in the sidebar";
+                            checked: !root.hideSidebarFeedback_S;
+                            toggled(v) => { root.setConfig("hide-sidebar-feedback", (!v) ? "true" : "false"); }
+                        }
+
+                        Divider {}
+
+                        ToggleSetting {
+                            label: "Show About Button";
+                            description: "Toggle visibility of the About button in the sidebar";
+                            checked: !root.hideSidebarAbout_S;
+                            toggled(v) => { root.setConfig("hide-sidebar-about", (!v) ? "true" : "false"); }
                         }
                     }
                 }

@@ -5,7 +5,11 @@
 #include "HPRInterpreter.hpp"
 #include "limitsManager.hpp"
 #include "telemetryManager.hpp"
+#include "netUtilities.hpp"
 #include <thread>
+#include <chrono>
+#include <sstream>
+#include <iomanip>
 
 // Slint stuff
 #include "app-window.h"
@@ -14,6 +18,31 @@
 #ifdef _WIN32
     #include <windows.h>
 #endif
+
+namespace {
+    const std::string FIREBASE_HOST = "humanpatternrecorder-default-rtdb.firebaseio.com";
+
+    std::string jsonEscape(const std::string& input) {
+        std::string output = "";
+        for (char c : input) {
+            if (c == '"') output += "\\\"";
+            else if (c == '\\') output += "\\\\";
+            else if (c == '\b') output += "\\b";
+            else if (c == '\f') output += "\\f";
+            else if (c == '\n') output += "\\n";
+            else if (c == '\r') output += "\\r";
+            else if (c == '\t') output += "\\t";
+            else if (static_cast<unsigned char>(c) < 32) {
+                std::ostringstream ss;
+                ss << "\\u" << std::setfill('0') << std::setw(4) << std::hex << (int)c;
+                output += ss.str();
+            } else {
+                output += c;
+            }
+        }
+        return output;
+    }
+}
 
 //CONSTRUCTOR FOR **COMPILED** UI
 UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow>& ui,  ExtensionManager* extMgr, HPRInterpreter* interpreter)
@@ -214,6 +243,52 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow>& ui,  ExtensionM
             std::string cmd = "xdg-open " + urlStr + " &";
             int idc = system(cmd.c_str());
         #endif
+    });
+
+    ui->on_sendFeedback([weak_ui](slint::SharedString email, slint::SharedString message) {
+        std::thread([weak_ui, emailStr = std::string(email), msgStr = std::string(message)]() {
+            auto now = std::chrono::system_clock::now();
+            uint64_t ts = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+
+#ifdef _WIN32
+            std::string osStr = "Windows";
+            std::string compStr = "";
+#else
+            std::string osStr = "Linux";
+            const char* xdg = std::getenv("XDG_CURRENT_DESKTOP");
+            std::string compStr = xdg ? xdg : "Unknown";
+#endif
+
+            std::string body = "{\"email\":\"" + jsonEscape(emailStr) + 
+                               "\",\"message\":\"" + jsonEscape(msgStr) + 
+                               "\",\"timestamp\":" + std::to_string(ts) + 
+                               ",\"version\":\"" + jsonEscape(AppState::APP_VERSION) + 
+                               "\",\"os\":\"" + jsonEscape(osStr) + "\"";
+            if (!compStr.empty()) {
+                body += ",\"compositor\":\"" + jsonEscape(compStr) + "\"";
+            }
+            body += "}";
+
+            std::map<std::string, std::string> headers = {
+                {"Content-Type", "application/json"}
+            };
+
+            auto response = NativeNet::httpPost(FIREBASE_HOST, "/feedback.json", body, true, headers);
+            bool success = response.second >= 200 && response.second < 300;
+            std::string errMsg = success ? "" : "HTTP error " + std::to_string(response.second);
+
+            slint::invoke_from_event_loop([weak_ui, success, errMsg]() {
+                if (auto handle = weak_ui.lock()) {
+                    (*handle)->set_is_sending_feedback(false);
+                    (*handle)->set_feedbackSuccess(success);
+                    (*handle)->set_feedbackErrorMsg(slint::SharedString(errMsg));
+                    (*handle)->set_showFeedbackResultPrompt(true);
+                    if (success) {
+                        (*handle)->set_feedbackMessage("");
+                    }
+                }
+            });
+        }).detach();
     });
 }
 
@@ -518,6 +593,61 @@ UiEventBridge::UiEventBridge(
         return slint::interpreter::Value();
     });
 
+    ui->set_callback("sendFeedback", [weak_ui](auto args) -> slint::interpreter::Value {
+        if (args.size() > 1) {
+            auto opt_email = args[0].to_string();
+            auto opt_msg = args[1].to_string();
+            if (opt_email.has_value() && opt_msg.has_value()) {
+                std::string email = std::string(*opt_email);
+                std::string msg = std::string(*opt_msg);
+
+                std::thread([weak_ui, email, msg]() {
+                    auto now = std::chrono::system_clock::now();
+                    uint64_t ts = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+
+#ifdef _WIN32
+                    std::string osStr = "Windows";
+                    std::string compStr = "";
+#else
+                    std::string osStr = "Linux";
+                    const char* xdg = std::getenv("XDG_CURRENT_DESKTOP");
+                    std::string compStr = xdg ? xdg : "Unknown";
+#endif
+
+                    std::string body = "{\"email\":\"" + jsonEscape(email) + 
+                                       "\",\"message\":\"" + jsonEscape(msg) + 
+                                       "\",\"timestamp\":" + std::to_string(ts) + 
+                                       ",\"version\":\"" + jsonEscape(AppState::APP_VERSION) + 
+                                       "\",\"os\":\"" + jsonEscape(osStr) + "\"";
+                    if (!compStr.empty()) {
+                        body += ",\"compositor\":\"" + jsonEscape(compStr) + "\"";
+                    }
+                    body += "}";
+
+                    std::map<std::string, std::string> headers = {
+                        {"Content-Type", "application/json"}
+                    };
+
+                    auto response = NativeNet::httpPost(FIREBASE_HOST, "/feedback.json", body, true, headers);
+                    bool success = response.second >= 200 && response.second < 300;
+                    std::string errMsg = success ? "" : "HTTP status " + std::to_string(response.second);
+
+                    slint::invoke_from_event_loop([weak_ui, success, errMsg]() {
+                        if (auto handle = weak_ui.lock()) {
+                            (*handle)->set_property("is-sending-feedback", slint::interpreter::Value(false));
+                            (*handle)->set_property("feedbackSuccess", slint::interpreter::Value(success));
+                            (*handle)->set_property("feedbackErrorMsg", slint::interpreter::Value(slint::SharedString(errMsg)));
+                            (*handle)->set_property("showFeedbackResultPrompt", slint::interpreter::Value(true));
+                            if (success) {
+                                (*handle)->set_property("feedbackMessage", slint::interpreter::Value(slint::SharedString("")));
+                            }
+                        }
+                    });
+                }).detach();
+            }
+        }
+        return slint::interpreter::Value();
+    });
 }
 
 

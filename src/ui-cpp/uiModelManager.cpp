@@ -339,6 +339,20 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
                 bool allowCustomVal = AppState::configManager.getConfig<bool>("allow-custom-backends", false);
                 bool allowNetworkVal = AppState::configManager.getConfig<bool>("allow-network-activity", true);
 
+                bool allowSidebarCustomizationVal = AppState::configManager.getConfig<bool>("allow-sidebar-customization", false);
+                bool hideSidebarReloadVal = AppState::configManager.getConfig<bool>("hide-sidebar-reload", false);
+                bool hideSidebarLimitsVal = AppState::configManager.getConfig<bool>("hide-sidebar-limits", false);
+                bool hideSidebarHistoryVal = AppState::configManager.getConfig<bool>("hide-sidebar-history", false);
+                bool hideSidebarTimelineVal = AppState::configManager.getConfig<bool>("hide-sidebar-timeline", false);
+                bool hideSidebarTabVal = AppState::configManager.getConfig<bool>("hide-sidebar-tab", false);
+                bool hideSidebarProjectVal = AppState::configManager.getConfig<bool>("hide-sidebar-project", false);
+                bool hideSidebarInsightsVal = AppState::configManager.getConfig<bool>("hide-sidebar-insights", false);
+                bool hideSidebarLiveVal = AppState::configManager.getConfig<bool>("hide-sidebar-live", false);
+                bool hideSidebarExtensionsVal = AppState::configManager.getConfig<bool>("hide-sidebar-extensions", false);
+                bool hideSidebarKofiVal = AppState::configManager.getConfig<bool>("hide-sidebar-kofi", false);
+                bool hideSidebarFeedbackVal = AppState::configManager.getConfig<bool>("hide-sidebar-feedback", false);
+                bool hideSidebarAboutVal = AppState::configManager.getConfig<bool>("hide-sidebar-about", false);
+
                 std::string nowPlayingTitleVal;
                 std::string nowPlayingUrlVal;
                 {
@@ -383,6 +397,33 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
                     (*handle)->set_allowCustomBackends_S(allowCustomVal);
                 if ((*handle)->get_allowNetworkActivity_S() != allowNetworkVal)
                     (*handle)->set_allowNetworkActivity_S(allowNetworkVal);
+
+                if ((*handle)->get_allowSidebarCustomization_S() != allowSidebarCustomizationVal)
+                    (*handle)->set_allowSidebarCustomization_S(allowSidebarCustomizationVal);
+                if ((*handle)->get_hideSidebarReload_S() != hideSidebarReloadVal)
+                    (*handle)->set_hideSidebarReload_S(hideSidebarReloadVal);
+                if ((*handle)->get_hideSidebarLimits_S() != hideSidebarLimitsVal)
+                    (*handle)->set_hideSidebarLimits_S(hideSidebarLimitsVal);
+                if ((*handle)->get_hideSidebarHistory_S() != hideSidebarHistoryVal)
+                    (*handle)->set_hideSidebarHistory_S(hideSidebarHistoryVal);
+                if ((*handle)->get_hideSidebarTimeline_S() != hideSidebarTimelineVal)
+                    (*handle)->set_hideSidebarTimeline_S(hideSidebarTimelineVal);
+                if ((*handle)->get_hideSidebarTab_S() != hideSidebarTabVal)
+                    (*handle)->set_hideSidebarTab_S(hideSidebarTabVal);
+                if ((*handle)->get_hideSidebarProject_S() != hideSidebarProjectVal)
+                    (*handle)->set_hideSidebarProject_S(hideSidebarProjectVal);
+                if ((*handle)->get_hideSidebarInsights_S() != hideSidebarInsightsVal)
+                    (*handle)->set_hideSidebarInsights_S(hideSidebarInsightsVal);
+                if ((*handle)->get_hideSidebarLive_S() != hideSidebarLiveVal)
+                    (*handle)->set_hideSidebarLive_S(hideSidebarLiveVal);
+                if ((*handle)->get_hideSidebarExtensions_S() != hideSidebarExtensionsVal)
+                    (*handle)->set_hideSidebarExtensions_S(hideSidebarExtensionsVal);
+                if ((*handle)->get_hideSidebarKofi_S() != hideSidebarKofiVal)
+                    (*handle)->set_hideSidebarKofi_S(hideSidebarKofiVal);
+                if ((*handle)->get_hideSidebarFeedback_S() != hideSidebarFeedbackVal)
+                    (*handle)->set_hideSidebarFeedback_S(hideSidebarFeedbackVal);
+                if ((*handle)->get_hideSidebarAbout_S() != hideSidebarAboutVal)
+                    (*handle)->set_hideSidebarAbout_S(hideSidebarAboutVal);
 
                 if ((*handle)->get_nowPlayingTitle_S() != slint::SharedString(nowPlayingTitleVal))
                     (*handle)->set_nowPlayingTitle_S(slint::SharedString(nowPlayingTitleVal));
@@ -800,6 +841,20 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
             bool allowCustomVal = AppState::configManager.getConfig<bool>("allow-custom-backends", false);
             bool allowNetworkVal = AppState::configManager.getConfig<bool>("allow-network-activity", true);
 
+            bool allowSidebarCustomizationVal = AppState::configManager.getConfig<bool>("allow-sidebar-customization", false);
+            bool hideSidebarReloadVal = AppState::configManager.getConfig<bool>("hide-sidebar-reload", false);
+            bool hideSidebarLimitsVal = AppState::configManager.getConfig<bool>("hide-sidebar-limits", false);
+            bool hideSidebarHistoryVal = AppState::configManager.getConfig<bool>("hide-sidebar-history", false);
+            bool hideSidebarTimelineVal = AppState::configManager.getConfig<bool>("hide-sidebar-timeline", false);
+            bool hideSidebarTabVal = AppState::configManager.getConfig<bool>("hide-sidebar-tab", false);
+            bool hideSidebarProjectVal = AppState::configManager.getConfig<bool>("hide-sidebar-project", false);
+            bool hideSidebarInsightsVal = AppState::configManager.getConfig<bool>("hide-sidebar-insights", false);
+            bool hideSidebarLiveVal = AppState::configManager.getConfig<bool>("hide-sidebar-live", false);
+            bool hideSidebarExtensionsVal = AppState::configManager.getConfig<bool>("hide-sidebar-extensions", false);
+            bool hideSidebarKofiVal = AppState::configManager.getConfig<bool>("hide-sidebar-kofi", false);
+            bool hideSidebarFeedbackVal = AppState::configManager.getConfig<bool>("hide-sidebar-feedback", false);
+            bool hideSidebarAboutVal = AppState::configManager.getConfig<bool>("hide-sidebar-about", false);
+
             std::string nowPlayingTitleVal;
             std::string nowPlayingUrlVal;
             {
@@ -839,6 +894,20 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
             setPropIfChanged("hardwareAccel_S", slint::interpreter::Value(hwAccelVal));
             setPropIfChanged("allowCustomBackends_S", slint::interpreter::Value(allowCustomVal));
             setPropIfChanged("allowNetworkActivity_S", slint::interpreter::Value(allowNetworkVal));
+
+            setPropIfChanged("allowSidebarCustomization_S", slint::interpreter::Value(allowSidebarCustomizationVal));
+            setPropIfChanged("hideSidebarReload_S", slint::interpreter::Value(hideSidebarReloadVal));
+            setPropIfChanged("hideSidebarLimits_S", slint::interpreter::Value(hideSidebarLimitsVal));
+            setPropIfChanged("hideSidebarHistory_S", slint::interpreter::Value(hideSidebarHistoryVal));
+            setPropIfChanged("hideSidebarTimeline_S", slint::interpreter::Value(hideSidebarTimelineVal));
+            setPropIfChanged("hideSidebarTab_S", slint::interpreter::Value(hideSidebarTabVal));
+            setPropIfChanged("hideSidebarProject_S", slint::interpreter::Value(hideSidebarProjectVal));
+            setPropIfChanged("hideSidebarInsights_S", slint::interpreter::Value(hideSidebarInsightsVal));
+            setPropIfChanged("hideSidebarLive_S", slint::interpreter::Value(hideSidebarLiveVal));
+            setPropIfChanged("hideSidebarExtensions_S", slint::interpreter::Value(hideSidebarExtensionsVal));
+            setPropIfChanged("hideSidebarKofi_S", slint::interpreter::Value(hideSidebarKofiVal));
+            setPropIfChanged("hideSidebarFeedback_S", slint::interpreter::Value(hideSidebarFeedbackVal));
+            setPropIfChanged("hideSidebarAbout_S", slint::interpreter::Value(hideSidebarAboutVal));
 
             setPropIfChanged("nowPlayingTitle_S", slint::interpreter::Value(slint::SharedString(nowPlayingTitleVal)));
             setPropIfChanged("nowPlayingUrl_S", slint::interpreter::Value(slint::SharedString(nowPlayingUrlVal)));

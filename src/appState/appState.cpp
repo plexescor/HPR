@@ -7,6 +7,7 @@ AppState::HistoricalData_Full AppState::historicalData_Full_State;
 
 AliasManager AppState::aliasManager;
 ConfigManager AppState::configManager;
+const std::string AppState::APP_VERSION = "0.9.2";
 PatternAnalyzer AppState::patternAnalyzer;
 
 ExtensionManager* AppState::extManager = nullptr;

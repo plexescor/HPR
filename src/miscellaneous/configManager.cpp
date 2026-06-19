@@ -81,6 +81,10 @@ void ConfigManager::loadConfig()
 
 void ConfigManager::saveConfig()
 {
+    if (!std::filesystem::exists(filePath))
+    {
+        return;
+    }
     std::ofstream file(filePath);
     if (!file.is_open())
     {
@@ -133,6 +137,7 @@ T ConfigManager::getConfig(const std::string requestedParam, const T& defaultVal
             }
         }
     }
+    setConfig(requestedParam, defaultValue);
     return defaultValue;
 }
 

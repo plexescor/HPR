@@ -13,6 +13,7 @@ import { TimelineView } from "./timeline-view.slint";
 import { SettingsView } from "./settings-view.slint";
 import { Palette } from "./palette.slint";
 import { Card } from "./card.slint";
+import { FeedbackView } from "./feedback-view.slint";
 
 
 
@@ -44,6 +45,7 @@ export component MainWindow inherits Window {
     callback openIssues;
     callback setConfig(string, string);
     callback openUrl(string);
+    callback sendFeedback(string, string);
 
     //PLS Donate and dont remove it!
     callback openKofi;
@@ -51,6 +53,12 @@ export component MainWindow inherits Window {
     callback setLimit(string, int);
     callback setGoal(string, int);
 
+    in-out property <bool> is-sending-feedback: false;
+    in-out property <bool> showFeedbackResultPrompt: false;
+    in-out property <bool> feedbackSuccess: false;
+    in-out property <string> feedbackErrorMsg: "";
+    in-out property <string> feedbackEmail: "";
+    in-out property <string> feedbackMessage: "";
 
     in property <float>           trackedTime_S;
     in property <float>           trackedTime_Tab_S;
@@ -84,6 +92,20 @@ export component MainWindow inherits Window {
     in property <bool>            hardwareAccel_S;
     in property <bool>            allowCustomBackends_S;
     in property <bool>            allowNetworkActivity_S;
+
+    in property <bool>            allowSidebarCustomization_S;
+    in property <bool>            hideSidebarReload_S;
+    in property <bool>            hideSidebarLimits_S;
+    in property <bool>            hideSidebarHistory_S;
+    in property <bool>            hideSidebarTimeline_S;
+    in property <bool>            hideSidebarTab_S;
+    in property <bool>            hideSidebarProject_S;
+    in property <bool>            hideSidebarInsights_S;
+    in property <bool>            hideSidebarLive_S;
+    in property <bool>            hideSidebarExtensions_S;
+    in property <bool>            hideSidebarKofi_S;
+    in property <bool>            hideSidebarFeedback_S;
+    in property <bool>            hideSidebarAbout_S;
 
     in property <string>          nowPlayingTitle_S;
     in property <string>          nowPlayingUrl_S;
@@ -129,7 +151,7 @@ export component MainWindow inherits Window {
     title: "HPR";
     default-font-size: 13px * Palette.scale;
     preferred-width: 780px * Palette.scale;
-    preferred-height: 600px * Palette.scale;
+    preferred-height: 612px * Palette.scale;
 
     date-picker := DatePickerPopup {
         x: (root.width - self.width) / 2;
@@ -407,6 +429,28 @@ export component MainWindow inherits Window {
                 allowCustomBackends_S: root.allowCustomBackends_S;
                 allowNetworkActivity_S: root.allowNetworkActivity_S;
                 setConfig(param, val) => { root.setConfig(param, val); }
+                allowSidebarCustomization_S: root.allowSidebarCustomization_S;
+                hideSidebarReload_S: root.hideSidebarReload_S;
+                hideSidebarLimits_S: root.hideSidebarLimits_S;
+                hideSidebarHistory_S: root.hideSidebarHistory_S;
+                hideSidebarTimeline_S: root.hideSidebarTimeline_S;
+                hideSidebarTab_S: root.hideSidebarTab_S;
+                hideSidebarProject_S: root.hideSidebarProject_S;
+                hideSidebarInsights_S: root.hideSidebarInsights_S;
+                hideSidebarLive_S: root.hideSidebarLive_S;
+                hideSidebarExtensions_S: root.hideSidebarExtensions_S;
+                hideSidebarKofi_S: root.hideSidebarKofi_S;
+                hideSidebarFeedback_S: root.hideSidebarFeedback_S;
+                hideSidebarAbout_S: root.hideSidebarAbout_S;
+            }
+            if active-view == "FEEDBACK" : FeedbackView {
+                vertical-stretch: 1;
+                email <=> root.feedbackEmail;
+                message <=> root.feedbackMessage;
+                is-sending: root.is-sending-feedback;
+                send-clicked(email, message) => {
+                    root.sendFeedback(email, message);
+                }
             }
 
         }
@@ -483,63 +527,63 @@ export component MainWindow inherits Window {
                     width: 75%;
                     height: 100%;
 
-                    SidebarButton {
+                    if !root.allowSidebarCustomization_S || !root.hideSidebarReload_S : SidebarButton {
                         icon: @image-url("./images/reload.svg");
                         icon-light: @image-url("./images/reload-light.svg");
                         tip: "Reload UI";
                         clicked => { root.reloadUi(); }
                     }
 
-                    SidebarButton {
+                    if !root.allowSidebarCustomization_S || !root.hideSidebarLimits_S : SidebarButton {
                         icon: @image-url("./images/goals.svg");
                         icon-light: @image-url("./images/goals-light.svg");
                         tip: "Manage per app limits and goals";
                         clicked => { root.active-view = "LIMITS"; }
                     }
 
-                    SidebarButton {
+                    if !root.allowSidebarCustomization_S || !root.hideSidebarHistory_S : SidebarButton {
                         icon: @image-url("./images/calendar.svg");
                         icon-light: @image-url("./images/calendar-light.svg");
                         tip: "View historical data";
                         clicked => { root.active-view = "HISTORY_RANGE"; }
                     }
 
-                    SidebarButton {
+                    if !root.allowSidebarCustomization_S || !root.hideSidebarTimeline_S : SidebarButton {
                         icon: @image-url("./images/timeline.svg");
                         icon-light: @image-url("./images/timeline-light.svg");
                         tip: "View day timeline";
                         clicked => { root.active-view = "TIMELINE"; }
                     }
 
-                    SidebarButton {
+                    if !root.allowSidebarCustomization_S || !root.hideSidebarTab_S : SidebarButton {
                         icon: @image-url("./images/tab.svg");
                         icon-light: @image-url("./images/tab-light.svg");
                         tip: "View usage per tab";
                         clicked => { root.active-view = "TAB"; }
                     }
 
-                    SidebarButton {
+                    if !root.allowSidebarCustomization_S || !root.hideSidebarProject_S : SidebarButton {
                         icon: @image-url("./images/project.svg");
                         icon-light: @image-url("./images/project-light.svg");
                         tip: "View usage per project";
                         clicked => { root.active-view = "PROJECT"; }
                     }
 
-                    SidebarButton {
+                    if !root.allowSidebarCustomization_S || !root.hideSidebarInsights_S : SidebarButton {
                         icon: @image-url("./images/insights.svg");
                         icon-light: @image-url("./images/insights-light.svg");
                         tip: "View insights";
                         clicked => { root.active-view = "INSIGHTS"; root.loadInsights(); }
                     }
 
-                    SidebarButton {
+                    if !root.allowSidebarCustomization_S || !root.hideSidebarLive_S : SidebarButton {
                         icon: @image-url("./images/live.svg");
                         icon-light: @image-url("./images/live-light.svg");
                         tip: "Switch to live view";
                         clicked => { root.active-view = "DATA" }
                     }
 
-                    SidebarButton {
+                    if !root.allowSidebarCustomization_S || !root.hideSidebarExtensions_S : SidebarButton {
                         icon: @image-url("./images/extension.svg");
                         icon-light: @image-url("./images/extension-light.svg");
                         tip: "View loaded extensions";
@@ -553,14 +597,21 @@ export component MainWindow inherits Window {
                         clicked => { root.active-view = "SETTINGS"; }
                     }
 
-                    SidebarButton {
+                    if !root.allowSidebarCustomization_S || !root.hideSidebarKofi_S : SidebarButton {
                         icon: @image-url("./images/ko-fi.svg");
                         icon-light: @image-url("./images/ko-fi-light.svg");
                         tip: "Support on Ko-fi";
                         clicked => { root.openKofi(); }
                     }
 
-                    SidebarButton {
+                    if !root.allowSidebarCustomization_S || !root.hideSidebarFeedback_S : SidebarButton {
+                        icon: @image-url("./images/message.svg");
+                        icon-light: @image-url("./images/message-light.svg");
+                        tip: "Send Feedback";
+                        clicked => { root.active-view = "FEEDBACK"; }
+                    }
+
+                    if !root.allowSidebarCustomization_S || !root.hideSidebarAbout_S : SidebarButton {
                         icon: @image-url("./images/about.svg");
                         icon-light: @image-url("./images/about-light.svg");
                         tip: "About";
@@ -676,6 +727,94 @@ export component MainWindow inherits Window {
 
                             Text {
                                 text: "I AGREE";
+                                font-size: 9px * Palette.scale;
+                                font-weight: 800;
+                                letter-spacing: 1.5px * Palette.scale;
+                                color: #ffffff;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        if showFeedbackResultPrompt : Rectangle {
+            background: #000000cc;
+            z: 100;
+            width: 100%;
+            height: 100%;
+
+            TouchArea {
+                // block click through
+            }
+
+            Card {
+                width: 440px * Palette.scale;
+                height: 240px * Palette.scale;
+                x: (parent.width - self.width) / 2;
+                y: (parent.height - self.height) / 2;
+
+                VerticalLayout {
+                    padding: 24px * Palette.scale;
+                    spacing: 16px * Palette.scale;
+                    alignment: space-between;
+
+                    VerticalLayout {
+                        spacing: 6px * Palette.scale;
+
+                        Text {
+                            text: root.feedbackSuccess ? "SUCCESS" : "ERROR";
+                            font-size: 8px * Palette.scale;
+                            font-weight: 800;
+                            letter-spacing: 2.5px * Palette.scale;
+                            color: root.feedbackSuccess ? #10b981 : #ef4444;
+                            horizontal-alignment: center;
+                        }
+
+                        Text {
+                            text: root.feedbackSuccess ? "Message Sent" : "Sending Failed";
+                            font-size: 18px * Palette.scale;
+                            font-weight: 800;
+                            letter-spacing: 0.5px * Palette.scale;
+                            color: Palette.text-primary;
+                            horizontal-alignment: center;
+                        }
+                    }
+
+                    Text {
+                        text: root.feedbackSuccess 
+                            ? "Thank you! Your message has been successfully sent to the developer."
+                            : "Could not send the message: " + root.feedbackErrorMsg + ". Please check your connection and try again.";
+                        font-size: 11px * Palette.scale;
+                        font-weight: 500;
+                        color: Palette.text-secondary;
+                        wrap: word-wrap;
+                        horizontal-alignment: center;
+                    }
+
+                    HorizontalLayout {
+                        alignment: center;
+
+                        // OK Button
+                        ok-btn := Rectangle {
+                            width: 130px * Palette.scale;
+                            height: 32px * Palette.scale;
+                            border-radius: 6px * Palette.scale;
+                            background: ta-ok.pressed ? @linear-gradient(135deg, #0284c7 0%, #0369a1 100%) : 
+                                        ta-ok.has-hover ? @linear-gradient(135deg, #7dd3fc 0%, #38bdf8 100%) : 
+                                        @linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+
+                            ta-ok := TouchArea {
+                                mouse-cursor: pointer;
+                                clicked => {
+                                    root.showFeedbackResultPrompt = false;
+                                }
+                            }
+
+                            Text {
+                                text: "OK";
                                 font-size: 9px * Palette.scale;
                                 font-weight: 800;
                                 letter-spacing: 1.5px * Palette.scale;

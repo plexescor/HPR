@@ -88,6 +88,7 @@ namespace AppState {
     extern HistoricalData_Full historicalData_Full_State;
 
     extern ConfigManager configManager;
+    extern const std::string APP_VERSION;
 
     extern AliasManager aliasManager;
     extern PatternAnalyzer patternAnalyzer;

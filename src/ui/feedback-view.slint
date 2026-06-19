@@ -1,0 +1,159 @@
+import { Card } from "./card.slint";
+import { SectionHeader } from "./section-header.slint";
+import { Palette } from "./palette.slint";
+import { LineEdit, TextEdit } from "std-widgets.slint";
+
+export component FeedbackView {
+    in-out property <string> email: "";
+    in-out property <string> message: "";
+    in property <bool> is-sending: false;
+    callback send-clicked(string /* email */, string /* message */);
+
+    VerticalLayout {
+        padding: 12px * Palette.scale;
+        padding-top: 6px * Palette.scale;
+        spacing: 15px * Palette.scale;
+        height: 100%;
+
+        HorizontalLayout {
+            alignment: start;
+            vertical-stretch: 0;
+            padding-top: 4px * Palette.scale;
+            SectionHeader { label: "SEND FEEDBACK"; }
+        }
+
+        Card {
+            vertical-stretch: 1;
+
+            Flickable {
+                width: 100%;
+                height: 100%;
+                interactive: true;
+                viewport-height: feedbackContent.preferred-height;
+
+                feedbackContent := VerticalLayout {
+                    width: 100%;
+                    padding: 24px * Palette.scale;
+                    spacing: 16px * Palette.scale;
+                    alignment: start;
+
+                    // Title info
+                    VerticalLayout {
+                        spacing: 6px * Palette.scale;
+                        Text {
+                            text: "SHARE YOUR THOUGHTS";
+                            font-size: 8px * Palette.scale;
+                            font-weight: 800;
+                            letter-spacing: 2.5px * Palette.scale;
+                            color: #38bdf8;
+                        }
+                        Text {
+                            text: "Send Feedback or Bug Reports";
+                            font-size: 16px * Palette.scale;
+                            font-weight: 800;
+                            color: Palette.text-primary;
+                        }
+                    }
+
+                    // Informational text
+                    Text {
+                        text: "This tab is for sending feedback and messages directly to the developer. Your messages will be sent to Firebase where the developer can view them. Optionally, you can include your email for a back-and-forth conversation.";
+                        font-size: 11px * Palette.scale;
+                        font-weight: 500;
+                        color: Palette.text-secondary;
+                        wrap: word-wrap;
+                    }
+
+                    // Email field
+                    VerticalLayout {
+                        spacing: 6px * Palette.scale;
+                        Text {
+                            text: "YOUR EMAIL (OPTIONAL)";
+                            color: Palette.text-muted;
+                            font-size: 9px * Palette.scale;
+                            font-weight: 700;
+                            letter-spacing: 1px * Palette.scale;
+                        }
+                        LineEdit {
+                            text: root.email;
+                            edited(val) => { root.email = val; }
+                            placeholder-text: "email@example.com (so we can reply)";
+                            enabled: !root.is-sending;
+                        }
+                    }
+
+                    // Message field
+                    VerticalLayout {
+                        spacing: 6px * Palette.scale;
+                        Text {
+                            text: "MESSAGE";
+                            color: Palette.text-muted;
+                            font-size: 9px * Palette.scale;
+                            font-weight: 700;
+                            letter-spacing: 1px * Palette.scale;
+                        }
+                        TextEdit {
+                            text: root.message;
+                            edited(val) => { root.message = val; }
+                            placeholder-text: "Type your message or bug report here...";
+                            wrap: word-wrap;
+                            height: 150px * Palette.scale;
+                            enabled: !root.is-sending;
+                        }
+                    }
+
+                    // Send Button
+                    send-btn := Rectangle {
+                        height: 40px * Palette.scale;
+                        border-radius: 6px * Palette.scale;
+                        background: (root.message == "" || root.is-sending)
+                            ? Palette.input-bg
+                            : (ta-send.pressed 
+                                ? @linear-gradient(135deg, #0284c7 0%, #0369a1 100%) 
+                                : (ta-send.has-hover 
+                                    ? @linear-gradient(135deg, #7dd3fc 0%, #38bdf8 100%) 
+                                    : @linear-gradient(135deg, #38bdf8 0%, #0284c7 100%)));
+                        border-width: 1px * Palette.scale;
+                        border-color: (root.message == "" || root.is-sending)
+                            ? Palette.input-border
+                            : (ta-send.has-hover ? #38bdf880 : #38bdf840);
+
+                        animate background { duration: 100ms; }
+                        animate border-color { duration: 100ms; }
+
+                        ta-send := TouchArea {
+                            mouse-cursor: (root.message == "" || root.is-sending) ? default : pointer;
+                            clicked => {
+                                if (root.message != "" && !root.is-sending) {
+                                    root.send-clicked(root.email, root.message);
+                                }
+                            }
+                        }
+
+                        Text {
+                            text: root.is-sending ? "SENDING..." : "SEND FEEDBACK";
+                            color: (root.message == "" || root.is-sending)
+                                ? Palette.text-dim
+                                : #ffffff;
+                            font-size: 11px * Palette.scale;
+                            font-weight: 800;
+                            letter-spacing: 1.5px * Palette.scale;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                        }
+                    }
+
+                    // Data disclaimer text at the bottom
+                    Text {
+                        text: "Data sent: Message, Email (optional), HPR Version, OS type, Linux compositor (if applicable), and Timestamp. Sent to: humanpatternrecorder-default-rtdb.firebaseio.com";
+                        font-size: 9px * Palette.scale;
+                        font-weight: 500;
+                        color: Palette.text-muted;
+                        wrap: word-wrap;
+                        horizontal-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+}

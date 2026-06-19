@@ -351,8 +351,8 @@ void showNotification(const std::string &title, const std::string &msg)
 {
 
     static auto startTime = std::chrono::steady_clock::now();
-    if (std::chrono::duration_cast<std::chrono::seconds>(
-            std::chrono::steady_clock::now() - startTime).count() < 10)
+    if (std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::steady_clock::now() - startTime).count() < 1200)
         return;
 
     if (AppState::extManager)
