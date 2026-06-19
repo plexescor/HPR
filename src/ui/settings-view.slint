@@ -108,6 +108,7 @@ export component SettingsView {
     in property <bool> hideSidebarKofi_S;
     in property <bool> hideSidebarFeedback_S;
     in property <bool> hideSidebarAbout_S;
+    in property <bool> hideSidebarThemes_S;
 
     Flickable {
         viewport-height: settingsContent.preferred-height;
@@ -378,6 +379,15 @@ export component SettingsView {
                             description: "Toggle visibility of the Send Feedback button in the sidebar";
                             checked: !root.hideSidebarFeedback_S;
                             toggled(v) => { root.setConfig("hide-sidebar-feedback", (!v) ? "true" : "false"); }
+                        }
+
+                        Divider {}
+
+                        ToggleSetting {
+                            label: "Show Themes Button";
+                            description: "Toggle visibility of the Themes button in the sidebar";
+                            checked: !root.hideSidebarThemes_S;
+                            toggled(v) => { root.setConfig("hide-sidebar-themes", (!v) ? "true" : "false"); }
                         }
 
                         Divider {}

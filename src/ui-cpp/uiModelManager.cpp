@@ -352,6 +352,7 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
                 bool hideSidebarKofiVal = AppState::configManager.getConfig<bool>("hide-sidebar-kofi", false);
                 bool hideSidebarFeedbackVal = AppState::configManager.getConfig<bool>("hide-sidebar-feedback", false);
                 bool hideSidebarAboutVal = AppState::configManager.getConfig<bool>("hide-sidebar-about", false);
+                bool hideSidebarThemesVal = AppState::configManager.getConfig<bool>("hide-sidebar-themes", false);
 
                 std::string nowPlayingTitleVal;
                 std::string nowPlayingUrlVal;
@@ -424,6 +425,8 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
                     (*handle)->set_hideSidebarFeedback_S(hideSidebarFeedbackVal);
                 if ((*handle)->get_hideSidebarAbout_S() != hideSidebarAboutVal)
                     (*handle)->set_hideSidebarAbout_S(hideSidebarAboutVal);
+                if ((*handle)->get_hideSidebarThemes_S() != hideSidebarThemesVal)
+                    (*handle)->set_hideSidebarThemes_S(hideSidebarThemesVal);
 
                 if ((*handle)->get_nowPlayingTitle_S() != slint::SharedString(nowPlayingTitleVal))
                     (*handle)->set_nowPlayingTitle_S(slint::SharedString(nowPlayingTitleVal));
@@ -854,6 +857,7 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
             bool hideSidebarKofiVal = AppState::configManager.getConfig<bool>("hide-sidebar-kofi", false);
             bool hideSidebarFeedbackVal = AppState::configManager.getConfig<bool>("hide-sidebar-feedback", false);
             bool hideSidebarAboutVal = AppState::configManager.getConfig<bool>("hide-sidebar-about", false);
+            bool hideSidebarThemesVal = AppState::configManager.getConfig<bool>("hide-sidebar-themes", false);
 
             std::string nowPlayingTitleVal;
             std::string nowPlayingUrlVal;
@@ -908,6 +912,7 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
             setPropIfChanged("hideSidebarKofi_S", slint::interpreter::Value(hideSidebarKofiVal));
             setPropIfChanged("hideSidebarFeedback_S", slint::interpreter::Value(hideSidebarFeedbackVal));
             setPropIfChanged("hideSidebarAbout_S", slint::interpreter::Value(hideSidebarAboutVal));
+            setPropIfChanged("hideSidebarThemes_S", slint::interpreter::Value(hideSidebarThemesVal));
 
             setPropIfChanged("nowPlayingTitle_S", slint::interpreter::Value(slint::SharedString(nowPlayingTitleVal)));
             setPropIfChanged("nowPlayingUrl_S", slint::interpreter::Value(slint::SharedString(nowPlayingUrlVal)));

@@ -14,6 +14,7 @@ import { SettingsView } from "./settings-view.slint";
 import { Palette } from "./palette.slint";
 import { Card } from "./card.slint";
 import { FeedbackView } from "./feedback-view.slint";
+import { ThemesView } from "./themes-view.slint";
 
 
 
@@ -52,6 +53,9 @@ export component MainWindow inherits Window {
 
     callback setLimit(string, int);
     callback setGoal(string, int);
+
+    callback themeSelected(string);
+    callback themeApply(string);
 
     in-out property <bool> is-sending-feedback: false;
     in-out property <bool> showFeedbackResultPrompt: false;
@@ -106,6 +110,12 @@ export component MainWindow inherits Window {
     in property <bool>            hideSidebarKofi_S;
     in property <bool>            hideSidebarFeedback_S;
     in property <bool>            hideSidebarAbout_S;
+    in property <bool>            hideSidebarThemes_S;
+
+    in property <bool>            themesAvailable_S;
+    in property <[string]>        themesList_S;
+    in property <[image]>         themePreviewImages_S;
+    in property <int>             themePreviewImageCount_S;
 
     in property <string>          nowPlayingTitle_S;
     in property <string>          nowPlayingUrl_S;
@@ -416,6 +426,16 @@ export component MainWindow inherits Window {
                 timelineMarkers: root.timelineMarkers_S;
                 timelineZoomFactor <=> root.timelineZoomFactor;
             }
+            if active-view == "THEMES" : ThemesView {
+                vertical-stretch: 1;
+                themesAvailable: root.themesAvailable_S;
+                themesList: root.themesList_S;
+                themePreviewImages: root.themePreviewImages_S;
+                themePreviewImageCount: root.themePreviewImageCount_S;
+
+                themeSelected(theme) => { root.themeSelected(theme); }
+                themeApply(theme) => { root.themeApply(theme); }
+            }
             if active-view == "SETTINGS" : SettingsView {
                 themeMode_S: root.themeMode_S;
                 autostart_S: root.autostart_S;
@@ -442,6 +462,7 @@ export component MainWindow inherits Window {
                 hideSidebarKofi_S: root.hideSidebarKofi_S;
                 hideSidebarFeedback_S: root.hideSidebarFeedback_S;
                 hideSidebarAbout_S: root.hideSidebarAbout_S;
+                hideSidebarThemes_S: root.hideSidebarThemes_S;
             }
             if active-view == "FEEDBACK" : FeedbackView {
                 vertical-stretch: 1;
@@ -595,6 +616,13 @@ export component MainWindow inherits Window {
                         icon-light: @image-url("./images/settings-light.svg");
                         tip: "Settings";
                         clicked => { root.active-view = "SETTINGS"; }
+                    }
+
+                    if !root.allowSidebarCustomization_S || !root.hideSidebarThemes_S : SidebarButton {
+                        icon: @image-url("./images/themes.svg");
+                        icon-light: @image-url("./images/themes-light.svg");
+                        tip: "Themes";
+                        clicked => { root.active-view = "THEMES"; }
                     }
 
                     if !root.allowSidebarCustomization_S || !root.hideSidebarKofi_S : SidebarButton {

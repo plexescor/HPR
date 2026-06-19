@@ -1,0 +1,204 @@
+import { Card } from "./card.slint";
+import { SectionHeader } from "./section-header.slint";
+import { Palette } from "./palette.slint";
+import { ComboBox } from "std-widgets.slint";
+
+export component ThemesView {
+    in property <bool> themesAvailable;
+    in property <[string]> themesList;
+    in property <[image]> themePreviewImages;
+    in property <int> themePreviewImageCount;
+    in-out property <int> currentImageIndex: 0;
+
+    callback themeSelected(string);
+    callback themeApply(string);
+
+    VerticalLayout {
+        alignment: start;
+        padding: 12px * Palette.scale;
+        padding-top: 6px * Palette.scale;
+        spacing: 10px * Palette.scale;
+
+        HorizontalLayout {
+            alignment: start;
+            vertical-stretch: 0;
+            padding-top: 4px * Palette.scale;
+
+            SectionHeader { label: "THEMES"; }
+        }
+
+        Card {
+            vertical-stretch: 0;
+            VerticalLayout {
+                padding: 24px * Palette.scale;
+                spacing: 16px * Palette.scale;
+
+                Text {
+                    text: "THEMES CONFIGURATION";
+                    font-size: 8px * Palette.scale;
+                    font-weight: 700;
+                    letter-spacing: 2.5px * Palette.scale;
+                    color: Palette.text-muted;
+                }
+
+                Text {
+                    text: "Select and customize HPR themes here.";
+                    font-size: 13px * Palette.scale;
+                    color: Palette.text-secondary;
+                    wrap: word-wrap;
+                }
+
+                if !root.themesAvailable : Text {
+                    text: "No themes installed";
+                    font-size: 14px * Palette.scale;
+                    font-weight: 500;
+                    color: Palette.text-secondary;
+                }
+
+                if root.themesAvailable : VerticalLayout {
+                    spacing: 12px * Palette.scale;
+
+                    Text {
+                        text: "Choose your preferred theme";
+                        font-size: 14px * Palette.scale;
+                        font-weight: 500;
+                        color: Palette.text-primary;
+                    }
+
+                    HorizontalLayout {
+                        spacing: 12px * Palette.scale;
+                        alignment: start;
+
+                        dropdown := ComboBox {
+                            width: 220px * Palette.scale;
+                            model: root.themesList;
+                            selected(val) => {
+                                root.currentImageIndex = 0;
+                                root.themeSelected(val);
+                            }
+                        }
+
+                        apply-btn := Rectangle {
+                            width: 90px * Palette.scale;
+                            height: dropdown.preferred-height;
+                            border-radius: 4px * Palette.scale;
+                            background: ta-apply.pressed
+                                ? @linear-gradient(135deg, #0284c7 0%, #0369a1 100%)
+                                : (ta-apply.has-hover
+                                    ? @linear-gradient(135deg, #7dd3fc 0%, #38bdf8 100%)
+                                    : @linear-gradient(135deg, #38bdf8 0%, #0284c7 100%));
+                            border-width: 1px * Palette.scale;
+                            border-color: ta-apply.has-hover ? #38bdf880 : #38bdf840;
+
+                            animate background { duration: 100ms; }
+                            animate border-color { duration: 100ms; }
+
+                            ta-apply := TouchArea {
+                                mouse-cursor: pointer;
+                                clicked => {
+                                    root.themeApply(dropdown.current-value);
+                                }
+                            }
+
+                            Text {
+                                text: "APPLY";
+                                color: #ffffff;
+                                font-size: 10px * Palette.scale;
+                                font-weight: 800;
+                                letter-spacing: 1px * Palette.scale;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Preview Section
+        if root.themesAvailable : HorizontalLayout {
+            vertical-stretch: 1;
+            alignment: center;
+            padding-top: 16px * Palette.scale;
+
+            // Preview image container with overlayed navigation buttons
+            if root.themePreviewImageCount > 0 : Rectangle {
+                width: root.width * 0.9;
+                border-radius: 8px * Palette.scale;
+                border-width: 1px * Palette.scale;
+                border-color: Palette.card-border;
+                background: Palette.card-background;
+                clip: true;
+
+                Image {
+                    width: 100%;
+                    height: 100%;
+                    source: root.themePreviewImages[root.currentImageIndex];
+                    image-fit: contain;
+                }
+
+                // Left pagination button
+                if root.themePreviewImageCount > 1 : Rectangle {
+                    x: 12px * Palette.scale;
+                    y: (parent.height - self.height) / 2;
+                    width: 36px * Palette.scale;
+                    height: 36px * Palette.scale;
+                    border-radius: 18px * Palette.scale;
+                    background: (root.currentImageIndex <= 0)
+                        ? #00000033
+                        : (ta-prev.pressed ? #00000099 : (ta-prev.has-hover ? #00000077 : #00000055));
+                    border-width: 1px * Palette.scale;
+                    border-color: (root.currentImageIndex <= 0) ? #ffffff11 : #ffffff33;
+
+                    ta-prev := TouchArea {
+                        enabled: root.currentImageIndex > 0;
+                        mouse-cursor: self.enabled ? pointer : default;
+                        clicked => {
+                            root.currentImageIndex -= 1;
+                        }
+                    }
+
+                    Text {
+                        text: "‹";
+                        font-size: 24px * Palette.scale;
+                        font-weight: 700;
+                        color: (root.currentImageIndex <= 0) ? #ffffff44 : #ffffff;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+
+                // Right pagination button
+                if root.themePreviewImageCount > 1 : Rectangle {
+                    x: parent.width - self.width - 12px * Palette.scale;
+                    y: (parent.height - self.height) / 2;
+                    width: 36px * Palette.scale;
+                    height: 36px * Palette.scale;
+                    border-radius: 18px * Palette.scale;
+                    background: (root.currentImageIndex >= root.themePreviewImageCount - 1)
+                        ? #00000033
+                        : (ta-next.pressed ? #00000099 : (ta-next.has-hover ? #00000077 : #00000055));
+                    border-width: 1px * Palette.scale;
+                    border-color: (root.currentImageIndex >= root.themePreviewImageCount - 1) ? #ffffff11 : #ffffff33;
+
+                    ta-next := TouchArea {
+                        enabled: root.currentImageIndex < root.themePreviewImageCount - 1;
+                        mouse-cursor: self.enabled ? pointer : default;
+                        clicked => {
+                            root.currentImageIndex += 1;
+                        }
+                    }
+
+                    Text {
+                        text: "›";
+                        font-size: 24px * Palette.scale;
+                        font-weight: 700;
+                        color: (root.currentImageIndex >= root.themePreviewImageCount - 1) ? #ffffff44 : #ffffff;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+}
