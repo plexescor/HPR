@@ -585,6 +585,10 @@ Themes and interpreted UI customization require enabling interpreter mode in `co
 use-interpreter,true
 ```
 
+> [!WARNING]
+> **Performance & RAM Usage:**
+> Enabling interpreter mode (`use-interpreter,true`) will load the UI dynamically at runtime. This can increase runtime RAM usage by 20-50% due to Slint's runtime compiler, bytecode interpreter overhead, and decoded theme preview image buffers.
+
 ### How Themes Work
 Themes are loaded dynamically from:
 * **Windows**: `%APPDATA%\HPR\HPR_Config\themes\`
