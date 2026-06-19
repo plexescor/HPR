@@ -78,6 +78,11 @@ UiModelManager::UiModelManager(slint::ComponentHandle<slint::interpreter::Compon
             (*handle)->set_property("timelineMarkers_S", slint::interpreter::Value(timelineMarkersModel_interp));
             (*handle)->set_property("themesList_S", slint::interpreter::Value(themesListModel_interp));
             (*handle)->set_property("themePreviewImages_S", slint::interpreter::Value(themePreviewsModel_interp));
+            
+            // Set initial theme values immediately!
+            (*handle)->set_property("currentTheme_S", slint::interpreter::Value(slint::SharedString(currentSelectedTheme)));
+            std::string activeTheme = AppState::configManager.getConfig("custom-theme", std::string("default"));
+            (*handle)->set_property("activeTheme_S", slint::interpreter::Value(slint::SharedString(activeTheme)));
         }
     });
 
