@@ -18,6 +18,7 @@
 
 #include <mutex>
 #include <optional>
+#include <map>
 
 #include "appEvents.hpp"
 
@@ -36,6 +37,10 @@ struct LoadedExtension
     std::recursive_mutex luaMutex; // Guards all shared Lua VM operations recursively to prevent multi-threaded race conditions without deadlocking
     std::recursive_mutex serverMutex;
     std::vector<std::pair<EventKey, size_t>> registeredConnections; // Tracks registered EventHub connections to clean up on destruction
+
+    std::map<std::string, std::map<size_t, sol::function>> eventCallbacks;
+    std::mutex eventQueueMutex;
+    std::vector<std::pair<std::string, CppValue>> pendingEvents;
 
     LoadedExtension() = default;
     ~LoadedExtension();

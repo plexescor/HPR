@@ -239,6 +239,10 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow>& ui,  ExtensionM
         EventHub::emit("MISC_KEY_PRESSED", CppValue(CppValue::Type::String, std::string(key)));
     });
 
+    ui->on_miscKeyReleased_S([this](slint::SharedString key) {
+        EventHub::emit("MISC_KEY_RELEASED", CppValue(CppValue::Type::String, std::string(key)));
+    });
+
     // ui->on_themeSelected([this](slint::SharedString themeName)
     // {
     //     themeName = std::string(themeName);
@@ -662,6 +666,16 @@ UiEventBridge::UiEventBridge(
             auto opt_key = args[0].to_string();
             if (opt_key.has_value()) {
                 EventHub::emit("MISC_KEY_PRESSED", CppValue(CppValue::Type::String, std::string(opt_key.value())));
+            }
+        }
+        return slint::interpreter::Value();
+    });
+
+    ui->set_callback("miscKeyReleased_S", [](auto args) -> slint::interpreter::Value {
+        if (args.size() > 0) {
+            auto opt_key = args[0].to_string();
+            if (opt_key.has_value()) {
+                EventHub::emit("MISC_KEY_RELEASED", CppValue(CppValue::Type::String, std::string(opt_key.value())));
             }
         }
         return slint::interpreter::Value();

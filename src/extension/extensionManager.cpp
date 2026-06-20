@@ -419,6 +419,34 @@ void ExtensionManager::runExtension(std::shared_ptr<LoadedExtension> ext_ptr)
 
             try
             {
+                // Process pending events on the extension thread safely
+                std::vector<std::pair<std::string, CppValue>> eventsToProcess;
+                {
+                    std::lock_guard<std::mutex> lock(ext.eventQueueMutex);
+                    eventsToProcess = std::move(ext.pendingEvents);
+                    ext.pendingEvents.clear();
+                }
+
+                if (!eventsToProcess.empty())
+                {
+                    std::lock_guard<std::recursive_mutex> luaLock(ext.luaMutex);
+                    for (const auto& [evtName, cppVal] : eventsToProcess)
+                    {
+                        auto it = ext.eventCallbacks.find(evtName);
+                        if (it != ext.eventCallbacks.end())
+                        {
+                            sol::object luaData = cppToLua(ext.lua, cppVal);
+                            for (auto& [id, cb] : it->second)
+                            {
+                                if (cb.valid())
+                                {
+                                    cb(luaData);
+                                }
+                            }
+                        }
+                    }
+                }
+
                 if (onTick.valid())
                 {
                     std::lock_guard<std::recursive_mutex> luaLock(ext.luaMutex);
@@ -1283,19 +1311,18 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         else if (eventName == "UI_READY") eventKey = Event::UI_READY;
         else eventKey = eventName; // Custom signal
 
-        size_t id = EventHub::connect(eventKey, [callback, &lua, &ext](EventData data) 
+        size_t id = EventHub::connect(eventKey, [eventName, &ext](EventData data) 
         {
-            // Convert standard EventData to generic CppValue, then convert to native Lua value safely under luaMutex
-            std::lock_guard<std::recursive_mutex> lock(ext.luaMutex);
-            sol::object luaData = cppToLua(lua, toCppValue(data));
-            callback(luaData);
+            std::lock_guard<std::mutex> lock(ext.eventQueueMutex);
+            ext.pendingEvents.push_back({eventName, toCppValue(data)});
         });
+        ext.eventCallbacks[eventName][id] = callback;
         ext.registeredConnections.push_back({eventKey, id});
         return id;
     };
 
     // Unsubscribe from a registered event
-    lua["HPR"]["disconnect_E"] = [](std::string eventName, size_t id) 
+    lua["HPR"]["disconnect_E"] = [&ext](std::string eventName, size_t id) 
     {
         EventKey eventKey;
         if (eventName == "LOAD_DATABASE_SINGULAR") eventKey = Event::LOAD_DATABASE_SINGULAR;
@@ -1308,6 +1335,7 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         else eventKey = eventName;
 
         EventHub::disconnect(eventKey, id);
+        ext.eventCallbacks[eventName].erase(id);
     };
 
     // Emit system or custom dynamic events

@@ -50,6 +50,7 @@ export component MainWindow inherits Window {
     callback sendFeedback(string, string);
 
     callback miscKeyPressed_S(string);
+    callback miscKeyReleased_S(string);
 
     //PLS Donate and dont remove it!
     callback openKofi;
@@ -399,6 +400,7 @@ export component MainWindow inherits Window {
                 vertical-stretch: 1;
                 misc-image: root.miscImage_S;
                 keyPressed_S(key) => { root.miscKeyPressed_S(key); }
+                keyReleased_S(key) => { root.miscKeyReleased_S(key); }
             }
             if active-view == "LIMITS" : GoalsView {
                 vertical-stretch: 1;

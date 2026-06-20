@@ -5,6 +5,7 @@ import { Palette } from "./palette.slint";
 export component MiscImageView {
     in property <image> misc-image;
     callback keyPressed_S(string);
+    callback keyReleased_S(string);
 
     forward-focus: fs;
 
@@ -31,6 +32,30 @@ export component MiscImageView {
                 return accept;
             }
             root.keyPressed_S(event.text);
+            accept
+        }
+        key-released(event) => {
+            if (event.text == Key.UpArrow) {
+                root.keyReleased_S("up");
+                return accept;
+            }
+            if (event.text == Key.DownArrow) {
+                root.keyReleased_S("down");
+                return accept;
+            }
+            if (event.text == Key.LeftArrow) {
+                root.keyReleased_S("left");
+                return accept;
+            }
+            if (event.text == Key.RightArrow) {
+                root.keyReleased_S("right");
+                return accept;
+            }
+            if (event.text == " ") {
+                root.keyReleased_S("space");
+                return accept;
+            }
+            root.keyReleased_S(event.text);
             accept
         }
     }
