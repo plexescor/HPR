@@ -24,6 +24,7 @@ class HPR {
         void hide();
         void run(); // blocking call i believe
         void quit();
+        void setUiImage(const std::string& propertyName, const slint::SharedPixelBuffer<slint::Rgba8Pixel>& pixelBuffer);
 
     private:
         void trackingLoop(); // runs on separate thread so that it polls shit continously (correct spelling?)

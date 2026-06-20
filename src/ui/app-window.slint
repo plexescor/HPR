@@ -15,6 +15,7 @@ import { Palette } from "./palette.slint";
 import { Card } from "./card.slint";
 import { FeedbackView } from "./feedback-view.slint";
 import { ThemesView } from "./themes-view.slint";
+import { MiscImageView } from "./misc-image-view.slint";
 
 
 
@@ -47,6 +48,8 @@ export component MainWindow inherits Window {
     callback setConfig(string, string);
     callback openUrl(string);
     callback sendFeedback(string, string);
+
+    callback miscKeyPressed_S(string);
 
     //PLS Donate and dont remove it!
     callback openKofi;
@@ -81,6 +84,8 @@ export component MainWindow inherits Window {
     in-out property <int>                timelineEndHour: 24;
     in property <[TimelineMarker]>       timelineMarkers_S;
     in-out property <float>              timelineZoomFactor: 1.0;
+    in property <bool>                   showMiscImagePanel_S;
+    in property <image>                  miscImage_S;
 
     // Theme properties
     in property <string>          themeMode_S;
@@ -167,7 +172,7 @@ export component MainWindow inherits Window {
     title: "HPR";
     default-font-size: 13px * Palette.scale;
     preferred-width: 780px * Palette.scale;
-    preferred-height: 612px * Palette.scale;
+    preferred-height: 626px * Palette.scale;
 
     date-picker := DatePickerPopup {
         x: (root.width - self.width) / 2;
@@ -390,6 +395,11 @@ export component MainWindow inherits Window {
                 disable-extension(author, name) => { root.disableExtension(author, name); }
                 reload-extension(author, name) => { root.reloadExtension(author, name); }
             }
+            if active-view == "MISC_IMAGE" : MiscImageView {
+                vertical-stretch: 1;
+                misc-image: root.miscImage_S;
+                keyPressed_S(key) => { root.miscKeyPressed_S(key); }
+            }
             if active-view == "LIMITS" : GoalsView {
                 vertical-stretch: 1;
                 raw-apps: root.rawApps_S;
@@ -476,6 +486,7 @@ export component MainWindow inherits Window {
                 hideSidebarFeedback_S: root.hideSidebarFeedback_S;
                 hideSidebarAbout_S: root.hideSidebarAbout_S;
                 hideSidebarThemes_S: root.hideSidebarThemes_S;
+                showMiscImagePanel_S: root.showMiscImagePanel_S;
             }
             if active-view == "FEEDBACK" : FeedbackView {
                 vertical-stretch: 1;
@@ -622,6 +633,13 @@ export component MainWindow inherits Window {
                         icon-light: @image-url("./images/extension-light.svg");
                         tip: "View loaded extensions";
                         clicked => { root.active-view = "EXTENSIONS"; }
+                    }
+
+                    if root.showMiscImagePanel_S : SidebarButton {
+                        icon: @image-url("./images/misc-image.svg");
+                        icon-light: @image-url("./images/misc-image-light.svg");
+                        tip: "Miscellaneous Image Panel";
+                        clicked => { root.active-view = "MISC_IMAGE"; }
                     }
 
                     SidebarButton {

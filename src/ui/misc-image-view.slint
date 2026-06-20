@@ -1,0 +1,48 @@
+import { Card } from "./card.slint";
+import { SectionHeader } from "./section-header.slint";
+import { Palette } from "./palette.slint";
+
+export component MiscImageView {
+    in property <image> misc-image;
+    callback keyPressed_S(string);
+
+    forward-focus: fs;
+
+    fs := FocusScope {
+        key-pressed(event) => {
+            root.keyPressed_S(event.text);
+            accept
+        }
+    }
+
+    init => {
+        fs.focus();
+    }
+
+    TouchArea {
+        clicked => {
+            fs.focus();
+        }
+
+        VerticalLayout {
+            padding: 12px * Palette.scale;
+            padding-top: 0px;
+            spacing: 10px * Palette.scale;
+            height: 100%;
+
+            SectionHeader { label: "MISCELLANEOUS IMAGE PANEL"; }
+
+            Card {
+                vertical-stretch: 1;
+                clip: true;
+
+                Image {
+                    source: root.misc-image;
+                    width: 100%;
+                    height: 100%;
+                    image-fit: contain;
+                }
+            }
+        }
+    }
+}

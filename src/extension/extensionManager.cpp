@@ -1152,6 +1152,38 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         return extractMMYY_from_DDMMYY(dateStr);
     };
 
+    lua["HPR"]["getSystemConfig_E"] = [](std::string key) -> std::string
+    {
+        return AppState::configManager.getConfig(key, std::string(""));
+    };
+
+    lua["HPR"]["setUiImage_E"] = [](std::string propertyName, int width, int height, std::string rgbaBytes)
+    {
+        if (rgbaBytes.size() < static_cast<size_t>(width * height * 4)) return;
+
+        slint::SharedPixelBuffer<slint::Rgba8Pixel> pixelBuffer(width, height);
+        const uint8_t* rawData = reinterpret_cast<const uint8_t*>(rgbaBytes.data());
+        slint::Rgba8Pixel* dest = pixelBuffer.begin();
+        for (int i = 0; i < width * height; ++i) {
+            dest[i] = slint::Rgba8Pixel{ rawData[i * 4], rawData[i * 4 + 1], rawData[i * 4 + 2], rawData[i * 4 + 3] };
+        }
+
+        if (AppState::extManager)
+        {
+            if (AppState::extManager->app)
+            {
+                AppState::extManager->app->setUiImage(propertyName, pixelBuffer);
+            }
+            else if (AppState::extManager->interpreterApp)
+            {
+                if (UiRegistry::isActive())
+                {
+                    AppState::extManager->interpreterApp->setUiImage(propertyName, pixelBuffer);
+                }
+            }
+        }
+    };
+
     lua["HPR"]["setUiProperty_E"] = [](std::string name, sol::object value) 
     {
         if (AppState::extManager)

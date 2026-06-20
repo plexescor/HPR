@@ -23,6 +23,7 @@ class HPRInterpreter {
         void reload(std::string path);
         void run();
         void quit();
+        void setUiImage(const std::string& propertyName, const slint::SharedPixelBuffer<slint::Rgba8Pixel>& pixelBuffer);
         UiModelManager* getModelManager() { return modelManager.has_value() ? &modelManager.value() : nullptr; }
 
     private:

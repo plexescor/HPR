@@ -93,6 +93,7 @@ export component SettingsView {
     in property <bool> hardwareAccel_S;
     in property <bool> allowCustomBackends_S;
     in property <bool> allowNetworkActivity_S;
+    in property <bool> showMiscImagePanel_S;
     callback setConfig(string, string);
 
     in property <bool> allowSidebarCustomization_S;
@@ -486,6 +487,15 @@ export component SettingsView {
                         description: "Let Lua extensions register dynamic tracking backends to replace or supplement the built-in window tracker";
                         checked: root.allowCustomBackends_S;
                         toggled(v) => { root.setConfig("allow-custom-backends", v ? "true" : "false"); }
+                    }
+
+                    Divider {}
+
+                    ToggleSetting {
+                        label: "Show Miscellaneous Image Panel";
+                        description: "Show a dedicated panel in HPR sidebar allowing extensions to render custom RGBA frames.";
+                        checked: root.showMiscImagePanel_S;
+                        toggled(v) => { root.setConfig("show-misc-image-panel", v ? "true" : "false"); }
                     }
                 }
             }

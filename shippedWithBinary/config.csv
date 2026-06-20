@@ -53,3 +53,6 @@ headless-mode,false
 
 # allow-network-activity -> allow or block all outgoing HTTP requests (default true)
 allow-network-activity,true
+
+# show-misc-image-panel -> show a dedicated panel in HPR sidebar allowing extensions to render custom RGBA frames (default false)
+show-misc-image-panel,false

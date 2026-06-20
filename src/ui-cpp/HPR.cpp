@@ -357,3 +357,16 @@ void HPR::run()
     slint::run_event_loop(slint::EventLoopMode::RunUntilQuit);
     running = false; // safety net
 }
+
+void HPR::setUiImage(const std::string& propertyName, const slint::SharedPixelBuffer<slint::Rgba8Pixel>& pixelBuffer)
+{
+    auto weak = slint::ComponentWeakHandle<MainWindow>(ui);
+    slint::invoke_from_event_loop([weak, propertyName, pixelBuffer]() {
+        if (auto handle = weak.lock()) {
+            if (propertyName == "miscImage_S") {
+                slint::Image img(pixelBuffer);
+                (*handle)->set_miscImage_S(img);
+            }
+        }
+    });
+}

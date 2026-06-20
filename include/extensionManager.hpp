@@ -69,12 +69,12 @@ class ExtensionManager
 
     public:
         //some shit
-        DatabaseManager* dbManager;
-        TrayManager* trayManager;
-        CurrentWindowManager* currentWindowManager;
-        HPR* app;
-        HPRInterpreter* interpreterApp;
-        LinuxInitialiser* linuxInit;
+        DatabaseManager* dbManager = nullptr;
+        TrayManager* trayManager = nullptr;
+        CurrentWindowManager* currentWindowManager = nullptr;
+        HPR* app = nullptr;
+        HPRInterpreter* interpreterApp = nullptr;
+        LinuxInitialiser* linuxInit = nullptr;
 };
 
 std::filesystem::path resolveAndSecurePath(const std::string& userPath, const std::filesystem::path& baseDir, std::string& errOut);

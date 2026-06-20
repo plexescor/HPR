@@ -69,21 +69,27 @@ UiModelManager::UiModelManager(slint::ComponentHandle<slint::interpreter::Compon
     {
         if (auto handle = weak.lock())
         {
-            (*handle)->set_property("timePerApp_S",    slint::interpreter::Value(timeLogModel_interp));
-            (*handle)->set_property("timePerTab_S",    slint::interpreter::Value(timeLogModelTab_interp));
-            (*handle)->set_property("timePerProject_S", slint::interpreter::Value(timeLogModelProject_interp));
-            (*handle)->set_property("switchHistory_S", slint::interpreter::Value(switchHistoryModel_interp));
-            (*handle)->set_property("loadedExtensions_S", slint::interpreter::Value(extensionsModel_interp));
-            (*handle)->set_property("rawApps_S", slint::interpreter::Value(rawAppsModel_interp));
-            (*handle)->set_property("timelineBlocks_S", slint::interpreter::Value(timelineBlocksModel_interp));
-            (*handle)->set_property("timelineMarkers_S", slint::interpreter::Value(timelineMarkersModel_interp));
-            (*handle)->set_property("themesList_S", slint::interpreter::Value(themesListModel_interp));
-            (*handle)->set_property("themePreviewImages_S", slint::interpreter::Value(themePreviewsModel_interp));
+            auto setPropSafe = [&](const char* name, const slint::interpreter::Value& val) {
+                if ((*handle)->get_property(name).has_value()) {
+                    (*handle)->set_property(name, val);
+                }
+            };
+
+            setPropSafe("timePerApp_S",    slint::interpreter::Value(timeLogModel_interp));
+            setPropSafe("timePerTab_S",    slint::interpreter::Value(timeLogModelTab_interp));
+            setPropSafe("timePerProject_S", slint::interpreter::Value(timeLogModelProject_interp));
+            setPropSafe("switchHistory_S", slint::interpreter::Value(switchHistoryModel_interp));
+            setPropSafe("loadedExtensions_S", slint::interpreter::Value(extensionsModel_interp));
+            setPropSafe("rawApps_S", slint::interpreter::Value(rawAppsModel_interp));
+            setPropSafe("timelineBlocks_S", slint::interpreter::Value(timelineBlocksModel_interp));
+            setPropSafe("timelineMarkers_S", slint::interpreter::Value(timelineMarkersModel_interp));
+            setPropSafe("themesList_S", slint::interpreter::Value(themesListModel_interp));
+            setPropSafe("themePreviewImages_S", slint::interpreter::Value(themePreviewsModel_interp));
             
             // Set initial theme values immediately!
-            (*handle)->set_property("currentTheme_S", slint::interpreter::Value(slint::SharedString(currentSelectedTheme)));
+            setPropSafe("currentTheme_S", slint::interpreter::Value(slint::SharedString(currentSelectedTheme)));
             std::string activeTheme = AppState::configManager.getConfig("custom-theme", std::string("default"));
-            (*handle)->set_property("activeTheme_S", slint::interpreter::Value(slint::SharedString(activeTheme)));
+            setPropSafe("activeTheme_S", slint::interpreter::Value(slint::SharedString(activeTheme)));
         }
     });
 
@@ -341,6 +347,7 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
                 bool headlessVal = AppState::configManager.getConfig<bool>("headless-mode", false);
                 bool telemetryVal = AppState::configManager.getConfig<bool>("anonymous-telemetry", false);
                 bool noTitleBarVal = AppState::configManager.getConfig<bool>("no-title-bar", false);
+                bool showMiscImageVal = AppState::configManager.getConfig<bool>("show-misc-image-panel", false);
                 float cornerRoundnessVal = AppState::configManager.getConfig<float>("corner-roundness", 0.5f);
                 float uiScaleVal = AppState::configManager.getConfig<float>("ui-scale", 0.5f);
                 bool showPromptVal = AppState::configManager.isFirstLaunch();
@@ -383,6 +390,8 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
                     (*handle)->set_headless_S(headlessVal);
                 if ((*handle)->get_telemetry_S() != telemetryVal)
                     (*handle)->set_telemetry_S(telemetryVal);
+                if ((*handle)->get_showMiscImagePanel_S() != showMiscImageVal)
+                    (*handle)->set_showMiscImagePanel_S(showMiscImageVal);
                 if ((*handle)->get_no_title_bar_enabled() != noTitleBarVal)
                     (*handle)->set_no_title_bar_enabled(noTitleBarVal);
                 if ((*handle)->get_cornerRoundness_S() != cornerRoundnessVal)
@@ -846,6 +855,7 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
             bool headlessVal = AppState::configManager.getConfig<bool>("headless-mode", false);
             bool telemetryVal = AppState::configManager.getConfig<bool>("anonymous-telemetry", false);
             bool noTitleBarVal = AppState::configManager.getConfig<bool>("no-title-bar", false);
+            bool showMiscImageVal = AppState::configManager.getConfig<bool>("show-misc-image-panel", false);
             float cornerRoundnessVal = AppState::configManager.getConfig<float>("corner-roundness", 0.5f);
             float uiScaleVal = AppState::configManager.getConfig<float>("ui-scale", 0.5f);
             bool showPromptVal = AppState::configManager.isFirstLaunch();
@@ -884,11 +894,10 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
 
             auto setPropIfChanged = [&](const char* name, const slint::interpreter::Value& val) {
                 if (auto current = getProp(name)) {
-                    if (*current == val) {
-                        return;
+                    if (*current != val) {
+                        (*handle)->set_property(name, val);
                     }
                 }
-                (*handle)->set_property(name, val);
             };
 
             setPropIfChanged("themeMode_S", slint::interpreter::Value(slint::SharedString(theme)));
@@ -896,6 +905,7 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
             setPropIfChanged("autostart_S", slint::interpreter::Value(autostartVal));
             setPropIfChanged("headless_S", slint::interpreter::Value(headlessVal));
             setPropIfChanged("telemetry_S", slint::interpreter::Value(telemetryVal));
+            setPropIfChanged("showMiscImagePanel_S", slint::interpreter::Value(showMiscImageVal));
             setPropIfChanged("no_title_bar_enabled", slint::interpreter::Value(noTitleBarVal));
             setPropIfChanged("cornerRoundness_S", slint::interpreter::Value((double)cornerRoundnessVal));
             setPropIfChanged("uiScale_S", slint::interpreter::Value((double)uiScaleVal));

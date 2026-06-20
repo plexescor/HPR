@@ -509,3 +509,17 @@ bool HPRInterpreter::initialiseSlintUiPath()
     }
     return true;
 }
+
+void HPRInterpreter::setUiImage(const std::string& propertyName, const slint::SharedPixelBuffer<slint::Rgba8Pixel>& pixelBuffer)
+{
+    if (!instance.has_value()) return;
+    slint::ComponentWeakHandle<slint::interpreter::ComponentInstance> weak(instance.value());
+    slint::invoke_from_event_loop([weak, propertyName, pixelBuffer]() {
+        if (auto handle = weak.lock()) {
+            if ((*handle)->get_property(propertyName).has_value()) {
+                slint::Image img(pixelBuffer);
+                (*handle)->set_property(propertyName, slint::interpreter::Value(img));
+            }
+        }
+    });
+}
