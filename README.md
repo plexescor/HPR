@@ -578,7 +578,9 @@ Windows: %APPDATA%\HPR\HPR_Config\config.csv
 
 ## Custom Themes & Customizing the UI (Advanced)
 
-HPR's UI is written in [Slint](https://slint.dev/). You can easily load custom themes and visual designs without modifying the C++ codebase or compiling anything. HPR handles dynamic hot-reloading at runtime when you select and apply a theme.
+HPR's UI is built using the [Slint UI Framework](https://docs.slint.dev/latest/docs/slint/). You can easily load custom themes and visual designs without modifying the C++ codebase or compiling anything. HPR handles dynamic hot-reloading at runtime when you select and apply a theme.
+
+Creating or modifying themes requires knowledge of Slint. You can download the [Minimal Boilerplate Theme](https://hpr-cpp.netlify.app/assets/boilerplate-theme.zip) as a starting point.
 
 ### Enabling Themes Mode
 Themes and interpreted UI customization require enabling interpreter mode in `config.csv`:
@@ -595,21 +597,139 @@ Themes are loaded dynamically from:
 * **Windows**: `%APPDATA%\HPR\HPR_Config\themes\`
 * **Linux**: `~/.config/HPR/themes/`
 
-Each theme is stored in its own sub-directory (e.g. `themes/my-awesome-theme/`) and should contain:
+Each theme is stored in its own sub-directory (e.g. `themes/my-awesome-theme/`) and must contain:
 1. **`metadata.csv`**: A CSV file containing properties like `name,My Awesome Theme` and `version,0.9.2`.
-2. **`app-window.slint`**: The root layout file of your theme, loaded at runtime.
-3. **Previews**: Up to 9 screenshots or designs (`1.png`, `2.png`, ..., `9.png`) to display in HPR's Themes tab preview container.
+2. **`types.slint`**: Defines the data models. This file must be kept exactly as it is to ensure proper data communication with the C++ backend.
+3. **`app-window.slint`**: The main layout file of your theme, loaded at runtime. This filename is mandatory.
+4. **Previews (Optional)**: Up to 9 screenshots or designs (`1.png`, `2.png`, ..., `9.png`) to display in HPR's Themes tab preview container.
+
+Theme creators have **FULL FREEDOM and no design or structural limits** to build any layout they want, and they can add or remove any other files (subcomponents, styles, assets) of their choice, as long as the mandatory files are present and satisfy the UI contract with the C++ backend.
 
 ### Restoring Default Layout
 If you wish to restore the default layout, select **default** in the dropdown. HPR will fall back to the reference layouts located in:
 * **Windows**: `%APPDATA%\HPR\HPR_Config\ui\app-window.slint`
 * **Linux**: `~/.config/HPR/ui/app-window.slint`
 
+### The UI Contract (C++ Bindings)
+HPR's C++ backend communicates with the Slint interface by looking for specific component, callback, and property names inside the `MainWindow` component. **Do not rename or delete these bindings in your Slint file.**
+
+#### Required Callbacks
+| Callback Signature | Description |
+|---|---|
+| `callback start_drag()` | Handles custom window dragging when title bar is disabled. |
+| `callback minimize_window()` | Minimizes the application window to tray. |
+| `callback close_window()` | Closes the application window (hides to tray). |
+| `callback loadHistoricalData_Singular(string)` | Loads database log for a single day ("DD-MM-YY"). |
+| `callback loadHistoricalData_Number(int, string)` | Loads database logs for the last N days. |
+| `callback loadHistoricalData_Range(string, string, string)` | Loads database logs for a range of dates. |
+| `callback loadInsights()` | Tells backend to process/update cross-day insights. |
+| `callback loadLiveData()` | Reloads real-time/live tracking database. |
+| `callback tabViewClicked()` | Switches browser view to tab mode. |
+| `callback siteViewClicked()` | Switches browser view to site mode. |
+| `callback rawViewClicked()` | Switches VS Code project view to raw. |
+| `callback filterViewClicked()` | Switches VS Code project view to aliased. |
+| `callback refreshExtensions()` | Rescans the extension directories. |
+| `callback disableExtension(string, string)` | Disables extension (author, name). |
+| `callback reloadExtension(string, string)` | Reloads/restarts extension (author, name). |
+| `callback reloadUi()` | Forces the interpreted UI to compile and reload. |
+| `callback openReleases()` | Opens the GitHub releases page in a browser. |
+| `callback openIssues()` | Opens the GitHub issues page in a browser. |
+| `callback setConfig(string, string)` | Modifies HPR global configuration (key, value). |
+| `callback openUrl(string)` | Opens any specified URL in the default browser. |
+| `callback sendFeedback(string, string)` | Submits feedback request (email, message). |
+| `callback openKofi()` | Opens support donation page in browser. |
+| `callback setLimit(string, int)` | Sets daily usage limit (app name, minutes). |
+| `callback setGoal(string, int)` | Sets daily usage goal (app name, minutes). |
+| `callback themeSelected(string)` | Sets theme preview index/selection. |
+| `callback themeApply(string)` | Applies theme and restarts interpreter. |
+| `callback refreshThemes()` | Rescans available themes directory. |
+
+#### Required Properties
+| Property Name & Type | Description |
+|---|---|
+| `in-out property <bool> is-sending-feedback` | True if backend is sending feedback email. |
+| `in-out property <bool> showFeedbackResultPrompt` | True when result of feedback sending is ready. |
+| `in-out property <bool> feedbackSuccess` | Status of feedback submission request. |
+| `in-out property <string> feedbackErrorMsg` | Error message returned from feedback server. |
+| `in-out property <string> feedbackEmail` | Feedback author email value. |
+| `in-out property <string> feedbackMessage` | Feedback text message content. |
+| `in property <float> trackedTime_S` | Total active tracked time today (seconds). |
+| `in property <float> trackedTime_Tab_S` | Total browser tab activity tracked today (seconds). |
+| `in property <string> windowName_S` | Active focused window title string. |
+| `in property <[TimeLog]> timePerApp_S` | Array of application time logs. |
+| `in property <[SwitchHistory]> switchHistory_S` | Chronological app focus history records. |
+| `in property <[TimeLog_Tab]> timePerTab_S` | Array of browser tab tracking logs. |
+| `in property <[TimeLog_Project]> timePerProject_S` | Array of VS Code project tracking logs. |
+| `in property <[LoadedExtension_S]> loadedExtensions_S` | Loaded Lua extension details list. |
+| `in property <float> trackedTime_Project_S` | Total VS Code project time today (seconds). |
+| `in property <[AppGoalData]> rawApps_S` | App limits and goals parameters list. |
+| `in property <[TimelineBlock]> timelineBlocks_S` | Aggregated blocks data for daily timeline. |
+| `in-out property <int> timelinePresetHours` | Hour span preset chosen for timeline viewport. |
+| `in-out property <int> timelineStartHour` | Starting hour boundary of timeline display range. |
+| `in-out property <int> timelineEndHour` | Ending hour boundary of timeline display range. |
+| `in property <[TimelineMarker]> timelineMarkers_S` | Labels and locations of timeline axis markers. |
+| `in-out property <float> timelineZoomFactor` | Horizontal zoom multiplier for timeline container. |
+| `in property <string> themeMode_S` | Theme configuration string. |
+| `in property <bool> autostart_S` | Whether launch on login is enabled. |
+| `in property <bool> headless_S` | Run without main UI visible (tray-only). |
+| `in property <bool> telemetry_S` | Anonymous analytics upload opt-in. |
+| `in property <bool> no-title-bar-enabled` | Custom titlebar/frameless window flag. |
+| `in property <float> cornerRoundness_S` | Corner radius multiplier for custom titlebar mode. |
+| `in property <bool> showTelemetryPrompt_S` | Shows the initial privacy settings dialog. |
+| `in-out property <float> uiScale_S` | Overall UI scale factor. |
+| `in-out property <bool> isDarkMode` | Current theme dark/light toggle state. |
+| `in property <bool> killApps_S` | Allow force closing apps that exceed set limits. |
+| `in property <bool> hardwareAccel_S` | Enables hardware/GPU rendering. |
+| `in property <bool> allowCustomBackends_S` | Allows custom tracking extensions. |
+| `in property <bool> allowNetworkActivity_S` | Blocks or allows internet access for HPR process. |
+| `in property <bool> allowSidebarCustomization_S` | Allows custom layouts of application sidebar. |
+| `in property <bool> hideSidebarReload_S` | Sidebar button toggle: Reload UI. |
+| `in property <bool> hideSidebarLimits_S` | Sidebar button toggle: Goals/limits. |
+| `in property <bool> hideSidebarHistory_S` | Sidebar button toggle: History search. |
+| `in property <bool> hideSidebarTimeline_S` | Sidebar button toggle: Timeline. |
+| `in property <bool> hideSidebarTab_S` | Sidebar button toggle: Tab/website list. |
+| `in property <bool> hideSidebarProject_S` | Sidebar button toggle: Projects logs. |
+| `in property <bool> hideSidebarInsights_S` | Sidebar button toggle: Insights panel. |
+| `in property <bool> hideSidebarLive_S` | Sidebar button toggle: Live usage. |
+| `in property <bool> hideSidebarExtensions_S` | Sidebar button toggle: Extensions. |
+| `in property <bool> hideSidebarKofi_S` | Sidebar button toggle: Support link. |
+| `in property <bool> hideSidebarFeedback_S` | Sidebar button toggle: Feedback forms. |
+| `in property <bool> hideSidebarAbout_S` | Sidebar button toggle: About page. |
+| `in property <bool> hideSidebarThemes_S` | Sidebar button toggle: Themes chooser. |
+| `in property <bool> themesAvailable_S` | True if themes folder contains custom directories. |
+| `in property <[string]> themesList_S` | Names of available custom themes. |
+| `in property <[image]> themePreviewImages_S` | Screenshots preview image cache list. |
+| `in property <int> themePreviewImageCount_S` | Number of preview images loaded for the theme. |
+| `in property <string> hprVersion_S` | HPR application version. |
+| `in property <string> themeVersion_S` | Version of current theme metadata. |
+| `in property <bool> useThemesEnabled_S` | True when interpreted UI is active in HPR config. |
+| `in property <string> currentTheme_S` | Name of selected theme directory in the Themes tab. |
+| `in property <string> activeTheme_S` | Name of theme currently active in backend memory. |
+| `in property <string> nowPlayingTitle_S` | Currently playing developer media title string. |
+| `in property <string> nowPlayingUrl_S` | Currently playing developer media source URL. |
+| `in property <string> mostUsedApp_S` | Insights: name of most used application today. |
+| `in property <string> totalTrackedTime_S` | Insights: total active focus time today formatted. |
+| `in property <string> totalSwitches_S` | Insights: total count of focus switches today. |
+| `in property <string> mostSwitchedFrom_S` | Insights: app most frequently switched away from. |
+| `in property <string> mostSwitchedTo_S` | Insights: app most frequently switched into. |
+| `in property <string> longestFocus_S` | Insights: longest single focus block today formatted. |
+| `in property <string> peakHour_S` | Insights: hour range with lowest switch density. |
+| `in property <string> escapePattern_S` | Insights: average escapes from primary work app to browser. |
+| `in property <string> returnRate_S` | Insights: rate of recovery bounce back to work app (%). |
+| `in property <string> avgFocusSession_S` | Insights: average duration of uninterrupted focus. |
+| `in property <string> mostDistractedDay_S` | Insights: weekday with highest switch frequency. |
+| `in property <string> productiveDays_S` | Insights: count of focus days in current week. |
+| `in property <string> screenTimeVsAvg_S` | Insights: percent screentime difference vs average. |
+| `in property <string> focusDipHour_S` | Insights: hour with highest switch rate globally. |
+| `in property <string> deepWorkBeforeNoon_S` | Insights: rate of early focus session triggers (%). |
+| `in property <string> weekendVsWeekday_S` | Insights: weekend vs weekday work percentage gap. |
+| `in property <string> cpuUsage` | Diagnostics: current HPR process CPU utilization percentage. |
+| `in property <string> ramUsage` | Diagnostics: current HPR process RAM usage description. |
+| `in property <string> loadedExtensions` | Diagnostics: number of extensions active. |
+| `in property <string> activeThreads` | Diagnostics: count of active HPR internal threads. |
+
 > [!NOTE]
 > **Detailed Theme Tutorial:** For a comprehensive, step-by-step walkthrough on creating layout files, sequential preview logic, and Slint contract bindings, see the [HPR Custom Themes Guide](https://hpr-cpp.netlify.app/themes.html).
-
-> [!WARNING]
-> **Do not rename structs, properties, or callbacks.** HPR's C++ backend references these by their exact name (e.g. `MainWindow`, `useThemesEnabled_S`, etc.). Renaming them will break C++ bindings silently. If a theme breaks, copy the reference layouts from `ui-REFERENCEONLY/` to diff against.
 
 ---
 
