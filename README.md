@@ -260,6 +260,8 @@ Each extension runs in its own isolated VM on a dedicated background thread, com
 - **Function Overriding (Advanced)**: Intercept, block, or modify 26+ core C++ functions directly from Lua (e.g., intercepting window validation, customizing how active windows are processed, blocking notifications, etc.)
 - AND MUCH MORE INSANE STUFF like impersonating ActivtyWatch client to feed the received data into HPR
 
+### **And yes, you can run [Budget Doom](https://github.com/plexescor/HPR-Extensions) (software rendering only).**
+
 <p align="center">
   <img src="./assetsgithub/extensions.png" alt="HPR Extensions" width="800"/>
 </p>
