@@ -8,6 +8,7 @@
 #include <slint-interpreter.h>
 #include "uiEventBridge.hpp"
 #include <thread>
+#include <condition_variable>
 #include <atomic>
 #include <chrono>
 #include <mutex>
@@ -44,6 +45,12 @@ class HPRInterpreter {
         std::string fileName = "app-window.slint";
 
         std::atomic<bool> running{true};
+        std::atomic<bool> paused{false};
+
+        std::mutex pauseMutex;
+        std::condition_variable pauseCv;
+
+
         std::thread tracker;
 
         std::optional<UiModelManager> modelManager;

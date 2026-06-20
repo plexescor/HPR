@@ -11,6 +11,8 @@
 
 #include <thread>
 #include <atomic>
+#include <condition_variable>
+#include <mutex>
 #include <chrono>
 #include <optional>
 
@@ -31,6 +33,11 @@ class HPR {
 
         slint::ComponentHandle<MainWindow> ui;
         std::atomic<bool> running{true};
+        std::atomic<bool> paused{false};
+        std::mutex pauseMutex;
+        std::condition_variable pauseCv;
+
+        
         std::thread tracker;
 
         UiModelManager modelManager;

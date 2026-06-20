@@ -18,6 +18,7 @@
 #endif
 
 #include <thread>
+#include <condition_variable>
 #include <atomic>
 #include <mutex>
 #include <vector>
@@ -37,6 +38,10 @@ HPR::HPR(ExtensionManager* extMgr) : ui(MainWindow::create()), modelManager(ui)
 HPR::~HPR()
 {
     running = false;
+
+    // Wake up the thread if it's trapped in a hidden pause cycle during shutdown
+    pauseCv.notify_all(); 
+
     if (tracker.joinable())
         tracker.join(); // Speaks for itself
 
@@ -45,6 +50,13 @@ HPR::~HPR()
 
 void HPR::show()
 {
+    //tell to unpause
+    {
+        std::lock_guard<std::mutex> lock(pauseMutex);
+        paused = false;
+    }
+    pauseCv.notify_one();
+
     auto weak = slint::ComponentWeakHandle<MainWindow>(ui);
 
     slint::invoke_from_event_loop([weak]()
@@ -81,6 +93,12 @@ void HPR::quit()
 
 void HPR::hide()
 {
+    //pause the thread
+    {
+        std::lock_guard<std::mutex> lock(pauseMutex);
+        paused = true;
+    }
+
     auto weak = slint::ComponentWeakHandle<MainWindow>(ui);
     slint::invoke_from_event_loop([weak]() {
         if (auto handle = weak.lock())
@@ -134,13 +152,23 @@ void HPR::trackingLoop()
     std::map<std::string, uint64_t> timeLog_Project;
     std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> switchHistory;
 
-    //Special priority to insights because they arent exactly on demand loaded,
-    //rather updated every 5 minutes
     auto lastInsightUpdate = std::chrono::steady_clock::now();
     bool firstRun = true;
 
     while (running)
     {
+        {
+            std::unique_lock<std::mutex> lock(pauseMutex);
+            
+            pauseCv.wait(lock, [this] 
+            { 
+                return !paused || !running; 
+            });
+        }
+
+        // If the app was literally CLOSED while hidden, break out immediately
+        if (!running) break;
+
         {
             auto now = std::chrono::steady_clock::now();
             

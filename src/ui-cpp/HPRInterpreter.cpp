@@ -20,6 +20,8 @@
 #include <fstream>
 #include <iostream>
 #include <sstream>
+#include <condition_variable>
+#include <mutex>
 #include "logger.hpp"
 #include <chrono>
 
@@ -69,6 +71,10 @@ HPRInterpreter::HPRInterpreter(ExtensionManager* extMgr)
 HPRInterpreter::~HPRInterpreter()
 {
     running = false;
+
+    // Wake up the thread if it's trapped in a hidden pause cycle during shutdown
+    pauseCv.notify_all(); 
+
     if (tracker.joinable())
         tracker.join(); // Speaks for itself
 
@@ -151,6 +157,13 @@ void HPRInterpreter::reload(std::string path)
 
 void HPRInterpreter::show()
 {
+    //tell to unpause
+    {
+        std::lock_guard<std::mutex> lock(pauseMutex);
+        paused = false;
+    }
+    pauseCv.notify_one();
+
     auto weak = slint::ComponentWeakHandle<slint::interpreter::ComponentInstance>(instance.value());
 
     slint::invoke_from_event_loop([weak]()
@@ -187,6 +200,12 @@ void HPRInterpreter::quit()
 
 void HPRInterpreter::hide()
 {
+    //pause the thread
+    {
+        std::lock_guard<std::mutex> lock(pauseMutex);
+        paused = true;
+    }
+
     auto weak = slint::ComponentWeakHandle<slint::interpreter::ComponentInstance>(instance.value());
     slint::invoke_from_event_loop([weak]()
     {
@@ -248,6 +267,18 @@ void HPRInterpreter::trackingLoop()
 
     while (running)
     {
+        {
+            std::unique_lock<std::mutex> lock(pauseMutex);
+            
+            pauseCv.wait(lock, [this] 
+            { 
+                return !paused || !running; 
+            });
+        }
+
+        // If the app was literally CLOSED while hidden, break out immediately
+        if (!running) break;
+
         {
             auto now = std::chrono::steady_clock::now();
             
