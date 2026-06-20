@@ -10,6 +10,26 @@ export component MiscImageView {
 
     fs := FocusScope {
         key-pressed(event) => {
+            if (event.text == Key.UpArrow) {
+                root.keyPressed_S("up");
+                return accept;
+            }
+            if (event.text == Key.DownArrow) {
+                root.keyPressed_S("down");
+                return accept;
+            }
+            if (event.text == Key.LeftArrow) {
+                root.keyPressed_S("left");
+                return accept;
+            }
+            if (event.text == Key.RightArrow) {
+                root.keyPressed_S("right");
+                return accept;
+            }
+            if (event.text == " ") {
+                root.keyPressed_S("space");
+                return accept;
+            }
             root.keyPressed_S(event.text);
             accept
         }
