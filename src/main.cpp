@@ -41,25 +41,16 @@
 		LimitsManager lim;
 		lim.run();
 
-		TimelineManager tlm;
-		tlm.run();
-
-		TelemetryManager::init();
-		NowPlayingManager::init();
-
-		ExtensionManager ext;
-		AppState::extManager = &ext;
-
-		//Check for hardware-acceleration flag
-		if (!AppState::configManager.getConfig("hardware-acceleration", true))
+		bool trueHeadless = AppState::configManager.getConfig("true-headless-mode", false);
+		if (trueHeadless)
 		{
-			_putenv_s("SLINT_BACKEND", "winit-software");
-		}
+			TelemetryManager::init();
 
-		CurrentWindowManager cwm;
+			ExtensionManager ext;
+			AppState::extManager = &ext;
 
-		if (AppState::configManager.getConfig("true-headless-mode", false))
-		{
+			CurrentWindowManager cwm;
+
 			//GIVE EXTENSION MANAGER FULL ACCESS TO EVERY OBJECT PRESENT
 			ext.dbManager = &dbm;
 			ext.trayManager = nullptr;
@@ -81,9 +72,26 @@
 			return 0;
 		}
 
+		TimelineManager tlm;
+		tlm.run();
+
+		TelemetryManager::init();
+		NowPlayingManager::init();
+
+		ExtensionManager ext;
+		AppState::extManager = &ext;
+
+		//Check for hardware-acceleration flag
+		if (!AppState::configManager.getConfig("hardware-acceleration", true))
+		{
+			_putenv_s("SLINT_BACKEND", "winit-software");
+		}
+
 		//This call is non blocking, it just starts a new BG thread
 		TrayManager tray;
 		tray.run();
+
+		CurrentWindowManager cwm;
 
 		//If not to use interpreter, use inbuilt ui
 		if (!AppState::configManager.getConfig("use-interpreter", false))
@@ -165,37 +173,24 @@
 		bool isAutostart = AutostartManager::isEnabled();
 		AppState::configManager.setConfig("autostart", isAutostart);
 
-		//Check for hardware-acceleration flag
-		//DEV NOTE: if you are on hyprland, if HA is on, the ram usage of HPR in BTOP++ can be ~250mb
-		//Its not true, idk why but hyprland counts the memory used by libllvm, livnvidia and stuff
-		//as used by HPR, if you get a actual breakdown of memory used by HPR, HPR will only account for only like ~30mb
-		//still if it bothers you, just turn HA off in config
-		if (!AppState::configManager.getConfig("hardware-acceleration", true))
-		{
-			setenv("SLINT_BACKEND", "winit-software", 1);
-		}
-
 		DatabaseManager dbm;
 		dbm.run();
 
 		LimitsManager lim;
 		lim.run();
 
-		TimelineManager tlm;
-		tlm.run();
-
-		TelemetryManager::init();
-
-
-		ExtensionManager ext;
-		AppState::extManager = &ext;
-	
-		LinuxInitialiser linuxInit; //Just a utility class to create config directory and check for icon
-
-		CurrentWindowManager cwm;
-
-		if (AppState::configManager.getConfig("true-headless-mode", false))
+		bool trueHeadless = AppState::configManager.getConfig("true-headless-mode", false);
+		if (trueHeadless)
 		{
+			TelemetryManager::init();
+
+			ExtensionManager ext;
+			AppState::extManager = &ext;
+
+			LinuxInitialiser linuxInit; //Just a utility class to create config directory and check for icon
+
+			CurrentWindowManager cwm;
+
 			//GIVE EXTENSION MANAGER FULL ACCESS TO EVERY OBJECT PRESENT
 			ext.dbManager = &dbm;
 			ext.trayManager = nullptr;
@@ -217,6 +212,28 @@
 			SingleInstance::getInstance().shutdown();
 			return 0;
 		}
+
+		//Check for hardware-acceleration flag
+		//DEV NOTE: if you are on hyprland, if HA is on, the ram usage of HPR in BTOP++ can be ~250mb
+		//Its not true, idk why but hyprland counts the memory used by libllvm, livnvidia and stuff
+		//as used by HPR, if you get a actual breakdown of memory used by HPR, HPR will only account for only like ~30mb
+		//still if it bothers you, just turn HA off in config
+		if (!AppState::configManager.getConfig("hardware-acceleration", true))
+		{
+			setenv("SLINT_BACKEND", "winit-software", 1);
+		}
+
+		TimelineManager tlm;
+		tlm.run();
+
+		TelemetryManager::init();
+
+		ExtensionManager ext;
+		AppState::extManager = &ext;
+	
+		LinuxInitialiser linuxInit; //Just a utility class to create config directory and check for icon
+
+		CurrentWindowManager cwm;
 
 		//This call is non blocking, it just starts a new BG thread
 		TrayManager tray;
