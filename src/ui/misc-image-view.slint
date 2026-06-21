@@ -11,48 +11,88 @@ export component MiscImageView {
 
     fs := FocusScope {
         key-pressed(event) => {
-            if (event.text == Key.UpArrow) {
+            if (event.text == Key.UpArrow || event.text == "\u{11}") {
                 root.keyPressed_S("up");
                 return accept;
             }
-            if (event.text == Key.DownArrow) {
+            if (event.text == Key.DownArrow || event.text == "\u{12}") {
                 root.keyPressed_S("down");
                 return accept;
             }
-            if (event.text == Key.LeftArrow) {
+            if (event.text == Key.LeftArrow || event.text == "\u{13}") {
                 root.keyPressed_S("left");
                 return accept;
             }
-            if (event.text == Key.RightArrow) {
+            if (event.text == Key.RightArrow || event.text == "\u{14}") {
                 root.keyPressed_S("right");
                 return accept;
             }
-            if (event.text == " ") {
+            if (event.text == " " || event.text == Key.Space) {
                 root.keyPressed_S("space");
+                return accept;
+            }
+            if (event.text == Key.Return || event.text == "\n") {
+                root.keyPressed_S("enter");
+                return accept;
+            }
+            if (event.text == Key.Escape || event.text == "\u{1b}") {
+                root.keyPressed_S("escape");
+                return accept;
+            }
+            if (event.text == Key.Tab || event.text == "\u{9}") {
+                root.keyPressed_S("tab");
+                return accept;
+            }
+            if (event.text == Key.Backspace || event.text == "\u{8}") {
+                root.keyPressed_S("backspace");
+                return accept;
+            }
+            if (event.text == Key.Delete || event.text == "\u{7f}") {
+                root.keyPressed_S("delete");
                 return accept;
             }
             root.keyPressed_S(event.text);
             accept
         }
         key-released(event) => {
-            if (event.text == Key.UpArrow) {
+            if (event.text == Key.UpArrow || event.text == "\u{11}") {
                 root.keyReleased_S("up");
                 return accept;
             }
-            if (event.text == Key.DownArrow) {
+            if (event.text == Key.DownArrow || event.text == "\u{12}") {
                 root.keyReleased_S("down");
                 return accept;
             }
-            if (event.text == Key.LeftArrow) {
+            if (event.text == Key.LeftArrow || event.text == "\u{13}") {
                 root.keyReleased_S("left");
                 return accept;
             }
-            if (event.text == Key.RightArrow) {
+            if (event.text == Key.RightArrow || event.text == "\u{14}") {
                 root.keyReleased_S("right");
                 return accept;
             }
-            if (event.text == " ") {
+            if (event.text == " " || event.text == Key.Space) {
                 root.keyReleased_S("space");
+                return accept;
+            }
+            if (event.text == Key.Return || event.text == "\n") {
+                root.keyReleased_S("enter");
+                return accept;
+            }
+            if (event.text == Key.Escape || event.text == "\u{1b}") {
+                root.keyReleased_S("escape");
+                return accept;
+            }
+            if (event.text == Key.Tab || event.text == "\u{9}") {
+                root.keyReleased_S("tab");
+                return accept;
+            }
+            if (event.text == Key.Backspace || event.text == "\u{8}") {
+                root.keyReleased_S("backspace");
+                return accept;
+            }
+            if (event.text == Key.Delete || event.text == "\u{7f}") {
+                root.keyReleased_S("delete");
                 return accept;
             }
             root.keyReleased_S(event.text);

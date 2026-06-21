@@ -94,6 +94,7 @@ export component SettingsView {
     in property <bool> allowCustomBackends_S;
     in property <bool> allowNetworkActivity_S;
     in property <bool> showMiscImagePanel_S;
+    in property <bool> trueHeadless_S;
     callback setConfig(string, string);
 
     in property <bool> allowSidebarCustomization_S;
@@ -441,6 +442,16 @@ export component SettingsView {
                         description: "Start hidden in the system tray without opening the main window";
                         checked: root.headless_S;
                         toggled(v) => { root.setConfig("headless-mode", v ? "true" : "false"); }
+                    }
+
+                    Divider {}
+
+                    ToggleSetting {
+                        label: "True Headless Mode";
+                        description: "Enabling this mode runs HPR with extremely barebones and minimal resource usage by running in the background without allocating any UI windows or tray icon resources.";
+                        warning-text: "WARNING: True Headless Mode completely disables the GUI and system tray icon to run HPR with absolute minimum resource usage. HPR will run invisibly in the background. The ONLY way to stop HPR is to kill its process (e.g., using killall HPR). To disable this mode, you must manually edit config.csv and set 'true-headless-mode' to 'false'.";
+                        checked: root.trueHeadless_S;
+                        toggled(v) => { root.setConfig("true-headless-mode", v ? "true" : "false"); }
                     }
                 }
             }

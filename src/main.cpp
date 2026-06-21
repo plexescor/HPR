@@ -15,6 +15,8 @@
 #include "autostartManager.hpp"
 #include "telemetryManager.hpp"
 #include "nowPlayingManager.hpp"
+#include <mutex>
+#include <condition_variable>
 
 #ifdef _WIN32
 	#include <windows.h>
@@ -54,11 +56,34 @@
 			_putenv_s("SLINT_BACKEND", "winit-software");
 		}
 
+		CurrentWindowManager cwm;
+
+		if (AppState::configManager.getConfig("true-headless-mode", false))
+		{
+			//GIVE EXTENSION MANAGER FULL ACCESS TO EVERY OBJECT PRESENT
+			ext.dbManager = &dbm;
+			ext.trayManager = nullptr;
+			ext.currentWindowManager = &cwm;
+			ext.app = nullptr;
+
+			ext.run();
+
+			cwm.detectAndSetBackend();
+			cwm.run();
+
+			// block main thread indefinitely
+			std::mutex mtx;
+			std::unique_lock<std::mutex> lck(mtx);
+			std::condition_variable cv;
+			cv.wait(lck);
+
+			SingleInstance::getInstance().shutdown();
+			return 0;
+		}
+
 		//This call is non blocking, it just starts a new BG thread
 		TrayManager tray;
 		tray.run();
-
-		CurrentWindowManager cwm;
 
 		//If not to use interpreter, use inbuilt ui
 		if (!AppState::configManager.getConfig("use-interpreter", false))
@@ -167,11 +192,35 @@
 	
 		LinuxInitialiser linuxInit; //Just a utility class to create config directory and check for icon
 
+		CurrentWindowManager cwm;
+
+		if (AppState::configManager.getConfig("true-headless-mode", false))
+		{
+			//GIVE EXTENSION MANAGER FULL ACCESS TO EVERY OBJECT PRESENT
+			ext.dbManager = &dbm;
+			ext.trayManager = nullptr;
+			ext.currentWindowManager = &cwm;
+			ext.app = nullptr;
+			ext.linuxInit = &linuxInit;
+
+			ext.run();
+
+			cwm.detectAndSetBackend();
+			cwm.run();
+
+			// block main thread indefinitely
+			std::mutex mtx;
+			std::unique_lock<std::mutex> lck(mtx);
+			std::condition_variable cv;
+			cv.wait(lck);
+
+			SingleInstance::getInstance().shutdown();
+			return 0;
+		}
+
 		//This call is non blocking, it just starts a new BG thread
 		TrayManager tray;
 		tray.run();
-
-		CurrentWindowManager cwm;
 
 		//If not to use interpreter, use inbuilt ui
 		if (!AppState::configManager.getConfig("use-interpreter", false))

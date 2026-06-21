@@ -345,12 +345,13 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
         if (auto handle = weak.lock()) {
                 bool autostartVal = AppState::configManager.getConfig<bool>("autostart", false);
                 bool headlessVal = AppState::configManager.getConfig<bool>("headless-mode", false);
+                bool trueHeadlessVal = AppState::configManager.getConfig<bool>("true-headless-mode", false);
                 bool telemetryVal = AppState::configManager.getConfig<bool>("anonymous-telemetry", false);
                 bool noTitleBarVal = AppState::configManager.getConfig<bool>("no-title-bar", false);
                 bool showMiscImageVal = AppState::configManager.getConfig<bool>("show-misc-image-panel", false);
                 float cornerRoundnessVal = AppState::configManager.getConfig<float>("corner-roundness", 0.5f);
                 float uiScaleVal = AppState::configManager.getConfig<float>("ui-scale", 0.5f);
-                bool showPromptVal = AppState::configManager.isFirstLaunch();
+                bool showPromptVal = AppState::configManager.isFirstLaunch() && !AppState::configManager.isTelemetryPromptAnswered();
                 
                 bool killAppsVal = AppState::configManager.getConfig<bool>("kill-apps", true);
                 bool hwAccelVal = AppState::configManager.getConfig<bool>("hardware-acceleration", true);
@@ -388,6 +389,8 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
                     (*handle)->set_autostart_S(autostartVal);
                 if ((*handle)->get_headless_S() != headlessVal)
                     (*handle)->set_headless_S(headlessVal);
+                if ((*handle)->get_trueHeadless_S() != trueHeadlessVal)
+                    (*handle)->set_trueHeadless_S(trueHeadlessVal);
                 if ((*handle)->get_telemetry_S() != telemetryVal)
                     (*handle)->set_telemetry_S(telemetryVal);
                 if ((*handle)->get_showMiscImagePanel_S() != showMiscImageVal)
@@ -853,12 +856,13 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
         {
             bool autostartVal = AppState::configManager.getConfig<bool>("autostart", false);
             bool headlessVal = AppState::configManager.getConfig<bool>("headless-mode", false);
+            bool trueHeadlessVal = AppState::configManager.getConfig<bool>("true-headless-mode", false);
             bool telemetryVal = AppState::configManager.getConfig<bool>("anonymous-telemetry", false);
             bool noTitleBarVal = AppState::configManager.getConfig<bool>("no-title-bar", false);
             bool showMiscImageVal = AppState::configManager.getConfig<bool>("show-misc-image-panel", false);
             float cornerRoundnessVal = AppState::configManager.getConfig<float>("corner-roundness", 0.5f);
             float uiScaleVal = AppState::configManager.getConfig<float>("ui-scale", 0.5f);
-            bool showPromptVal = AppState::configManager.isFirstLaunch();
+            bool showPromptVal = AppState::configManager.isFirstLaunch() && !AppState::configManager.isTelemetryPromptAnswered();
 
             bool killAppsVal = AppState::configManager.getConfig<bool>("kill-apps", true);
             bool hwAccelVal = AppState::configManager.getConfig<bool>("hardware-acceleration", true);
@@ -904,6 +908,7 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
             setPropIfChanged("isDarkMode", slint::interpreter::Value(isDark));
             setPropIfChanged("autostart_S", slint::interpreter::Value(autostartVal));
             setPropIfChanged("headless_S", slint::interpreter::Value(headlessVal));
+            setPropIfChanged("trueHeadless_S", slint::interpreter::Value(trueHeadlessVal));
             setPropIfChanged("telemetry_S", slint::interpreter::Value(telemetryVal));
             setPropIfChanged("showMiscImagePanel_S", slint::interpreter::Value(showMiscImageVal));
             setPropIfChanged("no_title_bar_enabled", slint::interpreter::Value(noTitleBarVal));

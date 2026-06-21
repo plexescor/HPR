@@ -6,6 +6,7 @@
 #include "limitsManager.hpp"
 #include "telemetryManager.hpp"
 #include "netUtilities.hpp"
+#include "logger.hpp"
 #include <thread>
 #include <chrono>
 #include <sstream>
@@ -41,6 +42,23 @@ namespace {
             }
         }
         return output;
+    }
+
+    std::string normalizeKey(const std::string& key) {
+        if (key == "\u0011" || key == "up") return "up";
+        if (key == "\u0012" || key == "down") return "down";
+        if (key == "\u0013" || key == "left") return "left";
+        if (key == "\u0014" || key == "right") return "right";
+        if (key == " " || key == "space") return "space";
+        if (key == "\r" || key == "\n" || key == "enter" || key == "return") return "enter";
+        if (key == "\u001b" || key == "escape" || key == "esc") return "escape";
+        if (key == "\t" || key == "tab") return "tab";
+        if (key == "\u0008" || key == "\b" || key == "backspace") return "backspace";
+        if (key == "\u007f" || key == "delete" || key == "del") return "delete";
+        if (key == "\u0010" || key == "shift") return "shift";
+        if (key == "\u0015" || key == "control" || key == "ctrl") return "control";
+        if (key == "\u0016" || key == "alt") return "alt";
+        return key;
     }
 }
 
@@ -167,8 +185,11 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow>& ui,  ExtensionM
         std::string param = std::string(paramName);
         std::string val   = std::string(value);
         AppState::configManager.setConfig(param, val);
-        if (param == "anonymous-telemetry" && val == "true") {
-            std::thread([]() { TelemetryManager::checkAndSend(); }).detach();
+        if (param == "anonymous-telemetry") {
+            AppState::configManager.markTelemetryPromptAnswered();
+            if (val == "true") {
+                std::thread([]() { TelemetryManager::checkAndSend(); }).detach();
+            }
         }
     });
 
@@ -236,11 +257,17 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow>& ui,  ExtensionM
     });
 
     ui->on_miscKeyPressed_S([this](slint::SharedString key) {
-        EventHub::emit("MISC_KEY_PRESSED", CppValue(CppValue::Type::String, std::string(key)));
+        std::string k = std::string(key);
+        std::string normalized = normalizeKey(k);
+        Logger::log("[UIEventBridge] miscKeyPressed_S (compiled): '" + k + "' -> '" + normalized + "'");
+        EventHub::emit("MISC_KEY_PRESSED", CppValue(CppValue::Type::String, normalized));
     });
 
     ui->on_miscKeyReleased_S([this](slint::SharedString key) {
-        EventHub::emit("MISC_KEY_RELEASED", CppValue(CppValue::Type::String, std::string(key)));
+        std::string k = std::string(key);
+        std::string normalized = normalizeKey(k);
+        Logger::log("[UIEventBridge] miscKeyReleased_S (compiled): '" + k + "' -> '" + normalized + "'");
+        EventHub::emit("MISC_KEY_RELEASED", CppValue(CppValue::Type::String, normalized));
     });
 
     // ui->on_themeSelected([this](slint::SharedString themeName)
@@ -529,8 +556,11 @@ UiEventBridge::UiEventBridge(
                 std::string param = std::string(opt_name.value());
                 std::string val   = std::string(opt_val.value());
                 AppState::configManager.setConfig(param, val);
-                if (param == "anonymous-telemetry" && val == "true") {
-                    std::thread([]() { TelemetryManager::checkAndSend(); }).detach();
+                if (param == "anonymous-telemetry") {
+                    AppState::configManager.markTelemetryPromptAnswered();
+                    if (val == "true") {
+                        std::thread([]() { TelemetryManager::checkAndSend(); }).detach();
+                    }
                 }
             }
         }
@@ -665,7 +695,10 @@ UiEventBridge::UiEventBridge(
         if (args.size() > 0) {
             auto opt_key = args[0].to_string();
             if (opt_key.has_value()) {
-                EventHub::emit("MISC_KEY_PRESSED", CppValue(CppValue::Type::String, std::string(opt_key.value())));
+                std::string k = std::string(opt_key.value());
+                std::string normalized = normalizeKey(k);
+                Logger::log("[UIEventBridge] miscKeyPressed_S (interpreted): '" + k + "' -> '" + normalized + "'");
+                EventHub::emit("MISC_KEY_PRESSED", CppValue(CppValue::Type::String, normalized));
             }
         }
         return slint::interpreter::Value();
@@ -675,7 +708,10 @@ UiEventBridge::UiEventBridge(
         if (args.size() > 0) {
             auto opt_key = args[0].to_string();
             if (opt_key.has_value()) {
-                EventHub::emit("MISC_KEY_RELEASED", CppValue(CppValue::Type::String, std::string(opt_key.value())));
+                std::string k = std::string(opt_key.value());
+                std::string normalized = normalizeKey(k);
+                Logger::log("[UIEventBridge] miscKeyReleased_S (interpreted): '" + k + "' -> '" + normalized + "'");
+                EventHub::emit("MISC_KEY_RELEASED", CppValue(CppValue::Type::String, normalized));
             }
         }
         return slint::interpreter::Value();
