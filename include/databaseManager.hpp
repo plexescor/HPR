@@ -12,6 +12,10 @@
 #ifdef _WIN32
     #include <windows.h>
 #endif
+struct ParallelQueryResult {
+            bool ok = false;
+            std::vector<std::map<std::string, std::string>> rows;
+        };
 
 class DatabaseManager
 {
@@ -29,6 +33,10 @@ class DatabaseManager
         static std::string getDbPathForDate(const std::string& date);
         std::string getLoadedHistDbPath() const;
 
+        ParallelQueryResult dbQueryNumber(int days, const std::string& mode, const std::string& sql, const std::vector<std::string>& params);
+        ParallelQueryResult dbQueryRange(std::string dateFrom, std::string dateTo, const std::string& mode, const std::string& sql, const std::vector<std::string>& params);
+
+        
     private:
         void writeLoop();
         void updateFilePath();
@@ -38,6 +46,11 @@ class DatabaseManager
         void loadDb_Number(int days, std::string mode);
         void loadDb_Range(std::string dateFrom, std::string dateTo, std::string mode);
         void loadPatternsData(int days);
+
+        std::vector<std::map<std::string, std::string>> mergeQueryResults(
+            const std::vector<std::map<std::string, std::string>>& rawRows, 
+            const std::string& mode);
+
 
     private:
         std::optional<sqlite::database> db;
@@ -80,6 +93,9 @@ class DatabaseManager
         };
         std::vector<PendingQuery> pendingQueries;
         std::mutex pendingQueriesMutex;
+
+        
+
 
         //Async tasks
         std::future<void> historyLoadTask_Singular;

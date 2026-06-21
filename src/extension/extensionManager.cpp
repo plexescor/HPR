@@ -1145,6 +1145,40 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         return dbManager->querySQL_Path(dbPath, sql, params.value_or(std::vector<std::string>{}));
     };
 
+    lua["HPR"]["dbQueryNumber_E"] = [this](int days, std::string mode, std::string sql, sol::optional<std::vector<std::string>> params)
+        -> std::vector<std::map<std::string, std::string>>
+    {
+        auto p = params.value_or(std::vector<std::string>{});
+        auto fut = std::async(std::launch::async, [this, days, mode, sql, p]() {
+            return dbManager->dbQueryNumber(days, mode, sql, p);
+        });
+
+        if (fut.wait_for(std::chrono::milliseconds(7500)) == std::future_status::timeout)
+        {
+            std::cerr << "[HPR] dbQueryNumber_E timed out after 7500ms\n";
+            Logger::log("[HPR] dbQueryNumber_E timed out after 7500ms");
+            return {};
+        }
+        return fut.get().rows;
+    };
+
+    lua["HPR"]["dbQueryRange_E"] = [this](std::string dateFrom, std::string dateTo, std::string mode, std::string sql, sol::optional<std::vector<std::string>> params)
+        -> std::vector<std::map<std::string, std::string>>
+    {
+        auto p = params.value_or(std::vector<std::string>{});
+        auto fut = std::async(std::launch::async, [this, dateFrom, dateTo, mode, sql, p]() {
+            return dbManager->dbQueryRange(dateFrom, dateTo, mode, sql, p);
+        });
+
+        if (fut.wait_for(std::chrono::milliseconds(7500)) == std::future_status::timeout)
+        {
+            std::cerr << "[HPR] dbQueryRange_E timed out after 7500ms\n";
+            Logger::log("[HPR] dbQueryRange_E timed out after 7500ms");
+            return {};
+        }
+        return fut.get().rows;
+    };
+
     lua["HPR"]["convertToDate_DDMMYY_E"] = [](uint64_t ms)
     {
         return convertToDate_DDMMYY(ms);
@@ -1309,6 +1343,10 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         else if (eventName == "MIDNIGHT_ROLLOVER") eventKey = Event::MIDNIGHT_ROLLOVER;
         else if (eventName == "WINDOW_CHANGED") eventKey = Event::WINDOW_CHANGED;
         else if (eventName == "UI_READY") eventKey = Event::UI_READY;
+        else if (eventName == "LOAD_DATABASE_NUMBER") eventKey = Event::LOAD_DATABASE_NUMBER;
+        else if (eventName == "LOAD_DATABASE_RANGE") eventKey = Event::LOAD_DATABASE_RANGE;
+        else if (eventName == "HISTORY_LOADED_NUMBER") eventKey = Event::HISTORY_LOADED_NUMBER;
+        else if (eventName == "HISTORY_LOADED_RANGE") eventKey = Event::HISTORY_LOADED_RANGE;
         else eventKey = eventName; // Custom signal
 
         size_t id = EventHub::connect(eventKey, [eventName, &ext](EventData data) 
@@ -1332,6 +1370,10 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         else if (eventName == "MIDNIGHT_ROLLOVER") eventKey = Event::MIDNIGHT_ROLLOVER;
         else if (eventName == "WINDOW_CHANGED") eventKey = Event::WINDOW_CHANGED;
         else if (eventName == "UI_READY") eventKey = Event::UI_READY;
+        else if (eventName == "LOAD_DATABASE_RANGE") eventKey = Event::LOAD_DATABASE_RANGE;
+        else if (eventName == "HISTORY_LOADED_NUMBER") eventKey = Event::HISTORY_LOADED_NUMBER;
+        else if (eventName == "HISTORY_LOADED_RANGE") eventKey = Event::HISTORY_LOADED_RANGE;
+
         else eventKey = eventName;
 
         EventHub::disconnect(eventKey, id);
@@ -1349,6 +1391,9 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         else if (eventName == "MIDNIGHT_ROLLOVER") eventKey = Event::MIDNIGHT_ROLLOVER;
         else if (eventName == "WINDOW_CHANGED") eventKey = Event::WINDOW_CHANGED;
         else if (eventName == "UI_READY") eventKey = Event::UI_READY;
+        else if (eventName == "LOAD_DATABASE_RANGE") eventKey = Event::LOAD_DATABASE_RANGE;
+        else if (eventName == "HISTORY_LOADED_NUMBER") eventKey = Event::HISTORY_LOADED_NUMBER;
+        else if (eventName == "HISTORY_LOADED_RANGE") eventKey = Event::HISTORY_LOADED_RANGE;
         else eventKey = eventName;
 
         // Convert Lua parameter to generic CppValue, then map to specific C++ EventData structure
