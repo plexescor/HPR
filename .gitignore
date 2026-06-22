@@ -3,6 +3,7 @@ build/ui
 shippedWithBinary/ui
 build1
 .vscode
+Debug/
 .cache/
 # Slint extracted folders
 external/Slint-cpp-*/
