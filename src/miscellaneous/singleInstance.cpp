@@ -145,17 +145,6 @@ void SingleInstance::shutdown() {
         close(serverFd);
         serverFd = -1;
     }
-    // Connect to unblock accept() if needed
-    int sock = socket(AF_UNIX, SOCK_STREAM, 0);
-    if (sock != -1) {
-        struct sockaddr_un addr;
-        memset(&addr, 0, sizeof(addr));
-        addr.sun_family = AF_UNIX;
-        strncpy(addr.sun_path, socketPath.c_str(), sizeof(addr.sun_path) - 1);
-        connect(sock, (struct sockaddr*)&addr, sizeof(addr));
-        close(sock);
-    }
-    unlink(socketPath.c_str());
 #endif
 
     if (serverThread.joinable()) {
@@ -200,8 +189,7 @@ void SingleInstance::runServer() {
     while (running) {
         int client_fd = accept(serverFd, NULL, NULL);
         if (client_fd < 0) {
-            if (!running) break;
-            continue;
+            break;
         }
         if (running) {
             char buffer[128];
