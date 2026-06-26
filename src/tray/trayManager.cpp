@@ -410,11 +410,26 @@ void TrayManager::trayManager_LoopLinux()
         if (!dbus_connection_read_write(dbusConn, 100))
             break;
 
-        // Retry registration every 5 seconds until watcher confirms our item
+        // Retry registration every 5 seconds, but only if watcher is actually on the bus
+        // (avoids duplicate icons on Cinnamon where watcher races app at boot)
         auto now = std::chrono::steady_clock::now();
-        if (std::chrono::duration_cast<std::chrono::seconds>(now - lastRegisterAttempt).count() >= 5)
+        if (!registered && std::chrono::duration_cast<std::chrono::seconds>(now - lastRegisterAttempt).count() >= 5)
         {
-            registerWithSNIWatcher(dbusConn, serviceName);
+            DBusError checkErr;
+            dbus_error_init(&checkErr);
+            DBusMessage* checkMsg = dbus_message_new_method_call(
+                "org.freedesktop.DBus", "/org/freedesktop/DBus",
+                "org.freedesktop.DBus", "GetNameOwner");
+            const char* watcherName = "org.kde.StatusNotifierWatcher";
+            dbus_message_append_args(checkMsg, DBUS_TYPE_STRING, &watcherName, DBUS_TYPE_INVALID);
+            DBusMessage* checkReply = dbus_connection_send_with_reply_and_block(dbusConn, checkMsg, 200, &checkErr);
+            dbus_message_unref(checkMsg);
+            bool watcherUp = (checkReply != nullptr && !dbus_error_is_set(&checkErr));
+            if (checkReply) dbus_message_unref(checkReply);
+            dbus_error_free(&checkErr);
+
+            if (watcherUp)
+                registerWithSNIWatcher(dbusConn, serviceName);
             lastRegisterAttempt = now;
         }
 
@@ -683,6 +698,7 @@ void TrayManager::trayManager_LoopLinux()
         else if (dbus_message_is_method_call(msg,
                 "org.kde.StatusNotifierItem", "Activate"))
         {
+            registered = true;
             if (onShow) onShow();
 
             DBusMessage* reply = dbus_message_new_method_return(msg);
@@ -695,6 +711,7 @@ void TrayManager::trayManager_LoopLinux()
         else if (dbus_message_is_method_call(msg,
                 "org.kde.StatusNotifierItem", "ContextMenu"))
         {
+            registered = true;
             if (onShow) onShow();
 
             DBusMessage* reply = dbus_message_new_method_return(msg);
@@ -707,6 +724,7 @@ void TrayManager::trayManager_LoopLinux()
         else if (dbus_message_is_method_call(msg,
                 "org.kde.StatusNotifierItem", "SecondaryActivate"))
         {
+            registered = true;
             if (onQuit) onQuit();
 
             DBusMessage* reply = dbus_message_new_method_return(msg);
@@ -731,6 +749,7 @@ void TrayManager::trayManager_LoopLinux()
             if (name && std::string(name) == "org.kde.StatusNotifierWatcher"
                 && newOwner && newOwner[0] != '\0')
             {
+                registered = false; // watcher restarted, re-register
                 registerWithSNIWatcher(dbusConn, serviceName);
             }
         }
