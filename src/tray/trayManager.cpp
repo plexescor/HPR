@@ -402,11 +402,21 @@ void TrayManager::trayManager_LoopLinux()
     // On GNOME the watcher may not be up yet; the NameOwnerChanged handler below will retry.
     registerWithSNIWatcher(dbusConn, serviceName);
 
+    auto lastRegisterAttempt = std::chrono::steady_clock::now();
+    bool registered = false;
     while (running)
     {
         // poll for 100ms so we can check running without blocking forever
         if (!dbus_connection_read_write(dbusConn, 100))
             break;
+
+        // Retry registration every 5 seconds until watcher confirms our item
+        auto now = std::chrono::steady_clock::now();
+        if (std::chrono::duration_cast<std::chrono::seconds>(now - lastRegisterAttempt).count() >= 5)
+        {
+            registerWithSNIWatcher(dbusConn, serviceName);
+            lastRegisterAttempt = now;
+        }
 
         DBusMessage* msg = dbus_connection_pop_message(dbusConn);
         if (!msg)
@@ -705,8 +715,8 @@ void TrayManager::trayManager_LoopLinux()
             dbus_message_unref(reply);
         }
 
-        // GNOME only: re-register when the SNI watcher (re)appears
-        else if (isGnome && dbus_message_is_signal(msg, "org.freedesktop.DBus", "NameOwnerChanged"))
+        // re-try on every shit
+        else if (dbus_message_is_signal(msg, "org.freedesktop.DBus", "NameOwnerChanged"))
         {
             const char* name     = nullptr;
             const char* oldOwner = nullptr;
