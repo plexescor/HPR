@@ -24,7 +24,7 @@ A huge thank you to our supporters keeping HPR active!
 
 <p align="center">
   <img src="https://img.shields.io/badge/status-active_development-brightgreen?style=flat-square" />
-  <img src="https://img.shields.io/badge/version-v0.9.2-blue?style=flat-square" />
+  <img src="https://img.shields.io/badge/version-v0.9.3-blue?style=flat-square" />
   <img src="https://img.shields.io/badge/language-C%2B%2B23-orange?style=flat-square" />
   <img src="https://img.shields.io/badge/UI-Slint_1.16.1-purple?style=flat-square" />
   <img src="https://img.shields.io/badge/DB-SQLite3_bundled-lightgrey?style=flat-square" />
@@ -306,7 +306,7 @@ end
 | `onTick(delta)` | Periodically on the extension's thread. `delta` is actual elapsed ms since last tick. |
 | `onExit()` | Once on shutdown. Must complete within 200ms or HPR force-detaches the thread. |
 
-**New Lua APIs in v0.9.2:**
+**New Lua APIs in v0.9.3:**
 
 | API | What it does |
 |---|---|
@@ -628,7 +628,7 @@ Instantiated exactly once in `appState.cpp`. Every thread that touches it acquir
 
 `timeLog_PerApp` and `timeLog_PerTab` accumulate raw millisecond durations. `switchHistory` keys on `std::pair<string, string>` (from, to) and stores a `vector<uint64_t>` of Unix millisecond timestamps for every recorded transition.
 
-**Extension event dispatch** is thread-safe as of v0.9.2. Extension callbacks are no longer fired directly from background threads. Incoming events are queued under `eventQueueMutex` and processed sequentially on the next `onTick` under `luaMutex`, eliminating a class of race conditions and segfaults that could occur with concurrent event dispatch.
+**Extension event dispatch** is thread-safe as of v0.9.3. Extension callbacks are no longer fired directly from background threads. Incoming events are queued under `eventQueueMutex` and processed sequentially on the next `onTick` under `luaMutex`, eliminating a class of race conditions and segfaults that could occur with concurrent event dispatch.
 
 ---
 
@@ -876,7 +876,7 @@ If HPR has been useful to you, a Ko-fi helps keep development going: [ko-fi.com/
 
 <p align="center">
   <sub>
-    Active development &nbsp;|&nbsp; v0.9.2 &nbsp;|&nbsp;
+    Active development &nbsp;|&nbsp; v0.9.3 &nbsp;|&nbsp;
     Hyprland · GNOME · KDE Plasma · Cinnamon · niri · Windows 10/11 &nbsp;|&nbsp;
     C++23 · Slint 1.16.1 · SQLite3 amalgamation · sqlite_modern_cpp · Lua 5.4 · sol2
   </sub>
