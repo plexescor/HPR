@@ -98,7 +98,7 @@ namespace NativeNet
             // Query HTTP Status Code
             DWORD dwStatusCode = 0;
             DWORD dwSize = sizeof(dwStatusCode);
-            if (WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
+            if (WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_statusCode | WINHTTP_QUERY_FLAG_NUMBER,
                                     WINHTTP_HEADER_NAME_BY_INDEX, &dwStatusCode, &dwSize, WINHTTP_NO_HEADER_INDEX)) 
             {
                 statusCode = static_cast<int>(dwStatusCode);
@@ -223,7 +223,7 @@ namespace NativeNet
             // Query HTTP Status Code
             DWORD dwStatusCode = 0;
             DWORD dwSize = sizeof(dwStatusCode);
-            if (WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
+            if (WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_statusCode | WINHTTP_QUERY_FLAG_NUMBER,
                                     WINHTTP_HEADER_NAME_BY_INDEX, &dwStatusCode, &dwSize, WINHTTP_NO_HEADER_INDEX)) 
             {
                 statusCode = static_cast<int>(dwStatusCode);
@@ -353,7 +353,7 @@ namespace NativeNet
         {
             DWORD dwStatusCode = 0;
             DWORD dwSize = sizeof(dwStatusCode);
-            if (WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
+            if (WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_statusCode | WINHTTP_QUERY_FLAG_NUMBER,
                                     WINHTTP_HEADER_NAME_BY_INDEX, &dwStatusCode, &dwSize, WINHTTP_NO_HEADER_INDEX))
             {
                 statusCode = static_cast<int>(dwStatusCode);
@@ -432,7 +432,7 @@ namespace NativeNet
 #endif
 
         // Read client request, parse HTTP, invoke Lua handler, and respond
-        void handleClient(SOCKET client_socket, sol::function handler, sol::state& lua)
+        void handleClient(SOCKET clientSocket, sol::function handler, sol::state& lua)
         {
             std::string request_str;
             char buffer[1024];
@@ -442,7 +442,7 @@ namespace NativeNet
             size_t header_end = std::string::npos;
             while (true)
             {
-                bytes_received = recv(client_socket, buffer, sizeof(buffer) - 1, 0);
+                bytes_received = recv(clientSocket, buffer, sizeof(buffer) - 1, 0);
                 if (bytes_received <= 0)
                 {
                     break;
@@ -459,7 +459,7 @@ namespace NativeNet
 
             if (header_end == std::string::npos)
             {
-                CLOSE_SOCKET(client_socket);
+                CLOSE_SOCKET(clientSocket);
                 return;
             }
 
@@ -541,7 +541,7 @@ namespace NativeNet
             {
                 size_t to_read = content_length - body_part.length();
                 size_t chunk_size = (to_read > sizeof(buffer) - 1) ? sizeof(buffer) - 1 : to_read;
-                bytes_received = recv(client_socket, buffer, static_cast<int>(chunk_size), 0);
+                bytes_received = recv(clientSocket, buffer, static_cast<int>(chunk_size), 0);
                 if (bytes_received <= 0)
                 {
                     break;
@@ -563,9 +563,9 @@ namespace NativeNet
             }
             req_table["headers"] = headers_table;
 
-            int status_code = 200;
-            std::string response_body;
-            std::map<std::string, std::string> response_headers;
+            int statusCode = 200;
+            std::string responseBody;
+            std::map<std::string, std::string> responseHeaders;
 
             sol::protected_function_result result = handler(req_table);
             if (result.valid())
@@ -575,10 +575,10 @@ namespace NativeNet
                 {
                     sol::table res_table = res_obj.as<sol::table>();
                     sol::optional<int> status_opt = res_table["status"];
-                    if (status_opt) status_code = *status_opt;
+                    if (status_opt) statusCode = *status_opt;
 
                     sol::optional<std::string> body_opt = res_table["body"];
-                    if (body_opt) response_body = *body_opt;
+                    if (body_opt) responseBody = *body_opt;
 
                     sol::optional<sol::table> headers_opt = res_table["headers"];
                     if (headers_opt)
@@ -586,14 +586,14 @@ namespace NativeNet
                         headers_opt->for_each([&](sol::object k, sol::object v) {
                             if (k.is<std::string>() && v.is<std::string>())
                             {
-                                response_headers[k.as<std::string>()] = v.as<std::string>();
+                                responseHeaders[k.as<std::string>()] = v.as<std::string>();
                             }
                         });
                     }
                 }
                 else if (res_obj.is<std::string>())
                 {
-                    response_body = res_obj.as<std::string>();
+                    responseBody = res_obj.as<std::string>();
                 }
             }
             else
@@ -601,30 +601,30 @@ namespace NativeNet
                 sol::error err = result;
                 std::cerr << "[HPR HTTP Server] Lua Handler Error: " << err.what() << std::endl;
                 Logger::log("[HPR HTTP Server] Lua Handler Error: " + std::string(err.what()));
-                status_code = 500;
-                response_body = "Internal Server Error: " + std::string(err.what());
+                statusCode = 500;
+                responseBody = "Internal Server Error: " + std::string(err.what());
             }
 
             // 6. Format and Send response
-            std::string response = "HTTP/1.1 " + std::to_string(status_code) + " OK\r\n";
+            std::string response = "HTTP/1.1 " + std::to_string(statusCode) + " OK\r\n";
             response += "Connection: close\r\n";
-            bool has_content_length = false;
-            for (const auto& [k, v] : response_headers)
+            bool hasContentLength = false;
+            for (const auto& [k, v] : responseHeaders)
             {
                 std::string lower_k = k;
                 std::transform(lower_k.begin(), lower_k.end(), lower_k.begin(), [](unsigned char c) { return std::tolower(c); });
-                if (lower_k == "content-length") has_content_length = true;
+                if (lower_k == "content-length") hasContentLength = true;
                 response += k + ": " + v + "\r\n";
             }
-            if (!has_content_length)
+            if (!hasContentLength)
             {
-                response += "Content-Length: " + std::to_string(response_body.length()) + "\r\n";
+                response += "Content-Length: " + std::to_string(responseBody.length()) + "\r\n";
             }
             response += "\r\n";
-            response += response_body;
+            response += responseBody;
 
-            send(client_socket, response.c_str(), static_cast<int>(response.length()), 0);
-            CLOSE_SOCKET(client_socket);
+            send(clientSocket, response.c_str(), static_cast<int>(response.length()), 0);
+            CLOSE_SOCKET(clientSocket);
         }
     }
 
@@ -640,8 +640,8 @@ namespace NativeNet
         }
 #endif
 
-        SOCKET server_fd = socket(AF_INET, SOCK_STREAM, 0);
-        if (server_fd == INVALID_SOCKET_VAL)
+        SOCKET serverFd = socket(AF_INET, SOCK_STREAM, 0);
+        if (serverFd == INVALID_SOCKET_VAL)
         {
             std::cerr << "[HPR HTTP Server] Failed to create socket" << std::endl;
             Logger::log("[HPR HTTP Server] Failed to create socket");
@@ -653,9 +653,9 @@ namespace NativeNet
 
         int opt = 1;
 #ifdef _WIN32
-        setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, (const char*)&opt, sizeof(opt));
+        setsockopt(serverFd, SOL_SOCKET, SO_REUSEADDR, (const char*)&opt, sizeof(opt));
 #else
-        setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
+        setsockopt(serverFd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
 #endif
 
         sockaddr_in address;
@@ -663,22 +663,22 @@ namespace NativeNet
         address.sin_addr.s_addr = htonl(INADDR_LOOPBACK); // Localhost only for safety & simplicity!
         address.sin_port = htons(port);
 
-        if (bind(server_fd, (struct sockaddr*)&address, sizeof(address)) == SOCKET_ERROR_VAL)
+        if (bind(serverFd, (struct sockaddr*)&address, sizeof(address)) == SOCKET_ERROR_VAL)
         {
             std::cerr << "[HPR HTTP Server] Failed to bind to port " << port << std::endl;
             Logger::log("[HPR HTTP Server] Failed to bind to port " + std::to_string(port));
-            CLOSE_SOCKET(server_fd);
+            CLOSE_SOCKET(serverFd);
 #ifdef _WIN32
             WSACleanup();
 #endif
             return false;
         }
 
-        if (listen(server_fd, 10) == SOCKET_ERROR_VAL)
+        if (listen(serverFd, 10) == SOCKET_ERROR_VAL)
         {
             std::cerr << "[HPR HTTP Server] Listen failed" << std::endl;
             Logger::log("[HPR HTTP Server] Listen failed");
-            CLOSE_SOCKET(server_fd);
+            CLOSE_SOCKET(serverFd);
 #ifdef _WIN32
             WSACleanup();
 #endif
@@ -689,19 +689,19 @@ namespace NativeNet
         std::cout << "[HPR HTTP Server] Server running on 127.0.0.1:" << port << std::endl;
         Logger::log("[HPR HTTP Server] Server running on 127.0.0.1:" + std::to_string(port));
 
-        std::thread([server_fd, handler, &ext]() mutable
+        std::thread([serverFd, handler, &ext]() mutable
         {
             while (ext.running)
             {
                 fd_set readfds;
                 FD_ZERO(&readfds);
-                FD_SET(server_fd, &readfds);
+                FD_SET(serverFd, &readfds);
 
                 timeval timeout;
                 timeout.tv_sec = 0;
                 timeout.tv_usec = 100000;
 
-                int activity = select(static_cast<int>(server_fd + 1), &readfds, nullptr, nullptr, &timeout);
+                int activity = select(static_cast<int>(serverFd + 1), &readfds, nullptr, nullptr, &timeout);
 
                 if (activity < 0)
                 {
@@ -717,20 +717,20 @@ namespace NativeNet
 
                 if (activity == 0) continue;
 
-                if (FD_ISSET(server_fd, &readfds))
+                if (FD_ISSET(serverFd, &readfds))
                 {
-                    sockaddr_in client_addr;
-                    socklen_t addr_len = sizeof(client_addr);
-                    SOCKET client_socket = accept(server_fd, (struct sockaddr*)&client_addr, &addr_len);
-                    if (client_socket != INVALID_SOCKET_VAL)
+                    sockaddr_in clientAddr;
+                    socklen_t addrLen = sizeof(clientAddr);
+                    SOCKET clientSocket = accept(serverFd, (struct sockaddr*)&clientAddr, &addrLen);
+                    if (clientSocket != INVALID_SOCKET_VAL)
                     {
                         std::lock_guard<std::recursive_mutex> lock(ext.luaMutex);
-                        handleClient(client_socket, handler, ext.lua);
+                        handleClient(clientSocket, handler, ext.lua);
                     }
                 }
             }
 
-            CLOSE_SOCKET(server_fd);
+            CLOSE_SOCKET(serverFd);
             #ifdef _WIN32
                 WSACleanup();
             #endif
