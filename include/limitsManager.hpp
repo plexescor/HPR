@@ -12,6 +12,7 @@ public:
     ~LimitsManager();
 
     void run();
+    void limitReached(const std::string& appName);
 
     static void setLimit(const std::string& appName, int minutes);
     static void setGoal(const std::string& appName, int minutes);

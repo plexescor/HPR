@@ -16,6 +16,10 @@ A huge thank you to our supporters keeping HPR active!
 
 ---
 
+> **On Slint 1.17 and tray support:** I'm aware Slint 1.17 shipped with built-in tray icon support. I'm not upgrading to it. Slint's tray implementation doesn't work reliably across all platforms HPR targets -- Waybar in particular has no usable support. Until Slint's tray story improves across the board, I'm keeping my native `libdbus-1` / Win32 approach which I know works everywhere HPR runs.
+
+---
+
 <p align="center">
   <img src="./assets/logo_1254png.png" alt="HPR Logo" width="300"/>
 </p>

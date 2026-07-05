@@ -5,6 +5,8 @@
 #include <chrono>
 #include "timeUtils.hpp"
 #include "configManager.hpp"
+#include "appEvents.hpp"
+#include "extensionManager.hpp"
 
 //i dont remember why i defined these as globals
 //but there must be a reason so keep it as is
@@ -48,6 +50,45 @@ void LimitsManager::run()
 {
     running = true;
     checkerThread = std::thread(&LimitsManager::checkLoop, this);
+}
+
+void LimitsManager::limitReached(const std::string& appName)
+{
+    //hook
+    //so sorry it was a false positive that it existed
+    if (AppState::extManager)
+    {
+        auto res = AppState::extManager->dispatchOverride("limitReached", { CppValue(CppValue::Type::String, appName) });
+        if (res.has_value() && res->type == CppValue::Type::String)
+        {
+            return;
+        }
+    }
+
+    std::string pid;
+    {
+        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        if (AppState::state.appNamePid.count(appName))
+            pid = AppState::state.appNamePid.at(appName);
+    }
+    std::string cmd;
+    if (!pid.empty())
+    {
+        #ifdef _WIN32
+            cmd = "taskkill /F /PID " + pid;
+        #else
+            cmd = "kill -9 " + pid + " 2>/dev/null";
+        #endif
+    }
+    else
+    {
+        #ifdef _WIN32
+            cmd = "taskkill /F /IM " + appName + " /IM " + appName + ".exe";
+        #else
+            cmd = "pkill -f \"" + appName + "\" || killall \"" + appName + "\"";
+        #endif
+    }
+    runSystemCommand_UNSAFE(cmd);
 }
 
 void LimitsManager::setLimit(const std::string& appName, int minutes)
@@ -191,30 +232,7 @@ void LimitsManager::checkLoop()
                         if (timeSinceLastKill >= killCooldown)
                         {
                             lastGlobalKillTime = now;
-                            std::string pid;
-                            {
-                                std::lock_guard<std::mutex> lock(AppState::stateMutex);
-                                if (AppState::state.appNamePid.count(appName))
-                                    pid = AppState::state.appNamePid.at(appName);
-                            }
-                            std::string cmd;
-                            if (!pid.empty())
-                            {
-                                #ifdef _WIN32
-                                    cmd = "taskkill /F /PID " + pid;
-                                #else
-                                    cmd = "kill -9 " + pid + " 2>/dev/null";
-                                #endif
-                            }
-                            else
-                            {
-                                #ifdef _WIN32
-                                    cmd = "taskkill /F /IM " + appName + " /IM " + appName + ".exe";
-                                #else
-                                    cmd = "pkill -f \"" + appName + "\" || killall \"" + appName + "\"";
-                                #endif
-                            }
-                            runSystemCommand_UNSAFE(cmd);
+                            limitReached(appName);
                         }
                     }
                 }
@@ -230,30 +248,7 @@ void LimitsManager::checkLoop()
                         if (timeSinceLastKill >= killCooldown)
                         {
                             lastGlobalKillTime = now;
-                            std::string pid;
-                            {
-                                std::lock_guard<std::mutex> lock(AppState::stateMutex);
-                                if (AppState::state.appNamePid.count(appName))
-                                    pid = AppState::state.appNamePid.at(appName);
-                            }
-                            std::string cmd;
-                            if (!pid.empty())
-                            {
-                                #ifdef _WIN32
-                                    cmd = "taskkill /F /PID " + pid;
-                                #else
-                                    cmd = "kill -9 " + pid + " 2>/dev/null";
-                                #endif
-                            }
-                            else
-                            {
-                                #ifdef _WIN32
-                                    cmd = "taskkill /F /IM " + appName + " /IM " + appName + ".exe";
-                                #else
-                                    cmd = "pkill -f \"" + appName + "\" || killall \"" + appName + "\"";
-                                #endif
-                            }
-                            runSystemCommand_UNSAFE(cmd);
+                            limitReached(appName);
                         }
                     }
                 }

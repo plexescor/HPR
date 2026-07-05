@@ -129,3 +129,8 @@ The following functions in HPR are currently overridable by Lua extensions via t
     - Description: Binds a callback to a Slint UI action. Allows intercepting or overriding UI action registration.
     - C++ Call Site: src/extension/extensionManager.cpp
     - Lua Override Key: HPR.overrides.registerUiCallback
+
+27. limitReached
+    - Description: Triggered when a time limit for an application is reached. Allows custom handling of limit events.
+    - C++ Call Site: src/limits/limitsManager.cpp
+    - Lua Override Key: HPR.overrides.limitReached

@@ -341,6 +341,16 @@ void ExtensionManager::loadExtensions()
                 try
                 {
                     ext->lua.script_file(entry.path().string());
+                    sol::optional<sol::function> initFn = ext->lua["init"];
+                    if (initFn && initFn->valid())
+                    {
+                        sol::protected_function_result res = (*initFn)();
+                        if (!res.valid())
+                        {
+                            sol::error err = res;
+                            std::cerr << "init() failed in " << entry.path() << ": " << err.what() << "\n";
+                        }
+                    }
                 }
                 catch (const std::exception& e)
                 {
@@ -394,16 +404,16 @@ void ExtensionManager::runExtension(std::shared_ptr<LoadedExtension> ext_ptr)
             AppState::state.loadedExtensions.push_back(ext.identity);
         }        
         int sleepTime = 1000; //ms
-        sol::function init = ext.lua["init"];
+        // sol::function init = ext.lua["init"];
         sol::function onTick = ext.lua["onTick"];
         sol::function onExit = ext.lua["onExit"];
 
-        if (init.valid()) 
-        {
-            std::lock_guard<std::recursive_mutex> luaLock(ext.luaMutex);
-            sol::object result = init();
-            if (result.is<int>()) sleepTime = result.as<int>();
-        }
+        // if (init.valid()) 
+        // {
+        //     std::lock_guard<std::recursive_mutex> luaLock(ext.luaMutex);
+        //     sol::object result = init();
+        //     if (result.is<int>()) sleepTime = result.as<int>();
+        // }
         
         auto lastTime = std::chrono::high_resolution_clock::now();
         while (ext.running)
@@ -745,6 +755,7 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
     lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::table, sol::lib::math);
     
     lua["HPR"] = lua.create_table();
+    lua["HPR"]["overrides"] = lua.create_table();
 
     lua["HPR"]["startServer_E"] = [&ext](int port, sol::function handler) -> bool
     {
@@ -1902,19 +1913,24 @@ std::optional<CppValue> ExtensionManager::dispatchOverride(const std::string& ov
                 }
 
                 sol::protected_function_result result = overrideFunc.value()(sol::as_args(luaArgs));
-                
+
                 if (result.valid())
                 {
                     if (result.return_count() == 0)
-                    {
                         continue;
-                    }
-                    sol::object returnedObject = result;
-                    if (returnedObject.is<sol::nil_t>())
-                    {
+
+                    sol::object returnedObject = result.get<sol::object>(0); // <-- fix here
+
+                    if (!returnedObject.valid() || returnedObject.is<sol::nil_t>())
                         continue;
-                    }
+
                     return luaToCpp(returnedObject);
+                }
+                else
+                {
+                    sol::error err = result;
+                    std::cerr << "[HPR Override Error] Lua error in override '" << overrideName
+                            << "': " << err.what() << std::endl;
                 }
             }
             catch (const std::exception& e)
