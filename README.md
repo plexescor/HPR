@@ -141,7 +141,7 @@ Click the calendar icon in the sidebar to open the History Range view:
 | **Last N Days** | Pull last 7, 14, 30 days or any custom count. Multiple daily files are merged and aggregated. |
 | **Date Range** | Set a start and end date. HPR reads every daily file in the span and streams the combined result back. |
 
-Historical loading runs on a dedicated background thread -- live tracking is never paused. A "Switch to Live View" button in the data view takes you back to real-time instantly.
+Historical loading runs on N number of threads where N = Days (no pool) -- live tracking is never paused. A "Switch to Live View" button in the data view takes you back to real-time instantly.
 
 <p align="center">
   <img src="./assetsgithub/history.png" alt="HPR History Range View" width="800"/>
@@ -207,7 +207,7 @@ Badges on each row show **remaining time live**. Limit rows have a red accent; g
 </p>
 
 > [!NOTE]
-> Advanced users can intercept the limit-reached event via the [Function Overriding API](https://hpr-cpp.netlify.app/overrides.html) to run custom Lua logic -- log it, send a webhook, suppress the notification, or anything else.
+> Advanced users can intercept the limit-reached function call via the [Function Overriding API](https://hpr-cpp.netlify.app/overrides.html) to run custom Lua logic -- log it, send a webhook, suppress the notification, or anything else.
 
 ---
 
@@ -256,7 +256,7 @@ Themes live in:
 - **Linux**: `~/.config/HPR/themes/`
 - **Windows**: `%APPDATA%\HPR\HPR_Config\themes\`
 
-Each theme is a subfolder containing an `app-window.slint` (the layout), an optional `metadata.csv` (name, version info), and up to 9 preview images (`1.png` through `9.png`).
+Each theme is a subfolder containing an `app-window.slint` (the layout), an required `metadata.csv` (name, version info), and up to 9 preview images (`1.png` through `9.png`).
 
 The **Themes View** in the sidebar shows all discovered themes with a horizontal preview carousel, description, version info, and apply/refresh controls. Applying a theme reloads the Slint component live with no restart. Selecting **default** reverts to the built-in layout.
 
