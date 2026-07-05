@@ -85,15 +85,7 @@ The following functions in HPR are currently overridable by Lua extensions via t
     - C++ Call Site: src/extension/extensionManager.cpp
     - Lua Override Key: HPR.overrides.dbQueryHistorical
 
-18. httpGet
-    - Description: Performs an HTTP GET request. Intercepts outgoing GET requests and allows custom spoofed responses.
-    - C++ Call Site: src/extension/extensionManager.cpp
-    - Lua Override Key: HPR.overrides.httpGet
-
-19. httpPost
-    - Description: Performs an HTTP POST request. Intercepts outgoing POST requests and allows custom spoofed responses.
-    - C++ Call Site: src/extension/extensionManager.cpp
-    - Lua Override Key: HPR.overrides.httpPost
+IDK why 
 
 20. stopTracking
     - Description: Stops tracking the active window state. Allows overriding or preventing the tracking pause.

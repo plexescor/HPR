@@ -279,7 +279,7 @@ Each extension runs in its own isolated VM on a dedicated background thread, com
 - Register fully custom window detection backends for compositors HPR doesn't natively support
 - Subscribe to HPR's internal event bus and react to state changes
 - Build interactive custom UI panels that render inside HPR via Slint callback bindings
-- **Function Overriding (Advanced)**: Intercept, block, or modify 26+ core C++ functions directly from Lua
+- **Function Overriding (Advanced)**: Intercept, block, or modify 24+ core C++ functions directly from Lua
 - AND yes, you can run [Budget Doom](https://github.com/plexescor/HPR-Extensions) (software rendering only)
 
 <p align="center">
