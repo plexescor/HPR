@@ -182,6 +182,13 @@ void LimitsManager::checkLoop()
                 bool sendReached = false;
                 bool doKill = false;
 
+                std::string currentApp;
+
+                {
+                    std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                    currentApp = AppState::state.currentWindow;
+                }
+
                 {
                     std::lock_guard<std::mutex> lock(limitsMutex);
 
@@ -232,7 +239,9 @@ void LimitsManager::checkLoop()
                         if (timeSinceLastKill >= killCooldown)
                         {
                             lastGlobalKillTime = now;
-                            limitReached(appName);
+                            //otherwise it kills them even if they run in background
+                            if (currentApp == appName)
+                                limitReached(appName);
                         }
                     }
                 }
@@ -248,7 +257,9 @@ void LimitsManager::checkLoop()
                         if (timeSinceLastKill >= killCooldown)
                         {
                             lastGlobalKillTime = now;
-                            limitReached(appName);
+                            //otherwise it kills them even if they run in background
+                            if (currentApp == appName)
+                                limitReached(appName);
                         }
                     }
                 }
