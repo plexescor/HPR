@@ -179,7 +179,7 @@ yay -S hpr
 
 You can install or update HPR on Linux automatically with a single command:
 ```bash
-curl -fsSL https://raw.githubusercontent.com/plexescor/HPR/master/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/plexescor/HPR/main/install.sh | bash
 ```
 
 The interactive installation script performs the following actions:

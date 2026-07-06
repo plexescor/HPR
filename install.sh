@@ -111,7 +111,7 @@ else
 fi
 
 echo ">> System-wide installation path config:"
-read -p "   Install location [$INSTALL_PATH]: " input_path < /dev/tty
+read -p "   Install location [Press Enter for '$INSTALL_PATH', or type custom path]: " input_path < /dev/tty
 if [ -n "$input_path" ]; then
     INSTALL_PATH="$input_path"
 fi
