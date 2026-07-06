@@ -175,7 +175,7 @@ A comparison between HPR and other popular automatic time trackers:
 yay -S hpr
 ```
 
-**Linux (Interactive Installer)**
+**Linux (Universal)**
 
 You can install or update HPR on Linux automatically with a single command:
 ```bash
