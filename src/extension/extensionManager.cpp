@@ -341,7 +341,7 @@ void ExtensionManager::loadExtensions()
                 try
                 {
                     ext->lua.script_file(entry.path().string());
-                    sol::optional<sol::function> initFn = ext->lua["init"];
+                    sol::optional<sol::function> initFn = (*ext).lua["init"];
                     if (initFn && initFn->valid())
                     {
                         sol::protected_function_result res = (*initFn)();
@@ -602,15 +602,16 @@ void ExtensionManager::reloadExtension(std::string authorName, std::string exten
     try 
     {
         newExt->lua.script_file(extPath.string());
-        sol::optional<sol::function> initFn = ext->lua["init"];
+        sol::optional<sol::function> initFn = (*newExt).lua["init"];
         if (initFn && initFn->valid())
         {
             sol::protected_function_result res = (*initFn)();
             if (!res.valid())
             {
                 sol::error err = res;
-                std::cerr << "init() failed in " << entry.path() << ": " << err.what() << "\n";
+                std::cerr << "init() failed in " << extPath.string() << ": " << err.what() << "\n";
             }
+        }
         
     } catch (const std::exception& e) {
         std::cerr << "Failed to reload extension: " << extPath.string() << "\nError: " << e.what() << '\n';
@@ -678,14 +679,14 @@ void ExtensionManager::reloadAllExtensions()
         try 
         {
             newExt->lua.script_file(path.string());
-            sol::optional<sol::function> initFn = ext->lua["init"];
+            sol::optional<sol::function> initFn = (*newExt).lua["init"];
             if (initFn && initFn->valid())
             {
                 sol::protected_function_result res = (*initFn)();
                 if (!res.valid())
                 {
                     sol::error err = res;
-                    std::cerr << "init() failed in " << entry.path() << ": " << err.what() << "\n";
+                    std::cerr << "init() failed in " << path << ": " << err.what() << "\n";
                 }
             }
         } catch (const std::exception& e) {
@@ -741,7 +742,7 @@ void ExtensionManager::refresh()
                 try
                 {
                     ext->lua.script_file(entry.path().string());
-                    sol::optional<sol::function> initFn = ext->lua["init"];
+                    sol::optional<sol::function> initFn = (*ext).lua["init"];
                     if (initFn && initFn->valid())
                     {
                         sol::protected_function_result res = (*initFn)();
