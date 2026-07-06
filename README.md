@@ -4,7 +4,7 @@
   </a>
 </p>
 
-> HPR is built solo by a 16-year-old developer in India. My Dad is pushing me to focus on JEE -- India's national engineering entrance exam, one of the most brutally competitive exams in the world -- so HPR development happens in whatever time I can steal from that. If I were an adult I would not have made HPR free at all because I would've needed money to survive, but I am a teen and I live under my Dad so I could "afford" HPR to be fully free and open source. If donations are enough to show this is worth continuing, I can justify spending time on HPR and try my hand at other things instead of just grinding JEE prep. If HPR has been useful to you, a Ko-fi donation genuinely helps.
+> HPR is built solo by a 16-year-old developer in India. My Dad is pushing me to focus on JEE - India's national engineering entrance exam, one of the most brutally competitive exams in the world - so HPR development happens in whatever time I can steal from that. If I were an adult I would not have made HPR free at all because I would've needed money to survive, but I am a teen and I live under my Dad so I could "afford" HPR to be fully free and open source. If donations are enough to show this is worth continuing, I can justify spending time on HPR and try my hand at other things instead of just grinding JEE prep. If HPR has been useful to you, a Ko-fi donation genuinely helps.
 
 ---
 
@@ -12,11 +12,11 @@
 
 A huge thank you to our supporters keeping HPR active!
 
-- **[Jesse Kramer](https://ko-fi.com/jessekramer)** ($20) -- *First Supporter* 💖
+- **[Jesse Kramer](https://ko-fi.com/jessekramer)** ($20) - *First Supporter* 💖
 
 ---
 
-> **On Slint 1.17 and tray support:** I'm aware Slint 1.17 shipped with built-in tray icon support. I'm not upgrading to it. Slint's tray implementation doesn't work reliably across all platforms HPR targets -- Waybar in particular has no usable support. Until Slint's tray story improves across the board, I'm keeping my native `libdbus-1` / Win32 approach which I know works everywhere HPR runs.
+> **On Slint 1.17 and tray support:** I'm aware Slint 1.17 shipped with built-in tray icon support. I'm not upgrading to it. Slint's tray implementation doesn't work reliably across all platforms HPR targets - Waybar in particular has no usable support. Until Slint's tray story improves across the board, I'm keeping my native `libdbus-1` / Win32 approach which I know works everywhere HPR runs.
 
 ---
 
@@ -52,7 +52,7 @@ A huge thank you to our supporters keeping HPR active!
 
 > [!IMPORTANT]
 > **HPR is fully free and open source.**
-> Every feature -- current and future -- is available to everyone at no cost. If HPR saves you time or you want to support continued development, a Ko-fi donation goes a long way.
+> Every feature - current and future - is available to everyone at no cost. If HPR saves you time or you want to support continued development, a Ko-fi donation goes a long way.
 
 ---
 
@@ -70,7 +70,7 @@ A huge thank you to our supporters keeping HPR active!
 
 <p align="center">
   <strong>See HPR in action</strong><br/>
-  <sub>Live window tracking, switch history, and the Insights engine -- all running locally, zero accounts.</sub>
+  <sub>Live window tracking, switch history, and the Insights engine - all running locally, zero accounts.</sub>
 </p>
 
 <p align="center">
@@ -109,7 +109,7 @@ https://github.com/user-attachments/assets/07659d3d-0f3b-4bbc-8823-8b5d11bfd32f
 
 You open your computer. You work. Hours pass. You have no idea where they went.
 
-HPR fixes that. It watches which window is in focus every 50 milliseconds, all day. It builds a running log of exactly where your time actually went -- not where you think it went. Switch from your browser to your editor, it records the transition. Switch back two hours later, it records that too. Every switch. Every minute. Every day.
+HPR fixes that. It watches which window is in focus every 50 milliseconds, all day. It builds a running log of exactly where your time actually went - not where you think it went. Switch from your browser to your editor, it records the transition. Switch back two hours later, it records that too. Every switch. Every minute. Every day.
 
 At any point you get three things live:
 
@@ -117,7 +117,7 @@ At any point you get three things live:
 - **Total time per application today**, displayed as `2h 14m 30s`
 - **Your complete switch history**: every transition, timestamped, in order
 
-**Historical data -- three modes:**
+**Historical data - three modes:**
 
 Click the calendar icon in the sidebar to open the History Range view:
 
@@ -127,7 +127,7 @@ Click the calendar icon in the sidebar to open the History Range view:
 | **Last N Days** | Pull last 7, 14, 30 days or any custom count. Multiple daily files are merged and aggregated. |
 | **Date Range** | Set a start and end date. HPR reads every daily file in the span and streams the combined result back. |
 
-Historical loading runs on N number of threads where N = Days (no pool) -- live tracking is never paused. A "Switch to Live View" button in the data view takes you back to real-time instantly.
+Historical loading runs on N number of threads where N = Days (no pool) - live tracking is never paused. A "Switch to Live View" button in the data view takes you back to real-time instantly.
 
 <p align="center">
   <img src="./assetsgithub/history.png" alt="HPR History Range View" width="800"/>
@@ -237,7 +237,7 @@ Windows: %APPDATA%\HPR\HPR_DB\
 HPR supports tracking browser tabs per site and per tab without requiring any browser extensions. When the active window is a supported browser (Chrome, Edge, Firefox, or Brave), HPR automatically queries the window title alongside the application name. This tab usage time is aggregated and tracked separately, giving you a detailed breakdown of which websites and tabs you spend time on.
 
 In the UI, toggle display mode with the **Tab View** and **Site View** buttons:
-- **Tab View**: Shows raw, unaliased tab names -- lets you differentiate between specific pages.
+- **Tab View**: Shows raw, unaliased tab names - lets you differentiate between specific pages.
 - **Site View**: Applies rules from `tabAliases.csv` to group tabs by website, collapsing specific pages into parent domains.
 
 ---
@@ -269,8 +269,8 @@ Set a daily time **limit** or daily usage **goal** on any tracked application di
 **Goals** set a minimum number of minutes you want to spend in an app each day. HPR tracks progress and notifies you when you hit it.
 
 **How to configure:**
-1. Click the Goals icon in the sidebar -- every tracked app appears automatically.
-2. Click any app row to expand it inline -- a minute input with +/- step buttons appears alongside three actions: **SET LIMIT**, **SET GOAL**, **RESET**.
+1. Click the Goals icon in the sidebar - every tracked app appears automatically.
+2. Click any app row to expand it inline - a minute input with +/- step buttons appears alongside three actions: **SET LIMIT**, **SET GOAL**, **RESET**.
 3. Done. A dedicated background thread (`LimitsManager`) monitors usage continuously. No restart required.
 
 Badges on each row show **remaining time live**. Limit rows have a red accent; goal rows have green.
@@ -280,7 +280,7 @@ Badges on each row show **remaining time live**. Limit rows have a red accent; g
 </p>
 
 > [!NOTE]
-> Advanced users can intercept the limit-reached function call via the [Function Overriding API](https://hpr-cpp.netlify.app/overrides.html) to run custom Lua logic -- log it, send a webhook, suppress the notification, or anything else.
+> Advanced users can intercept the limit-reached function call via the [Function Overriding API](https://hpr-cpp.netlify.app/overrides.html) to run custom Lua logic - log it, send a webhook, suppress the notification, or anything else.
 
 ---
 
@@ -368,7 +368,7 @@ Windows: %APPDATA%\HPR\HPR_Config\extensions\
 
 HPR scans recursively, so subdirectory organization like `extensions/my-backend/sway.lua` works fine.
 
-**A minimal extension** -- prints the active app every tick:
+**A minimal extension** - prints the active app every tick:
 ```lua
 function onTick(delta)
     print(HPR.getCurrentWindow_E())
@@ -411,7 +411,7 @@ HPR lives in your system tray and keeps running when you close the window. The o
 
 **Windows:** Right click for a context menu with **Show HPR** and **Quit**. Closing the window hides to tray.
 
-**Linux (Waybar, KDE, Cinnamon):** HPR registers as a `org.kde.StatusNotifierItem` on the session D-Bus. No GTK. No Qt. Pure `libdbus-1`. Left or right click opens HPR. Middle click quits. Waybar routes both left and right click to the same D-Bus method -- this is a Waybar limitation.
+**Linux (Waybar, KDE, Cinnamon):** HPR registers as a `org.kde.StatusNotifierItem` on the session D-Bus. No GTK. No Qt. Pure `libdbus-1`. Left or right click opens HPR. Middle click quits. Waybar routes both left and right click to the same D-Bus method - this is a Waybar limitation.
 
 ---
 
@@ -517,7 +517,7 @@ git clone https://github.com/plexescor/HPR
 cd HPR
 ```
 
-**Linux -- install Slint (choose one):**
+**Linux - install Slint (choose one):**
 ```bash
 # System-wide (requires sudo)
 sudo ./installDependencies.sh
@@ -541,7 +541,7 @@ cmake ..
 cmake --build . --parallel 8
 ```
 
-HPR uses slightly patched versions of `sol2`, `lua`, and `sqlite3` in `external/` to avoid compile errors under C++23 strict mode. Use the bundled ones for a clean build. CMake copies `aliases.csv`, `config.csv`, `ui/`, `assets/`, and the install scripts next to the output binary automatically -- a fresh build is immediately runnable from the build directory.
+HPR uses slightly patched versions of `sol2`, `lua`, and `sqlite3` in `external/` to avoid compile errors under C++23 strict mode. Use the bundled ones for a clean build. CMake copies `aliases.csv`, `config.csv`, `ui/`, `assets/`, and the install scripts next to the output binary automatically - a fresh build is immediately runnable from the build directory.
 
 
 
