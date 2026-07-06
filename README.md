@@ -117,21 +117,6 @@ At any point you get three things live:
 - **Total time per application today**, displayed as `2h 14m 30s`
 - **Your complete switch history**: every transition, timestamped, in order
 
-**Historical data - three modes:**
-
-Click the calendar icon in the sidebar to open the History Range view:
-
-| Mode | What it does |
-|---|---|
-| **Single Day** | Pick any specific date. Loads that day's `.db` file asynchronously off disk. |
-| **Last N Days** | Pull last 7, 14, 30 days or any custom count. Multiple daily files are merged and aggregated. |
-| **Date Range** | Set a start and end date. HPR reads every daily file in the span and streams the combined result back. |
-
-Historical loading runs on N number of threads where N = Days (no pool) - live tracking is never paused. A "Switch to Live View" button in the data view takes you back to real-time instantly.
-
-<p align="center">
-  <img src="./assetsgithub/history.png" alt="HPR History Range View" width="800"/>
-</p>
 
 **Tray controls:**
 
