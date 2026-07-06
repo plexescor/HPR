@@ -136,12 +136,12 @@ HPR features native, lightweight tracking backends for major Linux desktop envir
 
 | OS | Desktop / WM | Session Type | Tracking Backend | Setup Required | Status |
 |:---|:---|:---|:---|:---|:---|
-| **Linux** | Hyprland | Wayland | `hyprctl` IPC | None | Supported |
-| **Linux** | GNOME | Wayland | Custom Shell Extension | Install Extension (Interactive prompt) | Supported |
-| **Linux** | KDE Plasma 6+ | Wayland / X11 | KWin D-Bus scripting | None | Supported |
-| **Linux** | Cinnamon | X11 / Wayland | `org.Cinnamon.Eval` D-Bus | None | Supported |
-| **Linux** | niri | Wayland | `niri msg` IPC | None | Supported |
-| **Windows** | Windows 10 / 11 | Native Desktop | Win32 API (`GetForegroundWindow`) | None | Supported |
+| **Linux** | Hyprland | Wayland | `hyprctl` IPC | None | ✅ |
+| **Linux** | GNOME | Wayland | Custom Shell Extension | Install Extension (Interactive prompt) | ✅ |
+| **Linux** | KDE Plasma 6+ | Wayland / X11 | KWin D-Bus scripting | None | ✅ |
+| **Linux** | Cinnamon | X11 / Wayland | `org.Cinnamon.Eval` D-Bus | None | ✅ |
+| **Linux** | niri | Wayland | `niri msg` IPC | None | ✅ |
+| **Windows** | Windows 10 / 11 | Native Desktop | Win32 API (`GetForegroundWindow`) | None | ✅ |
 
 > [!NOTE]
 > **GNOME Window Tracking:** On GNOME desktop environments, HPR requires the custom `lol-another-window-extension` to fetch active window titles. If you install HPR via the interactive Linux installer script, it will automatically prompt and install this extension for you. On GNOME Wayland, a session logout/login is required once to allow GNOME Shell to discover the newly cloned extension.
