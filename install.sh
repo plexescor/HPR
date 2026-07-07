@@ -129,6 +129,19 @@ if [ -f "$INSTALL_PATH" ]; then
 fi
 sudo install -m 755 "$SRC_DIR/HPR" "$INSTALL_PATH"
 echo "   Binary installed successfully."
+
+# Install any dynamic libraries (*.so)
+echo ">> Installing dynamic libraries (*.so) to $INSTALL_DIR..."
+find "$SRC_DIR" -name "*.so*" | while read -r so_file; do
+    if [ -e "$so_file" ] || [ -L "$so_file" ]; then
+        target_so="$INSTALL_DIR/$(basename "$so_file")"
+        if [ -e "$target_so" ] || [ -L "$target_so" ]; then
+            sudo rm -f "$target_so"
+        fi
+        sudo cp -d "$so_file" "$target_so"
+        echo "   Copied $(basename "$so_file") to $INSTALL_DIR"
+    fi
+done
 echo ""
 
 # 6. User Configuration Setup
