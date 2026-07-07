@@ -181,8 +181,10 @@ You can install or update HPR on Linux automatically with a single command:
 ```bash
 curl -fsSL https://raw.githubusercontent.com/plexescor/HPR/main/install.sh | bash
 ```
-
+<details>
+<summary>
 The interactive installation script performs the following actions:
+</summary>
 * **Dependency Verification**: Checks for required CLI tools (`curl`, `tar`, `xz`, `dbus-send`, `git`).
 * **Version Check**: Queries the GitHub API to fetch and download the latest release asset package (`HPRv{VERSION}-Linux.tar.xz`).
 * **System Binary Installation**: Prompts you for your preferred system-wide installation path (defaults to `/usr/local/bin/HPR`) and installs the binary (uses `sudo` for binary copy only).
@@ -190,7 +192,7 @@ The interactive installation script performs the following actions:
 * **User Customization Protection**: Detects if you have modified your CSV configuration files or the custom `ui/` folder, and preserves your changes. Only untouched default configuration files/folders are updated. The reference directory (`ui-REFERENCEONLY`) and default assets are always updated silently.
 * **GNOME Extension Installation**: Detects if you are running the GNOME Desktop and prompts you to install the custom window-tracking extension (`lol-another-window-extension`) if it's missing, explaining clearly when a session logout/login is required.
 * **Launcher Creation**: Configures high-resolution app icon paths, creates a desktop launcher entry (`~/.local/share/applications/hpr.desktop`), and refreshes application menu databases.
-
+</details>
 > [!NOTE]
 > If you installed via the AUR, the system-wide desktop entry is already managed by the package. HPR detects this and skips the local entry entirely.
 
