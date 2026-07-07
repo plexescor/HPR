@@ -111,14 +111,31 @@ else
 fi
 
 echo ">> System-wide installation path config:"
-read -p "   Install location [Press Enter for '$INSTALL_PATH', or type custom path]: " input_path < /dev/tty
-if [ -n "$input_path" ]; then
-    # Expand leading ~ or ~/ to user's home directory
-    if [[ "$input_path" == "~" || "$input_path" == "~/"* ]]; then
-        input_path="${input_path/#\~/$HOME}"
+while true; do
+    read -p "   Install location [Press Enter for '$INSTALL_PATH', or type custom path]: " input_path < /dev/tty
+    if [ -z "$input_path" ]; then
+        break
     fi
-    INSTALL_PATH="$input_path"
-fi
+    if [[ "$input_path" == *~* ]]; then
+        echo -e "${RED}Error: Tilde (~) is not allowed. Please use absolute paths (e.g. /home/username/path).${NC}" >&2
+        continue
+    fi
+    
+    # Process custom path: strip trailing slashes to clean it up
+    cleaned_path="$input_path"
+    while [[ "$cleaned_path" == */ && "$cleaned_path" != "/" ]]; do
+        cleaned_path="${cleaned_path%/}"
+    done
+    
+    base_name=$(basename "$cleaned_path")
+    # If the entered path is a directory (or ends in slash) or has a basename other than HPR/hpr, append /HPR
+    if [[ "$input_path" == */ ]] || [ -d "$cleaned_path" ] || [[ "$base_name" != "HPR" && "$base_name" != "hpr" ]]; then
+        INSTALL_PATH="$cleaned_path/HPR"
+    else
+        INSTALL_PATH="$cleaned_path"
+    fi
+    break
+done
 
 INSTALL_DIR=$(dirname "$INSTALL_PATH")
 if [ ! -d "$INSTALL_DIR" ]; then
