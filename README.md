@@ -182,16 +182,18 @@ You can install or update HPR on Linux automatically with a single command:
 curl -fsSL https://raw.githubusercontent.com/plexescor/HPR/main/install.sh | bash
 ```
 <details>
-<summary>
-The interactive installation script performs the following actions:
-</summary>
-* **Dependency Verification**: Checks for required CLI tools (`curl`, `tar`, `xz`, `dbus-send`, `git`).
-* **Version Check**: Queries the GitHub API to fetch and download the latest release asset package (`HPRv{VERSION}-Linux.tar.xz`).
-* **System Binary Installation**: Prompts you for your preferred system-wide installation path (defaults to `/usr/local/bin/HPR`) and installs the binary (uses `sudo` for binary copy only).
-* **Configuration Setup**: Creates the config directories (`~/.config/HPR` and `~/.local/share/HPR`) and writes the default CSV files if they do not exist.
-* **User Customization Protection**: Detects if you have modified your CSV configuration files or the custom `ui/` folder, and preserves your changes. Only untouched default configuration files/folders are updated. The reference directory (`ui-REFERENCEONLY`) and default assets are always updated silently.
-* **GNOME Extension Installation**: Detects if you are running the GNOME Desktop and prompts you to install the custom window-tracking extension (`lol-another-window-extension`) if it's missing, explaining clearly when a session logout/login is required.
-* **Launcher Creation**: Configures high-resolution app icon paths, creates a desktop launcher entry (`~/.local/share/applications/hpr.desktop`), and refreshes application menu databases.
+<summary>The interactive installation script performs the following actions:</summary>
+
+<ul>
+<li><strong>Dependency Verification</strong>: Checks for required CLI tools (<code>curl</code>, <code>tar</code>, <code>xz</code>, <code>dbus-send</code>, <code>git</code>).</li>
+<li><strong>Version Check</strong>: Queries the GitHub API to fetch and download the latest release asset package (<code>HPRv{VERSION}-Linux.tar.xz</code>).</li>
+<li><strong>System Binary Installation</strong>: Prompts you for your preferred system-wide installation path (defaults to <code>/usr/local/bin/HPR</code>) and installs the binary (uses <code>sudo</code> for binary copy only).</li>
+<li><strong>Configuration Setup</strong>: Creates the config directories (<code>~/.config/HPR</code> and <code>~/.local/share/HPR</code>) and writes the default CSV files if they do not exist.</li>
+<li><strong>User Customization Protection</strong>: Detects if you have modified your CSV configuration files or the custom <code>ui/</code> folder, and preserves your changes. Only untouched default configuration files/folders are updated.</li>
+<li><strong>GNOME Extension Installation</strong>: Detects if you are running the GNOME Desktop and prompts you to install the custom window-tracking extension (<code>lol-another-window-extension</code>) if it's missing.</li>
+<li><strong>Launcher Creation</strong>: Configures high-resolution app icon paths, creates a desktop launcher entry (<code>~/.local/share/applications/hpr.desktop</code>), and refreshes application menu databases.</li>
+</ul>
+
 </details>
 
 <!-- -->
