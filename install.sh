@@ -113,6 +113,10 @@ fi
 echo ">> System-wide installation path config:"
 read -p "   Install location [Press Enter for '$INSTALL_PATH', or type custom path]: " input_path < /dev/tty
 if [ -n "$input_path" ]; then
+    # Expand leading ~ or ~/ to user's home directory
+    if [[ "$input_path" == "~" || "$input_path" == "~/"* ]]; then
+        input_path="${input_path/#\~/$HOME}"
+    fi
     INSTALL_PATH="$input_path"
 fi
 
