@@ -231,8 +231,8 @@ HPR supports tracking browser tabs per site and per tab without requiring any br
 
 ### Browser Support Matrix
 
-| Browser | Platform Support | Status | Extension Required | Parsing Strategy / Notes |
-| :--- | :--- | :--- | :--- | :--- |
+| Browser | Platform Support | Status &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | Extension Required | Parsing Strategy / Notes |
+| :--- | :--- | :------------------- | :--- | :--- |
 | **Google Chrome** | Windows / Linux | ✅ Working | No | Matches `chrome` (case-insensitive) in window title/process name |
 | **Microsoft Edge** | Windows / Linux | ✅ Working | No | Matches `edge` (case-insensitive) in window title/process name |
 | **Mozilla Firefox** | Windows / Linux | ✅ Working | No | Matches `firefox` (case-insensitive) in window title/process name |
@@ -251,8 +251,8 @@ HPR tracks which project you are currently working in, not just whether the edit
 
 ### IDE & Code Editor Support Matrix
 
-| Application | Platform Support | Status | Extension Required | Parsing Strategy / Notes |
-| :--- | :--- | :--- | :--- | :--- |
+| Application | Platform Support | Status &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | Extension Required | Parsing Strategy / Notes |
+| :--- | :--- | :------------------- | :--- | :--- |
 | **Visual Studio Code** | Windows / Linux | ✅ Working | No | Matches `code`, `vscode`, or `visual studio code` (case-insensitive) in window title/process name |
 | **IntelliJ IDEA** | Linux | ✅ Working (⚠️ may be unstable) | No | Matches `jetbrains` (case-insensitive) in window title/process name; extracts project name before the en dash (–). |
 | **WebStorm** | Linux | ✅ Working (⚠️ may be unstable) | No | Matches `jetbrains` (case-insensitive) in window title/process name; extracts project name before the en dash (–). |
