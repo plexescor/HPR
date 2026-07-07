@@ -8,9 +8,9 @@ structure, visual hierarchy — all yours to change.
 
 There is exactly ONE rule:
 
-  DO NOT RENAME ANYTHING THAT HPR'S C++ TALKS TO.
+  DO NOT RENAME ANYTHING THAT HPR'S C++ TALKS TO (unless you choose to omit them).
 
-That's it. Everything else is fair game.
+That's it. Everything else is fair game. Note that satisfying this UI/C++ contract is optional. If you omit any properties, callbacks, or structs, HPR will still load and run successfully, but you won't get data or event execution for those specific fields.
 
 
 ================================================
@@ -18,9 +18,7 @@ That's it. Everything else is fair game.
 ================================================
 
 In app-window.slint, the following names are
-hardcoded in HPR's C++ backend. Rename any of
-these and HPR will fail to compile or crash at
-runtime.
+hardcoded in HPR's C++ backend. Satisfying this contract is optional; omitting any of these properties, callbacks, or structs will still allow the app to work normally without crashes, though you will lose the corresponding data or feature. Do not rename the ones you do choose to use.
 
 -- Structs (defined in types.slint) --
 

@@ -484,11 +484,14 @@ Themes are loaded from:
 
 Each theme lives in its own subdirectory and must contain:
 1. **`metadata.csv`**: Properties like `name,My Theme` and `version,1.0`.
-2. **`types.slint`**: Defines data models. Keep this exactly as-is.
+2. **`types.slint`**: Defines data models. (Optional; omitting specific properties or models is fine, but you won't receive data for those fields).
 3. **`app-window.slint`**: The main layout file, loaded at runtime.
 4. **Previews (Optional)**: Up to 9 screenshots (`1.png` through `9.png`) shown in the Themes carousel.
 
-Theme creators have full freedom to build any layout they want and can add or remove any other files as long as the mandatory files are present and satisfy the UI contract with the C++ backend.
+Theme creators have full freedom to build any layout they want and can add or remove any other files as long as the mandatory files are present.
+
+> [!NOTE]
+> The UI/C++ contract is optional. If you choose to omit any of the bindings or properties specified in the contract, the application will still load and function normally, but you will not get the data or callbacks associated with the omitted properties.
 
 For the complete UI contract and required bindings, refer to [hpr-cpp.netlify.app/themes.html](https://hpr-cpp.netlify.app/themes.html).
 
