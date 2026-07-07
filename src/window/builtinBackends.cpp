@@ -295,23 +295,6 @@ void registerBuiltinBackends()
             }
         },
 
-        []()
-        {
-            std::string extensionCheckCommand =
-                "gdbus call --session "
-                "--dest org.gnome.Shell "
-                "--object-path "
-                "/org/gnome/Shell/Extensions/"
-                "LolAnotherWindowExtension "
-                "--method "
-                "org.gnome.Shell.Extensions."
-                "LolAnotherWindowExtension.FocusClass 2>&1";
-
-            std::string result =
-                runSystemCommand_UNSAFE(extensionCheckCommand);
-
-            return result.contains("('");
-        },
         []() -> std::string
         {
             std::string command =
@@ -386,20 +369,6 @@ void registerBuiltinBackends()
 
         []() {}, 
 
-        []() -> bool  // isUsable 
-        {
-            DBusError err;
-            dbus_error_init(&err);
-            DBusConnection* conn = dbus_bus_get_private(DBUS_BUS_SESSION, &err);
-            if (!conn || dbus_error_is_set(&err)) { dbus_error_free(&err); return false; }
-            bool exists = dbus_bus_name_has_owner(conn, "org.kde.KWin", &err);
-            dbus_error_free(&err);
-            dbus_connection_close(conn);
-            dbus_connection_unref(conn);
-            return exists;
-
-        },
-
         []() -> std::string 
         {
             std::string result = MotherfuckingKDE::kdeGetActiveWindowClass();
@@ -434,14 +403,6 @@ void registerBuiltinBackends()
         },
 
         []() {},
-
-        []()
-        {
-            std::string cmd = "hyprctl monitors -j";
-            std::string result = runSystemCommand_UNSAFE(cmd);
-            // Logger::log("hyprctl monitors result: '" + result + "'");
-            return result.contains("id");
-        },
 
         []() -> std::string
         {
@@ -502,15 +463,6 @@ void registerBuiltinBackends()
         {
             //no shit
         },
-
-        []()
-        {
-            #ifdef _WIN32
-                return true;
-            #endif
-                return false;
-        },
-
 
         []() -> std::string
         {
@@ -595,11 +547,6 @@ void registerBuiltinBackends()
 
         []() {},
 
-        []() -> bool
-        {
-            return true;
-        },
-
         []() -> std::string
         {
             std::string cmd = "niri msg --json focused-window 2>/dev/null";
@@ -652,13 +599,6 @@ void registerBuiltinBackends()
         },
 
         []() {},
-
-        []() -> bool
-        {
-            std::string cmd = "gdbus call --session --dest org.Cinnamon --object-path /org/Cinnamon --method org.Cinnamon.Eval \"global.display.focus_window.get_wm_class()\"";
-            std::string check = runSystemCommand_UNSAFE(cmd);
-            return (check.contains("(true,") || check.contains("(false,"));
-        },
 
         []() -> std::string
         {

@@ -1020,24 +1020,20 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         std::string name, 
         sol::function matchesEnvironment,
         sol::function initialize,
-        sol::function isUsable,
         sol::function getCurrentWindow,
-        sol::function getCurrentTitle
+        sol::function getCurrentTitle,
+        sol::function getCurrentPid
     ) 
     {
         auto safeMatches = [&ext, matchesEnvironment](const std::string& env) -> bool {
             std::lock_guard<std::recursive_mutex> lock(ext.luaMutex);
-            return matchesEnvironment(env);
+            sol::object result = matchesEnvironment(env);
+            return result.as<bool>();
         };
 
-        auto safeInitialize = [&ext, initialize]() {
+        auto safeInitialize = [&ext, initialize]() -> void {
             std::lock_guard<std::recursive_mutex> lock(ext.luaMutex);
             initialize();
-        };
-
-        auto safeIsUsable = [&ext, isUsable]() -> bool {
-            std::lock_guard<std::recursive_mutex> lock(ext.luaMutex);
-            return isUsable();
         };
 
         auto safeGetCurrentWindow = [&ext, getCurrentWindow]() -> std::string {
@@ -1050,7 +1046,12 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
             return getCurrentTitle();
         };
 
-        registerBackend_E(name, safeMatches, safeInitialize, safeIsUsable, safeGetCurrentWindow, safeGetCurrentTitle);
+        auto safeGetCurrentPid = [&ext, getCurrentPid]() -> std::string {
+            std::lock_guard<std::recursive_mutex> lock(ext.luaMutex);
+            return getCurrentPid();
+        };
+
+        registerBackend_E(name, safeMatches, safeInitialize, safeGetCurrentWindow, safeGetCurrentTitle, safeGetCurrentPid);
     };
 
     lua["HPR"]["dbExecute_E"] = [this](std::string sql, sol::optional<std::vector<std::string>> params) 

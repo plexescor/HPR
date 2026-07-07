@@ -10,9 +10,7 @@ struct WindowBackend
 
     std::function<bool(const std::string& desktopEnvironment)> matchesEnvironment;    
     std::function<void()> initialize;
-    std::function<bool()> isUsable;
         
-
     std::function<std::string()> getCurrentWindow;
     std::function<std::string()> getCurrentTitle;
     std::function<std::string()> getCurrentPid;

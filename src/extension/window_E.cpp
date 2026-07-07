@@ -38,18 +38,18 @@ std::string getCurrentTitle_E()
 void registerBackend_E(std::string name, 
     std::function<bool(const std::string&)> matchesEnvironment,
     std::function<void()> initialize,
-    std::function<bool()> isUsable,
     std::function<std::string()> getCurrentWindow,
-    std::function<std::string()> getCurrentTitle)
+    std::function<std::string()> getCurrentTitle,
+    std::function<std::string()> getCurrentPid)
 {
     registerBackend
     ({
         name,
         matchesEnvironment,
         initialize,
-        isUsable,
         getCurrentWindow,
-        getCurrentTitle
+        getCurrentTitle,
+        getCurrentPid
     });
 }
 
