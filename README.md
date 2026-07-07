@@ -254,7 +254,7 @@ HPR tracks which project you are currently working in, not just whether the edit
 | Application | Platform Support | Status | Extension Required | Parsing Strategy / Notes |
 | :--- | :--- | :--- | :--- | :--- |
 | **Visual Studio Code** | Windows / Linux | ✅ Working | No | Matches `code`, `vscode`, or `visual studio code` (case-insensitive) in window title/process name |
-| **IntelliJ IDEA** | Linux | ⚠️ In Development | No | Matches `jetbrains` (case-insensitive) in window title/process name; only tested on Linux |
+| **JetBrains IDEs** (IntelliJ, WebStorm, PyCharm, CLion, Rider, GoLand, RustRover, PhpStorm, RubyMine, DataGrip, DataSpell) | Linux | ✅ Working (⚠️ may be unstable) | No | Matches `jetbrains` (case-insensitive) in window title/process name; extracts project name before the en dash (–). Tested on Linux only. |
 
 ### How It Works
 
@@ -264,11 +264,11 @@ VS Code puts the active project name directly in its window title in the format 
 2. Find the last ` - ` separator in what remains.
 3. Everything after that separator is the project name.
 
-#### IntelliJ IDEA (In Development)
-IntelliJ IDEA prepends `jetbrains: ` to the active project window title in HPR (resolving to `jetbrains: ProjectName – file [module]` or just `jetbrains: ProjectName` using an em dash `–`). HPR parses it:
+#### JetBrains IDEs (Beta)
+JetBrains IDEs prepend `jetbrains: ` to the active project window title in HPR (resolving to `jetbrains: ProjectName – file [module]` or just `jetbrains: ProjectName` using an en dash `–`). HPR parses it:
 1. Strip the `jetbrains: ` prefix.
-2. Find the first occurrence of the em dash ` – ` (`\xe2\x80\x93`).
-3. Everything before the em dash is the project name. If no em dash is found, the whole cleaned string is used.
+2. Find the first occurrence of the en dash ` – ` (`\xe2\x80\x93`).
+3. Everything before the en dash is the project name. If no en dash is found, the whole cleaned string is used.
 
 The result goes into `timeLog_PerProject`, a separate time accumulator running in parallel with the normal per-app log. The UI has a dedicated Project View showing time broken down by project name for the day. Toggle between **Raw View** (unprocessed title substring) and the default parsed view which applies `projectAliases.csv`.
 
