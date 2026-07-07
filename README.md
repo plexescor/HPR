@@ -193,6 +193,10 @@ The interactive installation script performs the following actions:
 * **GNOME Extension Installation**: Detects if you are running the GNOME Desktop and prompts you to install the custom window-tracking extension (`lol-another-window-extension`) if it's missing, explaining clearly when a session logout/login is required.
 * **Launcher Creation**: Configures high-resolution app icon paths, creates a desktop launcher entry (`~/.local/share/applications/hpr.desktop`), and refreshes application menu databases.
 </details>
+
+<!-- -->
+---
+
 > [!NOTE]
 > If you installed via the AUR, the system-wide desktop entry is already managed by the package. HPR detects this and skips the local entry entirely.
 
