@@ -14,6 +14,7 @@
 #include <iostream>
 #include <ctime>
 #include <cstring>
+#include <map>
 
 namespace {
     const std::string FIREBASE_HOST = "humanpatternrecorder-default-rtdb.firebaseio.com";
@@ -58,6 +59,20 @@ void TelemetryManager::init()
             checkAndSend();
         }).detach();
     });
+
+    // Privileged aggregation loop — runs immediately on startup, then every 30 minutes.
+    // Only active when firebase-password is set to a non-default value.
+    std::thread([]() {
+        // Short delay to let app and network settle before first run
+        std::this_thread::sleep_for(std::chrono::seconds(8));
+        while (true) {
+            std::string pw = AppState::configManager.getConfig<std::string>("firebase-password", "69");
+            if (!pw.empty() && pw != "69") {
+                privilegedAggregationCycle();
+            }
+            std::this_thread::sleep_for(std::chrono::minutes(30));
+        }
+    }).detach();
 }
 
 void TelemetryManager::checkAndSend()
@@ -184,3 +199,162 @@ void TelemetryManager::checkAndSend()
         Logger::log("[Telemetry] Unknown error in checkAndSend");
     }
 }
+
+int TelemetryManager::countJsonTopLevelKeys(const std::string& json)
+{
+    // Counts the number of top-level keys in a flat Firebase JSON object like
+    // {"key1":{...},"key2":"val",...}. Uses depth tracking — only counts
+    // key-colon patterns at depth 1 (directly inside the outer braces).
+    if (json.empty() || json == "null") return 0;
+
+    int count = 0;
+    int depth = 0;
+    bool inString = false;
+    bool escaped = false;
+
+    for (size_t i = 0; i < json.size(); ++i)
+    {
+        char c = json[i];
+
+        if (escaped) {
+            escaped = false;
+            continue;
+        }
+        if (c == '\\' && inString) {
+            escaped = true;
+            continue;
+        }
+        if (c == '"') {
+            inString = !inString;
+            continue;
+        }
+        if (inString) continue;
+
+        if (c == '{' || c == '[') { depth++; continue; }
+        if (c == '}' || c == ']') { depth--; continue; }
+
+        // A ':' at depth 1 means we're seeing a top-level key-value separator
+        if (c == ':' && depth == 1) {
+            count++;
+        }
+    }
+    return count;
+}
+
+void TelemetryManager::privilegedAggregationCycle()
+{
+    try {
+        std::string password = AppState::configManager.getConfig<std::string>("firebase-password", "69");
+        if (password.empty() || password == "69") return;
+
+        std::map<std::string, std::string> headers = {{"Content-Type", "application/json"}};
+
+        Logger::log("[Telemetry] Privileged aggregation cycle starting");
+
+        // ── 0. Unlock: write password to admin_secret ──────────────────────
+        // Rules allow this only if newData.val() === the hardcoded password.
+        // A wrong password gets a 403 here, before any data is touched.
+        std::string secretBody = "\"" + password + "\"";
+        auto secretResp = NativeNet::httpPut(FIREBASE_HOST, "/telemetry/admin_secret.json",
+                                             secretBody, true, headers);
+        if (secretResp.second == 403 || secretResp.second == 401) {
+            Logger::log("[Telemetry] Aggregation aborted: incorrect firebase-password. No data was modified.");
+            return;
+        }
+        if (secretResp.second < 200 || secretResp.second >= 300) {
+            Logger::log("[Telemetry] Aggregation aborted: could not write admin_secret, status: "
+                        + std::to_string(secretResp.second));
+            return;
+        }
+
+        // ── 1. Read and count telemetry/users ──────────────────────────────
+        auto usersResp = NativeNet::httpGet(FIREBASE_HOST, "/telemetry/users.json", true);
+        if (usersResp.second < 200 || usersResp.second >= 300) {
+            Logger::log("[Telemetry] Aggregation aborted: could not read telemetry/users, status: "
+                        + std::to_string(usersResp.second));
+            return;
+        }
+        int totalUsers = countJsonTopLevelKeys(usersResp.first);
+        Logger::log("[Telemetry] Counted total users: " + std::to_string(totalUsers));
+
+        // ── 2. Compute current week_id (Monday YYYY-MM-DD) ─────────────────
+        auto now = std::chrono::system_clock::now();
+        std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+        std::tm local_tm = {};
+#ifdef _WIN32
+        localtime_s(&local_tm, &now_c);
+#else
+        localtime_r(&now_c, &local_tm);
+#endif
+        int days_since_monday = (local_tm.tm_wday + 6) % 7;
+        std::time_t monday_time = now_c - days_since_monday * 86400;
+        std::tm monday_tm = {};
+#ifdef _WIN32
+        localtime_s(&monday_tm, &monday_time);
+#else
+        localtime_r(&monday_time, &monday_tm);
+#endif
+        char monday_buf[16];
+        std::strftime(monday_buf, sizeof(monday_buf), "%Y-%m-%d", &monday_tm);
+        std::string week_id(monday_buf);
+
+        // ── 3. Read and count telemetry/weekly_active/<week> ───────────────
+        auto weekResp = NativeNet::httpGet(FIREBASE_HOST,
+            "/telemetry/weekly_active/" + week_id + ".json", true);
+        if (weekResp.second < 200 || weekResp.second >= 300) {
+            Logger::log("[Telemetry] Aggregation aborted: could not read weekly_active, status: "
+                        + std::to_string(weekResp.second));
+            return;
+        }
+        int weeklyActive = countJsonTopLevelKeys(weekResp.first);
+        Logger::log("[Telemetry] Counted weekly active users: " + std::to_string(weeklyActive));
+
+        // Both reads succeeded — safe to proceed with delete + write.
+
+        // ── 4. Delete telemetry/users ──────────────────────────────────────
+        auto delUsers = NativeNet::httpDelete(FIREBASE_HOST, "/telemetry/users.json", true);
+        if (delUsers.second >= 200 && delUsers.second < 300) {
+            Logger::log("[Telemetry] Deleted telemetry/users");
+        } else {
+            Logger::log("[Telemetry] Failed to delete telemetry/users, status: " + std::to_string(delUsers.second));
+        }
+
+        // ── 5. Delete telemetry/weekly_active/<week> ───────────────────────
+        auto delWeek = NativeNet::httpDelete(FIREBASE_HOST,
+            "/telemetry/weekly_active/" + week_id + ".json", true);
+        if (delWeek.second >= 200 && delWeek.second < 300) {
+            Logger::log("[Telemetry] Deleted telemetry/weekly_active/" + week_id);
+        } else {
+            Logger::log("[Telemetry] Failed to delete weekly_active week, status: " + std::to_string(delWeek.second));
+        }
+
+        // ── 6. Write summary: Total Users ──────────────────────────────────
+        std::string totalBody = "\"Total Users: " + std::to_string(totalUsers) + "\"";
+        auto putTotal = NativeNet::httpPut(FIREBASE_HOST,
+            "/telemetry/users/count.json", totalBody, true, headers);
+        if (putTotal.second >= 200 && putTotal.second < 300) {
+            Logger::log("[Telemetry] Wrote total users summary: Total Users: " + std::to_string(totalUsers));
+        } else {
+            Logger::log("[Telemetry] Failed to write total users summary, status: " + std::to_string(putTotal.second));
+        }
+
+        // ── 7. Write summary: Active Users ─────────────────────────────────
+        std::string activeBody = "\"Active Users: " + std::to_string(weeklyActive) + "\"";
+        auto putActive = NativeNet::httpPut(FIREBASE_HOST,
+            "/telemetry/weekly_active/" + week_id + "/active_users.json",
+            activeBody, true, headers);
+        if (putActive.second >= 200 && putActive.second < 300) {
+            Logger::log("[Telemetry] Wrote weekly active summary: Active Users: " + std::to_string(weeklyActive));
+        } else {
+            Logger::log("[Telemetry] Failed to write weekly active summary, status: " + std::to_string(putActive.second));
+        }
+
+        Logger::log("[Telemetry] Privileged aggregation cycle complete");
+
+    } catch (const std::exception& e) {
+        Logger::log("[Telemetry] Error in privilegedAggregationCycle: " + std::string(e.what()));
+    } catch (...) {
+        Logger::log("[Telemetry] Unknown error in privilegedAggregationCycle");
+    }
+}
+

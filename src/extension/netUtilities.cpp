@@ -491,6 +491,145 @@ namespace NativeNet
         return { response, statusCode };
     }
 
+    std::pair<std::string, int> httpDelete(const std::string& host, const std::string& path, bool secure, const std::map<std::string, std::string>& headers)
+    {
+        if (!AppState::configManager.getConfig<bool>("allow-network-activity", true))
+        {
+            return { "", 0 };
+        }
+        if (AppState::extManager)
+        {
+            CppValue headersVal(CppValue::Type::Struct);
+            for (const auto& [k, v] : headers)
+            {
+                headersVal.struct_val[k] = CppValue(CppValue::Type::String, v);
+            }
+            auto res = AppState::extManager->dispatchOverride("httpDelete", {
+                CppValue(CppValue::Type::String, host),
+                CppValue(CppValue::Type::String, path),
+                CppValue(CppValue::Type::Bool, secure),
+                headersVal
+            });
+            if (res.has_value() && res->type == CppValue::Type::Struct)
+            {
+                std::string resBody = "";
+                int status = 200;
+                if (res->struct_val.count("body") && res->struct_val.at("body").type == CppValue::Type::String)
+                    resBody = res->struct_val.at("body").str_val;
+                if (res->struct_val.count("status") && res->struct_val.at("status").type == CppValue::Type::Double)
+                    status = static_cast<int>(res->struct_val.at("status").double_val);
+                return { resBody, status };
+            }
+        }
+        std::string response;
+        int statusCode = 0;
+
+#ifdef _WIN32
+        HINTERNET hSession = WinHttpOpen(L"HPR/1.0",
+                                         WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
+                                         WINHTTP_NO_PROXY_NAME,
+                                         WINHTTP_NO_PROXY_BYPASS, 0);
+        if (!hSession) return { "", 0 };
+
+        std::string hostname = host;
+        INTERNET_PORT port = secure ? INTERNET_DEFAULT_HTTPS_PORT : INTERNET_DEFAULT_HTTP_PORT;
+
+        size_t colonPos = host.rfind(':');
+        if (colonPos != std::string::npos) {
+            hostname = host.substr(0, colonPos);
+            port = static_cast<INTERNET_PORT>(std::stoi(host.substr(colonPos + 1)));
+        }
+
+        std::wstring wHost(hostname.begin(), hostname.end());
+        HINTERNET hConnect = WinHttpConnect(hSession, wHost.c_str(), port, 0);
+        if (!hConnect) {
+            WinHttpCloseHandle(hSession);
+            return { "", 0 };
+        }
+
+        std::wstring wPath(path.begin(), path.end());
+        DWORD flags = secure ? WINHTTP_FLAG_SECURE : 0;
+
+        HINTERNET hRequest = WinHttpOpenRequest(hConnect, L"DELETE", wPath.c_str(),
+                                                NULL, WINHTTP_NO_REFERER,
+                                                WINHTTP_DEFAULT_ACCEPT_TYPES, flags);
+        if (!hRequest) {
+            WinHttpCloseHandle(hConnect);
+            WinHttpCloseHandle(hSession);
+            return { "", 0 };
+        }
+
+        for (const auto& [k, v] : headers) {
+            std::string headerLine = k + ": " + v + "\r\n";
+            std::wstring wHeaderLine(headerLine.begin(), headerLine.end());
+            WinHttpAddRequestHeaders(hRequest, wHeaderLine.c_str(), -1L, WINHTTP_ADDREQ_FLAG_ADD | WINHTTP_ADDREQ_FLAG_REPLACE);
+        }
+
+        if (WinHttpSendRequest(hRequest, WINHTTP_NO_ADDITIONAL_HEADERS, 0,
+                               WINHTTP_NO_REQUEST_DATA, 0, 0, 0) &&
+            WinHttpReceiveResponse(hRequest, NULL))
+        {
+            DWORD dwStatusCode = 0;
+            DWORD dwSize = sizeof(dwStatusCode);
+            if (WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_statusCode | WINHTTP_QUERY_FLAG_NUMBER,
+                                    WINHTTP_HEADER_NAME_BY_INDEX, &dwStatusCode, &dwSize, WINHTTP_NO_HEADER_INDEX))
+            {
+                statusCode = static_cast<int>(dwStatusCode);
+            }
+
+            DWORD dwSizeData = 0;
+            do {
+                if (WinHttpQueryDataAvailable(hRequest, &dwSizeData) && dwSizeData > 0) {
+                    std::vector<char> buffer(dwSizeData + 1);
+                    DWORD dwDownloaded = 0;
+                    if (WinHttpReadData(hRequest, &buffer[0], dwSizeData, &dwDownloaded)) {
+                        response.append(&buffer[0], dwDownloaded);
+                    }
+                }
+            } while (dwSizeData > 0);
+        }
+
+        WinHttpCloseHandle(hRequest);
+        WinHttpCloseHandle(hConnect);
+        WinHttpCloseHandle(hSession);
+
+#else
+        CURL* curl = curl_easy_init();
+        if (curl) {
+            std::string url = (secure ? "https://" : "http://") + host + path;
+            curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
+            curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "DELETE");
+            curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
+            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
+            curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+            curl_easy_setopt(curl, CURLOPT_USERAGENT, "HPR/1.0");
+
+            struct curl_slist* curlHeaders = nullptr;
+            for (const auto& [k, v] : headers) {
+                std::string headerStr = k + ": " + v;
+                curlHeaders = curl_slist_append(curlHeaders, headerStr.c_str());
+            }
+            if (curlHeaders) {
+                curl_easy_setopt(curl, CURLOPT_HTTPHEADER, curlHeaders);
+            }
+
+            CURLcode res = curl_easy_perform(curl);
+            if (res == CURLE_OK) {
+                long responseCode = 0;
+                curl_easy_getinfo(curl, CURLINFO_RESPONSE_CODE, &responseCode);
+                statusCode = static_cast<int>(responseCode);
+            } else {
+                Logger::log("[HPR] curl DELETE failed: " + std::string(curl_easy_strerror(res)));
+            }
+            if (curlHeaders) {
+                curl_slist_free_all(curlHeaders);
+            }
+            curl_easy_cleanup(curl);
+        }
+#endif
+        return { response, statusCode };
+    }
+
     namespace
     {
 #ifdef _WIN32

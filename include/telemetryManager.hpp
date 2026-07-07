@@ -10,4 +10,6 @@ public:
 
 private:
     static std::string generateUUID();
+    static void privilegedAggregationCycle();
+    static int countJsonTopLevelKeys(const std::string& json);
 };

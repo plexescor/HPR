@@ -139,3 +139,8 @@ The following functions in HPR are currently overridable by Lua extensions via t
     - Description: Intercepts outgoing HTTP PUT requests. Allows logging, custom filtering, or returning a mock response.
     - C++ Call Site: src/extension/netUtilities.cpp
     - Lua Override Key: HPR.overrides.httpPut
+
+29. httpDelete
+    - Description: Intercepts outgoing HTTP DELETE requests. Allows logging, blocking, or returning a mock response.
+    - C++ Call Site: src/extension/netUtilities.cpp
+    - Lua Override Key: HPR.overrides.httpDelete

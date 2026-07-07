@@ -935,6 +935,22 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
         return std::make_tuple(result.first, result.second);
     };
 
+    lua["HPR"]["httpDelete_E"] = [](std::string host, std::string path, sol::optional<bool> secure, sol::optional<sol::table> headers) -> std::tuple<std::string, int>
+    {
+        std::map<std::string, std::string> cppHeaders;
+        if (headers.has_value())
+        {
+            headers->for_each([&](sol::object k, sol::object v) {
+                if (k.is<std::string>() && v.is<std::string>())
+                {
+                    cppHeaders[k.as<std::string>()] = v.as<std::string>();
+                }
+            });
+        }
+        auto result = NativeNet::httpDelete(host, path, secure.value_or(true), cppHeaders);
+        return std::make_tuple(result.first, result.second);
+    };
+
     lua["HPR"]["parseJSON_E"] = [&lua](std::string jsonStr, sol::optional<std::string> fieldPath) 
     {
         return JsonParser::parseJSON_E(lua, jsonStr, fieldPath);
