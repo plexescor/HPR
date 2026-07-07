@@ -889,35 +889,6 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
 
     lua["HPR"]["httpGet_E"] = [](std::string host, std::string path, sol::optional<bool> secure, sol::optional<sol::table> headers) -> std::tuple<std::string, int>
     {
-        if (AppState::extManager)
-        {
-            CppValue headersVal(CppValue::Type::Struct);
-            if (headers.has_value())
-            {
-                headers->for_each([&](sol::object k, sol::object v) {
-                    if (k.is<std::string>() && v.is<std::string>())
-                    {
-                        headersVal.struct_val[k.as<std::string>()] = CppValue(CppValue::Type::String, v.as<std::string>());
-                    }
-                });
-            }
-            auto res = AppState::extManager->dispatchOverride("httpGet", {
-                CppValue(CppValue::Type::String, host),
-                CppValue(CppValue::Type::String, path),
-                CppValue(CppValue::Type::Bool, secure.value_or(true)),
-                headersVal
-            });
-            if (res.has_value() && res->type == CppValue::Type::Struct)
-            {
-                std::string body = "";
-                int status = 200;
-                if (res->struct_val.count("body") && res->struct_val.at("body").type == CppValue::Type::String)
-                    body = res->struct_val.at("body").str_val;
-                if (res->struct_val.count("status") && res->struct_val.at("status").type == CppValue::Type::Double)
-                    status = static_cast<int>(res->struct_val.at("status").double_val);
-                return std::make_tuple(body, status);
-            }
-        }
         std::map<std::string, std::string> cppHeaders;
         if (headers.has_value())
         {
@@ -934,36 +905,6 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
 
     lua["HPR"]["httpPost_E"] = [](std::string host, std::string path, std::string body, sol::optional<bool> secure, sol::optional<sol::table> headers) -> std::tuple<std::string, int>
     {
-        if (AppState::extManager)
-        {
-            CppValue headersVal(CppValue::Type::Struct);
-            if (headers.has_value())
-            {
-                headers->for_each([&](sol::object k, sol::object v) {
-                    if (k.is<std::string>() && v.is<std::string>())
-                    {
-                        headersVal.struct_val[k.as<std::string>()] = CppValue(CppValue::Type::String, v.as<std::string>());
-                    }
-                });
-            }
-            auto res = AppState::extManager->dispatchOverride("httpPost", {
-                CppValue(CppValue::Type::String, host),
-                CppValue(CppValue::Type::String, path),
-                CppValue(CppValue::Type::String, body),
-                CppValue(CppValue::Type::Bool, secure.value_or(true)),
-                headersVal
-            });
-            if (res.has_value() && res->type == CppValue::Type::Struct)
-            {
-                std::string resBody = "";
-                int status = 200;
-                if (res->struct_val.count("body") && res->struct_val.at("body").type == CppValue::Type::String)
-                    resBody = res->struct_val.at("body").str_val;
-                if (res->struct_val.count("status") && res->struct_val.at("status").type == CppValue::Type::Double)
-                    status = static_cast<int>(res->struct_val.at("status").double_val);
-                return std::make_tuple(resBody, status);
-            }
-        }
         std::map<std::string, std::string> cppHeaders;
         if (headers.has_value())
         {
@@ -975,6 +916,22 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
             });
         }
         auto result = NativeNet::httpPost(host, path, body, secure.value_or(true), cppHeaders);
+        return std::make_tuple(result.first, result.second);
+    };
+
+    lua["HPR"]["httpPut_E"] = [](std::string host, std::string path, std::string body, sol::optional<bool> secure, sol::optional<sol::table> headers) -> std::tuple<std::string, int>
+    {
+        std::map<std::string, std::string> cppHeaders;
+        if (headers.has_value())
+        {
+            headers->for_each([&](sol::object k, sol::object v) {
+                if (k.is<std::string>() && v.is<std::string>())
+                {
+                    cppHeaders[k.as<std::string>()] = v.as<std::string>();
+                }
+            });
+        }
+        auto result = NativeNet::httpPut(host, path, body, secure.value_or(true), cppHeaders);
         return std::make_tuple(result.first, result.second);
     };
 

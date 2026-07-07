@@ -46,6 +46,30 @@ namespace NativeNet
         {
             return { "", 0 };
         }
+        if (AppState::extManager)
+        {
+            CppValue headersVal(CppValue::Type::Struct);
+            for (const auto& [k, v] : headers)
+            {
+                headersVal.struct_val[k] = CppValue(CppValue::Type::String, v);
+            }
+            auto res = AppState::extManager->dispatchOverride("httpGet", {
+                CppValue(CppValue::Type::String, host),
+                CppValue(CppValue::Type::String, path),
+                CppValue(CppValue::Type::Bool, secure),
+                headersVal
+            });
+            if (res.has_value() && res->type == CppValue::Type::Struct)
+            {
+                std::string body = "";
+                int status = 200;
+                if (res->struct_val.count("body") && res->struct_val.at("body").type == CppValue::Type::String)
+                    body = res->struct_val.at("body").str_val;
+                if (res->struct_val.count("status") && res->struct_val.at("status").type == CppValue::Type::Double)
+                    status = static_cast<int>(res->struct_val.at("status").double_val);
+                return { body, status };
+            }
+        }
         std::string response;
         int statusCode = 0;
 
@@ -162,6 +186,31 @@ namespace NativeNet
         if (!AppState::configManager.getConfig<bool>("allow-network-activity", true))
         {
             return { "", 0 };
+        }
+        if (AppState::extManager)
+        {
+            CppValue headersVal(CppValue::Type::Struct);
+            for (const auto& [k, v] : headers)
+            {
+                headersVal.struct_val[k] = CppValue(CppValue::Type::String, v);
+            }
+            auto res = AppState::extManager->dispatchOverride("httpPost", {
+                CppValue(CppValue::Type::String, host),
+                CppValue(CppValue::Type::String, path),
+                CppValue(CppValue::Type::String, body),
+                CppValue(CppValue::Type::Bool, secure),
+                headersVal
+            });
+            if (res.has_value() && res->type == CppValue::Type::Struct)
+            {
+                std::string resBody = "";
+                int status = 200;
+                if (res->struct_val.count("body") && res->struct_val.at("body").type == CppValue::Type::String)
+                    resBody = res->struct_val.at("body").str_val;
+                if (res->struct_val.count("status") && res->struct_val.at("status").type == CppValue::Type::Double)
+                    status = static_cast<int>(res->struct_val.at("status").double_val);
+                return { resBody, status };
+            }
         }
         std::string response;
         int statusCode = 0;
@@ -294,6 +343,31 @@ namespace NativeNet
         if (!AppState::configManager.getConfig<bool>("allow-network-activity", true))
         {
             return { "", 0 };
+        }
+        if (AppState::extManager)
+        {
+            CppValue headersVal(CppValue::Type::Struct);
+            for (const auto& [k, v] : headers)
+            {
+                headersVal.struct_val[k] = CppValue(CppValue::Type::String, v);
+            }
+            auto res = AppState::extManager->dispatchOverride("httpPut", {
+                CppValue(CppValue::Type::String, host),
+                CppValue(CppValue::Type::String, path),
+                CppValue(CppValue::Type::String, body),
+                CppValue(CppValue::Type::Bool, secure),
+                headersVal
+            });
+            if (res.has_value() && res->type == CppValue::Type::Struct)
+            {
+                std::string resBody = "";
+                int status = 200;
+                if (res->struct_val.count("body") && res->struct_val.at("body").type == CppValue::Type::String)
+                    resBody = res->struct_val.at("body").str_val;
+                if (res->struct_val.count("status") && res->struct_val.at("status").type == CppValue::Type::Double)
+                    status = static_cast<int>(res->struct_val.at("status").double_val);
+                return { resBody, status };
+            }
         }
         std::string response;
         int statusCode = 0;

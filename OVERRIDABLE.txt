@@ -85,7 +85,15 @@ The following functions in HPR are currently overridable by Lua extensions via t
     - C++ Call Site: src/extension/extensionManager.cpp
     - Lua Override Key: HPR.overrides.dbQueryHistorical
 
-IDK why 
+18. httpGet
+    - Description: Intercepts outgoing HTTP GET requests. Allows logging, custom filtering, or returning a mock response.
+    - C++ Call Site: src/extension/netUtilities.cpp
+    - Lua Override Key: HPR.overrides.httpGet
+
+19. httpPost
+    - Description: Intercepts outgoing HTTP POST requests. Allows logging, custom filtering, or returning a mock response.
+    - C++ Call Site: src/extension/netUtilities.cpp
+    - Lua Override Key: HPR.overrides.httpPost
 
 20. stopTracking
     - Description: Stops tracking the active window state. Allows overriding or preventing the tracking pause.
@@ -126,3 +134,8 @@ IDK why
     - Description: Triggered when a time limit for an application is reached. Allows custom handling of limit events.
     - C++ Call Site: src/limits/limitsManager.cpp
     - Lua Override Key: HPR.overrides.limitReached
+
+28. httpPut
+    - Description: Intercepts outgoing HTTP PUT requests. Allows logging, custom filtering, or returning a mock response.
+    - C++ Call Site: src/extension/netUtilities.cpp
+    - Lua Override Key: HPR.overrides.httpPut
