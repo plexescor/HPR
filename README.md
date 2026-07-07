@@ -254,7 +254,17 @@ HPR tracks which project you are currently working in, not just whether the edit
 | Application | Platform Support | Status | Extension Required | Parsing Strategy / Notes |
 | :--- | :--- | :--- | :--- | :--- |
 | **Visual Studio Code** | Windows / Linux | ✅ Working | No | Matches `code`, `vscode`, or `visual studio code` (case-insensitive) in window title/process name |
-| **JetBrains IDEs** (IntelliJ, WebStorm, PyCharm, CLion, Rider, GoLand, RustRover, PhpStorm, RubyMine, DataGrip, DataSpell) | Linux | ✅ Working (⚠️ may be unstable) | No | Matches `jetbrains` (case-insensitive) in window title/process name; extracts project name before the en dash (–). Tested on Linux only. |
+| **IntelliJ IDEA** | Linux | ✅ Working (⚠️ may be unstable) | No | Matches `jetbrains` (case-insensitive) in window title/process name; extracts project name before the en dash (–). |
+| **WebStorm** | Linux | ✅ Working (⚠️ may be unstable) | No | Matches `jetbrains` (case-insensitive) in window title/process name; extracts project name before the en dash (–). |
+| **PyCharm** | Linux | ✅ Working (⚠️ may be unstable) | No | Matches `jetbrains` (case-insensitive) in window title/process name; extracts project name before the en dash (–). |
+| **CLion** | Linux | ✅ Working (⚠️ may be unstable) | No | Matches `jetbrains` (case-insensitive) in window title/process name; extracts project name before the en dash (–). |
+| **Rider** | Linux | ✅ Working (⚠️ may be unstable) | No | Matches `jetbrains` (case-insensitive) in window title/process name; extracts project name before the en dash (–). |
+| **GoLand** | Linux | ✅ Working (⚠️ may be unstable) | No | Matches `jetbrains` (case-insensitive) in window title/process name; extracts project name before the en dash (–). |
+| **RustRover** | Linux | ✅ Working (⚠️ may be unstable) | No | Matches `jetbrains` (case-insensitive) in window title/process name; extracts project name before the en dash (–). |
+| **PhpStorm** | Linux | ✅ Working (⚠️ may be unstable) | No | Matches `jetbrains` (case-insensitive) in window title/process name; extracts project name before the en dash (–). |
+| **RubyMine** | Linux | ✅ Working (⚠️ may be unstable) | No | Matches `jetbrains` (case-insensitive) in window title/process name; extracts project name before the en dash (–). |
+| **DataGrip** | Linux | ✅ Working (⚠️ may be unstable) | No | Matches `jetbrains` (case-insensitive) in window title/process name; extracts project name before the en dash (–). |
+| **DataSpell** | Linux | ✅ Working (⚠️ may be unstable) | No | Matches `jetbrains` (case-insensitive) in window title/process name; extracts project name before the en dash (–). |
 
 ### How It Works
 
