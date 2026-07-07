@@ -28,7 +28,7 @@ A huge thank you to our supporters keeping HPR active!
 
 <p align="center">
   <img src="https://img.shields.io/badge/status-active_development-brightgreen?style=flat-square" />
-  <img src="https://img.shields.io/badge/version-v0.9.3-blue?style=flat-square" />
+  <img src="https://img.shields.io/badge/version-v0.9.4-blue?style=flat-square" />
   <img src="https://img.shields.io/badge/language-C%2B%2B23-orange?style=flat-square" />
   <img src="https://img.shields.io/badge/UI-Slint_1.16.1-purple?style=flat-square" />
   <img src="https://img.shields.io/badge/DB-SQLite3_bundled-lightgrey?style=flat-square" />
@@ -411,7 +411,7 @@ end
 | `onTick(delta)` | Periodically on the extension's thread. `delta` is actual elapsed ms since last tick. |
 | `onExit()` | Once on shutdown. Must complete within 200ms or HPR force-detaches the thread. |
 
-**New Lua APIs in v0.9.3:**
+**New Lua APIs in v0.9.4:**
 
 | API | What it does |
 |---|---|
@@ -602,7 +602,7 @@ If HPR has been useful to you, a Ko-fi helps keep development going: [ko-fi.com/
 
 <p align="center">
   <sub>
-    Active development &nbsp;|&nbsp; v0.9.3 &nbsp;|&nbsp;
+    Active development &nbsp;|&nbsp; v0.9.4 &nbsp;|&nbsp;
     Hyprland · GNOME · KDE Plasma · Cinnamon · niri · Windows 10/11 &nbsp;|&nbsp;
     C++23 · Slint 1.16.1 · SQLite3 amalgamation · sqlite_modern_cpp · Lua 5.4 · sol2
   </sub>
