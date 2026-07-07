@@ -103,14 +103,14 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
                             const std::map<std::string, uint64_t> &rawTimeLog_Tab,
                             const std::map<std::string, uint64_t> &rawTimeLog_Project,
                             const std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> &rawHistory,
-                            std::string &currentWindowName,
+                            std::string &rawCurrentWindowName,
                             uint64_t &totalTrackedTime,
                             uint64_t &totalTrackedTime_Tab,
                             uint64_t &totalTrackedTime_Project,
                             AliasManager &aliasManager)
 {
 
-    currentWindowName = aliasManager.getAlias(currentWindowName);
+    std::string currentWindowName = aliasManager.getAlias(rawCurrentWindowName);
     //----------------------TIME LOG-----------------------------------------------
 
     // make a middle man translatedTimeLog with correct aliases and push rawTimeLog
@@ -176,24 +176,52 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
         //no person uses " - " in their project names, that would be shit, so this is a safe separator to use"
         for (const auto &[raw, duration] : rawTimeLog_Project)
         {
-            std::string middleMan;
+            if (!raw.empty() 
+            && (raw.contains("Visual Studio Code") 
+			|| raw.contains("vscode") 
+			|| raw.contains("Code")))
+            {
+                std::string middleMan;
 
-            const std::string suffix = " - Visual Studio Code";
-            std::string stripped = raw;
-            
-            if (stripped.size() >= suffix.size() && 
-                stripped.substr(stripped.size() - suffix.size()) == suffix)
-                stripped = stripped.substr(0, stripped.size() - suffix.size());
-            
-            // rfind last " - "
-            size_t pos = stripped.rfind(" - ");
-            if (pos == std::string::npos)
-                middleMan = stripped; // no separator, return raw
-            else
-                middleMan = stripped.substr(pos + 3);
+                const std::string suffix = " - Visual Studio Code";
+                std::string stripped = raw;
+                
+                if (stripped.size() >= suffix.size() && 
+                    stripped.substr(stripped.size() - suffix.size()) == suffix)
+                    stripped = stripped.substr(0, stripped.size() - suffix.size());
+                
+                // rfind last " - "
+                size_t pos = stripped.rfind(" - ");
+                if (pos == std::string::npos)
+                    middleMan = stripped; // no separator, return raw
+                else
+                    middleMan = stripped.substr(pos + 3);
 
-            translatedTimeLog_Project[aliasManager.getAlias_Project(middleMan)] += duration;
-            totalTrackedTime_Project += duration;
+                translatedTimeLog_Project[aliasManager.getAlias_Project(middleMan)] += duration;
+                totalTrackedTime_Project += duration;
+            }
+
+            // JetBrains: class starts with "jetbrains-", title is "ProjectName – file [module]" or just "ProjectName"
+            // fragile as fuck
+            else if (raw.contains("jetbrains: "))
+            {
+                // std::cout << raw << std::endl;
+                std::string cleaned = raw;
+
+                // Find the position of the substring
+                if (auto pos = cleaned.find("jetbrains: "); pos != std::string::npos) 
+                {
+                    // Erase using starting position and length
+                    cleaned.erase(pos, std::string("jetbrains: ").length()); //fuck hardoced
+                }
+                // std::cout << cleaned << std::endl;
+                const std::string emDash = " \xe2\x80\x93 "; //em dash
+                size_t pos = cleaned.find(emDash);
+                std::string middleMan = (pos == std::string::npos) ? cleaned : cleaned.substr(0, pos);
+
+                translatedTimeLog_Project[aliasManager.getAlias_Project(middleMan)] += duration;
+                totalTrackedTime_Project += duration;
+            }
         }
     }
 
@@ -587,13 +615,13 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
                             const std::map<std::string, uint64_t> &rawTimeLog_Tab,
                             const std::map<std::string, uint64_t> &rawTimeLog_Project,
                             const std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> &rawHistory,
-                            std::string &currentWindowName,
+                            std::string &rawCurrentWindowName,
                             uint64_t &totalTrackedTime,
                             uint64_t &totalTrackedTime_Tab,
                             uint64_t &totalTrackedTime_Project,
                             AliasManager &aliasManager)
 {
-    currentWindowName = aliasManager.getAlias(currentWindowName);
+    std::string currentWindowName = aliasManager.getAlias(rawCurrentWindowName);
 
     //----------------------TIME LOG-----------------------------------------------
 
@@ -658,24 +686,52 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
         //no person uses " - " in their project names, that would be shit, so this is a safe separator to use"
         for (const auto &[raw, duration] : rawTimeLog_Project)
         {
-            std::string middleMan;
+            if (!raw.empty() 
+            && (raw.contains("Visual Studio Code") 
+			|| raw.contains("vscode") 
+			|| raw.contains("Code")))
+            {
+                std::string middleMan;
 
-            const std::string suffix = " - Visual Studio Code";
-            std::string stripped = raw;
-            
-            if (stripped.size() >= suffix.size() && 
-                stripped.substr(stripped.size() - suffix.size()) == suffix)
-                stripped = stripped.substr(0, stripped.size() - suffix.size());
-            
-            // rfind last " - "
-            size_t pos = stripped.rfind(" - ");
-            if (pos == std::string::npos)
-                middleMan = stripped; // no separator, return raw
-            else
-                middleMan = stripped.substr(pos + 3);
+                const std::string suffix = " - Visual Studio Code";
+                std::string stripped = raw;
+                
+                if (stripped.size() >= suffix.size() && 
+                    stripped.substr(stripped.size() - suffix.size()) == suffix)
+                    stripped = stripped.substr(0, stripped.size() - suffix.size());
+                
+                // rfind last " - "
+                size_t pos = stripped.rfind(" - ");
+                if (pos == std::string::npos)
+                    middleMan = stripped; // no separator, return raw
+                else
+                    middleMan = stripped.substr(pos + 3);
 
-            translatedTimeLog_Project[aliasManager.getAlias_Project(middleMan)] += duration;
-            totalTrackedTime_Project += duration;
+                translatedTimeLog_Project[aliasManager.getAlias_Project(middleMan)] += duration;
+                totalTrackedTime_Project += duration;
+            }
+
+            // JetBrains: class starts with "jetbrains-", title is "ProjectName – file [module]" or just "ProjectName"
+            // JetBrains: class starts with "jetbrains-", title is "ProjectName – file [module]" or just "ProjectName"
+            // fragile as fuck
+            else if (raw.contains("jetbrains: "))
+            {
+                std::string cleaned = raw;
+
+                // Find the position of the substring
+                if (auto pos = cleaned.find("jetbrains: "); pos != std::string::npos) 
+                {
+                    // Erase using starting position and length
+                    cleaned.erase(pos, std::string("jetbrains: ").length()); //fuck hardoced
+                }
+
+                const std::string emDash = " \xe2\x80\x93 "; //em dash
+                size_t pos = cleaned.find(emDash);
+                std::string middleMan = (pos == std::string::npos) ? cleaned : cleaned.substr(0, pos);
+
+                translatedTimeLog_Project[aliasManager.getAlias_Project(middleMan)] += duration;
+                totalTrackedTime_Project += duration;
+            }
         }
     }
 

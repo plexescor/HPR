@@ -118,7 +118,8 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 		
 		if (lowerWindowName.contains("code") 
 		|| lowerWindowName.contains("vscode")
-		|| lowerWindowName.contains("visual studio code"))
+		|| lowerWindowName.contains("visual studio code")
+		|| lowerWindowName.contains("jetbrains"))
 		{
 			project = getCurrentTitle();
 		}
@@ -200,16 +201,32 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 					return std::tolower(c); 
 				});
 
-			if (!tab.empty() && (lowerTabName.contains("chrome") || lowerTabName.contains("edge") || lowerTabName.contains("firefox") || lowerTabName.contains("brave") || lowerTabName.contains("zen")))
+			if (!tab.empty() && (lowerTabName.contains("chrome") 
+			|| lowerTabName.contains("edge") 
+			|| lowerTabName.contains("firefox") 
+			|| lowerTabName.contains("brave") 
+			|| lowerTabName.contains("zen")))
 			{
 				AppState::state.timeLog_PerTab[tab] +=
 				std::chrono::duration_cast<std::chrono::milliseconds>(elapsed)
 					.count();
 			}
 			
-			if (!project.empty() && (lowerProjectName.contains("visual studio code") || lowerProjectName.contains("vscode") || lowerProjectName.contains("code")))
+			if (!project.empty() && (lowerProjectName.contains("visual studio code") 
+			|| lowerProjectName.contains("vscode") 
+			|| lowerProjectName.contains("code"))
+			)
 			{
 				AppState::state.timeLog_PerProject[project] +=
+				std::chrono::duration_cast<std::chrono::milliseconds>(elapsed)
+					.count();
+			}
+
+			else if (!project.empty()
+			&& lowerWindowName.contains("jetbrains")) //because jetbrain dont put ide name in title
+			{
+				//fuck need to do this
+				AppState::state.timeLog_PerProject["jetbrains: " + project] +=
 				std::chrono::duration_cast<std::chrono::milliseconds>(elapsed)
 					.count();
 			}

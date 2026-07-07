@@ -88,7 +88,7 @@ https://github.com/user-attachments/assets/07659d3d-0f3b-4bbc-8823-8b5d11bfd32f
 - [Comparison With Other Trackers](#comparison-with-other-trackers)
 - [Installation](#installation)
 - [Browser Tab Tracking](#browser-tab-tracking)
-- [VS Code Project Tracking](#vs-code-project-tracking)
+- [Code Editor & IDE Project Tracking](#code-editor--ide-project-tracking)
 - [App Limits and Goals](#app-limits-and-goals)
 - [Day Construction Timeline](#day-construction-timeline)
 - [Advanced Pattern Analysis](#advanced-pattern-analysis)
@@ -227,7 +227,17 @@ Windows: %APPDATA%\HPR\HPR_DB\
 
 ## Browser Tab Tracking
 
-HPR supports tracking browser tabs per site and per tab without requiring any browser extensions. When the active window is a supported browser (Chrome, Edge, Firefox, or Brave), HPR automatically queries the window title alongside the application name. This tab usage time is aggregated and tracked separately, giving you a detailed breakdown of which websites and tabs you spend time on.
+HPR supports tracking browser tabs per site and per tab without requiring any browser extensions. When the active window is a supported browser (Chrome, Edge, Firefox, Brave, or Zen Browser), HPR automatically queries the window title alongside the application name. This tab usage time is aggregated and tracked separately, giving you a detailed breakdown of which websites and tabs you spend time on.
+
+### Browser Support Matrix
+
+| Browser | Platform Support | Status | Extension Required | Parsing Strategy / Notes |
+| :--- | :--- | :--- | :--- | :--- |
+| **Google Chrome** | Windows / Linux | ✅ Working | No | Matches `chrome` (case-insensitive) in window title/process name |
+| **Microsoft Edge** | Windows / Linux | ✅ Working | No | Matches `edge` (case-insensitive) in window title/process name |
+| **Mozilla Firefox** | Windows / Linux | ✅ Working | No | Matches `firefox` (case-insensitive) in window title/process name |
+| **Brave** | Windows / Linux | ✅ Working | No | Matches `brave` (case-insensitive) in window title/process name |
+| **Zen Browser** | Windows / Linux | ✅ Working | No | Matches `zen` (case-insensitive) in window title/process name |
 
 In the UI, toggle display mode with the **Tab View** and **Site View** buttons:
 - **Tab View**: Shows raw, unaliased tab names - lets you differentiate between specific pages.
@@ -235,19 +245,34 @@ In the UI, toggle display mode with the **Tab View** and **Site View** buttons:
 
 ---
 
-## VS Code Project Tracking
+## Code Editor & IDE Project Tracking
 
-HPR tracks which VS Code project you are in, not just that VS Code is open. No extension required. No VS Code plugin to install.
+HPR tracks which project you are currently working in, not just whether the editor is open. No editor extensions, plugins, or marketplace installs are required.
 
+### IDE & Code Editor Support Matrix
+
+| Application | Platform Support | Status | Extension Required | Parsing Strategy / Notes |
+| :--- | :--- | :--- | :--- | :--- |
+| **Visual Studio Code** | Windows / Linux | ✅ Working | No | Matches `code`, `vscode`, or `visual studio code` (case-insensitive) in window title/process name |
+| **IntelliJ IDEA** | Linux | ⚠️ In Development | No | Matches `jetbrains` (case-insensitive) in window title/process name; only tested on Linux |
+
+### How It Works
+
+#### Visual Studio Code
 VS Code puts the active project name directly in its window title in the format `filename - project - Visual Studio Code`. HPR reads that title on every poll tick and parses it:
+1. Strip the trailing ` - Visual Studio Code` suffix.
+2. Find the last ` - ` separator in what remains.
+3. Everything after that separator is the project name.
 
-1. Strip the trailing ` - Visual Studio Code` suffix
-2. Find the last ` - ` separator in what remains
-3. Everything after that separator is the project name
+#### IntelliJ IDEA (In Development)
+IntelliJ IDEA prepends `jetbrains: ` to the active project window title in HPR (resolving to `jetbrains: ProjectName – file [module]` or just `jetbrains: ProjectName` using an em dash `–`). HPR parses it:
+1. Strip the `jetbrains: ` prefix.
+2. Find the first occurrence of the em dash ` – ` (`\xe2\x80\x93`).
+3. Everything before the em dash is the project name. If no em dash is found, the whole cleaned string is used.
 
 The result goes into `timeLog_PerProject`, a separate time accumulator running in parallel with the normal per-app log. The UI has a dedicated Project View showing time broken down by project name for the day. Toggle between **Raw View** (unprocessed title substring) and the default parsed view which applies `projectAliases.csv`.
 
-This works on every supported platform because each backend already has a window title getter and VS Code puts the project name in the title on all of them.
+This works on every supported platform because each backend already has a window title getter, and the supported editors put the project name in the title.
 
 ---
 
