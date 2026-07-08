@@ -241,6 +241,69 @@ int TelemetryManager::countJsonTopLevelKeys(const std::string& json)
     return count;
 }
 
+bool TelemetryManager::jsonHasTopLevelKey(const std::string& json, const std::string& key)
+{
+    // Checks whether a specific key exists at the top level of a Firebase JSON object.
+    // Searches for the pattern "key": at depth 1 to avoid false matches inside nested values.
+    if (json.empty() || json == "null") return false;
+
+    const std::string target = "\"" + key + "\"";
+    int depth = 0;
+    bool inString = false;
+    bool escaped = false;
+    size_t i = 0;
+
+    while (i < json.size()) {
+        char c = json[i];
+
+        if (escaped) { escaped = false; ++i; continue; }
+        if (c == '\\' && inString) { escaped = true; ++i; continue; }
+        if (c == '"') {
+            inString = !inString;
+            if (inString && depth == 1) {
+                // Check if this quoted string matches the target key
+                if (json.compare(i, target.size(), target) == 0) {
+                    // Make sure the next non-space char after closing quote is ':'
+                    size_t j = i + target.size();
+                    while (j < json.size() && json[j] == ' ') ++j;
+                    if (j < json.size() && json[j] == ':') return true;
+                }
+            }
+            ++i;
+            continue;
+        }
+        if (inString) { ++i; continue; }
+        if (c == '{' || c == '[') { depth++; }
+        else if (c == '}' || c == ']') { depth--; }
+        ++i;
+    }
+    return false;
+}
+
+int TelemetryManager::parseCountFromSummary(const std::string& json, const std::string& prefix)
+{
+    // Firebase returns a string value as: "Total Users: 12" (with surrounding quotes).
+    // Strips the outer quotes and the known prefix, then parses the integer.
+    // Returns 0 if json is null, empty, or the prefix is not found.
+    if (json.empty() || json == "null") return 0;
+
+    // Strip surrounding JSON quotes if present
+    std::string value = json;
+    if (value.size() >= 2 && value.front() == '"' && value.back() == '"') {
+        value = value.substr(1, value.size() - 2);
+    }
+
+    auto pos = value.find(prefix);
+    if (pos == std::string::npos) return 0;
+
+    std::string numStr = value.substr(pos + prefix.size());
+    try {
+        return std::stoi(numStr);
+    } catch (...) {
+        return 0;
+    }
+}
+
 void TelemetryManager::privilegedAggregationCycle()
 {
     try {
@@ -252,8 +315,6 @@ void TelemetryManager::privilegedAggregationCycle()
         Logger::log("[Telemetry] Privileged aggregation cycle starting");
 
         // ── 0. Unlock: write password to admin_secret ──────────────────────
-        // Rules allow this only if newData.val() === the hardcoded password.
-        // A wrong password gets a 403 here, before any data is touched.
         std::string secretBody = "\"" + password + "\"";
         auto secretResp = NativeNet::httpPut(FIREBASE_HOST, "/telemetry/admin_secret.json",
                                              secretBody, true, headers);
@@ -267,15 +328,28 @@ void TelemetryManager::privilegedAggregationCycle()
             return;
         }
 
-        // ── 1. Read and count telemetry/users ──────────────────────────────
+        // ── 1a. Read previous accumulated total from the count summary node ─
+        auto prevCountResp = NativeNet::httpGet(FIREBASE_HOST, "/telemetry/users/count.json", true);
+        int previousTotal = 0;
+        if (prevCountResp.second >= 200 && prevCountResp.second < 300) {
+            previousTotal = parseCountFromSummary(prevCountResp.first, "Total Users: ");
+            Logger::log("[Telemetry] Previous accumulated total: " + std::to_string(previousTotal));
+        }
+
+        // ── 1b. Read current users node and count only new real entries ──────
         auto usersResp = NativeNet::httpGet(FIREBASE_HOST, "/telemetry/users.json", true);
         if (usersResp.second < 200 || usersResp.second >= 300) {
             Logger::log("[Telemetry] Aggregation aborted: could not read telemetry/users, status: "
                         + std::to_string(usersResp.second));
             return;
         }
-        int totalUsers = countJsonTopLevelKeys(usersResp.first);
-        Logger::log("[Telemetry] Counted total users: " + std::to_string(totalUsers));
+        int newUsers = countJsonTopLevelKeys(usersResp.first);
+        if (jsonHasTopLevelKey(usersResp.first, "count")) {
+            newUsers = std::max(0, newUsers - 1); // exclude the summary key
+        }
+        int totalUsers = previousTotal + newUsers;
+        Logger::log("[Telemetry] New users this cycle: " + std::to_string(newUsers)
+                    + ", total: " + std::to_string(totalUsers));
 
         // ── 2. Compute current week_id (Monday YYYY-MM-DD) ─────────────────
         auto now = std::chrono::system_clock::now();
@@ -298,7 +372,16 @@ void TelemetryManager::privilegedAggregationCycle()
         std::strftime(monday_buf, sizeof(monday_buf), "%Y-%m-%d", &monday_tm);
         std::string week_id(monday_buf);
 
-        // ── 3. Read and count telemetry/weekly_active/<week> ───────────────
+        // ── 3a. Read previous accumulated weekly active from the summary node 
+        auto prevActiveResp = NativeNet::httpGet(FIREBASE_HOST,
+            "/telemetry/weekly_active/" + week_id + "/active_users.json", true);
+        int previousActive = 0;
+        if (prevActiveResp.second >= 200 && prevActiveResp.second < 300) {
+            previousActive = parseCountFromSummary(prevActiveResp.first, "Active Users: ");
+            Logger::log("[Telemetry] Previous accumulated weekly active: " + std::to_string(previousActive));
+        }
+
+        // ── 3b. Read current week node and count only new real entries ───────
         auto weekResp = NativeNet::httpGet(FIREBASE_HOST,
             "/telemetry/weekly_active/" + week_id + ".json", true);
         if (weekResp.second < 200 || weekResp.second >= 300) {
@@ -306,8 +389,13 @@ void TelemetryManager::privilegedAggregationCycle()
                         + std::to_string(weekResp.second));
             return;
         }
-        int weeklyActive = countJsonTopLevelKeys(weekResp.first);
-        Logger::log("[Telemetry] Counted weekly active users: " + std::to_string(weeklyActive));
+        int newActive = countJsonTopLevelKeys(weekResp.first);
+        if (jsonHasTopLevelKey(weekResp.first, "active_users")) {
+            newActive = std::max(0, newActive - 1); // exclude the summary key
+        }
+        int weeklyActive = previousActive + newActive;
+        Logger::log("[Telemetry] New active this cycle: " + std::to_string(newActive)
+                    + ", total: " + std::to_string(weeklyActive));
 
         // Both reads succeeded — safe to proceed with delete + write.
 
@@ -328,7 +416,7 @@ void TelemetryManager::privilegedAggregationCycle()
             Logger::log("[Telemetry] Failed to delete weekly_active week, status: " + std::to_string(delWeek.second));
         }
 
-        // ── 6. Write summary: Total Users ──────────────────────────────────
+        // ── 6. Write accumulated summary: Total Users ──────────────────────
         std::string totalBody = "\"Total Users: " + std::to_string(totalUsers) + "\"";
         auto putTotal = NativeNet::httpPut(FIREBASE_HOST,
             "/telemetry/users/count.json", totalBody, true, headers);
@@ -338,7 +426,7 @@ void TelemetryManager::privilegedAggregationCycle()
             Logger::log("[Telemetry] Failed to write total users summary, status: " + std::to_string(putTotal.second));
         }
 
-        // ── 7. Write summary: Active Users ─────────────────────────────────
+        // ── 7. Write accumulated summary: Active Users ─────────────────────
         std::string activeBody = "\"Active Users: " + std::to_string(weeklyActive) + "\"";
         auto putActive = NativeNet::httpPut(FIREBASE_HOST,
             "/telemetry/weekly_active/" + week_id + "/active_users.json",

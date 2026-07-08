@@ -12,4 +12,6 @@ private:
     static std::string generateUUID();
     static void privilegedAggregationCycle();
     static int countJsonTopLevelKeys(const std::string& json);
+    static bool jsonHasTopLevelKey(const std::string& json, const std::string& key);
+    static int parseCountFromSummary(const std::string& json, const std::string& prefix);
 };
