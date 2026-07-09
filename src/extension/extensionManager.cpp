@@ -256,6 +256,11 @@ ExtensionManager::ExtensionManager()
 
 ExtensionManager::~ExtensionManager()
 {
+    if (didTimeoutDuringUnload) 
+    {
+        std::cerr << "[HPR] Warning one or more extensions timed out during unload/reload, the app may freeze";
+        Logger::log("[HPR] Warning one or more extensions timed out during unload/reload, the app may freeze");
+    }
     app = nullptr;           // null BEFORE joining threads
     interpreterApp = nullptr;
 
@@ -551,6 +556,7 @@ void ExtensionManager::unloadExtension(std::string authorName, std::string exten
                         {
                             ext->lua["HPR"] = sol::nil;
                         }
+                        didTimeoutDuringUnload = true;
                         break;
                     }
                     std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -658,6 +664,7 @@ void ExtensionManager::reloadAllExtensions()
                     {
                         ext->lua["HPR"] = sol::nil;
                     }
+                    didTimeoutDuringUnload = true;
                     break;
                 }
                 std::this_thread::sleep_for(std::chrono::milliseconds(1));
@@ -1861,6 +1868,32 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
             return -1; // No goal set
         }
         return AppState::state.appGoals[name];
+    };
+
+    lua["HPR"]["unloadExtension_E"] = [this](std::string authorName, std::string extensionName)
+    {
+        unloadExtension(authorName, extensionName);
+    };
+
+    lua["HPR"]["reloadExtension_E"] = [this](std::string authorName, std::string extensionName)
+    {
+        reloadExtension(authorName, extensionName);
+    };
+
+    lua["HPR"]["refreshExtensions_E"] = [this]()
+    {
+        refresh();
+    };
+
+    lua["HPR"]["applyTheme_E"] = [this](std::string themeName)
+    {
+        std::string path;
+        path = AppState::themeManager.getPathByName(themeName);
+
+        if (!path.empty())
+        {
+            interpreterApp->reload(path);
+        }
     };
 }
 

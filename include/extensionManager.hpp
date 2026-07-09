@@ -72,6 +72,8 @@ class ExtensionManager
         std::vector<std::shared_ptr<LoadedExtension>> extensions;
         std::string extensionPath;
 
+        bool didTimeoutDuringUnload = false;
+
     public:
         //some shit
         DatabaseManager* dbManager = nullptr;
