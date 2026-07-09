@@ -116,7 +116,7 @@ The following functions in HPR are currently overridable by Lua extensions via t
     - Lua Override Key: HPR.overrides.getDbPathForDate
 
 24. getTime_MS
-    - Description: Returns the system time in milliseconds. Allows mocking/spoofing active time tracking timestamps.
+    - Description: Returns the system time in milliseconds. Allows mocking/spoofing the system time returned to extensions via getTime_MS_E (does not affect HPR's internal time tracking or database timestamps).
     - C++ Call Site: src/extension/extensionManager.cpp
     - Lua Override Key: HPR.overrides.getTime_MS
 
