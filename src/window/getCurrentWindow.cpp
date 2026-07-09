@@ -44,7 +44,7 @@ void CurrentWindowManager::stopTracking()
 	if (running)
 	{
 		{
-		std::lock_guard<std::mutex> lock(AppState::stateMutex);
+		std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
 		AppState::state.currentWindow = "AFK";
 		}
 
@@ -72,7 +72,7 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 
 	// Record initial arrival so the first app session can be counted
 	{
-		std::lock_guard<std::mutex> lock(AppState::stateMutex);
+		std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
 		auto nowSystem = std::chrono::system_clock::now();
 		uint64_t t = std::chrono::duration_cast<std::chrono::milliseconds>(
 						 nowSystem.time_since_epoch())
@@ -98,7 +98,7 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 		if (window.contains("SCRIPT"))
 		{
 			{
-				std::lock_guard<std::mutex> lock(AppState::stateMutex);
+				std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
 				AppState::state.currentWindow = window;
 			}
 			std::this_thread::sleep_for(std::chrono::milliseconds(pollInterval));
@@ -112,7 +112,7 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 
 		std::string title = getCurrentTitle();
 		{
-			std::lock_guard<std::mutex> lock(AppState::stateMutex);
+			std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
 			AppState::state.currentTitle = title;
 		}
 		
@@ -147,7 +147,7 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 
 		{
 			// Update current window in the AppState
-			std::lock_guard<std::mutex> lock(AppState::stateMutex);
+			std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
 			AppState::state.currentWindow = window;
 
 			auto now = std::chrono::steady_clock::now(); // get time now
@@ -181,7 +181,7 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 
 			std::string lowerTabName = tab;
 
-			//Convert windowName to lowercase
+			//Convert tab to lowercase
 			std::transform(lowerTabName.begin(), 
 				lowerTabName.end(), 
 				lowerTabName.begin(),
@@ -192,7 +192,7 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 
 			std::string lowerProjectName = project;
 
-			//Convert windowName to lowercase
+			//Convert project to lowercase
 			std::transform(lowerProjectName.begin(), 
 				lowerProjectName.end(), 
 				lowerProjectName.begin(),
@@ -207,6 +207,7 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 			|| lowerTabName.contains("brave") 
 			|| lowerTabName.contains("zen")))
 			{
+				AppState::state.currentTab = tab;
 				AppState::state.timeLog_PerTab[tab] +=
 				std::chrono::duration_cast<std::chrono::milliseconds>(elapsed)
 					.count();

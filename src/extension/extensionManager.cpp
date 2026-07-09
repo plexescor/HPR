@@ -400,7 +400,7 @@ void ExtensionManager::runExtension(std::shared_ptr<LoadedExtension> ext_ptr)
 
         ext.identity = { resolvedAuthor, resolvedName };
         {
-            std::lock_guard<std::mutex> lock(AppState::stateMutex);
+            std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
             AppState::state.loadedExtensions.push_back(ext.identity);
         }        
         int sleepTime = 1000; //ms
@@ -562,7 +562,7 @@ void ExtensionManager::unloadExtension(std::string authorName, std::string exten
             }
 
             {
-                std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
                 auto& loaded = AppState::state.loadedExtensions;
                 loaded.erase(
                     std::remove_if(loaded.begin(), loaded.end(),
@@ -1743,7 +1743,7 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
 
     lua["HPR"]["getLoadedExtensions_E"] = [&lua]() -> sol::table
     {
-        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
         sol::table listTable = lua.create_table();
         int index = 1;
         for (const auto& identity : AppState::state.loadedExtensions)
@@ -1810,7 +1810,7 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
 
     lua["HPR"]["getPid_E"] = [](std::string rawName) -> std::string
     {
-        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
         return AppState::state.appNamePid[rawName];
     };
 
@@ -1827,12 +1827,16 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
 
     lua["HPR"]["setLimit_E"] = [](std::string name, int minutes)
     {
-        LimitsManager::setLimit(name, minutes);
+        std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+        if (AppState::limitsManager)
+        {
+            AppState::limitsManager->setLimit(name, minutes);
+        }
     };
 
     lua["HPR"]["getLimit_E"] = [](std::string name) -> int
     {
-        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
         if (AppState::state.appLimits.find(name) == AppState::state.appLimits.end())
         {
             return -1; // No limit set
@@ -1842,12 +1846,16 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
 
     lua["HPR"]["setGoal_E"] = [](std::string name, int minutes)
     {
-        LimitsManager::setGoal(name, minutes);
+        std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+        if (AppState::limitsManager)
+        {
+            AppState::limitsManager->setGoal(name, minutes);
+        }
     };
 
     lua["HPR"]["getGoal_E"] = [](std::string name) -> int
     {
-        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
         if (AppState::state.appGoals.find(name) == AppState::state.appGoals.end())
         {
             return -1; // No goal set

@@ -71,7 +71,7 @@ std::map<std::string, uint64_t> getLiveTimeLogPerApp_E()
             return results;
         }
     }
-    std::lock_guard<std::mutex> lock(AppState::stateMutex);
+    std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
     return AppState::state.timeLog_PerApp;
 }
 
@@ -93,7 +93,7 @@ std::map<std::string, uint64_t> getLiveTimeLogPerTab_E()
             return results;
         }
     }
-    std::lock_guard<std::mutex> lock(AppState::stateMutex);
+    std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
     return AppState::state.timeLog_PerTab;
 }
 
@@ -115,6 +115,6 @@ std::map<std::string, uint64_t> getLiveTimeLogPerProject_E()
             return results;
         }
     }
-    std::lock_guard<std::mutex> lock(AppState::stateMutex);
+    std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
     return AppState::state.timeLog_PerProject;
 }

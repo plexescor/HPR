@@ -47,7 +47,7 @@ void NowPlayingManager::runCycle()
 
         std::string currentTitle = "";
         {
-            std::lock_guard<std::mutex> lock(AppState::stateMutex);
+            std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
             currentTitle = AppState::state.currentTitle;
         }
 
@@ -123,7 +123,7 @@ void NowPlayingManager::runCycle()
             }
 
             {
-                std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
                 AppState::state.nowPlayingTitle = fetchedTitle;
                 AppState::state.nowPlayingUrl = fetchedUrl;
             }

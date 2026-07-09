@@ -4,6 +4,304 @@ import { AppGoalData } from "./types.slint";
 import { LineEdit } from "std-widgets.slint";
 import { Palette } from "./palette.slint";
 
+component GoalRow inherits Rectangle {
+    in property <string> name;
+    in property <int> limit-mins;
+    in property <int> goal-mins;
+    in property <string> limit-remaining;
+    in property <string> goal-remaining;
+    in property <bool> is-even;
+    in-out property <bool> is-active-edit;
+    in-out property <int> input-minutes: 30;
+
+    callback clicked();
+    callback reset();
+    callback set-limit(int);
+    callback set-goal(int);
+
+    height: is-active-edit ? 98px * Palette.scale : 48px * Palette.scale;
+    border-radius: 5px * Palette.scale;
+    clip: true;
+    
+    // Premium gradient & subtle tint if limit/goal exists
+    background: ta.has-hover 
+        ? Palette.row-bg-hover 
+        : (limit-mins > 0 
+            ? #ef444405 
+            : (goal-mins > 0 
+                ? #10b98105 
+                : (is-even ? Palette.row-bg-even : transparent)));
+
+    animate height { duration: 180ms; easing: ease-in-out; }
+    animate background { duration: 100ms; easing: ease-out; }
+
+    ta := TouchArea {
+        pointer-event(evt) => {
+            if (evt.kind == PointerEventKind.down) {
+                root.clicked();
+            }
+        }
+    }
+
+    // Left border indicator/accent bar
+    Rectangle {
+        x: 0px;
+        y: (parent.height - self.height) / 2;
+        width: 3px * Palette.scale;
+        height: parent.height - 16px * Palette.scale;
+        border-radius: 1.5px * Palette.scale;
+        background: limit-mins > 0 
+            ? (ta.has-hover ? #ef4444 : #ef4444bb)
+            : (goal-mins > 0 
+                ? (ta.has-hover ? #10b981 : #10b981bb)
+                : (ta.has-hover ? #ffffff30 : transparent));
+        animate background { duration: 100ms; }
+    }
+
+    VerticalLayout {
+        padding-left: 16px * Palette.scale;
+        padding-right: 14px * Palette.scale;
+        padding-top: 8px * Palette.scale;
+        padding-bottom: 8px * Palette.scale;
+        spacing: 8px * Palette.scale;
+
+        // Top row showing the name and current state indication
+        HorizontalLayout {
+            alignment: space-between;
+
+            HorizontalLayout {
+                spacing: 8px * Palette.scale;
+                alignment: start;
+
+                Text {
+                    text: name;
+                    color: ta.has-hover ? Palette.text-primary : Palette.text-secondary;
+                    font-size: 13px * Palette.scale;
+                    font-weight: (limit-mins > 0 || goal-mins > 0) ? 600 : 400;
+                    vertical-alignment: center;
+                    animate color { duration: 100ms; }
+                    overflow: elide;
+                }
+
+                if limit-mins > 0 : Rectangle {
+                    background: #ef444428;
+                    border-color: #ef444460;
+                    border-width: 1px * Palette.scale;
+                    border-radius: 4px * Palette.scale;
+                    height: 20px * Palette.scale;
+                    width: limit-text.preferred-width + 12px * Palette.scale;
+                    y: (parent.height - self.height) / 2;
+
+                    limit-text := Text {
+                        text: "Limit: " + limit-mins + "m" + (limit-remaining != "" ? " (" + limit-remaining + " left)" : "");
+                        color: #f87171;
+                        font-size: 11px * Palette.scale;
+                        font-weight: 700;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+
+                if goal-mins > 0 : Rectangle {
+                    background: #10b98128;
+                    border-color: #10b98160;
+                    border-width: 1px * Palette.scale;
+                    border-radius: 4px * Palette.scale;
+                    height: 20px * Palette.scale;
+                    width: goal-text.preferred-width + 12px * Palette.scale;
+                    y: (parent.height - self.height) / 2;
+
+                    goal-text := Text {
+                        text: "Goal: " + goal-mins + "m" + (goal-remaining != "" ? " (" + goal-remaining + " left)" : "");
+                        color: #34d399;
+                        font-size: 11px * Palette.scale;
+                        font-weight: 700;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+
+            if !is-active-edit : Text {
+                text: "Configure (Click)";
+                color: Palette.text-label;
+                font-size: 10px * Palette.scale;
+                vertical-alignment: center;
+            }
+        }
+
+        // Expanded section for settings
+        if is-active-edit : HorizontalLayout {
+            alignment: space-between;
+            spacing: 12px * Palette.scale;
+
+            // Minutes adjustment layout
+            HorizontalLayout {
+                spacing: 8px * Palette.scale;
+                alignment: start;
+
+                Text {
+                    text: "Minutes:";
+                    color: #94a3b8;
+                    font-size: 11px * Palette.scale;
+                    vertical-alignment: center;
+                }
+
+                // Minus button
+                Rectangle {
+                    width: 24px * Palette.scale;
+                    height: 24px * Palette.scale;
+                    border-radius: 4px * Palette.scale;
+                    background: ta-minus.has-hover ? #ef444430 : #ef444410;
+                    border-width: 1px * Palette.scale;
+                    border-color: ta-minus.has-hover ? #ef444480 : #ef444430;
+                    animate background { duration: 100ms; }
+                    animate border-color { duration: 100ms; }
+
+                    ta-minus := TouchArea {
+                        clicked => {
+                            if (input-minutes > 5) {
+                                input-minutes -= 5;
+                            }
+                        }
+                    }
+
+                    Text {
+                        text: "-";
+                        color: #f87171;
+                        font-size: 14px * Palette.scale;
+                        font-weight: 700;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+
+                LineEdit {
+                    width: 72px * Palette.scale;
+                    height: 26px * Palette.scale;
+                    text: input-minutes;
+                    edited(text) => {
+                        input-minutes = text.to-float();
+                    }
+                }
+
+                // Plus button
+                Rectangle {
+                    width: 24px * Palette.scale;
+                    height: 24px * Palette.scale;
+                    border-radius: 4px * Palette.scale;
+                    background: ta-plus.has-hover ? #10b98130 : #10b98110;
+                    border-width: 1px * Palette.scale;
+                    border-color: ta-plus.has-hover ? #10b98180 : #10b98130;
+                    animate background { duration: 100ms; }
+                    animate border-color { duration: 100ms; }
+
+                    ta-plus := TouchArea {
+                        clicked => {
+                            input-minutes += 5;
+                        }
+                    }
+
+                    Text {
+                        text: "+";
+                        color: Palette.text-primary;
+                        font-size: 14px * Palette.scale;
+                        font-weight: 700;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+
+            // Set Limit / Set Goal buttons
+            HorizontalLayout {
+                spacing: 8px * Palette.scale;
+                alignment: end;
+
+                // Reset Button
+                Rectangle {
+                    width: 82px * Palette.scale;
+                    height: 26px * Palette.scale;
+                    border-radius: 5px * Palette.scale;
+                    background: ta-reset.pressed ? #e2e8f045 : (ta-reset.has-hover ? #e2e8f025 : #e2e8f012);
+                    border-width: 1px * Palette.scale;
+                    border-color: ta-reset.has-hover ? #e2e8f060 : #e2e8f035;
+
+                    ta-reset := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => {
+                            root.reset();
+                        }
+                    }
+
+                    Text {
+                        text: "RESET";
+                        color: ta-reset.has-hover ? #ffffff : #94a3b8;
+                        font-size: 9px * Palette.scale;
+                        font-weight: 700;
+                        letter-spacing: 1px * Palette.scale;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+
+                // Limit Button
+                Rectangle {
+                    width: 82px * Palette.scale;
+                    height: 26px * Palette.scale;
+                    border-radius: 5px * Palette.scale;
+                    background: ta-limit.pressed ? #ef444445 : (ta-limit.has-hover ? #ef444425 : #ef444412);
+                    border-width: 1px * Palette.scale;
+                    border-color: ta-limit.has-hover ? #ef444460 : #ef444435;
+
+                    ta-limit := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => {
+                            root.set-limit(input-minutes);
+                        }
+                    }
+
+                    Text {
+                        text: "SET LIMIT";
+                        color: ta-limit.has-hover ? #f87171 : #ef4444;
+                        font-size: 9px * Palette.scale;
+                        font-weight: 700;
+                        letter-spacing: 1px * Palette.scale;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+
+                // Goal Button
+                Rectangle {
+                    width: 82px * Palette.scale;
+                    height: 26px * Palette.scale;
+                    border-radius: 5px * Palette.scale;
+                    background: ta-goal.pressed ? #10b98145 : (ta-goal.has-hover ? #10b98125 : #10b98112);
+                    border-width: 1px * Palette.scale;
+                    border-color: ta-goal.has-hover ? #10b98160 : #10b98135;
+
+                    ta-goal := TouchArea {
+                        mouse-cursor: pointer;
+                        clicked => {
+                            root.set-goal(input-minutes);
+                        }
+                    }
+
+                    Text {
+                        text: "SET GOAL";
+                        color: ta-goal.has-hover ? #34d399 : #10b981;
+                        font-size: 9px * Palette.scale;
+                        font-weight: 700;
+                        letter-spacing: 1px * Palette.scale;
+                        horizontal-alignment: center;
+                        vertical-alignment: center;
+                    }
+                }
+            }
+        }
+    }
+}
 
 export component GoalsView {
     in property <[AppGoalData]> raw-apps;
@@ -13,7 +311,6 @@ export component GoalsView {
 
     // Keep track of which row is currently being configured
     property <int> active-edit-index: -1;
-    property <int> input-minutes: 30;
 
     VerticalLayout {
         padding: 12px * Palette.scale;
@@ -21,7 +318,9 @@ export component GoalsView {
         spacing: 10px * Palette.scale;
         height: 100%;
 
-        SectionHeader { label: "MANAGE APP LIMITS & GOALS"; }
+        SectionHeader { 
+            label: "MANAGE APP LIMITS & GOALS"; 
+        }
 
         Card {
             vertical-stretch: 1;
@@ -48,298 +347,34 @@ export component GoalsView {
                         }
                     }
 
-                    for app-goal-data[i] in raw-apps : Rectangle {
-                        height: active-edit-index == i ? 98px * Palette.scale : 48px * Palette.scale;
-                        border-radius: 5px * Palette.scale;
-                        clip: true;
-                        
-                        // Premium gradient & subtle tint if limit/goal exists
-                        background: ta.has-hover 
-                            ? Palette.row-bg-hover 
-                            : (app-goal-data.limit_mins > 0 
-                                ? #ef444405 
-                                : (app-goal-data.goal_mins > 0 
-                                    ? #10b98105 
-                                    : (mod(i, 2) == 0 ? Palette.row-bg-even : transparent)));
-
-                        animate height { duration: 180ms; easing: ease-in-out; }
-                        animate background { duration: 100ms; easing: ease-out; }
-
-                        ta := TouchArea {
-                            pointer-event(evt) => {
-                                if (evt.kind == PointerEventKind.down) {
-                                    if (active-edit-index == i) {
-                                        active-edit-index = -1;
-                                    } else {
-                                        active-edit-index = i;
-                                        input-minutes = 30; // reset to default
-                                    }
+                    VerticalLayout {
+                        for app-goal-data[i] in raw-apps : GoalRow {
+                            name: app-goal-data.name;
+                            limit-mins: app-goal-data.limit_mins;
+                            goal-mins: app-goal-data.goal_mins;
+                            limit-remaining: app-goal-data.limit_remaining;
+                            goal-remaining: app-goal-data.goal_remaining;
+                            is-even: mod(i, 2) == 0;
+                            is-active-edit: active-edit-index == i;
+                            clicked => {
+                                if (active-edit-index == i) {
+                                    active-edit-index = -1;
+                                } else {
+                                    active-edit-index = i;
                                 }
                             }
-                        }
-
-                        // Left border indicator/accent bar
-                        Rectangle {
-                            x: 0px;
-                            y: (parent.height - self.height) / 2;
-                            width: 3px * Palette.scale;
-                            height: parent.height - 16px * Palette.scale;
-                            border-radius: 1.5px * Palette.scale;
-                            background: app-goal-data.limit_mins > 0 
-                                ? (ta.has-hover ? #ef4444 : #ef4444bb)
-                                : (app-goal-data.goal_mins > 0 
-                                    ? (ta.has-hover ? #10b981 : #10b981bb)
-                                    : (ta.has-hover ? #ffffff30 : transparent));
-                            animate background { duration: 100ms; }
-                        }
-
-                        VerticalLayout {
-                            padding-left: 16px * Palette.scale;
-                            padding-right: 14px * Palette.scale;
-                            padding-top: 8px * Palette.scale;
-                            padding-bottom: 8px * Palette.scale;
-                            spacing: 8px * Palette.scale;
-
-                            // Top row showing the App Name and current state indication
-                            HorizontalLayout {
-                                alignment: space-between;
-
-                                HorizontalLayout {
-                                    spacing: 8px * Palette.scale;
-                                    alignment: start;
-
-                                    Text {
-                                        text: app-goal-data.name;
-                                        color: ta.has-hover ? Palette.text-primary : Palette.text-secondary;
-                                        font-size: 13px * Palette.scale;
-                                        font-weight: (app-goal-data.limit_mins > 0 || app-goal-data.goal_mins > 0) ? 600 : 400;
-                                        vertical-alignment: center;
-                                        animate color { duration: 100ms; }
-                                        overflow: elide;
-                                    }
-
-                                    if app-goal-data.limit_mins > 0 : Rectangle {
-                                        background: #ef444428;
-                                        border-color: #ef444460;
-                                        border-width: 1px * Palette.scale;
-                                        border-radius: 4px * Palette.scale;
-                                        height: 20px * Palette.scale;
-                                        width: limit-text.preferred-width + 12px * Palette.scale;
-                                        y: (parent.height - self.height) / 2;
-
-                                        limit-text := Text {
-                                            text: "Limit: " + app-goal-data.limit_mins + "m" + (app-goal-data.limit_remaining != "" ? " (" + app-goal-data.limit_remaining + " left)" : "");
-                                            color: #f87171;
-                                            font-size: 11px * Palette.scale;
-                                            font-weight: 700;
-                                            horizontal-alignment: center;
-                                            vertical-alignment: center;
-                                        }
-                                    }
-
-                                    if app-goal-data.goal_mins > 0 : Rectangle {
-                                        background: #10b98128;
-                                        border-color: #10b98160;
-                                        border-width: 1px * Palette.scale;
-                                        border-radius: 4px * Palette.scale;
-                                        height: 20px * Palette.scale;
-                                        width: goal-text.preferred-width + 12px * Palette.scale;
-                                        y: (parent.height - self.height) / 2;
-
-                                        goal-text := Text {
-                                            text: "Goal: " + app-goal-data.goal_mins + "m" + (app-goal-data.goal_remaining != "" ? " (" + app-goal-data.goal_remaining + " left)" : "");
-                                            color: #34d399;
-                                            font-size: 11px * Palette.scale;
-                                            font-weight: 700;
-                                            horizontal-alignment: center;
-                                            vertical-alignment: center;
-                                        }
-                                    }
-                                }
-
-                                if active-edit-index != i : Text {
-                                    text: "Configure (Click)";
-                                    color: Palette.text-label;
-                                    font-size: 10px * Palette.scale;
-                                    vertical-alignment: center;
-                                }
+                            reset => {
+                                root.set-limit(app-goal-data.raw_name, 0);
+                                root.set-goal(app-goal-data.raw_name, 0);
+                                active-edit-index = -1;
                             }
-
-                            // Expanded section for settings
-                            if active-edit-index == i : HorizontalLayout {
-
-                                alignment: space-between;
-                                spacing: 12px * Palette.scale;
-
-                                // Minutes adjustment layout
-                                HorizontalLayout {
-                                    spacing: 8px * Palette.scale;
-                                    alignment: start;
-
-                                    Text {
-                                        text: "Minutes:";
-                                        color: #94a3b8;
-                                        font-size: 11px * Palette.scale;
-                                        vertical-alignment: center;
-                                    }
-
-                                    // Minus button
-                                    Rectangle {
-                                        width: 24px * Palette.scale;
-                                        height: 24px * Palette.scale;
-                                        border-radius: 4px * Palette.scale;
-                                        background: ta-minus.has-hover ? #ef444430 : #ef444410;
-                                        border-width: 1px * Palette.scale;
-                                        border-color: ta-minus.has-hover ? #ef444480 : #ef444430;
-                                        animate background { duration: 100ms; }
-                                        animate border-color { duration: 100ms; }
-
-                                        ta-minus := TouchArea {
-                                            clicked => {
-                                                if (input-minutes > 5) {
-                                                    input-minutes -= 5;
-                                                }
-                                            }
-                                        }
-
-                                        Text {
-                                            text: "-";
-                                            color: #f87171;
-                                            font-size: 14px * Palette.scale;
-                                            font-weight: 700;
-                                            horizontal-alignment: center;
-                                            vertical-alignment: center;
-                                        }
-                                    }
-
-                                    LineEdit {
-                                        width: 72px * Palette.scale;
-                                        height: 26px * Palette.scale;
-                                        text: input-minutes;
-                                        edited(text) => {
-                                            input-minutes = text.to-float();
-                                        }
-                                    }
-
-
-                                    // Plus button
-                                    Rectangle {
-                                        width: 24px * Palette.scale;
-                                        height: 24px * Palette.scale;
-                                        border-radius: 4px * Palette.scale;
-                                        background: ta-plus.has-hover ? #10b98130 : #10b98110;
-                                        border-width: 1px * Palette.scale;
-                                        border-color: ta-plus.has-hover ? #10b98180 : #10b98130;
-                                        animate background { duration: 100ms; }
-                                        animate border-color { duration: 100ms; }
-
-                                        ta-plus := TouchArea {
-                                            clicked => {
-                                                input-minutes += 5;
-                                            }
-                                        }
-
-                                        Text {
-                                            text: "+";
-                                            color: Palette.text-primary;
-                                            font-size: 14px * Palette.scale;
-                                            font-weight: 700;
-                                            horizontal-alignment: center;
-                                            vertical-alignment: center;
-                                        }
-                                    }
-                                }
-
-                                // Set Limit / Set Goal buttons
-                                HorizontalLayout {
-                                    spacing: 8px * Palette.scale;
-                                    alignment: end;
-
-                                    // Reset Button
-                                    Rectangle {
-                                        width: 82px * Palette.scale;
-                                        height: 26px * Palette.scale;
-                                        border-radius: 5px * Palette.scale;
-                                        background: ta-reset.pressed ? #e2e8f045 : (ta-reset.has-hover ? #e2e8f025 : #e2e8f012);
-                                        border-width: 1px * Palette.scale;
-                                        border-color: ta-reset.has-hover ? #e2e8f060 : #e2e8f035;
-
-                                        ta-reset := TouchArea {
-                                            mouse-cursor: pointer;
-                                            clicked => {
-                                                root.set-limit(app-goal-data.raw_name, 0);
-                                                root.set-goal(app-goal-data.raw_name, 0);
-                                                active-edit-index = -1;
-                                            }
-                                        }
-
-                                        Text {
-                                            text: "RESET";
-                                            color: ta-reset.has-hover ? #ffffff : #94a3b8;
-                                            font-size: 9px * Palette.scale;
-                                            font-weight: 700;
-                                            letter-spacing: 1px * Palette.scale;
-                                            horizontal-alignment: center;
-                                            vertical-alignment: center;
-                                        }
-                                    }
-
-                                    // Limit Button
-                                    Rectangle {
-                                        width: 82px * Palette.scale;
-                                        height: 26px * Palette.scale;
-                                        border-radius: 5px * Palette.scale;
-                                        background: ta-limit.pressed ? #ef444445 : (ta-limit.has-hover ? #ef444425 : #ef444412);
-                                        border-width: 1px * Palette.scale;
-                                        border-color: ta-limit.has-hover ? #ef444460 : #ef444435;
-
-                                        ta-limit := TouchArea {
-                                            mouse-cursor: pointer;
-                                            clicked => {
-                                                root.set-limit(app-goal-data.raw_name, input-minutes);
-                                                active-edit-index = -1;
-                                            }
-                                        }
-
-                                        Text {
-                                            text: "SET LIMIT";
-                                            color: ta-limit.has-hover ? #f87171 : #ef4444;
-                                            font-size: 9px * Palette.scale;
-                                            font-weight: 700;
-                                            letter-spacing: 1px * Palette.scale;
-                                            horizontal-alignment: center;
-                                            vertical-alignment: center;
-                                        }
-                                    }
-
-                                    // Goal Button
-                                    Rectangle {
-                                        width: 82px * Palette.scale;
-                                        height: 26px * Palette.scale;
-                                        border-radius: 5px * Palette.scale;
-                                        background: ta-goal.pressed ? #10b98145 : (ta-goal.has-hover ? #10b98125 : #10b98112);
-                                        border-width: 1px * Palette.scale;
-                                        border-color: ta-goal.has-hover ? #10b98160 : #10b98135;
-
-                                        ta-goal := TouchArea {
-                                            mouse-cursor: pointer;
-                                            clicked => {
-                                                root.set-goal(app-goal-data.raw_name, input-minutes);
-                                                active-edit-index = -1;
-                                            }
-                                        }
-
-                                        Text {
-                                            text: "SET GOAL";
-                                            color: ta-goal.has-hover ? #34d399 : #10b981;
-                                            font-size: 9px * Palette.scale;
-                                            font-weight: 700;
-                                            letter-spacing: 1px * Palette.scale;
-                                            horizontal-alignment: center;
-                                            vertical-alignment: center;
-                                        }
-                                    }
-                                }
+                            set-limit(mins) => {
+                                root.set-limit(app-goal-data.raw_name, mins);
+                                active-edit-index = -1;
+                            }
+                            set-goal(mins) => {
+                                root.set-goal(app-goal-data.raw_name, mins);
+                                active-edit-index = -1;
                             }
                         }
                     }

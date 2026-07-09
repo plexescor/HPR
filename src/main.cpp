@@ -40,6 +40,7 @@
 
 		LimitsManager lim;
 		lim.run();
+		AppState::limitsManager = &lim;
 
 		bool trueHeadless = AppState::configManager.getConfig("true-headless-mode", false);
 		if (trueHeadless)
@@ -178,7 +179,7 @@
 
 		LimitsManager lim;
 		lim.run();
-
+		AppState::limitsManager = &lim;
 		bool trueHeadless = AppState::configManager.getConfig("true-headless-mode", false);
 		if (trueHeadless)
 		{

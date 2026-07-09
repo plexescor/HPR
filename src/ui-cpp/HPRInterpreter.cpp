@@ -287,7 +287,7 @@ void HPRInterpreter::trackingLoop()
             totalTrackedTime_Project = 0;
             // Scoped mutex to hold it for as little time as possible
             {
-                std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
                 //If live view, show today's data
                 if (AppState::state.currentView == AppState::CurrentView::LIVE)
                 {
@@ -361,7 +361,7 @@ void HPRInterpreter::trackingLoop()
                 int insightInterval = AppState::configManager.getConfig("ui-insight-interval", 1000);
                 if (firstRun || std::chrono::duration_cast<std::chrono::milliseconds>(now - lastInsightUpdate).count() >= insightInterval) 
                 {
-                    std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                    std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
                     
                     modelManager.value().showInsights_Interpreted(
                         AppState::patternAnalyzer.getMostUsed(),
@@ -387,7 +387,7 @@ void HPRInterpreter::trackingLoop()
 
                 std::vector<std::pair<std::string,std::string>> extensionsCopy;
                 {
-                    std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                    std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
                     extensionsCopy = AppState::state.loadedExtensions;
                 }
                 modelManager.value().showExtensions_Interpreted(extensionsCopy);

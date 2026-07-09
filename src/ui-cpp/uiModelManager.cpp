@@ -126,7 +126,7 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
     bool isTabView;
     std::map<std::string, uint64_t> translatedTimeLog_Tab;
     {
-        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
         isTabView= AppState::state.useTabView;
     }
 
@@ -152,7 +152,7 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
     bool isRawView;
     std::map<std::string, uint64_t> translatedTimeLog_Project;
     {
-        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
         isRawView= AppState::state.isRawProjectView;
     }
 
@@ -269,7 +269,7 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
         std::map<std::string,int> goals;
 
         {
-            std::lock_guard<std::mutex> lock(AppState::stateMutex);
+            std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
 
             limits = AppState::state.appLimits;
             goals = AppState::state.appGoals;
@@ -285,17 +285,22 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
             if (goals.count(raw))
                 goal = goals.at(raw);
 
-            std::string limit_rem =
-                LimitsManager::getLimitRemaining(raw, duration, limit);
-
-            std::string goal_rem =
-                LimitsManager::getGoalRemaining(raw, duration, goal);
+            std::string limit_rem;
+            std::string goal_rem;
+            {
+                std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+                if (AppState::limitsManager)
+                {
+                    limit_rem = AppState::limitsManager->getLimitRemaining(raw, duration, limit);
+                    goal_rem = AppState::limitsManager->getGoalRemaining(raw, duration, goal);
+                }
+            }
 
             // get display name using aliasManager under lua lock or default
             std::string displayName;
             {
                 // aliasManager uses extensions (lua state), so lock luaMutex as well if it exists or use stateMutex
-                std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
                 displayName = aliasManager.getAlias(raw);
             }
 
@@ -404,7 +409,7 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
                 std::string nowPlayingTitleVal;
                 std::string nowPlayingUrlVal;
                 {
-                    std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                    std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
                     nowPlayingTitleVal = AppState::state.nowPlayingTitle;
                     nowPlayingUrlVal = AppState::state.nowPlayingUrl;
                 }
@@ -637,7 +642,7 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
 
     bool isTabView;
     {
-        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
         isTabView= AppState::state.useTabView;
     }
 
@@ -662,7 +667,7 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
     //Projects
     bool isRawView;
     {
-        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
         isRawView= AppState::state.isRawProjectView;
     }
 
@@ -819,7 +824,7 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
     // Raw Apps extraction for interpreted mode with Limits & Goals from AppState
     std::vector<slint::interpreter::Value> slintVec_RawApps;
     {
-        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
         for (const auto &[raw, duration] : rawTimeLog)
         {
             int limit = 0;
@@ -827,8 +832,13 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
             if (AppState::state.appLimits.count(raw)) limit = AppState::state.appLimits.at(raw);
             if (AppState::state.appGoals.count(raw)) goal = AppState::state.appGoals.at(raw);
 
-            std::string limit_rem = LimitsManager::getLimitRemaining(raw, duration, limit);
-            std::string goal_rem = LimitsManager::getGoalRemaining(raw, duration, goal);
+            std::string limit_rem;
+            std::string goal_rem;
+            if (AppState::limitsManager)
+            {
+                limit_rem = AppState::limitsManager->getLimitRemaining(raw, duration, limit);
+                goal_rem = AppState::limitsManager->getGoalRemaining(raw, duration, goal);
+            }
 
             // get display name using aliasManager under lua/state mutex lock (already locked via stateMutex)
             std::string displayName = aliasManager.getAlias(raw);
@@ -943,7 +953,7 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
             std::string nowPlayingTitleVal;
             std::string nowPlayingUrlVal;
             {
-                std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
                 nowPlayingTitleVal = AppState::state.nowPlayingTitle;
                 nowPlayingUrlVal = AppState::state.nowPlayingUrl;
             }

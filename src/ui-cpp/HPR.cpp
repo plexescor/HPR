@@ -177,7 +177,7 @@ void HPR::trackingLoop()
             totalTrackedTime_Project = 0;
             // Scoped mutex to hold it for as little time as possible
             {
-                std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
                     
                 //If live view, show today's data
                 if (AppState::state.currentView == AppState::CurrentView::LIVE)
@@ -272,7 +272,7 @@ void HPR::trackingLoop()
 
             std::vector<std::pair<std::string,std::string>> extensionsCopy;
             {
-                std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
                 extensionsCopy = AppState::state.loadedExtensions;
             }
             modelManager.showExtensions(extensionsCopy);

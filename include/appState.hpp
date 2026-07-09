@@ -3,6 +3,8 @@
 #include "patternAnalyzer.hpp"
 #include "configManager.hpp"
 #include "themeManager.hpp"
+#include "limitsManager.hpp"
+
 #include <string>
 #include <atomic>
 #include <mutex>
@@ -30,6 +32,7 @@ namespace AppState {
         
         std::string currentWindow;
         std::string previousWindow;
+        std::string currentTab;
         std::string currentTitle;
         
         std::string nowPlayingTitle;
@@ -51,6 +54,7 @@ namespace AppState {
         // Limits & Goals
         std::map<std::string, int> appLimits;
         std::map<std::string, int> appGoals;
+
         std::map<std::string, uint64_t> limitTimeBase;
         std::map<std::string, uint64_t> goalTimeBase;
 
@@ -96,10 +100,11 @@ namespace AppState {
     extern ThemeManager themeManager;
 
     extern ExtensionManager* extManager;
+    extern LimitsManager* limitsManager;
 
     extern std::mutex patternAnalyzerMutex;
 
-    extern std::mutex stateMutex;
+    extern std::recursive_mutex stateMutex;
     extern std::mutex historyStateMutex;
     extern std::mutex historyLoadedMutex;
     extern std::condition_variable historyLoadedCV;

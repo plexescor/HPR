@@ -20,7 +20,7 @@ void PatternAnalyzer::generateInsights()
 {
     //Make a copy of appstate's map into this
     {
-        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
 
         if (AppState::state.currentView == AppState::CurrentView::LIVE)
         {

@@ -8,19 +8,9 @@
 #include "appEvents.hpp"
 #include "extensionManager.hpp"
 
-//i dont remember why i defined these as globals
-//but there must be a reason so keep it as is
-std::map<std::string, bool> LimitsManager::limitWarningSent;
-std::map<std::string, bool> LimitsManager::limitReachedSent;
-std::map<std::string, bool> LimitsManager::goalWarningSent;
-std::map<std::string, bool> LimitsManager::goalReachedSent;
-std::map<std::string, bool> LimitsManager::killSent;
-std::chrono::steady_clock::time_point LimitsManager::lastGlobalKillTime;
-std::mutex LimitsManager::limitsMutex;
-
 LimitsManager::LimitsManager() 
 {
-    std::lock_guard<std::mutex> lock(AppState::stateMutex);
+    std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
     for (const auto& [appName, _] : AppState::state.appLimits) {
         if (!AppState::state.limitTimeBase.count(appName)) {
             // only set if not already loaded from DB
@@ -67,7 +57,7 @@ void LimitsManager::limitReached(const std::string& appName)
 
     std::string pid;
     {
-        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
         if (AppState::state.appNamePid.count(appName))
             pid = AppState::state.appNamePid.at(appName);
     }
@@ -91,10 +81,11 @@ void LimitsManager::limitReached(const std::string& appName)
     runSystemCommand_UNSAFE(cmd);
 }
 
+
 void LimitsManager::setLimit(const std::string& appName, int minutes)
 {
     {
-        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
         if (minutes <= 0) 
         {
             AppState::state.appLimits.erase(appName);
@@ -118,11 +109,10 @@ void LimitsManager::setLimit(const std::string& appName, int minutes)
     Logger::log("[LimitsManager] Set limit for " + appName + " to " + std::to_string(minutes) + " minutes");
 }
 
-
 void LimitsManager::setGoal(const std::string& appName, int minutes)
 {
     {
-        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
         if (minutes <= 0)
         {
             AppState::state.appGoals.erase(appName);
@@ -145,6 +135,7 @@ void LimitsManager::setGoal(const std::string& appName, int minutes)
 }
 
 
+
 void LimitsManager::checkLoop()
 {
     while (running)
@@ -154,9 +145,8 @@ void LimitsManager::checkLoop()
         std::map<std::string, int> activeGoals;
         std::map<std::string, uint64_t> limitBases;
         std::map<std::string, uint64_t> goalBases;
-
         {
-            std::lock_guard<std::mutex> lock(AppState::stateMutex);
+            std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
             currentUsage = AppState::state.timeLog_PerApp;
             activeLimits = AppState::state.appLimits;
             activeGoals = AppState::state.appGoals;
@@ -185,7 +175,7 @@ void LimitsManager::checkLoop()
                 std::string currentApp;
 
                 {
-                    std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                    std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
                     currentApp = AppState::state.currentWindow;
                 }
 
@@ -220,7 +210,7 @@ void LimitsManager::checkLoop()
                 // Translate to aliased name for notification display
                 std::string aliasedName;
                 {
-                    std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                    std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
                     aliasedName = AppState::aliasManager.getAlias(appName);
                 }
 
@@ -309,7 +299,7 @@ void LimitsManager::checkLoop()
 
                 std::string aliasedName;
                 {
-                    std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                    std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
                     aliasedName = AppState::aliasManager.getAlias(appName);
                 }
 
@@ -319,6 +309,7 @@ void LimitsManager::checkLoop()
                     showNotification("HPR Goal Alert", "You are close to reaching your goal for " + aliasedName + "!");
             }
         }
+
 
         for (int i = 0; i < 6 && running; ++i)
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -332,7 +323,7 @@ std::string LimitsManager::getLimitRemaining(const std::string& appName, uint64_
     uint64_t limitMs = static_cast<uint64_t>(limitMins) * 60 * 1000;
     uint64_t base = 0;
     {
-        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
         if (AppState::state.limitTimeBase.count(appName))
             base = AppState::state.limitTimeBase.at(appName);
     }
@@ -350,7 +341,7 @@ std::string LimitsManager::getGoalRemaining(const std::string& appName, uint64_t
     uint64_t goalMs = static_cast<uint64_t>(goalMins) * 60 * 1000;
     uint64_t base = 0;
     {
-        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
         if (AppState::state.goalTimeBase.count(appName))
             base = AppState::state.goalTimeBase.at(appName);
     }

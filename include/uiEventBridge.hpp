@@ -25,6 +25,7 @@ class UiEventBridge
         void filterViewClicked();
         void rawViewClicked();
 
+
     private:
         ExtensionManager* extManager = nullptr;
         HPRInterpreter* interpreter = nullptr;

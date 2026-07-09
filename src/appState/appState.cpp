@@ -13,10 +13,11 @@ const std::string AppState::APP_VERSION = "0.9.4";
 PatternAnalyzer AppState::patternAnalyzer;
 
 ExtensionManager* AppState::extManager = nullptr;
+LimitsManager* AppState::limitsManager = nullptr;
 
 std::mutex AppState::patternAnalyzerMutex;
 
-std::mutex AppState::stateMutex;
+std::recursive_mutex AppState::stateMutex;
 std::mutex AppState::historyStateMutex;
 std::mutex AppState::historyLoadedMutex;
 std::condition_variable AppState::historyLoadedCV;

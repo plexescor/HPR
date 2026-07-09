@@ -155,7 +155,7 @@ void DatabaseManager::initDatabase(bool copyData)
     {
         //We need copies of the data for extra safety
         {
-            std::lock_guard<std::mutex> lock(AppState::stateMutex);
+            std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
             timeLog_PerApp_D = AppState::state.timeLog_PerApp;
             timeLog_PerTab_D = AppState::state.timeLog_PerTab;
             timeLog_PerProject_D = AppState::state.timeLog_PerProject;
@@ -213,7 +213,6 @@ void DatabaseManager::initDatabase(bool copyData)
      "   name text unique,"
      "   base_ms int"
      ");";
-
     *db << "create table if not exists goal_bases ("
         "   name text unique,"
         "   base_ms int"
@@ -276,6 +275,7 @@ bool DatabaseManager::loadStateFromDB()
         };
 
 
+
     } catch(const std::exception& e)
     {
         std::cerr << "[ERROR IN DB LOAD FROM DISK] " << e.what() << std::endl;
@@ -298,7 +298,7 @@ void DatabaseManager::writeLoop()
             *db << "BEGIN;";
 
             {
-                std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
                 timeLog_PerApp_D = AppState::state.timeLog_PerApp;
                 timeLog_PerTab_D = AppState::state.timeLog_PerTab;
                 timeLog_PerProject_D = AppState::state.timeLog_PerProject;
@@ -307,6 +307,7 @@ void DatabaseManager::writeLoop()
                 appGoals_D = AppState::state.appGoals;
                 limitTimeBase_D = AppState::state.limitTimeBase;
                 goalTimeBase_D = AppState::state.goalTimeBase;
+
             }
 
             for (const auto &[k, v] : timeLog_PerApp_D)
@@ -378,13 +379,14 @@ void DatabaseManager::writeLoop()
         if (needsRollover)
         {
             {
-                std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
                 AppState::state.timeLog_PerApp.clear();
                 AppState::state.timeLog_PerTab.clear();
                 AppState::state.timeLog_PerProject.clear();
                 AppState::state.switchHistory.clear();
                 AppState::state.limitTimeBase.clear();
                 AppState::state.goalTimeBase.clear();
+
             }
             EventHub::emit(Event::MIDNIGHT_ROLLOVER);
             std::lock_guard<std::mutex> dbLock(dbQueryMutex);
@@ -619,7 +621,7 @@ void DatabaseManager::loadDb_Number(int days, std::string mode)
 
                         if (fileNames[i] + ".db" == activeFileName)
                         {
-                            std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                            std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
                             results = AppState::state.timeLog_PerApp;
                             results_Tab = AppState::state.timeLog_PerTab;
                             results_Project = AppState::state.timeLog_PerProject;
@@ -750,7 +752,7 @@ void DatabaseManager::loadDb_Number(int days, std::string mode)
                     {
                         if (fileNames[i] + ".db" == activeFileName)
                         {
-                            std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                            std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
                             allApp[i] = AppState::state.timeLog_PerApp;
                             allTab[i] = AppState::state.timeLog_PerTab;
                             allProject[i] = AppState::state.timeLog_PerProject;
@@ -932,7 +934,7 @@ void DatabaseManager::loadDb_Range(std::string dateFrom, std::string dateTo, std
 
                         if (fileNames[i] + ".db" == activeFileName)
                         {
-                            std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                            std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
                             results = AppState::state.timeLog_PerApp;
                             results_Tab = AppState::state.timeLog_PerTab;
                             results_Project = AppState::state.timeLog_PerProject;
@@ -1061,7 +1063,7 @@ void DatabaseManager::loadDb_Range(std::string dateFrom, std::string dateTo, std
                     {
                         if (fileNames[i] + ".db" == activeFileName)
                         {
-                            std::lock_guard<std::mutex> lock(AppState::stateMutex);
+                            std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
                             allApp[i] = AppState::state.timeLog_PerApp;
                             allTab[i] = AppState::state.timeLog_PerTab;
                             allProject[i] = AppState::state.timeLog_PerProject;
@@ -1200,7 +1202,7 @@ void DatabaseManager::loadPatternsData(int days)
         if (dateStr + ".db" == activeFileName)
         {
             // Today's live data — read from AppState under lock
-            std::lock_guard<std::mutex> lock(AppState::stateMutex);
+            std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
             dayData.timePerApp   = AppState::state.timeLog_PerApp;
             dayData.switchHistory = AppState::state.switchHistory;
         }

@@ -172,12 +172,20 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow>& ui,  ExtensionM
 
     ui->on_setLimit([](slint::SharedString appName, int minutes) 
     {
-        LimitsManager::setLimit(std::string(appName), minutes);
+        std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+        if (AppState::limitsManager)
+        {
+            AppState::limitsManager->setLimit(std::string(appName), minutes);
+        }
     });
 
     ui->on_setGoal([](slint::SharedString appName, int minutes) 
     {
-        LimitsManager::setGoal(std::string(appName), minutes);
+        std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+        if (AppState::limitsManager)
+        {
+            AppState::limitsManager->setGoal(std::string(appName), minutes);
+        }
     });
 
     ui->on_setConfig([](slint::SharedString paramName, slint::SharedString value) 
@@ -525,7 +533,11 @@ UiEventBridge::UiEventBridge(
             auto opt_mins = args[1].to_number();
             if (opt_name.has_value() && opt_mins.has_value()) 
             {
-                LimitsManager::setLimit(std::string(opt_name.value()), (int)opt_mins.value());
+                std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+                if (AppState::limitsManager)
+                {
+                    AppState::limitsManager->setLimit(std::string(opt_name.value()), (int)opt_mins.value());
+                }
             }
         }
         return slint::interpreter::Value();
@@ -539,7 +551,11 @@ UiEventBridge::UiEventBridge(
             auto opt_mins = args[1].to_number();
             if (opt_name.has_value() && opt_mins.has_value()) 
             {
-                LimitsManager::setGoal(std::string(opt_name.value()), (int)opt_mins.value());
+                std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+                if (AppState::limitsManager)
+                {
+                    AppState::limitsManager->setGoal(std::string(opt_name.value()), (int)opt_mins.value());
+                }
             }
         }
         return slint::interpreter::Value();
@@ -819,21 +835,21 @@ void UiEventBridge::init() {
 void UiEventBridge::showHistoricalDataSingular()
 {
     //Make the current app state historical
-    std::lock_guard<std::mutex> lock(AppState::stateMutex);
+    std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
     AppState::state.currentView = AppState::CurrentView::HISTORICAL_SINGULAR;
 }
 
 void UiEventBridge::showHistoricalDataNumber()
 {
     //Make the current app state historical
-    std::lock_guard<std::mutex> lock(AppState::stateMutex);
+    std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
     AppState::state.currentView = AppState::CurrentView::HISTORICAL_NUMBER;
 }
 
 void UiEventBridge::showHistoricalDataRange()
 {
     //Make the current app state historical
-    std::lock_guard<std::mutex> lock(AppState::stateMutex);
+    std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
     AppState::state.currentView = AppState::CurrentView::HISTORICAL_RANGE;
 }
 
@@ -841,34 +857,32 @@ void UiEventBridge::showLiveData()
 {
     EventHub::emit(Event::LOAD_LIVE_DATA); // Tell everyone we need live data, so they can prepare it before we switch the view
     //Make the current app state live
-    std::lock_guard<std::mutex> lock(AppState::stateMutex);
+    std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
     AppState::state.currentView = AppState::CurrentView::LIVE;
 }
 
 void UiEventBridge::tabViewClicked()
 {
     //Make the current app state live
-    std::lock_guard<std::mutex> lock(AppState::stateMutex);
+    std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
     AppState::state.useTabView = true;
 }
 
 void UiEventBridge::siteViewClicked()
 {
     //Make the current app state live
-    std::lock_guard<std::mutex> lock(AppState::stateMutex);
+    std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
     AppState::state.useTabView = false;
 }
 
 void UiEventBridge::filterViewClicked()
 {
-    //Make the current app state live
-    std::lock_guard<std::mutex> lock(AppState::stateMutex);
+    std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
     AppState::state.isRawProjectView = false;
 }
 
 void UiEventBridge::rawViewClicked()
 {
-    //Make the current app state live
-    std::lock_guard<std::mutex> lock(AppState::stateMutex);
+    std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
     AppState::state.isRawProjectView = true;
 }

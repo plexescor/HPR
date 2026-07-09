@@ -70,7 +70,7 @@ void TimelineManager::updateTimeline(int presetHours, int startHour, int endHour
 
     // 1. Safely copy switch history and view mode
     {
-        std::lock_guard<std::mutex> lock(AppState::stateMutex);
+        std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
         currentView = AppState::state.currentView;
 
         if (currentView == AppState::CurrentView::LIVE)
