@@ -1892,7 +1892,10 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
 
         if (!path.empty())
         {
-            interpreterApp->reload(path);
+            if (interpreterApp)
+            {
+                interpreterApp->reload(path);
+            }
         }
     };
 }
