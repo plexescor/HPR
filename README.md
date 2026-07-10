@@ -223,6 +223,13 @@ Windows: %APPDATA%\HPR\HPR_DB\
 
 </details>
 
+> [!NOTE]
+> **Microsoft Visual C++ Runtime (64-bit)**
+>
+> HPR depends on the Microsoft Visual C++ Runtime. If you're using **Windows 10** or **Windows 11 which are installed fresh, install the **64-bit Microsoft Visual C++ Redistributable** before launching HPR.
+>
+> **Download (x64):** https://aka.ms/vc14/vc_redist.x64.exe
+
 ---
 
 ## Browser Tab Tracking
@@ -249,22 +256,25 @@ In the UI, toggle display mode with the **Tab View** and **Site View** buttons:
 
 HPR tracks which project you are currently working in, not just whether the editor is open. No editor extensions, plugins, or marketplace installs are required.
 
+> [!NOTE]
+> On Windows, HPR currently supports only 64-bit JetBrains IDEs. 32-bit builds are not supported.
+
 ### IDE & Code Editor Support Matrix
 
 | Application | Platform Support | Status &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; | Extension Required | Parsing Strategy / Notes |
 | :--- | :--- | :------------------- | :--- | :--- |
 | **Visual Studio Code** | Windows / Linux | ✅ Working | No | Matches `code`, `vscode`, or `visual studio code` (case-insensitive) in window title/process name |
-| **IntelliJ IDEA** | Linux | ✅ Working (⚠️ may be unstable) | No | Matches `jetbrains` (case-insensitive) in window title/process name; extracts project name before the en dash (–). |
-| **WebStorm** | Linux | ✅ Working (⚠️ may be unstable) | No | Matches `jetbrains` (case-insensitive) in window title/process name; extracts project name before the en dash (–). |
-| **PyCharm** | Linux | ✅ Working (⚠️ may be unstable) | No | Matches `jetbrains` (case-insensitive) in window title/process name; extracts project name before the en dash (–). |
-| **CLion** | Linux | ✅ Working (⚠️ may be unstable) | No | Matches `jetbrains` (case-insensitive) in window title/process name; extracts project name before the en dash (–). |
-| **Rider** | Linux | ✅ Working (⚠️ may be unstable) | No | Matches `jetbrains` (case-insensitive) in window title/process name; extracts project name before the en dash (–). |
-| **GoLand** | Linux | ✅ Working (⚠️ may be unstable) | No | Matches `jetbrains` (case-insensitive) in window title/process name; extracts project name before the en dash (–). |
-| **RustRover** | Linux | ✅ Working (⚠️ may be unstable) | No | Matches `jetbrains` (case-insensitive) in window title/process name; extracts project name before the en dash (–). |
-| **PhpStorm** | Linux | ✅ Working (⚠️ may be unstable) | No | Matches `jetbrains` (case-insensitive) in window title/process name; extracts project name before the en dash (–). |
-| **RubyMine** | Linux | ✅ Working (⚠️ may be unstable) | No | Matches `jetbrains` (case-insensitive) in window title/process name; extracts project name before the en dash (–). |
-| **DataGrip** | Linux | ✅ Working (⚠️ may be unstable) | No | Matches `jetbrains` (case-insensitive) in window title/process name; extracts project name before the en dash (–). |
-| **DataSpell** | Linux | ✅ Working (⚠️ may be unstable) | No | Matches `jetbrains` (case-insensitive) in window title/process name; extracts project name before the en dash (–). |
+| **IntelliJ IDEA** | Windows / Linux | ✅ Working | No | Matches `jetbrains` (case-insensitive) in window title/process name; extracts project name before the en dash (–). |
+| **WebStorm** | Windows / Linux | ✅ Working | No | Matches `jetbrains` (case-insensitive) in window title/process name; extracts project name before the en dash (–). |
+| **PyCharm** | Windows / Linux | ✅ Working | No | Matches `jetbrains` (case-insensitive) in window title/process name; extracts project name before the en dash (–). |
+| **CLion** | Windows / Linux | ✅ Working | No | Matches `jetbrains` (case-insensitive) in window title/process name; extracts project name before the en dash (–). |
+| **Rider** | Windows / Linux | ✅ Working | No | Matches `jetbrains` (case-insensitive) in window title/process name; extracts project name before the en dash (–). |
+| **GoLand** | Windows / Linux | ✅ Working | No | Matches `jetbrains` (case-insensitive) in window title/process name; extracts project name before the en dash (–). |
+| **RustRover** | Windows / Linux | ✅ Working | No | Matches `jetbrains` (case-insensitive) in window title/process name; extracts project name before the en dash (–). |
+| **PhpStorm** | Windows / Linux | ✅ Working | No | Matches `jetbrains` (case-insensitive) in window title/process name; extracts project name before the en dash (–). |
+| **RubyMine** | Windows / Linux | ✅ Working | No | Matches `jetbrains` (case-insensitive) in window title/process name; extracts project name before the en dash (–). |
+| **DataGrip** | Windows / Linux | ✅ Working | No | Matches `jetbrains` (case-insensitive) in window title/process name; extracts project name before the en dash (–). |
+| **DataSpell** | Linux | ✅ Working | No | Matches `jetbrains` (case-insensitive) in window title/process name; extracts project name before the en dash (–). |
 
 ### How It Works
 
@@ -275,7 +285,7 @@ VS Code puts the active project name directly in its window title in the format 
 3. Everything after that separator is the project name.
 
 #### JetBrains IDEs (Beta)
-JetBrains IDEs prepend `jetbrains: ` to the active project window title in HPR (resolving to `jetbrains: ProjectName – file [module]` or just `jetbrains: ProjectName` using an en dash `–`). HPR parses it:
+HPR prepend `jetbrains: ` to the active project window title (resolving to `jetbrains: ProjectName – file [module]` or just `jetbrains: ProjectName` using an en dash `–`). HPR parses it:
 1. Strip the `jetbrains: ` prefix.
 2. Find the first occurrence of the en dash ` – ` (`\xe2\x80\x93`).
 3. Everything before the en dash is the project name. If no en dash is found, the whole cleaned string is used.
