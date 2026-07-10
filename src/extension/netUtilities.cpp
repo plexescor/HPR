@@ -122,7 +122,7 @@ namespace NativeNet
             // Query HTTP Status Code
             DWORD dwStatusCode = 0;
             DWORD dwSize = sizeof(dwStatusCode);
-            if (WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_statusCode | WINHTTP_QUERY_FLAG_NUMBER,
+            if (WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
                                     WINHTTP_HEADER_NAME_BY_INDEX, &dwStatusCode, &dwSize, WINHTTP_NO_HEADER_INDEX)) 
             {
                 statusCode = static_cast<int>(dwStatusCode);
@@ -272,7 +272,7 @@ namespace NativeNet
             // Query HTTP Status Code
             DWORD dwStatusCode = 0;
             DWORD dwSize = sizeof(dwStatusCode);
-            if (WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_statusCode | WINHTTP_QUERY_FLAG_NUMBER,
+            if (WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
                                     WINHTTP_HEADER_NAME_BY_INDEX, &dwStatusCode, &dwSize, WINHTTP_NO_HEADER_INDEX)) 
             {
                 statusCode = static_cast<int>(dwStatusCode);
@@ -427,7 +427,7 @@ namespace NativeNet
         {
             DWORD dwStatusCode = 0;
             DWORD dwSize = sizeof(dwStatusCode);
-            if (WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_statusCode | WINHTTP_QUERY_FLAG_NUMBER,
+            if (WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
                                     WINHTTP_HEADER_NAME_BY_INDEX, &dwStatusCode, &dwSize, WINHTTP_NO_HEADER_INDEX))
             {
                 statusCode = static_cast<int>(dwStatusCode);
@@ -571,7 +571,7 @@ namespace NativeNet
         {
             DWORD dwStatusCode = 0;
             DWORD dwSize = sizeof(dwStatusCode);
-            if (WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_statusCode | WINHTTP_QUERY_FLAG_NUMBER,
+            if (WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER,
                                     WINHTTP_HEADER_NAME_BY_INDEX, &dwStatusCode, &dwSize, WINHTTP_NO_HEADER_INDEX))
             {
                 statusCode = static_cast<int>(dwStatusCode);
