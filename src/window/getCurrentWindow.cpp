@@ -39,6 +39,37 @@ void CurrentWindowManager::run()
         );
 }
 
+bool CurrentWindowManager::isJetbrainsIDE(std::string& windowName)
+{
+	std::string lowerWindowName = windowName;
+
+	//Convert windowName to lowercase
+	std::transform(lowerWindowName.begin(), 
+		lowerWindowName.end(), 
+		lowerWindowName.begin(),
+		[](unsigned char c)
+		{ 
+			return std::tolower(c); 
+		});
+
+	if (lowerWindowName.contains("jetbrains")
+		|| lowerWindowName.contains("clion")
+		|| lowerWindowName.contains("goland")
+		|| lowerWindowName.contains("datagrip")
+		|| lowerWindowName.contains("idea64")
+		|| lowerWindowName.contains("rider")
+		|| lowerWindowName.contains("phpstorm")
+		|| lowerWindowName.contains("pycharm")
+		|| lowerWindowName.contains("rubymine")
+		|| lowerWindowName.contains("rustrover")
+		|| lowerWindowName.contains("webstorm"))
+	{
+		return true;
+	}
+
+	return false;
+}
+
 void CurrentWindowManager::stopTracking()
 {
 	if (running)
@@ -119,17 +150,7 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 		if (lowerWindowName.contains("code") 
 		|| lowerWindowName.contains("vscode")
 		|| lowerWindowName.contains("visual studio code")
-		|| lowerWindowName.contains("jetbrains")
-		|| lowerWindowName.contains("clion")
-		|| lowerWindowName.contains("goland")
-		|| lowerWindowName.contains("idea64")
-		|| lowerWindowName.contains("rider")
-		|| lowerWindowName.contains("phpstorm")
-		|| lowerWindowName.contains("pycharm")
-		|| lowerWindowName.contains("rubymine")
-		|| lowerWindowName.contains("rustrover")
-		|| lowerWindowName.contains("webstorm")
-		|| lowerWindowName.contains("datagrip"))
+		|| isJetbrainsIDE(lowerWindowName))
 		{
 			project = getCurrentTitle();
 		}
@@ -150,7 +171,7 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 			project = "";
 		}
 
-		if (project.contains("Unknown67"))
+		if (project.contains("Unknown67")) //vecause "unknown" may be contained in titles as actual strings
 		{
 			std::this_thread::sleep_for(std::chrono::milliseconds(pollInterval));
 			continue;
@@ -240,17 +261,7 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 			}
 
 			else if (!project.empty()
-			&& (lowerWindowName.contains("jetbrains")
-				|| lowerWindowName.contains("clion")
-				|| lowerWindowName.contains("goland")
-				|| lowerWindowName.contains("datagrip")
-				|| lowerWindowName.contains("idea64")
-				|| lowerWindowName.contains("rider")
-				|| lowerWindowName.contains("phpstorm")
-				|| lowerWindowName.contains("pycharm")
-				|| lowerWindowName.contains("rubymine")
-				|| lowerWindowName.contains("rustrover")
-				|| lowerWindowName.contains("webstorm"))
+			&& (isJetbrainsIDE(lowerProjectName))
 			) //because jetbrain dont put ide name in title
 			{
 				//fuck need to do this

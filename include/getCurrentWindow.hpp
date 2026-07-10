@@ -16,6 +16,7 @@ public:
     void stopTracking();
     void startTracking();
 	void detectAndSetBackend();
+    bool isJetbrainsIDE(std::string& windowName);
 
 private:
     void getCurrentWindow_Loop();
