@@ -390,6 +390,7 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
                 bool hwAccelVal = AppState::configManager.getConfig<bool>("hardware-acceleration", true);
                 bool allowCustomVal = AppState::configManager.getConfig<bool>("allow-custom-backends", false);
                 bool allowNetworkVal = AppState::configManager.getConfig<bool>("allow-network-activity", true);
+                bool allowNativeLibrariesVal = AppState::configManager.getConfig<bool>("allow-native-libraries", false);
 
                 bool allowSidebarCustomizationVal = AppState::configManager.getConfig<bool>("allow-sidebar-customization", false);
                 bool hideSidebarReloadVal = AppState::configManager.getConfig<bool>("hide-sidebar-reload", false);
@@ -454,6 +455,8 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
                     (*handle)->set_allowCustomBackends_S(allowCustomVal);
                 if ((*handle)->get_allowNetworkActivity_S() != allowNetworkVal)
                     (*handle)->set_allowNetworkActivity_S(allowNetworkVal);
+                if ((*handle)->get_allowNativeLibraries_S() != allowNativeLibrariesVal)
+                    (*handle)->set_allowNativeLibraries_S(allowNativeLibrariesVal);
 
                 if ((*handle)->get_allowSidebarCustomization_S() != allowSidebarCustomizationVal)
                     (*handle)->set_allowSidebarCustomization_S(allowSidebarCustomizationVal);
@@ -934,6 +937,7 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
             bool hwAccelVal = AppState::configManager.getConfig<bool>("hardware-acceleration", true);
             bool allowCustomVal = AppState::configManager.getConfig<bool>("allow-custom-backends", false);
             bool allowNetworkVal = AppState::configManager.getConfig<bool>("allow-network-activity", true);
+            bool allowNativeLibrariesVal = AppState::configManager.getConfig<bool>("allow-native-libraries", false);
 
             bool allowSidebarCustomizationVal = AppState::configManager.getConfig<bool>("allow-sidebar-customization", false);
             bool hideSidebarReloadVal = AppState::configManager.getConfig<bool>("hide-sidebar-reload", false);
@@ -990,6 +994,7 @@ void UiModelManager::update_Interpreted(const std::map<std::string, uint64_t> &r
             setPropIfChanged("hardwareAccel_S", slint::interpreter::Value(hwAccelVal));
             setPropIfChanged("allowCustomBackends_S", slint::interpreter::Value(allowCustomVal));
             setPropIfChanged("allowNetworkActivity_S", slint::interpreter::Value(allowNetworkVal));
+            setPropIfChanged("allowNativeLibraries_S", slint::interpreter::Value(allowNativeLibrariesVal));
 
             setPropIfChanged("allowSidebarCustomization_S", slint::interpreter::Value(allowSidebarCustomizationVal));
             setPropIfChanged("hideSidebarReload_S", slint::interpreter::Value(hideSidebarReloadVal));

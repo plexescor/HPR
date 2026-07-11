@@ -790,7 +790,15 @@ void ExtensionManager::registerFunctions(LoadedExtension& ext)
 {
     sol::state& lua = ext.lua;
     //Functions exposed to lua
-    lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::table, sol::lib::math);
+    bool allowNativeLibraries = AppState::configManager.getConfig<bool>("allow-native-libraries", false);
+    if (allowNativeLibraries)
+    {
+        lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::table, sol::lib::math, sol::lib::package);
+    }
+    else
+    {
+        lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::table, sol::lib::math);
+    }
     
     lua["HPR"] = lua.create_table();
     lua["HPR"]["overrides"] = lua.create_table();

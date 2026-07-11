@@ -391,6 +391,7 @@ Each extension runs in its own isolated VM on a dedicated background thread, com
 - Subscribe to HPR's internal event bus and react to state changes
 - Build interactive custom UI panels that render inside HPR via Slint callback bindings
 - **Function Overriding (Advanced)**: Intercept, block, or modify 24+ core C++ functions directly from Lua
+- **Native Shared Libraries (Supercharged)**: Load external `.so`/`.dll` binary files to perform low-level OS operations, custom tray integration, high-performance tasks, or anything you want (must enable *"Allow Extensions to Load Native Libraries"* in Settings)
 - AND yes, you can run [Budget Doom](https://github.com/plexescor/HPR-Extensions) (software rendering only)
 
 <p align="center">

@@ -95,6 +95,7 @@ export component SettingsView {
     in property <bool> allowNetworkActivity_S;
     in property <bool> showMiscImagePanel_S;
     in property <bool> trueHeadless_S;
+    in property <bool> allowNativeLibraries_S;
     callback setConfig(string, string);
 
     in property <bool> allowSidebarCustomization_S;
@@ -507,6 +508,16 @@ export component SettingsView {
                         description: "Show a dedicated panel in HPR sidebar allowing extensions to render custom RGBA frames.";
                         checked: root.showMiscImagePanel_S;
                         toggled(v) => { root.setConfig("show-misc-image-panel", v ? "true" : "false"); }
+                    }
+
+                    Divider {}
+
+                    ToggleSetting {
+                        label: "Allow Extensions to Load Native Libraries";
+                        description: "Enables Lua extensions to call package.loadlib/require to load external .dll or .so libraries. Warning: This gives extensions complete access to run arbitrary machine code on your computer.";
+                        warning-text: "WARNING: Allowing native libraries bypasses sandbox restrictions. Run only trusted extensions.";
+                        checked: root.allowNativeLibraries_S;
+                        toggled(v) => { root.setConfig("allow-native-libraries", v ? "true" : "false"); }
                     }
                 }
             }
