@@ -74,12 +74,12 @@ select_version() {
     # Always fetch latest release information first to inform the user
     fetch_latest_version
 
-    echo -e "${BOLD}Select HPR version to install/update:${NC}"
-    echo "  1) Latest release ($TAG_NAME)"
-    echo "  2) Custom version"
+    echo -e "${GREEN}Select HPR version to install/update:${NC}"
+    echo -e "${GREEN}  1) Latest release ($TAG_NAME)${NC}"
+    echo -e "${GREEN}  2) Custom version${NC}"
     
     while true; do
-        read -p "Select option (1-2): " ver_choice < /dev/tty
+        read -p "$(echo -e "${GREEN}Select option (1-2): ${NC}")" ver_choice < /dev/tty
         case "$ver_choice" in
             1)
                 # Already fetched in the beginning
@@ -87,9 +87,9 @@ select_version() {
                 ;;
             2)
                 while true; do
-                    echo -e ">> Enter the custom version you want to install."
-                    echo -e "   (Example: ${BOLD}v0.9.3${NC} or ${BOLD}0.9.3${NC})"
-                    read -p "Version: " custom_ver < /dev/tty
+                    echo -e "${GREEN}>> Enter the custom version you want to install.${NC}"
+                    echo -e "${GREEN}   (Example: ${BOLD}${GREEN}v0.9.3${NC}${GREEN} or ${BOLD}${GREEN}0.9.3${NC}${GREEN})${NC}"
+                    read -p "$(echo -e "${GREEN}Version: ${NC}")" custom_ver < /dev/tty
                     
                     # Trim whitespace using sed
                     custom_ver=$(echo "$custom_ver" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
@@ -216,9 +216,9 @@ get_hpr_path() {
     # If not found, ask user
     echo -e "${YELLOW}>> HPR installation not detected in default metadata folders.${NC}"
     while true; do
-        echo -e ">> If you copied HPR somewhere else, enter the path to HPR binary"
-        echo -e "   (include the binary itself in the path, e.g. /home/username/HPR_DIR/HPR)"
-        read -p ">> If HPR is truly not installed, press [Enter]: " input_path < /dev/tty
+        echo -e "${GREEN}>> If you copied HPR somewhere else, enter the path to HPR binary${NC}"
+        echo -e "${GREEN}   (include the binary itself in the path, e.g. /home/username/HPR_DIR/HPR)${NC}"
+        read -p "$(echo -e "${GREEN}>> If HPR is truly not installed, press [Enter]: ${NC}")" input_path < /dev/tty
         
         if [ -z "$input_path" ]; then
             echo "   HPR is not installed."
@@ -240,7 +240,7 @@ get_hpr_path() {
         done
         
         # Double confirm
-        read -p ">> Are you sure HPR is located at '$cleaned_path'? (y/N): " confirm_loc < /dev/tty
+        read -p "$(echo -e "${GREEN}>> Are you sure HPR is located at '$cleaned_path'? (y/N): ${NC}")" confirm_loc < /dev/tty
         if [[ "$confirm_loc" =~ ^[Yy] ]]; then
             echo "$cleaned_path"
             return 0
@@ -350,7 +350,7 @@ setup_gnome_extension() {
         
         if [ "$IS_INSTALLED" = false ]; then
             echo -e "${YELLOW}>> GNOME Desktop detected, but HPR's window-tracking extension is not installed/active.${NC}"
-            read -p ">> Would you like to install the required GNOME Shell extension? (Y/n): " install_ext < /dev/tty
+            read -p "$(echo -e "${GREEN}>> Would you like to install the required GNOME Shell extension? (Y/n): ${NC}")" install_ext < /dev/tty
             if [[ -z "$install_ext" || "$install_ext" =~ ^[Yy] ]]; then
                 echo ">> Installing GNOME extension..."
                 if [ -d "$EXT_DIR" ]; then
@@ -499,9 +499,9 @@ install_hpr() {
         INSTALL_PATH="/usr/local/bin/HPR"
     fi
     
-    echo ">> Configuring installation directory..."
+    echo -e "${GREEN}>> Configuring installation directory...${NC}"
     while true; do
-        read -p "   Install location [Press Enter for '$INSTALL_PATH', or type custom path]: " input_path < /dev/tty
+        read -p "$(echo -e "${GREEN}   Install location [Press Enter for '$INSTALL_PATH', or type custom path]: ${NC}")" input_path < /dev/tty
         if [ -z "$input_path" ]; then
             break
         fi
@@ -601,7 +601,7 @@ update_hpr() {
         sudo rm -f "$INSTALL_DIR"/libslint_cpp.so*
     else
         echo -e "${RED}WARNING: All files inside directory '$INSTALL_DIR' will be deleted!${NC}"
-        read -p "Are you absolutely sure you want to delete everything inside '$INSTALL_DIR'? (y/N): " confirm_wipe < /dev/tty
+        read -p "$(echo -e "${RED}Are you absolutely sure you want to delete everything inside '$INSTALL_DIR'? (y/N): ${NC}")" confirm_wipe < /dev/tty
         if [[ "$confirm_wipe" =~ ^[Yy] ]]; then
             echo "   Wiping directory: $INSTALL_DIR..."
             sudo rm -rf "$INSTALL_DIR"/*
@@ -660,7 +660,7 @@ remove_hpr() {
         sudo rm -f "$INSTALL_DIR"/libslint_cpp.so*
     else
         echo -e "${RED}WARNING: All files inside directory '$INSTALL_DIR' will be deleted!${NC}"
-        read -p "Are you absolutely sure you want to delete everything inside '$INSTALL_DIR'? (y/N): " confirm_wipe < /dev/tty
+        read -p "$(echo -e "${RED}Are you absolutely sure you want to delete everything inside '$INSTALL_DIR'? (y/N): ${NC}")" confirm_wipe < /dev/tty
         if [[ "$confirm_wipe" =~ ^[Yy] ]]; then
             echo "   Wiping and removing directory: $INSTALL_DIR..."
             sudo rm -rf "$INSTALL_DIR"
@@ -690,8 +690,8 @@ while true; do
     echo "  2) Update HPR"
     echo "  3) Remove HPR"
     echo "  4) Exit"
-    echo -e "${BOLD}=================================================${NC}"
-    read -p "Select an action (1-4): " choice < /dev/tty
+    echo -e "${GREEN}=================================================${NC}"
+    read -p "$(echo -e "${GREEN}Select an action (1-4): ${NC}")" choice < /dev/tty
     echo ""
     
     case "$choice" in
