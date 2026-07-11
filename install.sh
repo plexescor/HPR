@@ -74,9 +74,9 @@ select_version() {
     # Always fetch latest release information first to inform the user
     fetch_latest_version
 
-    echo -e "${GREEN}Select HPR version to install/update:${NC}"
-    echo -e "${GREEN}  1) Latest release ($TAG_NAME)${NC}"
-    echo -e "${GREEN}  2) Custom version${NC}"
+    echo -e "${BOLD}Select HPR version to install/update:${NC}"
+    echo "  1) Latest release ($TAG_NAME)"
+    echo "  2) Custom version"
     
     while true; do
         read -p "$(echo -e "${GREEN}Select option (1-2): ${NC}")" ver_choice < /dev/tty
@@ -686,10 +686,10 @@ while true; do
     echo -e "${BOLD}=================================================${NC}"
     echo -e "${BOLD}         HPR Linux Installation Manager          ${NC}"
     echo -e "${BOLD}=================================================${NC}"
-    echo -e "${GREEN}  1) Install HPR${NC}"
-    echo -e "${GREEN}  2) Update HPR${NC}"
-    echo -e "${GREEN}  3) Remove HPR${NC}"
-    echo -e "${GREEN}  4) Exit${NC}"
+    echo "  1) Install HPR"
+    echo "  2) Update HPR"
+    echo "  3) Remove HPR"
+    echo "  4) Exit"
     echo -e "${GREEN}=================================================${NC}"
     read -p "$(echo -e "${GREEN}Select an action (1-4): ${NC}")" choice < /dev/tty
     echo ""
