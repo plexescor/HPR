@@ -346,16 +346,7 @@ void ExtensionManager::loadExtensions()
                 try
                 {
                     ext->lua.script_file(entry.path().string());
-                    sol::optional<sol::function> initFn = (*ext).lua["init"];
-                    if (initFn && initFn->valid())
-                    {
-                        sol::protected_function_result res = (*initFn)();
-                        if (!res.valid())
-                        {
-                            sol::error err = res;
-                            std::cerr << "init() failed in " << entry.path() << ": " << err.what() << "\n";
-                        }
-                    }
+                    // initFn is now run on the background thread inside runExtension()
                 }
                 catch (const std::exception& e)
                 {
@@ -409,16 +400,24 @@ void ExtensionManager::runExtension(std::shared_ptr<LoadedExtension> ext_ptr)
             AppState::state.loadedExtensions.push_back(ext.identity);
         }        
         int sleepTime = 1000; //ms
-        // sol::function init = ext.lua["init"];
+        sol::function init = ext.lua["init"];
         sol::function onTick = ext.lua["onTick"];
         sol::function onExit = ext.lua["onExit"];
 
-        // if (init.valid()) 
-        // {
-        //     std::lock_guard<std::recursive_mutex> luaLock(ext.luaMutex);
-        //     sol::object result = init();
-        //     if (result.is<int>()) sleepTime = result.as<int>();
-        // }
+        if (init.valid()) 
+        {
+            std::lock_guard<std::recursive_mutex> luaLock(ext.luaMutex);
+            sol::protected_function init_p = init;
+            sol::protected_function_result result = init_p();
+            if (result.valid()) {
+                if (result.return_count() > 0 && result[0].is<int>()) {
+                    sleepTime = result[0].as<int>();
+                }
+            } else {
+                sol::error err = result;
+                std::cerr << "init() failed in " << ext.path << ": " << err.what() << "\n";
+            }
+        }
         
         auto lastTime = std::chrono::high_resolution_clock::now();
         while (ext.running)
@@ -608,16 +607,7 @@ void ExtensionManager::reloadExtension(std::string authorName, std::string exten
     try 
     {
         newExt->lua.script_file(extPath.string());
-        sol::optional<sol::function> initFn = (*newExt).lua["init"];
-        if (initFn && initFn->valid())
-        {
-            sol::protected_function_result res = (*initFn)();
-            if (!res.valid())
-            {
-                sol::error err = res;
-                std::cerr << "init() failed in " << extPath.string() << ": " << err.what() << "\n";
-            }
-        }
+        // initFn is run on the background thread in runExtension()
         
     } catch (const std::exception& e) {
         std::cerr << "Failed to reload extension: " << extPath.string() << "\nError: " << e.what() << '\n';
@@ -686,16 +676,7 @@ void ExtensionManager::reloadAllExtensions()
         try 
         {
             newExt->lua.script_file(path.string());
-            sol::optional<sol::function> initFn = (*newExt).lua["init"];
-            if (initFn && initFn->valid())
-            {
-                sol::protected_function_result res = (*initFn)();
-                if (!res.valid())
-                {
-                    sol::error err = res;
-                    std::cerr << "init() failed in " << path << ": " << err.what() << "\n";
-                }
-            }
+            // initFn is run on the background thread in runExtension()
         } catch (const std::exception& e) {
             std::cerr << "Failed to reload extension: " << path << "\nError: " << e.what() << '\n';
             Logger::log("[HPR] Failed to reload extension: " + path.string() + "\nError: " + e.what() + "\n");
@@ -749,16 +730,7 @@ void ExtensionManager::refresh()
                 try
                 {
                     ext->lua.script_file(entry.path().string());
-                    sol::optional<sol::function> initFn = (*ext).lua["init"];
-                    if (initFn && initFn->valid())
-                    {
-                        sol::protected_function_result res = (*initFn)();
-                        if (!res.valid())
-                        {
-                            sol::error err = res;
-                            std::cerr << "init() failed in " << entry.path() << ": " << err.what() << "\n";
-                        }
-                    }
+                    // initFn is run on the background thread in runExtension()
                 }
                 catch (const std::exception& e)
                 {
