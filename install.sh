@@ -23,7 +23,7 @@ cleanup_temp() {
         TEMP_DIR=""
         echo "   Cleanup complete."
     fi
-}
+} >&2
 trap cleanup_temp EXIT
 
 check_dependencies() {
@@ -224,26 +224,26 @@ get_hpr_path() {
     fi
     
     # If not found, ask user
-    echo -e "${YELLOW}>> HPR installation was not detected automatically.${NC}"
-    echo "   If you installed HPR manually or moved the binary, enter the full path to it below."
-    echo "   The path must point to the HPR binary itself, not its containing folder."
-    echo "   (Example: /home/username/HPR_DIR/HPR)"
-    echo ""
+    echo -e "${YELLOW}>> HPR installation was not detected automatically.${NC}" >&2
+    echo "   If you installed HPR manually or moved the binary, enter the full path to it below." >&2
+    echo "   The path must point to the HPR binary itself, not its containing folder." >&2
+    echo "   (Example: /home/username/HPR_DIR/HPR)" >&2
+    echo "" >&2
     while true; do
         read -p ">> Path to HPR binary (press [Enter] if HPR is not installed): " input_path < /dev/tty
         
         if [ -z "$input_path" ]; then
-            echo "   No path provided. Returning to the main menu."
-            echo "   Use 'Install HPR' (option 1) to install it first."
-            echo ""
+            echo "   No path provided. Returning to the main menu." >&2
+            echo "   Use 'Install HPR' (option 1) to install it first." >&2
+            echo "" >&2
             return 1
         fi
         
         # Check for tilde
         if [[ "$input_path" == *~* ]]; then
             echo -e "${RED}Error: Do not use ~ in the path — the shell does not expand it here.${NC}" >&2
-            echo "   Use the full absolute path. (e.g. /home/your-username/HPR_DIR/HPR)"
-            echo ""
+            echo "   Use the full absolute path. (e.g. /home/your-username/HPR_DIR/HPR)" >&2
+            echo "" >&2
             continue
         fi
         
@@ -259,8 +259,8 @@ get_hpr_path() {
             echo "$cleaned_path"
             return 0
         else
-            echo "   Path not confirmed. Please try again."
-            echo ""
+            echo "   Path not confirmed. Please try again." >&2
+            echo "" >&2
         fi
     done
 }
@@ -754,4 +754,4 @@ while true; do
             echo ""
             ;;
     esac
-done
+done >&2
