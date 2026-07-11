@@ -282,23 +282,25 @@ bool TelemetryManager::jsonHasTopLevelKey(const std::string& json, const std::st
 
 int TelemetryManager::parseCountFromSummary(const std::string& json, const std::string& prefix)
 {
-    // Firebase returns a string value as: "Total Users: 12" (with surrounding quotes).
-    // Strips the outer quotes and the known prefix, then parses the integer.
-    // Returns 0 if json is null, empty, or the prefix is not found.
     if (json.empty() || json == "null") return 0;
 
-    // Strip surrounding JSON quotes if present
-    std::string value = json;
-    if (value.size() >= 2 && value.front() == '"' && value.back() == '"') {
-        value = value.substr(1, value.size() - 2);
-    }
+    // Extract the "value" field from:
+    // {"value":"Total Users: 42","secret":"..."}
+    const std::string key = "\"value\":\"";
+    size_t start = json.find(key);
+    if (start == std::string::npos) return 0;
+
+    start += key.size();
+    size_t end = json.find('"', start);
+    if (end == std::string::npos) return 0;
+
+    std::string value = json.substr(start, end - start);
 
     auto pos = value.find(prefix);
     if (pos == std::string::npos) return 0;
 
-    std::string numStr = value.substr(pos + prefix.size());
     try {
-        return std::stoi(numStr);
+        return std::stoi(value.substr(pos + prefix.size()));
     } catch (...) {
         return 0;
     }
@@ -344,9 +346,7 @@ void TelemetryManager::privilegedAggregationCycle()
             return;
         }
         int newUsers = countJsonTopLevelKeys(usersResp.first);
-        if (jsonHasTopLevelKey(usersResp.first, "count")) {
-            newUsers = std::max(0, newUsers - 1); // exclude the summary key
-        }
+        newUsers = std::max(0, newUsers - 1);
         int totalUsers = previousTotal + newUsers;
         Logger::log("[Telemetry] New users this cycle: " + std::to_string(newUsers)
                     + ", total: " + std::to_string(totalUsers));
@@ -390,34 +390,20 @@ void TelemetryManager::privilegedAggregationCycle()
             return;
         }
         int newActive = countJsonTopLevelKeys(weekResp.first);
-        if (jsonHasTopLevelKey(weekResp.first, "active_users")) {
-            newActive = std::max(0, newActive - 1); // exclude the summary key
-        }
+        newActive = std::max(0, newActive - 1);
         int weeklyActive = previousActive + newActive;
         Logger::log("[Telemetry] New active this cycle: " + std::to_string(newActive)
                     + ", total: " + std::to_string(weeklyActive));
 
         // Both reads succeeded — safe to proceed with delete + write.
 
-        // ── 4. Delete telemetry/users ──────────────────────────────────────
-        auto delUsers = NativeNet::httpDelete(FIREBASE_HOST, "/telemetry/users.json", true);
-        if (delUsers.second >= 200 && delUsers.second < 300) {
-            Logger::log("[Telemetry] Deleted telemetry/users");
-        } else {
-            Logger::log("[Telemetry] Failed to delete telemetry/users, status: " + std::to_string(delUsers.second));
-        }
-
-        // ── 5. Delete telemetry/weekly_active/<week> ───────────────────────
-        auto delWeek = NativeNet::httpDelete(FIREBASE_HOST,
-            "/telemetry/weekly_active/" + week_id + ".json", true);
-        if (delWeek.second >= 200 && delWeek.second < 300) {
-            Logger::log("[Telemetry] Deleted telemetry/weekly_active/" + week_id);
-        } else {
-            Logger::log("[Telemetry] Failed to delete weekly_active week, status: " + std::to_string(delWeek.second));
-        }
 
         // ── 6. Write accumulated summary: Total Users ──────────────────────
-        std::string totalBody = "\"Total Users: " + std::to_string(totalUsers) + "\"";
+        std::string password = AppState::configManager.getConfig<std::string>("firebase-password", "");
+
+        std::string totalBody =
+            "{\"value\":\"Total Users: " + std::to_string(totalUsers) +
+            "\",\"secret\":\"" + password + "\"}";
         auto putTotal = NativeNet::httpPut(FIREBASE_HOST,
             "/telemetry/users/count.json", totalBody, true, headers);
         if (putTotal.second >= 200 && putTotal.second < 300) {
@@ -427,7 +413,11 @@ void TelemetryManager::privilegedAggregationCycle()
         }
 
         // ── 7. Write accumulated summary: Active Users ─────────────────────
-        std::string activeBody = "\"Active Users: " + std::to_string(weeklyActive) + "\"";
+        std::string password = AppState::configManager.getConfig<std::string>("firebase-password", "");
+
+        std::string activeBody =
+            "{\"value\":\"Active Users: " + std::to_string(weeklyActive) +
+            "\",\"secret\":\"" + password + "\"}";
         auto putActive = NativeNet::httpPut(FIREBASE_HOST,
             "/telemetry/weekly_active/" + week_id + "/active_users.json",
             activeBody, true, headers);
