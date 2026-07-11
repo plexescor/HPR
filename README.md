@@ -186,10 +186,12 @@ curl -fsSL https://raw.githubusercontent.com/plexescor/HPR/main/install.sh | bas
 
 <ul>
 <li><strong>Dependency Verification</strong>: Checks for required CLI tools (<code>curl</code>, <code>tar</code>, <code>xz</code>, <code>dbus-send</code>, <code>git</code>).</li>
-<li><strong>Version Check</strong>: Queries the GitHub API to fetch and download the latest release asset package (<code>HPRv{VERSION}-Linux.tar.xz</code>).</li>
+<li><strong>Re-installation Prevention</strong>: Before running a clean installation, the script verifies if HPR is already installed and warns you to use the update mode instead.</li>
+<li><strong>Flexible Version Selection</strong>: Prompts you to select between installing the Latest release (automatically fetching and displaying the latest tag) or specifying a Custom version (e.g., <code>v0.9.3</code> or <code>0.9.3</code>, with input normalization to prepend <code>v</code> automatically if omitted).</li>
 <li><strong>System Binary Installation</strong>: Prompts you for your preferred system-wide installation path (defaults to <code>/usr/local/bin/HPR</code>) and installs the binary (uses <code>sudo</code> for binary copy only).</li>
 <li><strong>Configuration Setup</strong>: Creates the config directories (<code>~/.config/HPR</code> and <code>~/.local/share/HPR</code>) and writes the default CSV files if they do not exist.</li>
 <li><strong>User Customization Protection</strong>: Detects if you have modified your CSV configuration files or the custom <code>ui/</code> folder, and preserves your changes. Only untouched default configuration files/folders are updated.</li>
+<li><strong>Wipe Confirmation and Safe Abort</strong>: Before updating or removing HPR, prompts you for a directory wipe confirmation. If you choose to cancel, the entire process aborts immediately, keeping your files safe.</li>
 <li><strong>GNOME Extension Installation</strong>: Detects if you are running the GNOME Desktop and prompts you to install the custom window-tracking extension (<code>lol-another-window-extension</code>) if it's missing.</li>
 <li><strong>Launcher Creation</strong>: Configures high-resolution app icon paths, creates a desktop launcher entry (<code>~/.local/share/applications/hpr.desktop</code>), and refreshes application menu databases.</li>
 </ul>
