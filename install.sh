@@ -5,7 +5,6 @@ set -e
 
 # Define color codes for pretty output
 BOLD='\033[1m'
-GREEN='\033[0;32m'
 RED='\033[0;31m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
@@ -38,11 +37,12 @@ check_dependencies() {
     done
     
     if [ ${#MISSING_DEPS[@]} -ne 0 ]; then
-        echo -e "${RED}Error: The following required dependencies are missing:${NC}"
+        echo -e "${RED}Error: The following required tools are missing and must be installed before continuing:${NC}"
         for dep in "${MISSING_DEPS[@]}"; do
             echo "  - $dep"
         done
-        echo "Please install them using your package manager and try again."
+        echo "   Install them with your package manager and run the installer again."
+        echo "   Examples: apt install <name>  |  pacman -S <name>  |  dnf install <name>"
         exit 1
     fi
     echo "   All dependencies satisfied."
@@ -61,7 +61,10 @@ fetch_latest_version() {
     fi
     
     if [ -z "$TAG_NAME" ]; then
-        echo -e "${RED}Error: Could not retrieve the latest version from GitHub.${NC}" >&2
+        echo -e "${RED}Error: Could not fetch the latest HPR release from GitHub.${NC}" >&2
+        echo "   This may be caused by a network issue or a GitHub API rate limit."
+        echo "   Check your internet connection and try again."
+        echo "   If the problem persists, choose 'Custom version' to install a specific release."
         exit 1
     fi
     
@@ -79,7 +82,7 @@ select_version() {
     echo "  2) Custom version"
     
     while true; do
-        read -p "$(echo -e "${GREEN}Select option (1-2): ${NC}")" ver_choice < /dev/tty
+        read -p "Select option (1-2): " ver_choice < /dev/tty
         case "$ver_choice" in
             1)
                 # Already fetched in the beginning
@@ -87,15 +90,16 @@ select_version() {
                 ;;
             2)
                 while true; do
-                    echo -e "${GREEN}>> Enter the custom version you want to install.${NC}"
-                    echo -e "${GREEN}   (Example: ${BOLD}${GREEN}v0.9.3${NC}${GREEN} or ${BOLD}${GREEN}0.9.3${NC}${GREEN})${NC}"
-                    read -p "$(echo -e "${GREEN}Version: ${NC}")" custom_ver < /dev/tty
+                    echo ">> Enter the HPR version tag you want to install."
+                    echo "   Find all available releases at: https://github.com/plexescor/HPR/releases"
+                    echo -e "   (Example: ${BOLD}v0.9.3${NC} or ${BOLD}0.9.3${NC} — the leading 'v' is optional)"
+                    read -p "Version: " custom_ver < /dev/tty
                     
                     # Trim whitespace using sed
                     custom_ver=$(echo "$custom_ver" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
                     
                     if [ -z "$custom_ver" ]; then
-                        echo -e "${RED}Error: Version cannot be empty.${NC}"
+                        echo -e "${RED}Error: Version cannot be empty. Please enter a valid version tag (e.g. v0.9.3).${NC}"
                         continue
                     fi
                     
@@ -108,7 +112,7 @@ select_version() {
                         VERSION_NUM="$custom_ver"
                     fi
                     
-                    echo "   Selected version: $TAG_NAME (version number: $VERSION_NUM)"
+                    echo "   Selected version: $TAG_NAME"
                     echo ""
                     break 2
                 done
@@ -127,9 +131,13 @@ download_and_extract() {
     local ASSET_NAME="HPRv${VERSION_NUM}-Linux.tar.xz"
     local ASSET_URL="https://github.com/plexescor/HPR/releases/download/${TAG_NAME}/${ASSET_NAME}"
     
-    echo ">> Downloading release archive from: $ASSET_URL"
+    echo ">> Downloading release archive from:"
+    echo "   $ASSET_URL"
     if ! curl -fL --progress-bar -o "$TEMP_DIR/$ASSET_NAME" "$ASSET_URL"; then
-        echo -e "${RED}Error: Failed to download the release asset from $ASSET_URL${NC}" >&2
+        echo -e "${RED}Error: Failed to download the release archive.${NC}" >&2
+        echo "   Possible causes:"
+        echo "     - The version tag '$TAG_NAME' does not exist. Check https://github.com/plexescor/HPR/releases for valid tags."
+        echo "     - A network error or firewall is blocking the download."
         exit 1
     fi
     
@@ -145,14 +153,16 @@ download_and_extract() {
     fi
     
     if [ -z "$SRC_DIR" ] || [ ! -d "$SRC_DIR" ]; then
-        echo -e "${RED}Error: Could not locate HPR binary in the extracted archive.${NC}" >&2
+        echo -e "${RED}Error: Could not locate the HPR binary inside the downloaded archive.${NC}" >&2
+        echo "   The archive may be malformed or from an unexpected release format."
+        echo "   Please try again or report this issue at: https://github.com/plexescor/HPR/issues"
         exit 1
     fi
 }
 
 write_metadata_file() {
     local target_path="$1"
-    echo ">> Persisting installation path metadata..."
+    echo ">> Saving installation path for future updates and removal..."
     
     # Attempt to write to primary system path
     if sudo mkdir -p "$(dirname "$METADATA_FILE")" >/dev/null 2>&1; then
@@ -214,21 +224,25 @@ get_hpr_path() {
     fi
     
     # If not found, ask user
-    echo -e "${YELLOW}>> HPR installation not detected in default metadata folders.${NC}"
+    echo -e "${YELLOW}>> HPR installation was not detected automatically.${NC}"
+    echo "   If you installed HPR manually or moved the binary, enter the full path to it below."
+    echo "   The path must point to the HPR binary itself, not its containing folder."
+    echo "   (Example: /home/username/HPR_DIR/HPR)"
+    echo ""
     while true; do
-        echo -e "${GREEN}>> If you copied HPR somewhere else, enter the path to HPR binary${NC}"
-        echo -e "${GREEN}   (include the binary itself in the path, e.g. /home/username/HPR_DIR/HPR)${NC}"
-        read -p "$(echo -e "${GREEN}>> If HPR is truly not installed, press [Enter]: ${NC}")" input_path < /dev/tty
+        read -p ">> Path to HPR binary (press [Enter] if HPR is not installed): " input_path < /dev/tty
         
         if [ -z "$input_path" ]; then
-            echo "   HPR is not installed."
+            echo "   No path provided. Returning to the main menu."
+            echo "   Use 'Install HPR' (option 1) to install it first."
             echo ""
             return 1
         fi
         
         # Check for tilde
         if [[ "$input_path" == *~* ]]; then
-            echo -e "${RED}Error: Tilde (~) is not allowed. Please use absolute paths (e.g. /home/username/path).${NC}" >&2
+            echo -e "${RED}Error: Do not use ~ in the path — the shell does not expand it here.${NC}" >&2
+            echo "   Use the full absolute path. (e.g. /home/your-username/HPR_DIR/HPR)"
             echo ""
             continue
         fi
@@ -240,12 +254,12 @@ get_hpr_path() {
         done
         
         # Double confirm
-        read -p "$(echo -e "${GREEN}>> Are you sure HPR is located at '$cleaned_path'? (y/N): ${NC}")" confirm_loc < /dev/tty
+        read -p ">> Are you sure HPR is located at '$cleaned_path'? (y/N): " confirm_loc < /dev/tty
         if [[ "$confirm_loc" =~ ^[Yy] ]]; then
             echo "$cleaned_path"
             return 0
         else
-            echo "   Let's try again."
+            echo "   Path not confirmed. Please try again."
             echo ""
         fi
     done
@@ -349,8 +363,11 @@ setup_gnome_extension() {
         fi
         
         if [ "$IS_INSTALLED" = false ]; then
-            echo -e "${GREEN}>> GNOME Desktop detected, but HPR's window-tracking extension is not installed/active.${NC}"
-            read -p "$(echo -e "${GREEN}>> Would you like to install the required GNOME Shell extension? (Y/n): ${NC}")" install_ext < /dev/tty
+            echo -e "${YELLOW}>> GNOME Desktop detected. HPR requires a small Shell extension to track which window is active.${NC}"
+            echo "   Extension: lol-another-window-extension (github.com/plexescor/lol-another-window-extension)"
+            echo "   Without it, HPR cannot detect active windows on GNOME Wayland."
+            echo ""
+            read -p ">> Install the GNOME Shell extension now? Answering N will skip it — HPR will still launch but cannot track windows on GNOME Wayland. (Y/n): " install_ext < /dev/tty
             if [[ -z "$install_ext" || "$install_ext" =~ ^[Yy] ]]; then
                 echo ">> Installing GNOME extension..."
                 if [ -d "$EXT_DIR" ]; then
@@ -365,7 +382,7 @@ setup_gnome_extension() {
                     if gnome-extensions list 2>/dev/null | grep -qF "$EXT_ID"; then
                         echo ">> Enabling GNOME extension..."
                         if gnome-extensions enable "$EXT_ID" >/dev/null 2>&1; then
-                            echo -e "${GREEN}   Extension enabled successfully! No restart needed.${NC}"
+                            echo -e "${BOLD}   Extension enabled successfully! No restart needed.${NC}"
                         else
                             echo -e "${YELLOW}   Failed to enable the extension automatically. You can enable it via the Extensions app.${NC}"
                         fi
@@ -386,7 +403,10 @@ setup_gnome_extension() {
                         echo ""
                     fi
                 else
-                    echo -e "${RED}Error: Failed to clone the extension repository.${NC}"
+                    echo -e "${RED}Error: Failed to download the GNOME Shell extension from GitHub.${NC}"
+                    echo "   Check your internet connection and try again."
+                    echo "   You can also install it manually from:"
+                    echo "   https://github.com/plexescor/lol-another-window-extension"
                 fi
             fi
         else
@@ -468,8 +488,9 @@ refresh_desktop_caches() {
 
 install_hpr() {
     if check_if_already_installed; then
-        echo -e "${YELLOW}HPR is already installed on your system.${NC}"
-        echo -e "Please use the 'Update HPR' option if you want to upgrade or reinstall."
+        echo -e "${YELLOW}HPR is already installed on this system.${NC}"
+        echo "   To upgrade to a newer version, use option 2) Update HPR."
+        echo "   To change your installation location, use option 2) Update HPR."
         echo ""
         return 0
     fi
@@ -499,14 +520,18 @@ install_hpr() {
         INSTALL_PATH="/usr/local/bin/HPR"
     fi
     
-    echo -e "${GREEN}>> Configuring installation directory...${NC}"
+    echo ">> Choose install location."
+    echo "   The HPR binary will be installed here. sudo access is required to write to system paths."
+    echo "   Default: $INSTALL_PATH"
+    echo "   Or enter a custom absolute path (e.g. /home/username/apps/HPR). Press Enter to use the default."
     while true; do
-        read -p "$(echo -e "${GREEN}   Install location [Press Enter for '$INSTALL_PATH', or type custom path]: ${NC}")" input_path < /dev/tty
+        read -p "   Install path: " input_path < /dev/tty
         if [ -z "$input_path" ]; then
             break
         fi
         if [[ "$input_path" == *~* ]]; then
-            echo -e "${RED}Error: Tilde (~) is not allowed. Please use absolute paths (e.g. /home/username/path).${NC}" >&2
+            echo -e "${RED}Error: Do not use ~ in the path — the shell does not expand it here.${NC}" >&2
+            echo "   Use the full absolute path. (e.g. /home/your-username/apps/HPR)"
             continue
         fi
         
@@ -568,7 +593,12 @@ install_hpr() {
     setup_desktop_launcher "$INSTALL_PATH"
     
     cleanup_temp
-    echo -e "${BOLD}${GREEN}HPR Installation Complete!${NC}"
+    echo -e "${BOLD}=================================================${NC}"
+    echo -e "${BOLD}HPR Installation Complete!${NC}"
+    echo "   HPR has been installed to: $INSTALL_PATH"
+    echo "   You can run it from a terminal: HPR"
+    echo "   Or find it in your application launcher."
+    echo -e "${BOLD}=================================================${NC}"
     echo ""
 }
 
@@ -592,21 +622,23 @@ update_hpr() {
     local INSTALL_DIR
     INSTALL_DIR=$(dirname "$INSTALL_PATH")
     
-    echo ">> Cleaning target directory..."
+    echo ">> Preparing update: replacing old HPR files in '$INSTALL_DIR'..."
     # safety check for critical system directory
     if [[ "$INSTALL_DIR" == "/usr/local/bin" || "$INSTALL_DIR" == "/usr/bin" || "$INSTALL_DIR" == "/bin" || "$INSTALL_DIR" == "/usr/local" || "$INSTALL_DIR" == "$HOME" || "$INSTALL_DIR" == "/" ]]; then
-        echo "   Safety Check: '$INSTALL_DIR' is a critical system path. Directory wiping is disabled."
-        echo "   Deleting old binary 'HPR' and dynamic library 'libslint_cpp.so'..."
+        echo "   Note: '$INSTALL_DIR' is a protected system path — only the HPR binary and its libraries will be replaced, not the whole directory."
+        echo "   Removing old HPR binary and shared library (libslint_cpp.so)..."
         sudo rm -f "$INSTALL_PATH"
         sudo rm -f "$INSTALL_DIR"/libslint_cpp.so*
     else
-        echo -e "${RED}WARNING: All files inside directory '$INSTALL_DIR' will be deleted!${NC}"
-        read -p "$(echo -e "${RED}Are you absolutely sure you want to delete everything inside '$INSTALL_DIR'? (y/N): ${NC}")" confirm_wipe < /dev/tty
+        echo -e "${RED}WARNING: '$INSTALL_DIR' is a custom install directory and ALL files inside it will be permanently deleted.${NC}"
+        echo -e "${RED}   This includes HPR and anything else you may have placed in that folder.${NC}"
+        echo -e "${RED}   If you only want to replace the HPR binary, answer N — the update will abort safely.${NC}"
+        read -p "$(echo -e "${RED}Confirm deletion of all files inside '$INSTALL_DIR'? (y/N): ${NC}")" confirm_wipe < /dev/tty
         if [[ "$confirm_wipe" =~ ^[Yy] ]]; then
             echo "   Wiping directory: $INSTALL_DIR..."
             sudo rm -rf "$INSTALL_DIR"/*
         else
-            echo "   Wipe cancelled. Aborting update..."
+            echo "   Cancelled. No files were deleted. Returning to the main menu."
             echo ""
             cleanup_temp
             return 0
@@ -638,7 +670,10 @@ update_hpr() {
     setup_desktop_launcher "$INSTALL_PATH"
     
     cleanup_temp
-    echo -e "${BOLD}${GREEN}HPR Update Complete!${NC}"
+    echo -e "${BOLD}=================================================${NC}"
+    echo -e "${BOLD}HPR Update Complete!${NC}"
+    echo "   HPR $TAG_NAME has been installed to: $INSTALL_PATH"
+    echo -e "${BOLD}=================================================${NC}"
     echo ""
 }
 
@@ -652,20 +687,21 @@ remove_hpr() {
     local INSTALL_DIR
     INSTALL_DIR=$(dirname "$INSTALL_PATH")
     
-    echo ">> Deleting files..."
+    echo ">> Removing HPR binary and associated library files from '$INSTALL_DIR'..."
     if [[ "$INSTALL_DIR" == "/usr/local/bin" || "$INSTALL_DIR" == "/usr/bin" || "$INSTALL_DIR" == "/bin" || "$INSTALL_DIR" == "/usr/local" || "$INSTALL_DIR" == "$HOME" || "$INSTALL_DIR" == "/" ]]; then
-        echo "   Safety Check: '$INSTALL_DIR' is a critical system path. Directory wiping is disabled."
-        echo "   Deleting HPR binary and dynamic library 'libslint_cpp.so'..."
+        echo "   Note: '$INSTALL_DIR' is a protected system path — only the HPR binary and its libraries will be removed, not the whole directory."
+        echo "   Removing HPR binary and shared library (libslint_cpp.so)..."
         sudo rm -f "$INSTALL_PATH"
         sudo rm -f "$INSTALL_DIR"/libslint_cpp.so*
     else
-        echo -e "${RED}WARNING: All files inside directory '$INSTALL_DIR' will be deleted!${NC}"
-        read -p "$(echo -e "${RED}Are you absolutely sure you want to delete everything inside '$INSTALL_DIR'? (y/N): ${NC}")" confirm_wipe < /dev/tty
+        echo -e "${RED}WARNING: '$INSTALL_DIR' is a custom install directory and ALL files inside it will be permanently deleted.${NC}"
+        echo -e "${RED}   This includes HPR and anything else you may have placed in that folder.${NC}"
+        read -p "$(echo -e "${RED}Confirm deletion of all files inside '$INSTALL_DIR'? (y/N): ${NC}")" confirm_wipe < /dev/tty
         if [[ "$confirm_wipe" =~ ^[Yy] ]]; then
             echo "   Wiping and removing directory: $INSTALL_DIR..."
             sudo rm -rf "$INSTALL_DIR"
         else
-            echo "   Wipe cancelled. Aborting removal..."
+            echo "   Cancelled. No files were deleted. Returning to the main menu."
             echo ""
             return 0
         fi
@@ -677,7 +713,12 @@ remove_hpr() {
     # Remove metadata
     remove_metadata_files
     
-    echo -e "${BOLD}${GREEN}HPR Removal Complete!${NC}"
+    echo -e "${BOLD}=================================================${NC}"
+    echo -e "${BOLD}HPR Removal Complete!${NC}"
+    echo "   The HPR binary and installer metadata have been removed."
+    echo "   Your personal config files in ~/.config/HPR were NOT deleted."
+    echo "   To remove them manually: rm -rf ~/.config/HPR"
+    echo -e "${BOLD}=================================================${NC}"
     echo ""
 }
 
@@ -690,8 +731,8 @@ while true; do
     echo "  2) Update HPR"
     echo "  3) Remove HPR"
     echo "  4) Exit"
-    echo -e "${GREEN}=================================================${NC}"
-    read -p "$(echo -e "${GREEN}Select an action (1-4): ${NC}")" choice < /dev/tty
+    echo -e "${BOLD}=================================================${NC}"
+    read -p "Select an action (1-4): " choice < /dev/tty
     echo ""
     
     case "$choice" in
