@@ -71,15 +71,18 @@ fetch_latest_version() {
 }
 
 select_version() {
+    # Always fetch latest release information first to inform the user
+    fetch_latest_version
+
     echo -e "${BOLD}Select HPR version to install/update:${NC}"
-    echo "  1) Latest release"
+    echo "  1) Latest release ($TAG_NAME)"
     echo "  2) Custom version"
     
     while true; do
         read -p "Select option (1-2): " ver_choice < /dev/tty
         case "$ver_choice" in
             1)
-                fetch_latest_version
+                # Already fetched in the beginning
                 break
                 ;;
             2)
@@ -175,6 +178,20 @@ remove_metadata_files() {
         rm -f "$FALLBACK_METADATA_FILE"
         echo "   Removed fallback metadata file: $FALLBACK_METADATA_FILE"
     fi
+}
+
+check_if_already_installed() {
+    local PATH_FOUND=""
+    if [ -f "$METADATA_FILE" ]; then
+        PATH_FOUND=$(cat "$METADATA_FILE" 2>/dev/null || true)
+    fi
+    if [ -z "$PATH_FOUND" ] && [ -f "$FALLBACK_METADATA_FILE" ]; then
+        PATH_FOUND=$(cat "$FALLBACK_METADATA_FILE" 2>/dev/null || true)
+    fi
+    if [ -n "$PATH_FOUND" ] && [ -f "$PATH_FOUND" ]; then
+        return 0
+    fi
+    return 1
 }
 
 get_hpr_path() {
@@ -450,6 +467,13 @@ refresh_desktop_caches() {
 }
 
 install_hpr() {
+    if check_if_already_installed; then
+        echo -e "${YELLOW}HPR is already installed on your system.${NC}"
+        echo -e "Please use the 'Update HPR' option if you want to upgrade or reinstall."
+        echo ""
+        return 0
+    fi
+
     echo ">> Initiating HPR Installation process..."
     
     # 1. Dependency Verification
@@ -582,9 +606,10 @@ update_hpr() {
             echo "   Wiping directory: $INSTALL_DIR..."
             sudo rm -rf "$INSTALL_DIR"/*
         else
-            echo "   Wipe cancelled. Deleting only 'HPR' and 'libslint_cpp.so'..."
-            sudo rm -f "$INSTALL_PATH"
-            sudo rm -f "$INSTALL_DIR"/libslint_cpp.so*
+            echo "   Wipe cancelled. Aborting update..."
+            echo ""
+            cleanup_temp
+            return 0
         fi
     fi
     
@@ -640,9 +665,9 @@ remove_hpr() {
             echo "   Wiping and removing directory: $INSTALL_DIR..."
             sudo rm -rf "$INSTALL_DIR"
         else
-            echo "   Wipe cancelled. Deleting only HPR binary and dynamic library 'libslint_cpp.so'..."
-            sudo rm -f "$INSTALL_PATH"
-            sudo rm -f "$INSTALL_DIR"/libslint_cpp.so*
+            echo "   Wipe cancelled. Aborting removal..."
+            echo ""
+            return 0
         fi
     fi
     
