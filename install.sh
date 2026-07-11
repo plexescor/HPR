@@ -70,6 +70,53 @@ fetch_latest_version() {
     echo ""
 }
 
+select_version() {
+    echo -e "${BOLD}Select HPR version to install/update:${NC}"
+    echo "  1) Latest release"
+    echo "  2) Custom version"
+    
+    while true; do
+        read -p "Select option (1-2): " ver_choice < /dev/tty
+        case "$ver_choice" in
+            1)
+                fetch_latest_version
+                break
+                ;;
+            2)
+                while true; do
+                    echo -e ">> Enter the custom version you want to install."
+                    echo -e "   (Example: ${BOLD}v0.9.3${NC} or ${BOLD}0.9.3${NC})"
+                    read -p "Version: " custom_ver < /dev/tty
+                    
+                    # Trim whitespace using sed
+                    custom_ver=$(echo "$custom_ver" | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')
+                    
+                    if [ -z "$custom_ver" ]; then
+                        echo -e "${RED}Error: Version cannot be empty.${NC}"
+                        continue
+                    fi
+                    
+                    # Normalize: if "v" is there proceed as usual, otherwise prepend "v"
+                    if [[ "$custom_ver" =~ ^v ]]; then
+                        TAG_NAME="$custom_ver"
+                        VERSION_NUM="${custom_ver#v}"
+                    else
+                        TAG_NAME="v$custom_ver"
+                        VERSION_NUM="$custom_ver"
+                    fi
+                    
+                    echo "   Selected version: $TAG_NAME (version number: $VERSION_NUM)"
+                    echo ""
+                    break 2
+                done
+                ;;
+            *)
+                echo -e "${RED}Invalid option. Please choose 1 or 2.${NC}"
+                ;;
+        esac
+    done
+}
+
 download_and_extract() {
     cleanup_temp
     TEMP_DIR=$(mktemp -d -t hpr-installer-XXXXXX)
@@ -408,8 +455,8 @@ install_hpr() {
     # 1. Dependency Verification
     check_dependencies
     
-    # 2. Latest Version Fetching
-    fetch_latest_version
+    # 2. HPR Version Selection
+    select_version
     
     # 3. Download and Extract
     download_and_extract
@@ -510,8 +557,8 @@ update_hpr() {
     # 1. Check dependencies
     check_dependencies
     
-    # 2. Fetch latest version
-    fetch_latest_version
+    # 2. HPR Version Selection
+    select_version
     
     # 3. Download and extract
     download_and_extract
