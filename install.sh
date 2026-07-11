@@ -349,7 +349,7 @@ setup_gnome_extension() {
         fi
         
         if [ "$IS_INSTALLED" = false ]; then
-            echo -e "${YELLOW}>> GNOME Desktop detected, but HPR's window-tracking extension is not installed/active.${NC}"
+            echo -e "${GREEN}>> GNOME Desktop detected, but HPR's window-tracking extension is not installed/active.${NC}"
             read -p "$(echo -e "${GREEN}>> Would you like to install the required GNOME Shell extension? (Y/n): ${NC}")" install_ext < /dev/tty
             if [[ -z "$install_ext" || "$install_ext" =~ ^[Yy] ]]; then
                 echo ">> Installing GNOME extension..."
@@ -686,10 +686,10 @@ while true; do
     echo -e "${BOLD}=================================================${NC}"
     echo -e "${BOLD}         HPR Linux Installation Manager          ${NC}"
     echo -e "${BOLD}=================================================${NC}"
-    echo "  1) Install HPR"
-    echo "  2) Update HPR"
-    echo "  3) Remove HPR"
-    echo "  4) Exit"
+    echo -e "${GREEN}  1) Install HPR${NC}"
+    echo -e "${GREEN}  2) Update HPR${NC}"
+    echo -e "${GREEN}  3) Remove HPR${NC}"
+    echo -e "${GREEN}  4) Exit${NC}"
     echo -e "${GREEN}=================================================${NC}"
     read -p "$(echo -e "${GREEN}Select an action (1-4): ${NC}")" choice < /dev/tty
     echo ""
