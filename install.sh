@@ -130,20 +130,45 @@ download_and_extract() {
     
     local ASSET_NAME="HPRv${VERSION_NUM}-Linux.tar.xz"
     local ASSET_URL="https://github.com/plexescor/HPR/releases/download/${TAG_NAME}/${ASSET_NAME}"
+    local DOWNLOAD_SUCCESS=false
+    local USE_ZIP=false
     
-    echo ">> Downloading release archive from:"
-    echo "   $ASSET_URL"
-    if ! curl -fL --progress-bar -o "$TEMP_DIR/$ASSET_NAME" "$ASSET_URL"; then
-        echo -e "${RED}Error: Failed to download the release archive.${NC}" >&2
-        echo "   Possible causes:"
-        echo "     - The version tag '$TAG_NAME' does not exist. Check https://github.com/plexescor/HPR/releases for valid tags."
-        echo "     - A network error or firewall is blocking the download."
+    echo ">> Downloading release archive from:" >&2
+    echo "   $ASSET_URL" >&2
+    if curl -fL --progress-bar -o "$TEMP_DIR/$ASSET_NAME" "$ASSET_URL"; then
+        DOWNLOAD_SUCCESS=true
+    else
+        echo ">> .tar.xz archive not found or download failed. Trying zip fallback..." >&2
+        local ASSET_NAME_ZIP="HPRv${VERSION_NUM}-Linux.zip"
+        local ASSET_URL_ZIP="https://github.com/plexescor/HPR/releases/download/${TAG_NAME}/${ASSET_NAME_ZIP}"
+        echo ">> Downloading release archive from:" >&2
+        echo "   $ASSET_URL_ZIP" >&2
+        if curl -fL --progress-bar -o "$TEMP_DIR/$ASSET_NAME_ZIP" "$ASSET_URL_ZIP"; then
+            DOWNLOAD_SUCCESS=true
+            USE_ZIP=true
+        fi
+    fi
+    
+    if [ "$DOWNLOAD_SUCCESS" = false ]; then
+        echo -e "${RED}Error: Failed to download the release archive (.tar.xz or .zip).${NC}" >&2
+        echo "   Possible causes:" >&2
+        echo "     - The version tag '$TAG_NAME' does not exist. Check https://github.com/plexescor/HPR/releases for valid tags." >&2
+        echo "     - A network error or firewall is blocking the download." >&2
         exit 1
     fi
     
-    echo ">> Extracting release archive..."
-    tar -xf "$TEMP_DIR/$ASSET_NAME" -C "$TEMP_DIR"
-    echo "   Extraction complete."
+    echo ">> Extracting release archive..." >&2
+    if [ "$USE_ZIP" = true ]; then
+        if ! command -v unzip >/dev/null 2>&1; then
+            echo -e "${RED}Error: 'unzip' is required to extract the zip fallback but is not installed.${NC}" >&2
+            echo "   Please install 'unzip' using your package manager and try again." >&2
+            exit 1
+        fi
+        unzip -q "$TEMP_DIR/$ASSET_NAME_ZIP" -d "$TEMP_DIR"
+    else
+        tar -xf "$TEMP_DIR/$ASSET_NAME" -C "$TEMP_DIR"
+    fi
+    echo "   Extraction complete." >&2
     
     # Locate the extracted source directory containing HPR
     if [ -f "$TEMP_DIR/HPR" ]; then
@@ -154,8 +179,8 @@ download_and_extract() {
     
     if [ -z "$SRC_DIR" ] || [ ! -d "$SRC_DIR" ]; then
         echo -e "${RED}Error: Could not locate the HPR binary inside the downloaded archive.${NC}" >&2
-        echo "   The archive may be malformed or from an unexpected release format."
-        echo "   Please try again or report this issue at: https://github.com/plexescor/HPR/issues"
+        echo "   The archive may be malformed or from an unexpected release format." >&2
+        echo "   Please try again or report this issue at: https://github.com/plexescor/HPR/issues" >&2
         exit 1
     fi
 }
