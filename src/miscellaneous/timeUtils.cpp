@@ -8,12 +8,23 @@
 #include <stdexcept>
 #include <sstream>
 
+std::tm safe_localtime(std::time_t tt)
+{
+    std::tm tm = {};
+#ifdef _WIN32
+    localtime_s(&tm, &tt);
+#else
+    localtime_r(&tt, &tm);
+#endif
+    return tm;
+}
+
 std::string convertToDate_DDMMYY(uint64_t ms)
 {
     try
     {
         std::time_t tt = static_cast<std::time_t>(ms / 1000);
-        std::tm tm = *std::localtime(&tt);
+        std::tm tm = safe_localtime(tt);
         std::ostringstream oss;
         oss << std::put_time(&tm, "%d-%m-%y");
         return oss.str();
@@ -26,7 +37,7 @@ std::string convertToDate_MMYY(uint64_t ms)
     try
     {
         std::time_t tt = static_cast<std::time_t>(ms / 1000);
-        std::tm tm = *std::localtime(&tt);
+        std::tm tm = safe_localtime(tt);
         std::ostringstream oss;
         oss << std::put_time(&tm, "%m-%y");
         return oss.str();
@@ -39,7 +50,7 @@ std::string convertToTime_HHMMSS_12(uint64_t ms)
     try
     {
         std::time_t tt = static_cast<std::time_t>(ms / 1000);
-        std::tm tm = *std::localtime(&tt);
+        std::tm tm = safe_localtime(tt);
         std::ostringstream oss;
         oss << std::put_time(&tm, "%I:%M:%S %p");
         std::string result = oss.str();

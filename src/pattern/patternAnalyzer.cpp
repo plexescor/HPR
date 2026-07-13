@@ -324,16 +324,16 @@ static int pick(int n)
 int localHour(uint64_t ms)
 {
     time_t t = static_cast<time_t>(ms / 1000);
-    std::tm* lt = std::localtime(&t);
-    return lt ? lt->tm_hour : 0;
+    std::tm lt = safe_localtime(t);
+    return lt.tm_hour;
 }
 
 // Returns the day-of-week (0=Sunday … 6=Saturday) for a ms-since-epoch timestamp.
 int localDow(uint64_t ms)
 {
     time_t t = static_cast<time_t>(ms / 1000);
-    std::tm* lt = std::localtime(&t);
-    return lt ? lt->tm_wday : 0;
+    std::tm lt = safe_localtime(t);
+    return lt.tm_wday;
 }
 
 static const char* dowName(int dow)

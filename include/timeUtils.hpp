@@ -1,6 +1,9 @@
 #pragma once
 #include <string>
 #include <cstdint>
+#include <ctime>
+
+std::tm safe_localtime(std::time_t tt);
 
 std::string convertToDate_DDMMYY(uint64_t ms);
 std::string convertToDate_MMYY(uint64_t ms);

@@ -41,7 +41,7 @@ static std::string formatTime_HHMM(uint64_t ms)
     try
     {
         std::time_t tt = static_cast<std::time_t>(ms / 1000);
-        std::tm tm = *std::localtime(&tt);
+        std::tm tm = safe_localtime(tt);
         std::ostringstream oss;
         oss << std::put_time(&tm, "%I:%M %p");
         return oss.str();
@@ -130,7 +130,7 @@ void TimelineManager::updateTimeline(int presetHours, int startHour, int endHour
     // 4. Calculate time range boundaries
     // Get start/end based on current day boundaries
     std::time_t tt_first = static_cast<std::time_t>(transitions[0].ts / 1000);
-    std::tm tmStart = *std::localtime(&tt_first);
+    std::tm tmStart = safe_localtime(tt_first);
     tmStart.tm_hour = 0; tmStart.tm_min = 0; tmStart.tm_sec = 0;
     uint64_t dayStartMs = static_cast<uint64_t>(std::mktime(&tmStart)) * 1000ULL;
 
