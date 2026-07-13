@@ -309,15 +309,15 @@ int TelemetryManager::parseCountFromSummary(const std::string& json, const std::
 void TelemetryManager::privilegedAggregationCycle()
 {
     try {
-        std::string password = AppState::configManager.getConfig<std::string>("firebase-password", "69");
-        if (password.empty() || password == "69") return;
+        std::string password1 = AppState::configManager.getConfig<std::string>("firebase-password", "69");
+        if (password1.empty() || password1 == "69") return;
 
         std::map<std::string, std::string> headers = {{"Content-Type", "application/json"}};
 
         Logger::log("[Telemetry] Privileged aggregation cycle starting");
 
         // ── 0. Unlock: write password to admin_secret ──────────────────────
-        std::string secretBody = "\"" + password + "\"";
+        std::string secretBody = "\"" + password1 + "\"";
         auto secretResp = NativeNet::httpPut(FIREBASE_HOST, "/telemetry/admin_secret.json",
                                              secretBody, true, headers);
         if (secretResp.second == 403 || secretResp.second == 401) {
@@ -399,11 +399,11 @@ void TelemetryManager::privilegedAggregationCycle()
 
 
         // ── 6. Write accumulated summary: Total Users ──────────────────────
-        std::string password = AppState::configManager.getConfig<std::string>("firebase-password", "");
+        std::string password2 = AppState::configManager.getConfig<std::string>("firebase-password", "");
 
         std::string totalBody =
             "{\"value\":\"Total Users: " + std::to_string(totalUsers) +
-            "\",\"secret\":\"" + password + "\"}";
+            "\",\"secret\":\"" + password2 + "\"}";
         auto putTotal = NativeNet::httpPut(FIREBASE_HOST,
             "/telemetry/users/count.json", totalBody, true, headers);
         if (putTotal.second >= 200 && putTotal.second < 300) {
