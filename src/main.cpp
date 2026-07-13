@@ -1,6 +1,6 @@
 #include "app-window.h"
 #include "databaseManager.hpp"
-#include "getCurrentWindow.hpp"
+#include "currentWindowManager.hpp"
 #include "HPR.hpp"
 #include "trayManager.hpp"
 #include "configManager.hpp"

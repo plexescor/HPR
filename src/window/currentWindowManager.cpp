@@ -3,7 +3,7 @@
 #include <ranges>
 
 #include "appState.hpp"
-#include "getCurrentWindow.hpp"
+#include "currentWindowManager.hpp"
 #include "validateAndUpdateWindow.hpp"
 #include "windowUtilities.hpp"
 #include "builtinBackends.hpp"

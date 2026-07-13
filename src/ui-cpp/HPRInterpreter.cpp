@@ -3,7 +3,7 @@
 #include <slint-interpreter.h>
 
 #include "appState.hpp"
-#include "getCurrentWindow.hpp"
+#include "currentWindowManager.hpp"
 #include "timeUtils.hpp"
 #include "aliasManager.hpp"
 #include "uiEventBridge.hpp"

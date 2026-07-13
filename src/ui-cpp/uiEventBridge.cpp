@@ -193,9 +193,11 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow>& ui,  ExtensionM
         std::string param = std::string(paramName);
         std::string val   = std::string(value);
         AppState::configManager.setConfig(param, val);
-        if (param == "anonymous-telemetry") {
+        if (param == "anonymous-telemetry") 
+        {
             AppState::configManager.markTelemetryPromptAnswered();
-            if (val == "true") {
+            if (val == "true") 
+            {
                 std::thread([]() { TelemetryManager::checkAndSend(); }).detach();
             }
         }

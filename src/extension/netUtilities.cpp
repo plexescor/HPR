@@ -16,6 +16,7 @@
 #include <cctype>
 #include <chrono>
 #include <thread>
+#include <print>
 
 #ifdef _WIN32
     #include <windows.h>
@@ -899,7 +900,7 @@ namespace NativeNet
         }
 
         
-        std::cout << "[HPR HTTP Server] Server running on 127.0.0.1:" << port << std::endl;
+        std::println("[HPR HTTP Server] Server running on 127.0.0.1: {}", port);;
         Logger::log("[HPR HTTP Server] Server running on 127.0.0.1:" + std::to_string(port));
 
         std::thread([serverFd, handler, &ext]() mutable
@@ -947,7 +948,7 @@ namespace NativeNet
             #ifdef _WIN32
                 WSACleanup();
             #endif
-            std::cout << "[HPR HTTP Server] Server stopped cleanly" << std::endl;
+            std::println("[HPR HTTP Server] Server stopped cleanly");
             Logger::log("[HPR HTTP Server] Server stopped cleanly");
         }).detach();
 

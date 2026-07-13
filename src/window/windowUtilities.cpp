@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <vector>
 #include <fstream>
+#include <print>
+
 #ifdef __linux__
     #include <dbus/dbus.h>
 #endif
@@ -238,7 +240,7 @@ std::string runSystemCommand(std::string &command) {
 
     if (isCommandBlocked(command))
     {
-        std::cout << "Haha motherfucker what did you expect 🤣🤣🤣" << std::endl;
+        std::println("Haha motherfucker what did you expect 🤣🤣🤣");
         std::cerr << "[HPR] Blocked dangerous command: " << command << std::endl;
         Logger::log("[HPR] Blocked dangerous command: " + command);
         return "Haha motherfucker what did you expect 🤣🤣🤣";

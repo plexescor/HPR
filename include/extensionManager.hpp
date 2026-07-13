@@ -9,7 +9,7 @@
 #include "databaseManager.hpp"
 #include "trayManager.hpp"
 #include "linuxUtilities.hpp"
-#include "getCurrentWindow.hpp"
+#include "currentWindowManager.hpp"
 #ifdef _WIN32
     #include <windows.h>
 #else

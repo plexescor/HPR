@@ -26,7 +26,7 @@
 
 #include "appState.hpp"
 #include "uiRegistry.hpp"
-#include "getCurrentWindow.hpp"
+#include "currentWindowManager.hpp"
 #include "extensionManager.hpp"
 #include "timeUtils.hpp"
 #include "window_E.hpp"

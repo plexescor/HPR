@@ -115,78 +115,78 @@ void TelemetryManager::checkAndSend()
 
         // 2. Report Active Usage (4+ days/week)
         auto now = std::chrono::system_clock::now();
-        std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+        std::time_t nowC = std::chrono::system_clock::to_time_t(now);
         std::tm local_tm = {};
 #ifdef _WIN32
-        localtime_s(&local_tm, &now_c);
+        localtime_s(&local_tm, &nowC);
 #else
-        localtime_r(&now_c, &local_tm);
+        localtime_r(&nowC, &local_tm);
 #endif
 
-        int current_day_of_week = local_tm.tm_wday; // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
-        int days_since_monday = (current_day_of_week + 6) % 7;
+        int currentDayOfWeek = local_tm.tm_wday; // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
+        int daysSinceMonday = (currentDayOfWeek + 6) % 7;
 
         // Calculate Monday date string for this week (YYYY-MM-DD)
-        std::time_t monday_time = now_c - days_since_monday * 86400;
-        std::tm monday_tm = {};
+        std::time_t mondayTime = nowC - daysSinceMonday * 86400;
+        std::tm mondayTm = {};
 #ifdef _WIN32
-        localtime_s(&monday_tm, &monday_time);
+        localtime_s(&mondayTm, &mondayTime);
 #else
-        localtime_r(&monday_time, &monday_tm);
+        localtime_r(&mondayTime, &mondayTm);
 #endif
-        char monday_buf[16];
-        std::strftime(monday_buf, sizeof(monday_buf), "%Y-%m-%d", &monday_tm);
-        std::string week_id(monday_buf);
+        char mondayBuffer[16];
+        std::strftime(mondayBuffer, sizeof(mondayBuffer), "%Y-%m-%d", &mondayTm);
+        std::string weekId(mondayBuffer);
 
         // Check active days by verifying the existence of database files
-        int active_days_count = 0;
+        int activeDaysCount = 0;
         for (int i = 0; i < 7; ++i) {
-            std::time_t day_time = now_c + (i - days_since_monday) * 86400;
-            std::tm day_tm = {};
+            std::time_t dayTime = nowC + (i - daysSinceMonday) * 86400;
+            std::tm dayTm = {};
 #ifdef _WIN32
-            localtime_s(&day_tm, &day_time);
+            localtime_s(&dayTm, &dayTime);
 #else
-            localtime_r(&day_time, &day_tm);
+            localtime_r(&dayTime, &dayTm);
 #endif
             char buf[16];
-            std::strftime(buf, sizeof(buf), "%d-%m-%y", &day_tm);
-            std::string date_str(buf);
+            std::strftime(buf, sizeof(buf), "%d-%m-%y", &dayTm);
+            std::string dateString(buf);
 
-            std::string db_path;
-            std::string mm_yy = extractMMYY_from_DDMMYY(date_str);
-            if (mm_yy.empty()) continue;
+            std::string dbPath;
+            std::string MMYY = extractMMYY_from_DDMMYY(dateString);
+            if (MMYY.empty()) continue;
 
 #ifdef _WIN32
             char* appData = std::getenv("APPDATA");
             if (appData) {
-                db_path = std::string(appData) + "/HPR/HPR_DB/" + mm_yy + "/" + date_str + ".db";
+                dbPath = std::string(appData) + "/HPR/HPR_DB/" + MMYY + "/" + dateString + ".db";
             }
 #else
             const char* home = std::getenv("HOME");
             if (home) {
-                db_path = std::string(home) + "/.local/share/HPR/HPR_DB/" + mm_yy + "/" + date_str + ".db";
+                dbPath = std::string(home) + "/.local/share/HPR/HPR_DB/" + MMYY + "/" + dateString + ".db";
             }
 #endif
 
-            if (!db_path.empty() && std::filesystem::exists(db_path)) {
-                active_days_count++;
+            if (!dbPath.empty() && std::filesystem::exists(dbPath)) {
+                activeDaysCount++;
             }
         }
 
-        if (active_days_count >= 4) {
+        if (activeDaysCount >= 4) {
             std::string lastReportedWeek = AppState::configManager.getConfig<std::string>("last-reported-week", "");
-            if (lastReportedWeek != week_id) {
+            if (lastReportedWeek != weekId) {
                 std::string body = "{\"userId\":\"" + userId + "\"}";
                 std::map<std::string, std::string> headers = {
                     {"Content-Type", "application/json"}
                 };
 
-                // PUT with userId as key under week_id → same user same week = same path = no duplicate
-                std::string path = "/telemetry/weekly_active/" + week_id + "/" + userId + ".json";
+                // PUT with userId as key under weekId → same user same week = same path = no duplicate
+                std::string path = "/telemetry/weekly_active/" + weekId + "/" + userId + ".json";
                 auto response = NativeNet::httpPut(FIREBASE_HOST, path, body, true, headers);
                 if (response.second >= 200 && response.second < 300) {
-                    AppState::configManager.setConfig("last-reported-week", week_id);
-                    Logger::log("[Telemetry] Weekly active reported successfully for week: " + week_id);
+                    AppState::configManager.setConfig("last-reported-week", weekId);
+                    Logger::log("[Telemetry] Weekly active reported successfully for week: " + weekId);
                 } else {
                     Logger::log("[Telemetry] Weekly active reporting failed with code: " + std::to_string(response.second));
                 }
@@ -351,30 +351,30 @@ void TelemetryManager::privilegedAggregationCycle()
         Logger::log("[Telemetry] New users this cycle: " + std::to_string(newUsers)
                     + ", total: " + std::to_string(totalUsers));
 
-        // ── 2. Compute current week_id (Monday YYYY-MM-DD) ─────────────────
+        // ── 2. Compute current weekId (Monday YYYY-MM-DD) ─────────────────
         auto now = std::chrono::system_clock::now();
-        std::time_t now_c = std::chrono::system_clock::to_time_t(now);
+        std::time_t nowC = std::chrono::system_clock::to_time_t(now);
         std::tm local_tm = {};
 #ifdef _WIN32
-        localtime_s(&local_tm, &now_c);
+        localtime_s(&local_tm, &nowC);
 #else
-        localtime_r(&now_c, &local_tm);
+        localtime_r(&nowC, &local_tm);
 #endif
-        int days_since_monday = (local_tm.tm_wday + 6) % 7;
-        std::time_t monday_time = now_c - days_since_monday * 86400;
-        std::tm monday_tm = {};
+        int daysSinceMonday = (local_tm.tm_wday + 6) % 7;
+        std::time_t mondayTime = nowC - daysSinceMonday * 86400;
+        std::tm mondayTm = {};
 #ifdef _WIN32
-        localtime_s(&monday_tm, &monday_time);
+        localtime_s(&mondayTm, &mondayTime);
 #else
-        localtime_r(&monday_time, &monday_tm);
+        localtime_r(&mondayTime, &mondayTm);
 #endif
-        char monday_buf[16];
-        std::strftime(monday_buf, sizeof(monday_buf), "%Y-%m-%d", &monday_tm);
-        std::string week_id(monday_buf);
+        char mondayBuffer[16];
+        std::strftime(mondayBuffer, sizeof(mondayBuffer), "%Y-%m-%d", &mondayTm);
+        std::string weekId(mondayBuffer);
 
         // ── 3a. Read previous accumulated weekly active from the summary node 
         auto prevActiveResp = NativeNet::httpGet(FIREBASE_HOST,
-            "/telemetry/weekly_active/" + week_id + "/active_users.json", true);
+            "/telemetry/weekly_active/" + weekId + "/active_users.json", true);
         int previousActive = 0;
         if (prevActiveResp.second >= 200 && prevActiveResp.second < 300) {
             previousActive = parseCountFromSummary(prevActiveResp.first, "Active Users: ");
@@ -383,7 +383,7 @@ void TelemetryManager::privilegedAggregationCycle()
 
         // ── 3b. Read current week node and count only new real entries ───────
         auto weekResp = NativeNet::httpGet(FIREBASE_HOST,
-            "/telemetry/weekly_active/" + week_id + ".json", true);
+            "/telemetry/weekly_active/" + weekId + ".json", true);
         if (weekResp.second < 200 || weekResp.second >= 300) {
             Logger::log("[Telemetry] Aggregation aborted: could not read weekly_active, status: "
                         + std::to_string(weekResp.second));
@@ -419,7 +419,7 @@ void TelemetryManager::privilegedAggregationCycle()
             "{\"value\":\"Active Users: " + std::to_string(weeklyActive) +
             "\",\"secret\":\"" + password + "\"}";
         auto putActive = NativeNet::httpPut(FIREBASE_HOST,
-            "/telemetry/weekly_active/" + week_id + "/active_users.json",
+            "/telemetry/weekly_active/" + weekId + "/active_users.json",
             activeBody, true, headers);
         if (putActive.second >= 200 && putActive.second < 300) {
             Logger::log("[Telemetry] Wrote weekly active summary: Active Users: " + std::to_string(weeklyActive));

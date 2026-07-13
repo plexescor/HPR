@@ -18,7 +18,6 @@ ConfigManager::ConfigManager() { loadConfig(); }
 
 void ConfigManager::loadConfig()
 {
-
     std::string tempPath;
     #ifdef _WIN32
         tempPath = std::getenv("APPDATA");
@@ -41,7 +40,7 @@ void ConfigManager::loadConfig()
         std::ofstream lockFile(lockPath);
         if (lockFile.is_open())
         {
-            lockFile << "HPR Installed";
+            lockFile << "HPR Installed Dont delete this file";
             lockFile.close();
         }
     }
@@ -51,12 +50,31 @@ void ConfigManager::loadConfig()
     }
     Logger::log("[ConfigManager] First launch: " + std::string(firstLaunch ? "yes" : "no"));
 
+    // Check if the file exists. If it doesn't, create an empty one.
+    if (!std::filesystem::exists(filePath))
+    {
+        std::ofstream createBlankFile(filePath);
+        if (createBlankFile.is_open())
+        {
+            createBlankFile.close();
+            std::cerr << "Config file not found. Created a blank config.csv at " << filePath << "\n";
+            Logger::log("Config file not found. Created a blank config.csv at " + filePath);
+        }
+        else
+        {
+            std::cerr << "Error: Could not create blank config file at " << filePath << "\n";
+            Logger::log("Error: Could not create blank config file at " + filePath);
+        }
+        
+        // Return early since the file is brand new and empty anyway
+        return;
+    }
+
     std::ifstream file(filePath);
     if (!file.is_open())
     {
-        std::cerr << "Warning: config.csv not found at " << filePath
-                  << ". App will use default settings.\n";
-        Logger::log("Warning: config.csv not found at " + filePath + ". App will use default settings.");
+        std::cerr << "Warning: config.csv could not be opened at " << filePath << ".\n";
+        Logger::log("Warning: config.csv could not be opened at " + filePath);
         return;
     }
 
@@ -78,6 +96,7 @@ void ConfigManager::loadConfig()
         }
     }
 }
+
 
 void ConfigManager::saveConfig()
 {

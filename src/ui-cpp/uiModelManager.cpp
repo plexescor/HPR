@@ -204,8 +204,7 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
             // JetBrains: class starts with "jetbrains-", title is "ProjectName – file [module]" or just "ProjectName"
             // fragile as fuck
             else if (raw.contains("jetbrains: "))
-            {
-                // std::cout << raw << std::endl;
+            {;
                 std::string cleaned = raw;
 
                 // Find the position of the substring
@@ -214,7 +213,6 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
                     // Erase using starting position and length
                     cleaned.erase(pos, std::string("jetbrains: ").length()); //fuck hardoced
                 }
-                // std::cout << cleaned << std::endl;
                 const std::string emDash = " \xe2\x80\x93 "; //em dash
                 size_t pos = cleaned.find(emDash);
                 std::string middleMan = (pos == std::string::npos) ? cleaned : cleaned.substr(0, pos);

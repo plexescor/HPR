@@ -598,7 +598,7 @@ The full codebase is readable in one sitting if you go in this order:
 ```
 main.cpp              ->  startup, config loading, thread orchestration
 appState.hpp          ->  the shared data model, the center of everything
-getCurrentWindow.cpp  ->  platform-specific window polling per backend
+currentWindowManager.cpp  ->  platform-specific window polling per backend
 databaseManager.cpp   ->  persistence, lock file, midnight rollover, historical load
 limitsManager.cpp     ->  per-app usage limit and goal monitoring, force-quit, notification dispatch
 extensionManager.cpp  ->  Lua VM lifecycle, sol2 bindings, hot-reload, RAII subscription tracking

@@ -2,7 +2,7 @@
 
 #include "HPR.hpp"
 #include "appState.hpp"
-#include "getCurrentWindow.hpp"
+#include "currentWindowManager.hpp"
 #include "timeUtils.hpp"
 #include "aliasManager.hpp"
 #include "uiEventBridge.hpp"
@@ -24,6 +24,7 @@
 #include <vector>
 #include <algorithm>
 #include <chrono>
+#include <print>
 
 HPR::HPR(ExtensionManager* extMgr) : ui(MainWindow::create()), modelManager(ui)
 {
@@ -324,7 +325,7 @@ void HPR::run()
     bool headless = AppState::configManager.getConfig("headless-mode", false);
     if (!headless)
     {
-        std::cout << "Showing ui\n";
+        std::println("Showing ui");
         ui->show();
     }
     else

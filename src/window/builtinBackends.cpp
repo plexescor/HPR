@@ -9,16 +9,6 @@
     #include <Psapi.h>
 #endif
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////
-///
-///
-///
-///         MOTHERFUCKING KDE YOU ARE WORSE THAN GNOME I WILL FUK YOU SO HARD YU WILL 
-///         REGRET THE DAY YOU WERE BORN, I SWEAR TO GOD, I WILL FUCKING END YOU
-///         
-///
-///
-///////////////////////////////////////////////////////////////////////////////////////////////////////
 #ifdef __linux__
     #include <dbus/dbus.h>
     #include <functional>
@@ -30,7 +20,7 @@
     //AND USED CLAUDE TO TRANSLATE TO CPP CODE
     //BECAUSE IT WAS IN FUCKIN RUST
 
-    namespace MotherfuckingKDE
+    namespace NiceKDE
     {
         std::string generateMarker() 
         {
@@ -230,23 +220,6 @@
 
 #endif
 
-static std::string s_qdbus_bin = "";
-
-std::string getQDBusCommand() 
-{
-    if (!s_qdbus_bin.empty()) return s_qdbus_bin;
-    
-    std::string cmd = "command -v qdbus6 || command -v qdbus-qt6 || command -v qdbus";
-    std::string check = runSystemCommand_UNSAFE(cmd);
-    
-    // Trim whitespace/newlines
-    while (!check.empty() && (check.back() == '\n' || check.back() == ' '))
-        check.pop_back();
-        
-    s_qdbus_bin = check.empty() ? "qdbus6" : check;
-    return s_qdbus_bin;
-}
-
 void registerBuiltinBackends()
 {
     registerBackend
@@ -371,7 +344,7 @@ void registerBuiltinBackends()
 
         []() -> std::string 
         {
-            std::string result = MotherfuckingKDE::kdeGetActiveWindowClass();
+            std::string result = NiceKDE::kdeGetActiveWindowClass();
             while (!result.empty() && (result.back() == '\n' || result.back() == ' '))
                 result.pop_back();
             return result;
@@ -379,7 +352,7 @@ void registerBuiltinBackends()
 
         []() -> std::string 
         {
-            std::string result = MotherfuckingKDE::kdeGetActiveWindowName();
+            std::string result = NiceKDE::kdeGetActiveWindowName();
             while (!result.empty() && (result.back() == '\n' || result.back() == ' '))
                 result.pop_back();
             return result;
@@ -387,7 +360,7 @@ void registerBuiltinBackends()
 
         []() -> std::string
         {
-            return MotherfuckingKDE::kdeGetActiveWindowPid();
+            return NiceKDE::kdeGetActiveWindowPid();
         }
 
     });
