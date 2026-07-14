@@ -8,6 +8,7 @@
 #include <vector>
 #include <sqlite_modern_cpp.h>
 #include <future>
+#include <filesystem>
 #include <vector>
 #ifdef _WIN32
     #include <windows.h>
@@ -55,9 +56,9 @@ class DatabaseManager
     private:
         std::optional<sqlite::database> db;
 
-        std::string filePath;
+        std::filesystem::path filePath;
         std::string fileName;
-        std::string loadedHistDbPath;
+        std::filesystem::path loadedHistDbPath;
 
         std::mutex stateMutex;
         std::mutex dbQueryMutex; // Thread-safety for Lua threads

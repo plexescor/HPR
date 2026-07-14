@@ -105,15 +105,15 @@ std::map<std::string, std::string> parseCsv(std::string path)
 
 void ThemeManager::initialisePath()
 {
-    std::string tempPath;
+    std::filesystem::path tempPath;
     #ifdef _WIN32
         tempPath = std::getenv("APPDATA");
-        tempPath += "/HPR/HPR_Config/themes/";
+        tempPath /= "HPR/HPR_Config/themes/";
     #else
         const char* home = std::getenv("HOME");
         if (!home) throw std::runtime_error("HOME env var not set");
         tempPath = home;
-        tempPath += "/.config/HPR/themes/";
+        tempPath /= ".config/HPR/themes/";
     #endif
     
     themeDirectory = tempPath;

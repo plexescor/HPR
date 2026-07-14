@@ -24,27 +24,27 @@ AliasManager::AliasManager()
 void AliasManager::loadAliases()
 {
     aliasList.clear(); //clear the vector if we ever reload alises.csv
-    std::string tempPath;
+    std::filesystem::path tempPath;
     #ifdef _WIN32
         tempPath = std::getenv("APPDATA");
-        tempPath += "/HPR/HPR_Config/";
+        tempPath /= "HPR/HPR_Config/";
     #else
         const char* home = std::getenv("HOME");
         if (!home) throw std::runtime_error("HOME env var not set");
         tempPath = home;
-        tempPath += "/.config/HPR/";
+        tempPath /= ".config/HPR/";
     #endif
 
     std::filesystem::create_directories(tempPath);
-    filePath = tempPath + fileName;
+    filePath = tempPath / fileName;
 
     std::ifstream file(filePath);
 
     if (!file.is_open())
     {
-        std::cerr << "Warning: aliases.csv not found at " << filePath
+        std::cerr << "Warning: aliases.csv not found at " << filePath.string()
                   << ". Using raw names.\n";
-        Logger::log("Warning: aliases.csv not found at " + filePath + ". Using raw names.");
+        Logger::log("Warning: aliases.csv not found at " + filePath.string() + ". Using raw names.");
         return;
     }
 
@@ -73,27 +73,27 @@ void AliasManager::loadAliases()
 void AliasManager::loadAliases_Tab()
 {
     aliasList_Tab.clear(); //clear the vector if we ever reload 
-    std::string tempPath;
+    std::filesystem::path tempPath;
     #ifdef _WIN32
         tempPath = std::getenv("APPDATA");
-        tempPath += "/HPR/HPR_Config/";
+        tempPath /= "HPR/HPR_Config/";
     #else
         const char* home = std::getenv("HOME");
         if (!home) throw std::runtime_error("HOME env var not set");
         tempPath = home;
-        tempPath += "/.config/HPR/";
+        tempPath /= ".config/HPR/";
     #endif
 
     std::filesystem::create_directories(tempPath);
-    filePath_Tab = tempPath + fileName_Tab;
+    filePath_Tab = tempPath / fileName_Tab;
 
     std::ifstream file(filePath_Tab);
 
     if (!file.is_open())
     {
-        std::cerr << "Warning: tabAliases.csv not found at " << filePath_Tab
+        std::cerr << "Warning: tabAliases.csv not found at " << filePath_Tab.string()
                   << ". Using raw names.\n";
-        Logger::log("Warning: tabAliases.csv not found at " + filePath_Tab + ". Using raw names.");
+        Logger::log("Warning: tabAliases.csv not found at " + filePath_Tab.string() + ". Using raw names.");
         return;
     }
 
@@ -122,27 +122,27 @@ void AliasManager::loadAliases_Tab()
 void AliasManager::loadAliases_Project()
 {
     aliasList_Project.clear(); //clear the vector if we ever reload 
-    std::string tempPath;
+    std::filesystem::path tempPath;
     #ifdef _WIN32
         tempPath = std::getenv("APPDATA");
-        tempPath += "/HPR/HPR_Config/";
+        tempPath /= "HPR/HPR_Config/";
     #else
         const char* home = std::getenv("HOME");
         if (!home) throw std::runtime_error("HOME env var not set");
         tempPath = home;
-        tempPath += "/.config/HPR/";
+        tempPath /= ".config/HPR/";
     #endif
 
     std::filesystem::create_directories(tempPath);
-    filePath_Project = tempPath + fileName_Project;
+    filePath_Project = tempPath / fileName_Project;
 
     std::ifstream file(filePath_Project);
 
     if (!file.is_open())
     {
-        std::cerr << "Warning: projectAliases.csv not found at " << filePath_Project
+        std::cerr << "Warning: projectAliases.csv not found at " << filePath_Project.string()
                   << ". will use raw but parsed names.\n";
-        Logger::log("Warning: projectAliases.csv not found at " + filePath_Project + ". will use raw but parsed names.");
+        Logger::log("Warning: projectAliases.csv not found at " + filePath_Project.string() + ". will use raw but parsed names.");
         return;
     }
 

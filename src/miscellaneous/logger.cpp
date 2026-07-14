@@ -12,7 +12,7 @@ static std::mutex s_logMutex;
 
 std::string Logger::getLogFilePath()
 {
-    std::string logDir;
+    std::filesystem::path logDir;
 
 #ifdef _WIN32
     const char* appData = getenv("APPDATA");
@@ -38,9 +38,9 @@ std::string Logger::getLogFilePath()
     fileName << std::put_time(&tm, "%Y-%m-%d") << ".log";
 
 #ifdef _WIN32
-    return logDir + "\\" + fileName.str();
+    return logDir / fileName.str();
 #else
-    return logDir + "/" + fileName.str();
+    return logDir / fileName.str();
 #endif
 }
 

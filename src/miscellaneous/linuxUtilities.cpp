@@ -21,26 +21,26 @@ LinuxInitialiser::LinuxInitialiser()
         const char* home = std::getenv("HOME");
         if (!home) throw std::runtime_error("HOME env var not set");
 
-        std::string configDir = std::string(home) + "/.config/HPR/";
-        std::string assetsDir = configDir + "assets/";
+        std::filesystem::path configDir = std::filesystem::path(home) / ".config/HPR/";
+        std::filesystem::path assetsDir = configDir / "assets/";
 
         std::filesystem::create_directories(assetsDir);
-        filePath = assetsDir + iconName;
+        filePath = assetsDir / iconName;
 
         std::ifstream file(filePath);
         if (!file.is_open())
         {
-            std::cerr << "Warning: " << iconName << " not found at " << filePath
+            std::cerr << "Warning: " << iconName << " not found at " << filePath.string()
                     << ". App will have no icon.\n";
-            Logger::log("Warning: " + iconName + " not found at " + filePath + ". App will have no icon.");
+            Logger::log("Warning: " + iconName + " not found at " + filePath.string() + ". App will have no icon.");
             return;
         }
 
         // Register the icon into a local hicolor theme directory.
         // This is what TrayManager reads via IconThemePath to show the tray icon.
-        std::string themeAppsDir = configDir + "icons/hicolor/256x256/apps/";
+        std::filesystem::path themeAppsDir = configDir / "icons/hicolor/256x256/apps/";
         std::filesystem::create_directories(themeAppsDir);
-        std::string themeIconPath = themeAppsDir + "hpr.png";
+        std::filesystem::path themeIconPath = themeAppsDir / "hpr.png";
 
         if (!std::filesystem::exists(themeIconPath) ||
             std::filesystem::last_write_time(filePath) >
@@ -55,7 +55,7 @@ LinuxInitialiser::LinuxInitialiser()
         // this directory as a valid icon theme and can resolve "hpr" → hpr.png.
         // Without this file, St.IconTheme::lookup_icon_for_scale() returns null
         // and the tray icon silently shows nothing.  Other DEs are unaffected.
-        std::string indexThemePath = configDir + "icons/hicolor/index.theme";
+        std::filesystem::path indexThemePath = configDir / "icons/hicolor/index.theme";
         if (!std::filesystem::exists(indexThemePath))
         {
             std::ofstream indexTheme(indexThemePath);
@@ -73,7 +73,7 @@ LinuxInitialiser::LinuxInitialiser()
             }
         }
 
-        s_iconThemePath = configDir + "icons";
+        s_iconThemePath = configDir / "icons";
 
         // Write a .desktop file to ~/.local/share/applications/hpr.desktop.
         // This is what the taskbar (both X11 WMs and Wayland compositors) uses
@@ -85,13 +85,13 @@ LinuxInitialiser::LinuxInitialiser()
         if (std::filesystem::exists("/usr/share/applications/hpr.desktop"))
             return;
 
-        std::string desktopDir = std::string(home) + "/.local/share/applications/";
+        std::filesystem::path desktopDir = std::filesystem::path(home) / ".local/share/applications/";
         std::filesystem::create_directories(desktopDir);
-        std::string desktopFile = desktopDir + "hpr.desktop";
+        std::filesystem::path desktopFile = desktopDir / "hpr.desktop";
 
         bool shouldWrite = true;
         std::string expectedExec = "Exec=" + std::filesystem::canonical("/proc/self/exe").string();
-        std::string expectedIcon = "Icon=" + themeIconPath;
+        std::string expectedIcon = "Icon=" + themeIconPath.string();
 
         if (std::filesystem::exists(desktopFile))
         {
@@ -133,8 +133,8 @@ LinuxInitialiser::LinuxInitialiser()
             }
             else
             {
-                std::cerr << "Warning: could not write .desktop file to " << desktopFile << "\n";
-                Logger::log("Warning: could not write .desktop file to " + desktopFile);
+                std::cerr << "Warning: could not write .desktop file to " << desktopFile.string() << "\n";
+                Logger::log("Warning: could not write .desktop file to " + desktopFile.string());
             }
         }
     #endif
