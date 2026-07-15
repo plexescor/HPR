@@ -446,7 +446,7 @@ std::string DatabaseManager::getDbPathForDate(const std::string& date)
     std::filesystem::path path;
     #ifdef _WIN32
         path = std::getenv("APPDATA");
-        path /= std::filesystem::path("HPR/HPR_DB/") + extractMMYY_from_DDMMYY(date) + "/" + date + ".db";
+        path /= std::filesystem::path("HPR/HPR_DB/") / extractMMYY_from_DDMMYY(date) / (date + ".db");
     #else
         const char* home = std::getenv("HOME");
         if (!home) throw std::runtime_error("HOME env var not set");
