@@ -1923,10 +1923,10 @@ std::optional<CppValue> ExtensionManager::dispatchOverride(const std::string& ov
     {
         std::lock_guard<std::recursive_mutex> luaLock(ext->luaMutex);
         
-        sol::table hpr = ext->lua["HPR"];
-        if (!hpr.valid()) continue;
+        sol::table HPR = ext->lua["HPR"];
+        if (!HPR.valid()) continue;
         
-        sol::object overridesObj = hpr["overrides"];
+        sol::object overridesObj = HPR["overrides"];
         if (!overridesObj.valid() || !overridesObj.is<sol::table>()) continue;
         
         sol::table overrides = overridesObj.as<sol::table>();
