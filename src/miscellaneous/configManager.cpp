@@ -18,19 +18,19 @@ ConfigManager::ConfigManager() { loadConfig(); }
 
 void ConfigManager::loadConfig()
 {
-    std::string tempPath;
+    std::filesystem::path tempPath;
     #ifdef _WIN32
         tempPath = std::getenv("APPDATA");
-        tempPath += "/HPR/HPR_Config/";
+        tempPath /= std::filesystem::path("HPR/HPR_Config/");
     #else
         const char* home = std::getenv("HOME");
         if (!home) throw std::runtime_error("HOME env var not set");
         tempPath = home;
-        tempPath += "/.config/HPR/";
+        tempPath /= std::filesystem::path(".config/HPR/");
     #endif
     
     std::filesystem::create_directories(tempPath);
-    filePath = tempPath + fileName;
+    filePath = tempPath / fileName;
 
     std::filesystem::path lockPath = std::filesystem::path(tempPath) / "HPR.lock";
     bool lockExists = std::filesystem::exists(lockPath);
@@ -57,13 +57,13 @@ void ConfigManager::loadConfig()
         if (createBlankFile.is_open())
         {
             createBlankFile.close();
-            std::cerr << "Config file not found. Created a blank config.csv at " << filePath << "\n";
-            Logger::log("Config file not found. Created a blank config.csv at " + filePath);
+            std::cerr << "Config file not found. Created a blank config.csv at " << filePath.string() << "\n";
+            Logger::log("Config file not found. Created a blank config.csv at " + filePath.string());
         }
         else
         {
-            std::cerr << "Error: Could not create blank config file at " << filePath << "\n";
-            Logger::log("Error: Could not create blank config file at " + filePath);
+            std::cerr << "Error: Could not create blank config file at " << filePath.string() << "\n";
+            Logger::log("Error: Could not create blank config file at " + filePath.string());
         }
         
         // Return early since the file is brand new and empty anyway
@@ -73,8 +73,8 @@ void ConfigManager::loadConfig()
     std::ifstream file(filePath);
     if (!file.is_open())
     {
-        std::cerr << "Warning: config.csv could not be opened at " << filePath << ".\n";
-        Logger::log("Warning: config.csv could not be opened at " + filePath);
+        std::cerr << "Warning: config.csv could not be opened at " << filePath.string() << ".\n";
+        Logger::log("Warning: config.csv could not be opened at " + filePath.string());
         return;
     }
 
@@ -107,8 +107,8 @@ void ConfigManager::saveConfig()
     std::ofstream file(filePath);
     if (!file.is_open())
     {
-        std::cerr << "Error: Failed to open config file for writing: " << filePath << std::endl;
-        Logger::log("Error: Failed to open config file for writing: " + filePath);
+        std::cerr << "Error: Failed to open config file for writing: " << filePath.string() << std::endl;
+        Logger::log("Error: Failed to open config file for writing: " + filePath.string());
         return;
     }
     for (const auto& [param, value] : config)

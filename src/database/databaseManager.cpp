@@ -31,11 +31,11 @@ DatabaseManager::DatabaseManager()
     initDatabase();
 
     // Try to create a lock file
-    std::string lockPath = filePath + "hpr.lock";
+    std::filesystem::path lockPath = filePath / "hpr.lock";
 
     #ifdef _WIN32
         lockHandle = CreateFileA(
-                lockPath.c_str(),
+                lockPath.string().c_str(),
                 GENERIC_WRITE,
                 0,              // 0 = exclusive access
                 NULL,
@@ -166,7 +166,8 @@ void DatabaseManager::initDatabase(bool copyData)
     }
 
 
-    db.emplace(filePath + fileName);
+    
+    db.emplace((filePath / fileName).string());
 
     // WAL mode + synchronous normal — critical for Btrfs+LUKS
     *db << "PRAGMA journal_mode=WAL;";
@@ -442,17 +443,17 @@ std::string DatabaseManager::getDbPathForDate(const std::string& date)
             return res->str_val;
         }
     }
-    std::string path;
+    std::filesystem::path path;
     #ifdef _WIN32
         path = std::getenv("APPDATA");
-        path += "/HPR/HPR_DB/" + extractMMYY_from_DDMMYY(date) + "/" + date + ".db";
+        path /= std::filesystem::path("HPR/HPR_DB/") / extractMMYY_from_DDMMYY(date) / (date + ".db");
     #else
         const char* home = std::getenv("HOME");
         if (!home) throw std::runtime_error("HOME env var not set");
         path = home;
-        path += "/.local/share/HPR/HPR_DB/" + extractMMYY_from_DDMMYY(date) + "/" + date + ".db";
+        path /= std::filesystem::path(".local/share/HPR/HPR_DB") / extractMMYY_from_DDMMYY(date) / (date + ".db");
     #endif
-    return path;
+    return path.string();
 }
 
 std::string DatabaseManager::getLoadedHistDbPath() const
@@ -465,7 +466,7 @@ std::string DatabaseManager::getLoadedHistDbPath() const
             return res->str_val;
         }
     }
-    return loadedHistDbPath;
+    return loadedHistDbPath.string();
 }
 
 void DatabaseManager::loadDb_Singular(std::string requestedDate)
@@ -487,20 +488,20 @@ void DatabaseManager::loadDb_Singular(std::string requestedDate)
             //and i will not do anything, :)
 
             
-            std::string path = getDbPathForDate(requestedDate);
+            std::filesystem::path path = getDbPathForDate(requestedDate);
             loadedHistDbPath = path;
 
             //Check if shit even exists
             if (!std::filesystem::exists(path))
             {
-                EventHub::emit(Event::APP_ERROR, ErrorGui{"File not found! " + path});
+                EventHub::emit(Event::APP_ERROR, ErrorGui{"File not found! " + path.string()});
                 std::cerr << "Historical file not found: " << path << std::endl;
-                Logger::log("[HPR] Historical file not found: " + path);
+                Logger::log("[HPR] Historical file not found: " + path.string());
                 return; 
             }
 
             //Load a new db
-            sqlite::database histDb(path);
+            sqlite::database histDb(path.string());
 
             //Force so incomplete .db files possibly due to a crash are fully 
             //resolved by a WAL checkpoint
@@ -574,15 +575,15 @@ void DatabaseManager::loadDb_Number(int days, std::string mode)
 
         if (mode == "total")
         {
-            std::string path;
+            std::filesystem::path path;
             #ifdef _WIN32
                 path = std::getenv("APPDATA");
-                path += "/HPR/HPR_DB/";
+                path /= std::filesystem::path("HPR/HPR_DB/");
             #else
                 const char* home = std::getenv("HOME");
                 if (!home) throw std::runtime_error("HOME env var not set");
                 path = home;
-                path += "/.local/share/HPR/HPR_DB/";
+                path /= std::filesystem::path(".local/share/HPR/HPR_DB/");
             #endif
 
             //the file names to load
@@ -629,16 +630,16 @@ void DatabaseManager::loadDb_Number(int days, std::string mode)
                         }
                         else
                         {
-                            std::string fullPath = path + extractMMYY_from_DDMMYY(fileNames[i]) + "/" + fileNames[i] + ".db";
+                            std::filesystem::path fullPath = path / extractMMYY_from_DDMMYY(fileNames[i]) / (fileNames[i] + ".db");
 
                             if (!std::filesystem::exists(fullPath))
                             {
                                 std::cerr << "Historical file not found: " << fullPath << std::endl;
-                                Logger::log("[HPR] Historical file not found: " + fullPath);
+                                Logger::log("[HPR] Historical file not found: " + fullPath.string());
                                 return;
                             }
 
-                            sqlite::database numDb(fullPath);
+                            sqlite::database numDb(fullPath.string());
 
                             //load from db to the map
                             numDb << "select name, duration from app_usage;"
@@ -706,15 +707,15 @@ void DatabaseManager::loadDb_Number(int days, std::string mode)
 
         if (mode == "average")
         {
-            std::string path;
+            std::filesystem::path path;
             #ifdef _WIN32
                 path = std::getenv("APPDATA");
-                path += "/HPR/HPR_DB/";
+                path /= std::filesystem::path("HPR/HPR_DB/");
             #else
                 const char* home = std::getenv("HOME");
                 if (!home) throw std::runtime_error("HOME env var not set");
                 path = home;
-                path += "/.local/share/HPR/HPR_DB/";
+                path /= std::filesystem::path(".local/share/HPR/HPR_DB/");
             #endif
 
             std::vector<std::string> fileNames;
@@ -761,16 +762,16 @@ void DatabaseManager::loadDb_Number(int days, std::string mode)
                         }
                         else
                         {
-                            std::string fullPath = path + extractMMYY_from_DDMMYY(fileNames[i]) + "/" + fileNames[i] + ".db";
+                            std::filesystem::path fullPath = path / extractMMYY_from_DDMMYY(fileNames[i]) / (fileNames[i] + ".db");
 
                             if (!std::filesystem::exists(fullPath))
                             {
                                 std::cerr << "Historical file not found: " << fullPath << std::endl;
-                                Logger::log("[HPR] Historical file not found: " + fullPath);
+                                Logger::log("[HPR] Historical file not found: " + fullPath.string());
                                 return;
                             }
 
-                            sqlite::database numDb(fullPath);
+                            sqlite::database numDb(fullPath.string());
 
                             numDb << "select name, duration from app_usage;"
                                 >> [&, i](std::string name, uint64_t duration) {
@@ -887,15 +888,15 @@ void DatabaseManager::loadDb_Range(std::string dateFrom, std::string dateTo, std
 
         if (mode == "total")
         {
-            std::string path;
+            std::filesystem::path path;
             #ifdef _WIN32
                 path = std::getenv("APPDATA");
-                path += "/HPR/HPR_DB/";
+                path /= std::filesystem::path("HPR/HPR_DB/");
             #else
                 const char* home = std::getenv("HOME");
                 if (!home) throw std::runtime_error("HOME env var not set");
                 path = home;
-                path += "/.local/share/HPR/HPR_DB/";
+                path /= std::filesystem::path(".local/share/HPR/HPR_DB/");
             #endif
 
             //the file names to load
@@ -942,16 +943,16 @@ void DatabaseManager::loadDb_Range(std::string dateFrom, std::string dateTo, std
                         }
                         else
                         {
-                            std::string fullPath = path + extractMMYY_from_DDMMYY(fileNames[i]) + "/" + fileNames[i] + ".db";
+                            std::filesystem::path fullPath = path / extractMMYY_from_DDMMYY(fileNames[i]) / (fileNames[i] + ".db");
 
                             if (!std::filesystem::exists(fullPath))
                             {
                                 std::cerr << "Historical file not found: " << fullPath << std::endl;
-                                Logger::log("[HPR] Historical file not found: " + fullPath);
+                                Logger::log("[HPR] Historical file not found: " + fullPath.string());
                                 return;
                             }
 
-                            sqlite::database numDb(fullPath);
+                            sqlite::database numDb(fullPath.string());
 
                             //load from db to the map
                             numDb << "select name, duration from app_usage;"
@@ -1017,15 +1018,15 @@ void DatabaseManager::loadDb_Range(std::string dateFrom, std::string dateTo, std
 
         if (mode == "average")
         {
-            std::string path;
+            std::filesystem::path path;
             #ifdef _WIN32
                 path = std::getenv("APPDATA");
-                path += "/HPR/HPR_DB/";
+                path /= std::filesystem::path("HPR/HPR_DB/");
             #else
                 const char* home = std::getenv("HOME");
                 if (!home) throw std::runtime_error("HOME env var not set");
                 path = home;
-                path += "/.local/share/HPR/HPR_DB/";
+                path /= std::filesystem::path(".local/share/HPR/HPR_DB/");
             #endif
 
             std::vector<std::string> fileNames;
@@ -1072,16 +1073,16 @@ void DatabaseManager::loadDb_Range(std::string dateFrom, std::string dateTo, std
                         }
                         else
                         {
-                            std::string fullPath = path + extractMMYY_from_DDMMYY(fileNames[i]) + "/" + fileNames[i] + ".db";
+                            std::filesystem::path fullPath = path / extractMMYY_from_DDMMYY(fileNames[i]) / (fileNames[i] + ".db");
 
                             if (!std::filesystem::exists(fullPath))
                             {
                                 std::cerr << "Historical file not found: " << fullPath << std::endl;
-                                Logger::log("[HPR] Historical file not found: " + fullPath);
+                                Logger::log("[HPR] Historical file not found: " + fullPath.string());
                                 return;
                             }
 
-                            sqlite::database numDb(fullPath);
+                            sqlite::database numDb(fullPath.string());
 
                             numDb << "select name, duration from app_usage;"
                                 >> [&, i](std::string name, uint64_t duration) {
@@ -1168,10 +1169,10 @@ void DatabaseManager::loadPatternsData(int days)
 {
     std::string activeFileName = this->fileName;
 
-    std::string basePath;
+    std::filesystem::path basePath;
     #ifdef _WIN32
         basePath = std::getenv("APPDATA");
-        basePath += "/HPR/HPR_DB/";
+        basePath /= std::filesystem::path("HPR/HPR_DB/");
     #else
         const char* home = std::getenv("HOME");
         if (!home)
@@ -1181,7 +1182,7 @@ void DatabaseManager::loadPatternsData(int days)
             return;
         }
         basePath = home;
-        basePath += "/.local/share/HPR/HPR_DB/";
+        basePath /= std::filesystem::path(".local/share/HPR/HPR_DB/");
     #endif
 
     // Walk backwards from today, one day at a time
@@ -1208,7 +1209,7 @@ void DatabaseManager::loadPatternsData(int days)
         }
         else
         {
-            std::string fullPath = basePath + extractMMYY_from_DDMMYY(dateStr) + "/" + dateStr + ".db";
+            std::filesystem::path fullPath = basePath / extractMMYY_from_DDMMYY(dateStr) / (dateStr + ".db");
             if (!std::filesystem::exists(fullPath))
             {
                 // Missing day — skip silently (user may not have data for every day)
@@ -1217,7 +1218,7 @@ void DatabaseManager::loadPatternsData(int days)
 
             try
             {
-                sqlite::database dayDb(fullPath);
+                sqlite::database dayDb(fullPath.string());
                 dayDb << "PRAGMA wal_checkpoint(PASSIVE);";
 
                 dayDb << "select name, duration from app_usage;"
@@ -1233,7 +1234,7 @@ void DatabaseManager::loadPatternsData(int days)
             catch (const std::exception& e)
             {
                 std::cerr << "[loadPatternsData] Failed to load " << fullPath << ": " << e.what() << "\n";
-                Logger::log("[loadPatternsData] Failed to load " + fullPath + ": " + std::string(e.what()));
+                Logger::log("[loadPatternsData] Failed to load " + fullPath.string() + ": " + std::string(e.what()));
                 continue;
             }
         }
@@ -1281,15 +1282,15 @@ ParallelQueryResult DatabaseManager::dbQueryNumber(int days, const std::string& 
         std::chrono::system_clock::now().time_since_epoch()).count();
     std::string activeFileName = this->fileName;
 
-    std::string path;
+    std::filesystem::path path;
     #ifdef _WIN32
         path = std::getenv("APPDATA");
-        path += "/HPR/HPR_DB/";
+        path /= std::filesystem::path("HPR/HPR_DB/");
     #else
         const char* home = std::getenv("HOME");
         if (!home) throw std::runtime_error("HOME env var not set");
         path = home;
-        path += "/.local/share/HPR/HPR_DB/";
+        path /= std::filesystem::path(".local/share/HPR/HPR_DB/");
     #endif
 
     std::vector<std::string> fileNames;
@@ -1340,15 +1341,15 @@ ParallelQueryResult DatabaseManager::dbQueryNumber(int days, const std::string& 
                 }
                 else
                 {
-                    std::string fullPath = path + extractMMYY_from_DDMMYY(fileNames[i]) + "/" + fileNames[i] + ".db";
+                    std::filesystem::path fullPath = path / extractMMYY_from_DDMMYY(fileNames[i]) / (fileNames[i] + ".db");
                     if (!std::filesystem::exists(fullPath))
                     {
                         std::cerr << "Historical file not found: " << fullPath << std::endl;
-                        Logger::log("[HPR] Historical file not found: " + fullPath);
+                        Logger::log("[HPR] Historical file not found: " + fullPath.string());
                         return;
                     }
 
-                    sqlite::database dayDb(fullPath);
+                    sqlite::database dayDb(fullPath.string());
                     sqlite3* rawDb = dayDb.connection().get();
                     sqlite3_stmt* stmt = nullptr;
                     if (sqlite3_prepare_v2(rawDb, sql.c_str(), -1, &stmt, nullptr) == SQLITE_OK)
@@ -1420,15 +1421,15 @@ ParallelQueryResult DatabaseManager::dbQueryRange(std::string dateFrom, std::str
     std::mutex localMutex; // local to this call only — never touches AppState
     std::vector<std::map<std::string, std::string>> rawRows;
 
-    std::string path;
+    std::filesystem::path path;
     #ifdef _WIN32
         path = std::getenv("APPDATA");
-        path += "/HPR/HPR_DB/";
+        path /= std::filesystem::path("HPR/HPR_DB/");
     #else
         const char* home = std::getenv("HOME");
         if (!home) throw std::runtime_error("HOME env var not set");
         path = home;
-        path += "/.local/share/HPR/HPR_DB/";
+        path /= std::filesystem::path(".local/share/HPR/HPR_DB/");
     #endif
 
     // Walk backward from timeStampTo, same seed convention as loadDb_Range
@@ -1489,16 +1490,16 @@ ParallelQueryResult DatabaseManager::dbQueryRange(std::string dateFrom, std::str
                 else
                 {
                     // Past day — open the on-disk daily db file directly
-                    std::string fullPath = path + extractMMYY_from_DDMMYY(fileNames[i]) + "/" + fileNames[i] + ".db";
+                    std::filesystem::path fullPath = path / extractMMYY_from_DDMMYY(fileNames[i]) / (fileNames[i] + ".db");
 
                     if (!std::filesystem::exists(fullPath))
                     {
                         std::cerr << "Historical file not found: " << fullPath << std::endl;
-                        Logger::log("[HPR] Historical file not found: " + fullPath);
+                        Logger::log("[HPR] Historical file not found: " + fullPath.string());
                         return;
                     }
 
-                    sqlite::database dayDb(fullPath);
+                    sqlite::database dayDb(fullPath.string());
                     sqlite3* rawDb = dayDb.connection().get();
                     sqlite3_stmt* stmt = nullptr;
                     if (sqlite3_prepare_v2(rawDb, sql.c_str(), -1, &stmt, nullptr) == SQLITE_OK)
@@ -1778,15 +1779,15 @@ void DatabaseManager::updateFilePath()
 	uint64_t t = std::chrono::duration_cast<std::chrono::milliseconds>(
         nowSystem.time_since_epoch()).count();
 
-    std::string tempPath;
+    std::filesystem::path tempPath;
     #ifdef _WIN32
         tempPath = std::getenv("APPDATA");
-        tempPath += "/HPR/HPR_DB/" + convertToDate_MMYY(t) + "/";
+        tempPath /= std::filesystem::path("HPR/HPR_DB") / convertToDate_MMYY(t) / "";
     #else
         const char* home = std::getenv("HOME");
         if (!home) throw std::runtime_error("HOME env var not set");
         tempPath = home;
-        tempPath += "/.local/share/HPR/HPR_DB/" + convertToDate_MMYY(t) + "/";
+        tempPath /= std::filesystem::path(".local/share/HPR/HPR_DB") / convertToDate_MMYY(t);
     #endif
     
     filePath = tempPath;

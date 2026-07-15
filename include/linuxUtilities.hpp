@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <filesystem>
 
 class LinuxInitialiser {
 public:
@@ -13,7 +14,7 @@ public:
 
 private:
   std::string iconName = "logo_256png.png";
-  std::string filePath;
+  std::filesystem::path filePath;
 
   static std::string s_iconThemePath;
 };

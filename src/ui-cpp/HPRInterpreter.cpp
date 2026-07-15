@@ -37,7 +37,7 @@ HPRInterpreter::HPRInterpreter(ExtensionManager* extMgr)
     if (!initialiseSlintUiPath()) exit(1);
 
     std::string savedTheme = AppState::configManager.getConfig("custom-theme", std::string("default"));
-    std::string pathToLoad = filePath + fileName;
+    std::string pathToLoad = (filePath / fileName).string();
     if (savedTheme != "default" && AppState::themeManager.availableThemes_Bare.contains(savedTheme))
     {
         pathToLoad = AppState::themeManager.availableThemes_Bare[savedTheme];
@@ -88,7 +88,7 @@ void HPRInterpreter::reload(std::string path)
 
     std::optional<slint::interpreter::ComponentDefinition> newDef;
 
-    if (path == "") newDef = newCompiler.build_from_path(filePath + fileName);
+    if (path == "") newDef = newCompiler.build_from_path((filePath / fileName).string());
     else newDef = newCompiler.build_from_path(path);
 
     if (!newDef.has_value())
@@ -484,27 +484,27 @@ void HPRInterpreter::run()
 
 bool HPRInterpreter::initialiseSlintUiPath()
 {
-    std::string tempPath;
+    std::filesystem::path tempPath;
     #ifdef _WIN32
         tempPath = std::getenv("APPDATA");
-        tempPath += "/HPR/HPR_Config/ui/";
+        tempPath /= std::filesystem::path("HPR/HPR_Config/ui/");
     #else
         const char* home = std::getenv("HOME");
         if (!home) throw std::runtime_error("HOME env var not set");
         tempPath = home;
-        tempPath += "/.config/HPR/ui/";
+        tempPath /= std::filesystem::path(".config/HPR/ui/");
     #endif
 
     std::filesystem::create_directories(tempPath);
     filePath = tempPath;
 
-    std::ifstream file(filePath + fileName);
+    std::ifstream file(filePath / fileName);
 
     if (!file.is_open())
     {
-        std::cerr << "Warning: " << fileName << "  not found at " << filePath
+        std::cerr << "Warning: " << fileName << "  not found at " << filePath.string()
                   << ". Closing HPR .\n";
-        Logger::log("Warning: " + fileName + " not found at " + filePath + ". Closing HPR.");
+        Logger::log("Warning: " + fileName + " not found at " + filePath.string() + ". Closing HPR.");
         return false;
     }
     return true;

@@ -28,9 +28,9 @@ class AliasManager
         std::string fileName_Tab = "tabAliases.csv";
         std::string fileName_Project = "projectAliases.csv";
 
-        std::string filePath;
-        std::string filePath_Tab;
-        std::string filePath_Project;
+        std::filesystem::path filePath;
+        std::filesystem::path filePath_Tab;
+        std::filesystem::path filePath_Project;
 
         std::filesystem::file_time_type lastModified;
         std::filesystem::file_time_type lastModified_Tab;

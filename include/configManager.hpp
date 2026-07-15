@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 #include <utility>
-
+#include <filesystem>
 class ConfigManager
 {
     public: //No need for destructor
@@ -27,7 +27,7 @@ class ConfigManager
     private:
         std::vector<std::pair<std::string, std::string>> config; 
         std::string fileName = "config.csv";
-        std::string filePath;
+        std::filesystem::path filePath;
         bool firstLaunch = false;
         bool telemetryPromptAnswered = false;
 };
