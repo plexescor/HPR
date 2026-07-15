@@ -70,7 +70,7 @@ class ExtensionManager
 
     private:
         std::vector<std::shared_ptr<LoadedExtension>> extensions;
-        std::string extensionPath;
+        std::filesystem::path extensionPath;
 
         bool didTimeoutDuringUnload = false;
 

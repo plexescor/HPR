@@ -1884,12 +1884,12 @@ void ExtensionManager::updateExtensionPath()
 {
     #ifdef _WIN32
         extensionPath = std::getenv("APPDATA");
-        extensionPath += "/HPR/HPR_Config/extensions/";
+        extensionPath /= "HPR/HPR_Config/extensions/";
     #else
         const char* home = std::getenv("HOME");
         if (!home) throw std::runtime_error("HOME env var not set");
         extensionPath = home;
-        extensionPath += "/.config/HPR/extensions/";
+        extensionPath /= ".config/HPR/extensions/";
     #endif
 
     std::filesystem::create_directories(extensionPath);

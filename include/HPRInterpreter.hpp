@@ -1,3 +1,4 @@
+
 // HPR.hpp
 #pragma once
 
@@ -12,6 +13,7 @@
 #include <atomic>
 #include <chrono>
 #include <mutex>
+#include <filesystem>
 #include <optional>
 
 class HPRInterpreter {
@@ -42,7 +44,7 @@ class HPRInterpreter {
         std::optional<slint::ComponentHandle<slint::interpreter::ComponentInstance>> instance;
         std::optional<slint::ComponentWeakHandle<slint::interpreter::ComponentInstance>> weak_instance;
 
-        std::string filePath;
+        std::filesystem::path filePath;
         std::string fileName = "app-window.slint";
 
         std::atomic<bool> running{true};
