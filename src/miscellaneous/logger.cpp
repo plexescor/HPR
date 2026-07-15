@@ -38,9 +38,9 @@ std::string Logger::getLogFilePath()
     fileName << std::put_time(&tm, "%Y-%m-%d") << ".log";
 
 #ifdef _WIN32
-    return logDir / fileName.str();
+    return (logDir / fileName.str()).string();
 #else
-    return logDir / fileName.str();
+    return (logDir / fileName.str()).string();
 #endif
 }
 

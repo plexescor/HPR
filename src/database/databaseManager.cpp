@@ -466,7 +466,7 @@ std::string DatabaseManager::getLoadedHistDbPath() const
             return res->str_val;
         }
     }
-    return loadedHistDbPath;
+    return loadedHistDbPath.string();
 }
 
 void DatabaseManager::loadDb_Singular(std::string requestedDate)
