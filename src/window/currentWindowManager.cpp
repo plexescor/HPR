@@ -342,14 +342,7 @@ void CurrentWindowManager::detectAndSetBackend()
     {
         if (!backend.matchesEnvironment(currentPlatform)) continue;
 
-        bool isCustom = (backend.name != "GNOME" &&
-                         backend.name != "KDE" &&
-                         backend.name != "Hyprland" &&
-                         backend.name != "Windows" &&
-                         backend.name != "niri" &&
-                         backend.name != "Cinnamon");
-
-        if (isCustom && !allowCustom)
+        if (!allowCustom)
         {
             continue;
         }
