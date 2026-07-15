@@ -108,12 +108,12 @@ void ThemeManager::initialisePath()
     std::filesystem::path tempPath;
     #ifdef _WIN32
         tempPath = std::getenv("APPDATA");
-        tempPath /= "HPR/HPR_Config/themes/";
+        tempPath /= std::filesystem::path("HPR/HPR_Config/themes/");
     #else
         const char* home = std::getenv("HOME");
         if (!home) throw std::runtime_error("HOME env var not set");
         tempPath = home;
-        tempPath /= ".config/HPR/themes/";
+        tempPath /= std::filesystem::path(".config/HPR/themes/");
     #endif
     
     themeDirectory = tempPath;

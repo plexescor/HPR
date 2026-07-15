@@ -27,12 +27,12 @@ void AliasManager::loadAliases()
     std::filesystem::path tempPath;
     #ifdef _WIN32
         tempPath = std::getenv("APPDATA");
-        tempPath /= "HPR/HPR_Config/";
+        tempPath /= std::filesystem::path("HPR/HPR_Config/");
     #else
         const char* home = std::getenv("HOME");
         if (!home) throw std::runtime_error("HOME env var not set");
         tempPath = home;
-        tempPath /= ".config/HPR/";
+        tempPath /= std::filesystem::path(".config/HPR/");
     #endif
 
     std::filesystem::create_directories(tempPath);
@@ -76,12 +76,12 @@ void AliasManager::loadAliases_Tab()
     std::filesystem::path tempPath;
     #ifdef _WIN32
         tempPath = std::getenv("APPDATA");
-        tempPath /= "HPR/HPR_Config/";
+        tempPath /= std::filesystem::path("HPR/HPR_Config/");
     #else
         const char* home = std::getenv("HOME");
         if (!home) throw std::runtime_error("HOME env var not set");
         tempPath = home;
-        tempPath /= ".config/HPR/";
+        tempPath /= std::filesystem::path(".config/HPR/");
     #endif
 
     std::filesystem::create_directories(tempPath);
@@ -125,12 +125,12 @@ void AliasManager::loadAliases_Project()
     std::filesystem::path tempPath;
     #ifdef _WIN32
         tempPath = std::getenv("APPDATA");
-        tempPath /= "HPR/HPR_Config/";
+        tempPath /= std::filesystem::path("HPR/HPR_Config/");
     #else
         const char* home = std::getenv("HOME");
         if (!home) throw std::runtime_error("HOME env var not set");
         tempPath = home;
-        tempPath /= ".config/HPR/";
+        tempPath /= std::filesystem::path(".config/HPR/");
     #endif
 
     std::filesystem::create_directories(tempPath);
