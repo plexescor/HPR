@@ -37,5 +37,6 @@ private:
     std::string project = "";
 
     std::thread windowPollingThread;
+public:
     std::atomic<bool> running{true};
 };
