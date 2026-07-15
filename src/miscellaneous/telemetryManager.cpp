@@ -13,6 +13,7 @@
 #include <iomanip>
 #include <iostream>
 #include <ctime>
+#include <print>
 #include <cstring>
 #include <map>
 
@@ -80,7 +81,9 @@ void TelemetryManager::checkAndSend()
     try {
         // Bail out if user hasn't opted in (default is false)
         bool enabled = AppState::configManager.getConfig<bool>("anonymous-telemetry", false);
-        if (!enabled) {
+        if (!enabled) 
+        {
+            // std::println("[Telemetry] Telemetry is disabled. Skipping telemetry check.");
             return;
         }
 
@@ -114,6 +117,7 @@ void TelemetryManager::checkAndSend()
         }
 
         // 2. Report Active Usage (4+ days/week)
+        std::println("[Telemetry] Checking weekly active usage for user: {}", userId);
         auto now = std::chrono::system_clock::now();
         std::time_t nowC = std::chrono::system_clock::to_time_t(now);
         std::tm local_tm = {};
@@ -173,9 +177,11 @@ void TelemetryManager::checkAndSend()
             }
         }
 
+        // std::println("[Telemetry] User {} has {} active days this week (weekId: {})", userId, activeDaysCount, weekId);
         if (activeDaysCount >= 4) {
             std::string lastReportedWeek = AppState::configManager.getConfig<std::string>("last-reported-week", "");
             if (lastReportedWeek != weekId) {
+                // std::println("[Telemetry] About to send weekly active data for week: {}", weekId);
                 std::string body = "{\"userId\":\"" + userId + "\"}";
                 std::map<std::string, std::string> headers = {
                     {"Content-Type", "application/json"}
@@ -183,6 +189,8 @@ void TelemetryManager::checkAndSend()
 
                 // PUT with userId as key under weekId → same user same week = same path = no duplicate
                 std::string path = "/telemetry/weekly_active/" + weekId + "/" + userId + ".json";
+                // std::println("[Telemetry] Sending PUT to path: {}", path);
+                // std::println("[Telemetry] Body: {}", body);
                 auto response = NativeNet::httpPut(FIREBASE_HOST, path, body, true, headers);
                 if (response.second >= 200 && response.second < 300) {
                     AppState::configManager.setConfig("last-reported-week", weekId);

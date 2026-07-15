@@ -341,8 +341,8 @@ void CurrentWindowManager::detectAndSetBackend()
     for (auto& backend : std::views::reverse(registeredBackends))
     {
         if (!backend.matchesEnvironment(currentPlatform)) continue;
-
-        if (!allowCustom)
+		bool isNative = backend.nativeBackend;
+        if (!allowCustom && !isNative)
         {
             continue;
         }

@@ -49,7 +49,8 @@ void registerBackend_E(std::string name,
         initialize,
         getCurrentWindow,
         getCurrentTitle,
-        getCurrentPid
+        getCurrentPid,
+        false // nativeBackend is false for backends registered via extension
     });
 }
 

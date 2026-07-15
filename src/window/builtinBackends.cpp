@@ -332,7 +332,8 @@ void registerBuiltinBackends()
             }
 
             return "";
-        }
+        },
+        true
     });
 
 #ifdef __linux__
@@ -361,7 +362,8 @@ void registerBuiltinBackends()
         []() -> std::string
         {
             return NiceKDE::kdeGetActiveWindowPid();
-        }
+        },
+        true
 
     });
 #endif
@@ -416,7 +418,8 @@ void registerBuiltinBackends()
             if (numStart == std::string::npos) return "";
             size_t numEnd = json.find_first_of(",}\n", numStart);
             return json.substr(numStart, numEnd - numStart);
-        }
+        },
+        true
     });
 
     registerBackend
@@ -505,7 +508,8 @@ void registerBuiltinBackends()
             return pid ? std::to_string(pid) : "";
         #endif
             return "";
-        }
+        },
+        true
 
     });
 
@@ -559,7 +563,8 @@ void registerBuiltinBackends()
             if (numStart == std::string::npos) return "";
             size_t numEnd = json.find_first_of(",}\n", numStart);
             return json.substr(numStart, numEnd - numStart);
-        }
+        },
+        true
     });
 
     registerBackend
@@ -624,6 +629,7 @@ void registerBuiltinBackends()
             if (numStart == std::string::npos) return "";
             size_t numEnd = raw.find_first_of(",)\n", numStart);
             return raw.substr(numStart, numEnd - numStart);
-        }
+        },
+        true
     });
 }
