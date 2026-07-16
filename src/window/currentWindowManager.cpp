@@ -18,16 +18,15 @@
 
 CurrentWindowManager::CurrentWindowManager() { registerBuiltinBackends(); }
 
-CurrentWindowManager::~CurrentWindowManager()
-{
-	running = false;
-
-	if (windowPollingThread.joinable())
-		windowPollingThread.join();
-}
+CurrentWindowManager::~CurrentWindowManager() { running = false; }
 
 void CurrentWindowManager::run()
 {
+	if (windowPollingThread.joinable())
+	{
+		running = false;
+		windowPollingThread.join();
+	}
 	running = true;
 	windowPollingThread = std::thread(&CurrentWindowManager::getCurrentWindow_Loop, this);
 }
@@ -71,6 +70,8 @@ void CurrentWindowManager::stopTracking()
 
 void CurrentWindowManager::startTracking()
 {
+	if (windowPollingThread.joinable())
+		return;
 	if (!running)
 		run();
 }
@@ -267,6 +268,7 @@ std::string CurrentWindowManager::getCurrentTitle()
 
 void CurrentWindowManager::detectAndSetBackend()
 {
+	activeBackend = nullptr;
 #ifdef __linux__
 
 	std::string cmd = "echo $XDG_CURRENT_DESKTOP";

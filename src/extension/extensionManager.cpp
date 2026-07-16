@@ -254,6 +254,12 @@ ExtensionManager::ExtensionManager() { loadExtensions(); }
 
 ExtensionManager::~ExtensionManager()
 {
+	if (currentWindowManager)
+	{
+		currentWindowManager->stopTracking();
+	}
+	unregisterNonNativeBackends();
+
 	if (didTimeoutDuringUnload)
 	{
 		std::cerr << "[HPR] Warning one or more extensions timed out during "
@@ -520,6 +526,17 @@ void ExtensionManager::unloadExtension(std::string authorName, std::string exten
 
 		if (ext->identity.first == authorName && ext->identity.second == extensionName)
 		{
+			if (currentWindowManager)
+			{
+				currentWindowManager->stopTracking();
+			}
+			unregisterNonNativeBackends();
+			if (currentWindowManager)
+			{
+				currentWindowManager->detectAndSetBackend();
+				currentWindowManager->startTracking();
+			}
+
 			ext->running = false;
 
 			std::thread t = std::move(ext->thread);
@@ -618,6 +635,17 @@ void ExtensionManager::reloadExtension(std::string authorName, std::string exten
 
 void ExtensionManager::reloadAllExtensions()
 {
+	if (currentWindowManager)
+	{
+		currentWindowManager->stopTracking();
+	}
+	unregisterNonNativeBackends();
+	if (currentWindowManager)
+	{
+		currentWindowManager->detectAndSetBackend();
+		currentWindowManager->startTracking();
+	}
+
 	std::vector<std::filesystem::path> paths;
 	for (const auto &ext : extensions)
 		paths.push_back(ext->path);
@@ -1001,7 +1029,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		currentWindowManager->startTracking();
 	};
 
-	lua["HPR"]["registerBackend_E"] = [&ext](std::string name, sol::function matchesEnvironment,
+	lua["HPR"]["registerBackend_E"] = [&ext, this](std::string name, sol::function matchesEnvironment,
 											 sol::function initialize, sol::function getCurrentWindow,
 											 sol::function getCurrentTitle, sol::function getCurrentPid)
 	{
@@ -1037,7 +1065,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		};
 
 		registerBackend_E(name, safeMatches, safeInitialize, safeGetCurrentWindow, safeGetCurrentTitle,
-						  safeGetCurrentPid);
+						  safeGetCurrentPid, currentWindowManager);
 	};
 
 	lua["HPR"]["dbExecute_E"] = [this](std::string sql, sol::optional<std::vector<std::string>> params)

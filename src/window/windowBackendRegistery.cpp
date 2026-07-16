@@ -2,6 +2,7 @@
 #include <functional>
 #include <string>
 #include <vector>
+#include <algorithm>
 
 std::vector<WindowBackend> registeredBackends;
 
@@ -17,4 +18,12 @@ WindowBackend *getBackendByName(const std::string &name)
 	}
 
 	return nullptr;
+}
+
+void unregisterNonNativeBackends()
+{
+	registeredBackends.erase(
+		std::remove_if(registeredBackends.begin(), registeredBackends.end(),
+					   [](const WindowBackend &b) { return !b.nativeBackend; }),
+		registeredBackends.end());
 }

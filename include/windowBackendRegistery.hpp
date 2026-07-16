@@ -23,3 +23,5 @@ extern std::vector<WindowBackend> registeredBackends;
 void registerBackend(const WindowBackend &backend);
 
 WindowBackend *getBackendByName(const std::string &name);
+
+void unregisterNonNativeBackends();

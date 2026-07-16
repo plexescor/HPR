@@ -2,7 +2,7 @@
 #include "appState.hpp"
 #include "extensionManager.hpp"
 #include "windowBackendRegistery.hpp"
-
+#include "currentWindowManager.hpp"
 #include <functional>
 #include <mutex>
 #include <string>
@@ -37,12 +37,19 @@ std::string getCurrentTitle_E()
 
 void registerBackend_E(std::string name, std::function<bool(const std::string &)> matchesEnvironment,
 					   std::function<void()> initialize, std::function<std::string()> getCurrentWindow,
-					   std::function<std::string()> getCurrentTitle, std::function<std::string()> getCurrentPid)
+					   std::function<std::string()> getCurrentTitle, std::function<std::string()> getCurrentPid,
+					   CurrentWindowManager* currentWindowManager)
 {
 	registerBackend({
 		name, matchesEnvironment, initialize, getCurrentWindow, getCurrentTitle, getCurrentPid,
 		false // nativeBackend is false for backends registered via extension
 	});
+	if (currentWindowManager)
+	{
+		currentWindowManager->stopTracking();
+		currentWindowManager->detectAndSetBackend();
+		currentWindowManager->startTracking();
+	}
 }
 
 std::map<std::string, uint64_t> getLiveTimeLogPerApp_E()
