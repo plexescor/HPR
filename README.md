@@ -389,7 +389,7 @@ Each extension runs in its own isolated VM on a dedicated background thread, com
 **What you can do with extensions:**
 - Read the currently active window in real time
 - Run shell commands and query the HPR database directly
-- Register fully custom window detection backends for compositors HPR doesn't natively support
+- Register fully custom window detection backends for compositors HPR doesn't natively support (Note that dynamic backend registration via Lua is currently an experimental feature and may exhibit unstable behavior or minor bugs depending on your desktop setup)
 - Subscribe to HPR's internal event bus and react to state changes
 - Build interactive custom UI panels that render inside HPR via Slint callback bindings
 - **Function Overriding (Advanced)**: Intercept, block, or modify 24+ core C++ functions directly from Lua
