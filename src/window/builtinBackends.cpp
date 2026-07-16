@@ -5,8 +5,8 @@
 #include <iostream>
 #include <string>
 #ifdef _WIN32
-#include <Psapi.h>
 #include <windows.h>
+#include <Psapi.h>
 #endif
 
 #ifdef __linux__

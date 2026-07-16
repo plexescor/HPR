@@ -8,9 +8,9 @@
 #include "appState.hpp"
 
 #ifdef _WIN32
+#include <windows.h>
 #include <psapi.h>
 #include <shellapi.h>
-#include <windows.h>
 #endif
 
 #ifdef __linux__
