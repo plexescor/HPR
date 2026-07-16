@@ -12,8 +12,8 @@ ThemeManager AppState::themeManager;
 const std::string AppState::APP_VERSION = "0.9.4";
 PatternAnalyzer AppState::patternAnalyzer;
 
-ExtensionManager* AppState::extManager = nullptr;
-LimitsManager* AppState::limitsManager = nullptr;
+ExtensionManager *AppState::extManager = nullptr;
+LimitsManager *AppState::limitsManager = nullptr;
 
 std::mutex AppState::patternAnalyzerMutex;
 

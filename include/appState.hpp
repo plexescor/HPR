@@ -1,121 +1,134 @@
 #pragma once
 #include "aliasManager.hpp"
-#include "patternAnalyzer.hpp"
 #include "configManager.hpp"
-#include "themeManager.hpp"
 #include "limitsManager.hpp"
+#include "patternAnalyzer.hpp"
+#include "themeManager.hpp"
 
-#include <string>
 #include <atomic>
-#include <mutex>
 #include <condition_variable>
-#include <map>
 #include <cstdint>
+#include <map>
+#include <mutex>
+#include <string>
 #include <vector>
 
 class ExtensionManager;
 
-namespace AppState {
-    
-    enum CurrentView {HISTORICAL_SINGULAR, LIVE, HISTORICAL_NUMBER, HISTORICAL_RANGE};
+namespace AppState
+{
 
-    struct AppState {
-        std::vector<std::pair<std::string, std::string>> loadedExtensions;
+enum CurrentView
+{
+	HISTORICAL_SINGULAR,
+	LIVE,
+	HISTORICAL_NUMBER,
+	HISTORICAL_RANGE
+};
 
-        CurrentView currentView = CurrentView::LIVE;
+struct AppState
+{
+	std::vector<std::pair<std::string, std::string>> loadedExtensions;
 
-        bool useTabView = false; //which means data is shown per site and not per tab
-        bool isRawProjectView = false; //which means VSCode projects are shown as they are, without aliasing or parsing
-        std::string currentPlatform;
+	CurrentView currentView = CurrentView::LIVE;
 
-        std::string currentError = "";
-        
-        std::string currentWindow;
-        std::string previousWindow;
-        std::string currentTab;
-        std::string currentTitle;
-        
-        std::string nowPlayingTitle;
-        std::string nowPlayingUrl;
-        
-        //Apps
-        std::map<std::string, uint64_t> timeLog_PerApp; 
-        std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> switchHistory;
+	bool useTabView = false;	   // which means data is shown per site and not per tab
+	bool isRawProjectView = false; // which means VSCode projects are shown as
+								   // they are, without aliasing or parsing
+	std::string currentPlatform;
 
-        //idk
-        // std::vector<std::pair<std::string, uint64_t>> switchEventLog;
+	std::string currentError = "";
 
-        //Tabs
-        std::map<std::string, uint64_t> timeLog_PerTab;
+	std::string currentWindow;
+	std::string previousWindow;
+	std::string currentTab;
+	std::string currentTitle;
 
-        //Projects
-        std::map<std::string, uint64_t> timeLog_PerProject;
+	std::string nowPlayingTitle;
+	std::string nowPlayingUrl;
 
-        // Limits & Goals
-        std::map<std::string, int> appLimits;
-        std::map<std::string, int> appGoals;
+	// Apps
+	std::map<std::string, uint64_t> timeLog_PerApp;
+	std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> switchHistory;
 
-        std::map<std::string, uint64_t> limitTimeBase;
-        std::map<std::string, uint64_t> goalTimeBase;
+	// idk
+	//  std::vector<std::pair<std::string, uint64_t>> switchEventLog;
 
-        //misc stuff
-        std::map<std::string, std::string> appNamePid;
-        std::map<std::string, std::string> pidAppName;
-    };
+	// Tabs
+	std::map<std::string, uint64_t> timeLog_PerTab;
 
-    //Intended to hold data for max 1 whole day
-    struct HistoricalData_Singular {
-        std::map<std::string, uint64_t> timeLog_PerApp;
-        std::map<std::string, uint64_t> timeLog_PerTab;
-        std::map<std::string, uint64_t> timeLog_PerProject;
-        std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> switchHistory;
-        bool isLoaded = false;
-    };
+	// Projects
+	std::map<std::string, uint64_t> timeLog_PerProject;
 
-    struct HistoricalData_Full {
-        std::map<std::string, uint64_t> timeLog_PerApp;
-        std::map<std::string, uint64_t> timeLog_PerTab;
-        std::map<std::string, uint64_t> timeLog_PerProject;
-        std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> switchHistory;
-        bool isLoaded = false;
-    };
+	// Limits & Goals
+	std::map<std::string, int> appLimits;
+	std::map<std::string, int> appGoals;
 
-    struct TimelineEventInternal {
-        double x;
-        double width;
-        std::string appName;
-        std::string duration;
-        std::string timeRange;
-    };
+	std::map<std::string, uint64_t> limitTimeBase;
+	std::map<std::string, uint64_t> goalTimeBase;
 
-    extern AppState state;
-    extern HistoricalData_Singular historicalData_State; //keep name as is because i dont wanna update all files
-    extern HistoricalData_Full historicalData_Full_State;
+	// misc stuff
+	std::map<std::string, std::string> appNamePid;
+	std::map<std::string, std::string> pidAppName;
+};
 
-    extern ConfigManager configManager;
-    extern const std::string APP_VERSION;
+// Intended to hold data for max 1 whole day
+struct HistoricalData_Singular
+{
+	std::map<std::string, uint64_t> timeLog_PerApp;
+	std::map<std::string, uint64_t> timeLog_PerTab;
+	std::map<std::string, uint64_t> timeLog_PerProject;
+	std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> switchHistory;
+	bool isLoaded = false;
+};
 
-    extern AliasManager aliasManager;
-    extern PatternAnalyzer patternAnalyzer;
-    extern ThemeManager themeManager;
+struct HistoricalData_Full
+{
+	std::map<std::string, uint64_t> timeLog_PerApp;
+	std::map<std::string, uint64_t> timeLog_PerTab;
+	std::map<std::string, uint64_t> timeLog_PerProject;
+	std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> switchHistory;
+	bool isLoaded = false;
+};
 
-    extern ExtensionManager* extManager;
-    extern LimitsManager* limitsManager;
+struct TimelineEventInternal
+{
+	double x;
+	double width;
+	std::string appName;
+	std::string duration;
+	std::string timeRange;
+};
 
-    extern std::mutex patternAnalyzerMutex;
+extern AppState state;
+extern HistoricalData_Singular historicalData_State; // keep name as is because i dont wanna update all
+													 // files
+extern HistoricalData_Full historicalData_Full_State;
 
-    extern std::recursive_mutex stateMutex;
-    extern std::mutex historyStateMutex;
-    extern std::mutex historyLoadedMutex;
-    extern std::condition_variable historyLoadedCV;
+extern ConfigManager configManager;
+extern const std::string APP_VERSION;
 
-    extern std::vector<TimelineEventInternal> timelineEvents;
-    extern std::mutex timelineMutex;
+extern AliasManager aliasManager;
+extern PatternAnalyzer patternAnalyzer;
+extern ThemeManager themeManager;
 
-    struct TimelineMarkerInternal {
-        double x;
-        std::string label;
-    };
-    extern std::vector<TimelineMarkerInternal> timelineMarkers;
-}
+extern ExtensionManager *extManager;
+extern LimitsManager *limitsManager;
 
+extern std::mutex patternAnalyzerMutex;
+
+extern std::recursive_mutex stateMutex;
+extern std::mutex historyStateMutex;
+extern std::mutex historyLoadedMutex;
+extern std::condition_variable historyLoadedCV;
+
+extern std::vector<TimelineEventInternal> timelineEvents;
+extern std::mutex timelineMutex;
+
+struct TimelineMarkerInternal
+{
+	double x;
+	std::string label;
+};
+extern std::vector<TimelineMarkerInternal> timelineMarkers;
+} // namespace AppState

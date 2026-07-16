@@ -1,244 +1,267 @@
 #pragma once
 
-#include <variant>
 #include <functional>
 #include <map>
-#include <vector>
 #include <mutex>
 #include <string>
+#include <variant>
+#include <vector>
 
-//Some info for others
-//If you want events which also include a data, use a struct EventName {data}
-//And add the struct in the EventData's std::variant<EvenName>
+// Some info for others
+// If you want events which also include a data, use a struct EventName {data}
+// And add the struct in the EventData's std::variant<EvenName>
 
 // ---------- Data For Specific Events -------------------------
-    struct Empty {};
+struct Empty
+{
+};
 
-    //Give the database a specific date to load data from
-    struct DatabaseDate_Singular{
-        std::string date;
-    };
+// Give the database a specific date to load data from
+struct DatabaseDate_Singular
+{
+	std::string date;
+};
 
-    //give the db certain number of days to load starting from today
-    struct DatabaseDate_Number{
-        int days;
-        std::string mode; // 
-    };
+// give the db certain number of days to load starting from today
+struct DatabaseDate_Number
+{
+	int days;
+	std::string mode; //
+};
 
-    struct DatabaseDate_Range{
-        std::string dateFrom;
-        std::string dateTo;
-        std::string mode;
-     };
+struct DatabaseDate_Range
+{
+	std::string dateFrom;
+	std::string dateTo;
+	std::string mode;
+};
 
-    // Request PatternAnalyzer to load N days of raw per-day data (synchronous)
-    struct PatternDataRequest {
-        int days;
-    };
+// Request PatternAnalyzer to load N days of raw per-day data (synchronous)
+struct PatternDataRequest
+{
+	int days;
+};
 
-    //Data for window change event
-    struct WindowChangedData {
-        std::string fromWindow;
-        std::string toWindow;
-    };
+// Data for window change event
+struct WindowChangedData
+{
+	std::string fromWindow;
+	std::string toWindow;
+};
 
-    //An Error message
-    struct ErrorGui{
-        std::string error;
-    };
+// An Error message
+struct ErrorGui
+{
+	std::string error;
+};
 
-    //Generic value representation to transfer dynamic structures between Lua and C++
-    struct CppValue
-    {
-        enum class Type { Null, String, Double, Bool, Array, Struct };
-        Type type = Type::Null;
-        
-        std::string str_val;
-        double double_val = 0.0;
-        bool bool_val = false;
-        
-        std::vector<CppValue> array_val;
-        std::map<std::string, CppValue> struct_val;
+// Generic value representation to transfer dynamic structures between Lua and
+// C++
+struct CppValue
+{
+	enum class Type
+	{
+		Null,
+		String,
+		Double,
+		Bool,
+		Array,
+		Struct
+	};
+	Type type = Type::Null;
 
-        CppValue() = default;
-        CppValue(Type t) : type(t) {}
-        CppValue(Type t, std::string s) : type(t), str_val(s) {}
-        CppValue(Type t, double d) : type(t), double_val(d) {}
-        CppValue(Type t, bool b) : type(t), bool_val(b) {}
-    };
+	std::string str_val;
+	double double_val = 0.0;
+	bool bool_val = false;
+
+	std::vector<CppValue> array_val;
+	std::map<std::string, CppValue> struct_val;
+
+	CppValue() = default;
+	CppValue(Type t) : type(t) {}
+	CppValue(Type t, std::string s) : type(t), str_val(s) {}
+	CppValue(Type t, double d) : type(t), double_val(d) {}
+	CppValue(Type t, bool b) : type(t), bool_val(b) {}
+};
 
 // ------------    Actual Events -------------------------------
-    enum class Event {
-        LOAD_DATABASE_SINGULAR,
-        LOAD_DATABASE_NUMBER,
-        LOAD_DATABASE_RANGE,
-        HISTORY_LOADED_SINGULAR,
-        HISTORY_LOADED_NUMBER,
-        HISTORY_LOADED_RANGE,
-        LOAD_LIVE_DATA,
-        APP_ERROR, //ERROR was reserved in msvc thats why
-        MIDNIGHT_ROLLOVER,
-        WINDOW_CHANGED,
-        UI_READY,
-        LOAD_PATTERNS_DATA  // Synchronous: DB manager loads per-day data into PatternAnalyzer
-    };
+enum class Event
+{
+	LOAD_DATABASE_SINGULAR,
+	LOAD_DATABASE_NUMBER,
+	LOAD_DATABASE_RANGE,
+	HISTORY_LOADED_SINGULAR,
+	HISTORY_LOADED_NUMBER,
+	HISTORY_LOADED_RANGE,
+	LOAD_LIVE_DATA,
+	APP_ERROR, // ERROR was reserved in msvc thats why
+	MIDNIGHT_ROLLOVER,
+	WINDOW_CHANGED,
+	UI_READY,
+	LOAD_PATTERNS_DATA // Synchronous: DB manager loads per-day data into
+					   // PatternAnalyzer
+};
 
 using EventKey = std::variant<Event, std::string>;
 
-using EventData = std::variant<Empty, DatabaseDate_Singular, DatabaseDate_Number, DatabaseDate_Range, ErrorGui, WindowChangedData, CppValue, PatternDataRequest>;
+using EventData = std::variant<Empty, DatabaseDate_Singular, DatabaseDate_Number, DatabaseDate_Range, ErrorGui,
+							   WindowChangedData, CppValue, PatternDataRequest>;
 
 /** Converts type-safe EventData variant into generic CppValue */
-inline CppValue toCppValue(const EventData& data)
+inline CppValue toCppValue(const EventData &data)
 {
-    CppValue result;
-    std::visit([&](auto&& arg) 
-    {
-        using T = std::decay_t<decltype(arg)>;
-        if constexpr (std::is_same_v<T, Empty>) 
-        {
-            result.type = CppValue::Type::Null;
-        } 
-        else if constexpr (std::is_same_v<T, DatabaseDate_Singular>) 
-        {
-            result.type = CppValue::Type::Struct;
-            result.struct_val["date"] = CppValue(CppValue::Type::String, arg.date);
-        } 
-        else if constexpr (std::is_same_v<T, ErrorGui>) 
-        {
-            result.type = CppValue::Type::Struct;
-            result.struct_val["error"] = CppValue(CppValue::Type::String, arg.error);
-        } 
-        else if constexpr (std::is_same_v<T, CppValue>) 
-        {
-            result = arg;
-        }
-        else if constexpr (std::is_same_v<T, WindowChangedData>) 
-        {
-            result.type = CppValue::Type::Struct;
-            result.struct_val["fromWindow"] = CppValue(CppValue::Type::String, arg.fromWindow);
-            result.struct_val["toWindow"] = CppValue(CppValue::Type::String, arg.toWindow);
-        }
-        else if constexpr (std::is_same_v<T, DatabaseDate_Number>) 
-        {
-            result.type = CppValue::Type::Struct;
-            result.struct_val["days"] = CppValue(CppValue::Type::Double, static_cast<double>(arg.days));
-            result.struct_val["mode"] = CppValue(CppValue::Type::String, arg.mode);
-        }
-        else if constexpr (std::is_same_v<T, DatabaseDate_Range>) 
-        {
-            result.type = CppValue::Type::Struct;
-            result.struct_val["dateFrom"] = CppValue(CppValue::Type::String, arg.dateFrom);
-            result.struct_val["dateTo"] = CppValue(CppValue::Type::String, arg.dateTo);
-            result.struct_val["mode"] = CppValue(CppValue::Type::String, arg.mode);
-        }
-    }, data);
-    return result;
+	CppValue result;
+	std::visit(
+		[&](auto &&arg)
+		{
+			using T = std::decay_t<decltype(arg)>;
+			if constexpr (std::is_same_v<T, Empty>)
+			{
+				result.type = CppValue::Type::Null;
+			}
+			else if constexpr (std::is_same_v<T, DatabaseDate_Singular>)
+			{
+				result.type = CppValue::Type::Struct;
+				result.struct_val["date"] = CppValue(CppValue::Type::String, arg.date);
+			}
+			else if constexpr (std::is_same_v<T, ErrorGui>)
+			{
+				result.type = CppValue::Type::Struct;
+				result.struct_val["error"] = CppValue(CppValue::Type::String, arg.error);
+			}
+			else if constexpr (std::is_same_v<T, CppValue>)
+			{
+				result = arg;
+			}
+			else if constexpr (std::is_same_v<T, WindowChangedData>)
+			{
+				result.type = CppValue::Type::Struct;
+				result.struct_val["fromWindow"] = CppValue(CppValue::Type::String, arg.fromWindow);
+				result.struct_val["toWindow"] = CppValue(CppValue::Type::String, arg.toWindow);
+			}
+			else if constexpr (std::is_same_v<T, DatabaseDate_Number>)
+			{
+				result.type = CppValue::Type::Struct;
+				result.struct_val["days"] = CppValue(CppValue::Type::Double, static_cast<double>(arg.days));
+				result.struct_val["mode"] = CppValue(CppValue::Type::String, arg.mode);
+			}
+			else if constexpr (std::is_same_v<T, DatabaseDate_Range>)
+			{
+				result.type = CppValue::Type::Struct;
+				result.struct_val["dateFrom"] = CppValue(CppValue::Type::String, arg.dateFrom);
+				result.struct_val["dateTo"] = CppValue(CppValue::Type::String, arg.dateTo);
+				result.struct_val["mode"] = CppValue(CppValue::Type::String, arg.mode);
+			}
+		},
+		data);
+	return result;
 }
 
-// Converts generic CppValue back to specific EventData based on target event key
-inline EventData toEventData(const EventKey& key, const CppValue& val)
+// Converts generic CppValue back to specific EventData based on target event
+// key
+inline EventData toEventData(const EventKey &key, const CppValue &val)
 {
-    if (std::holds_alternative<Event>(key))
-    {
-        Event ev = std::get<Event>(key);
-        if (ev == Event::LOAD_DATABASE_SINGULAR)
-        {
-            DatabaseDate_Singular d;
-            if (val.type == CppValue::Type::Struct && val.struct_val.count("date"))
-                d.date = val.struct_val.at("date").str_val;
-            return d;
-        }
-        else if (ev == Event::LOAD_DATABASE_NUMBER)
-        {
-            DatabaseDate_Number d;
-            if (val.type == CppValue::Type::Struct && val.struct_val.count("days"))
-                d.days = static_cast<int>(val.struct_val.at("days").double_val);
-            if (val.type == CppValue::Type::Struct && val.struct_val.count("mode"))
-                d.mode = val.struct_val.at("mode").str_val;
-            return d;
-        }
-        else if (ev == Event::LOAD_DATABASE_RANGE)
-        {
-            DatabaseDate_Range d;
-            if (val.type == CppValue::Type::Struct && val.struct_val.count("dateFrom"))
-                d.dateFrom = val.struct_val.at("dateFrom").str_val;
-            if (val.type == CppValue::Type::Struct && val.struct_val.count("dateTo"))
-                d.dateTo = val.struct_val.at("dateTo").str_val;
-            if (val.type == CppValue::Type::Struct && val.struct_val.count("mode"))
-                d.mode = val.struct_val.at("mode").str_val;
-            return d;
-        }
-        else if (ev == Event::APP_ERROR)
-        {
-            ErrorGui e;
-            if (val.type == CppValue::Type::Struct && val.struct_val.count("error"))
-                e.error = val.struct_val.at("error").str_val;
-            return e;
-        }
-        else if (ev == Event::WINDOW_CHANGED)
-        {
-            WindowChangedData w;
-            if (val.type == CppValue::Type::Struct && val.struct_val.count("fromWindow") && val.struct_val.count("toWindow"))
-            {
-                w.fromWindow = val.struct_val.at("fromWindow").str_val;
-                w.toWindow = val.struct_val.at("toWindow").str_val;
-            }
-            return w;
-        }
-    }
-    return val;
+	if (std::holds_alternative<Event>(key))
+	{
+		Event ev = std::get<Event>(key);
+		if (ev == Event::LOAD_DATABASE_SINGULAR)
+		{
+			DatabaseDate_Singular d;
+			if (val.type == CppValue::Type::Struct && val.struct_val.count("date"))
+				d.date = val.struct_val.at("date").str_val;
+			return d;
+		}
+		else if (ev == Event::LOAD_DATABASE_NUMBER)
+		{
+			DatabaseDate_Number d;
+			if (val.type == CppValue::Type::Struct && val.struct_val.count("days"))
+				d.days = static_cast<int>(val.struct_val.at("days").double_val);
+			if (val.type == CppValue::Type::Struct && val.struct_val.count("mode"))
+				d.mode = val.struct_val.at("mode").str_val;
+			return d;
+		}
+		else if (ev == Event::LOAD_DATABASE_RANGE)
+		{
+			DatabaseDate_Range d;
+			if (val.type == CppValue::Type::Struct && val.struct_val.count("dateFrom"))
+				d.dateFrom = val.struct_val.at("dateFrom").str_val;
+			if (val.type == CppValue::Type::Struct && val.struct_val.count("dateTo"))
+				d.dateTo = val.struct_val.at("dateTo").str_val;
+			if (val.type == CppValue::Type::Struct && val.struct_val.count("mode"))
+				d.mode = val.struct_val.at("mode").str_val;
+			return d;
+		}
+		else if (ev == Event::APP_ERROR)
+		{
+			ErrorGui e;
+			if (val.type == CppValue::Type::Struct && val.struct_val.count("error"))
+				e.error = val.struct_val.at("error").str_val;
+			return e;
+		}
+		else if (ev == Event::WINDOW_CHANGED)
+		{
+			WindowChangedData w;
+			if (val.type == CppValue::Type::Struct && val.struct_val.count("fromWindow") &&
+				val.struct_val.count("toWindow"))
+			{
+				w.fromWindow = val.struct_val.at("fromWindow").str_val;
+				w.toWindow = val.struct_val.at("toWindow").str_val;
+			}
+			return w;
+		}
+	}
+	return val;
 }
 
 class EventHub
 {
-    //Gosh this shit is complex, i still can;t fully wrap my brain around it.
-    public:
+	// Gosh this shit is complex, i still can;t fully wrap my brain around it.
+  public:
+	// Things can connect to this in their own constructer to receive events and
+	// potentially some other data
+	static size_t connect(EventKey event, std::function<void(EventData)> callback)
+	{
+		std::lock_guard<std::mutex> lock(hubMutex);
+		static size_t nextId = 0;
+		size_t id = nextId++;
+		subscribers[event][id] = callback;
+		return id;
+	}
 
-        //Things can connect to this in their own constructer to receive events and 
-        //potentially some other data
-        static size_t connect(EventKey event, std::function<void(EventData)> callback) 
-        {
-            std::lock_guard<std::mutex> lock(hubMutex);
-            static size_t nextId = 0;
-            size_t id = nextId++;
-            subscribers[event][id] = callback;
-            return id;
-        }
+	// Disconnect
+	static void disconnect(EventKey event, size_t id)
+	{
+		std::lock_guard<std::mutex> lock(hubMutex);
+		if (subscribers.count(event))
+		{
+			subscribers[event].erase(id);
+		}
+	}
 
-        //Disconnect
-        static void disconnect(EventKey event, size_t id)
-        {
-            std::lock_guard<std::mutex> lock(hubMutex);
-            if (subscribers.count(event)) 
-            {
-                subscribers[event].erase(id);
-            }
-        }
+	// Things can call specific Event and pass-in specific data so the signal
+	// can be emitted to the listeners
+	static void emit(EventKey event, EventData data = {})
+	{
 
-        //Things can call specific Event and pass-in specific data so the signal can
-        //be emitted to the listeners
-        static void emit(EventKey event, EventData data = {})
-        {
+		std::map<EventKey, std::map<size_t, std::function<void(EventData)>>> subscribersLocal;
 
-            std::map<EventKey, std::map<size_t, std::function<void(EventData)>>> subscribersLocal;
-            
-            {
-                std::lock_guard<std::mutex> lock(hubMutex);
-                subscribersLocal = subscribers;
-            }
-            
-            if (subscribersLocal.count(event)) 
-            {
-                //iterate through the map of IDs and Callbacks
-                for (auto const& [id, callback] : subscribersLocal[event]) 
-                {
-                    callback(data);
-                }
-            }
-        }
+		{
+			std::lock_guard<std::mutex> lock(hubMutex);
+			subscribersLocal = subscribers;
+		}
 
-    private:
-        //Dont take risks
-        static inline std::mutex hubMutex;
-        static inline std::map<EventKey, std::map<size_t, std::function<void(EventData)>>> subscribers;
+		if (subscribersLocal.count(event))
+		{
+			// iterate through the map of IDs and Callbacks
+			for (auto const &[id, callback] : subscribersLocal[event])
+			{
+				callback(data);
+			}
+		}
+	}
+
+  private:
+	// Dont take risks
+	static inline std::mutex hubMutex;
+	static inline std::map<EventKey, std::map<size_t, std::function<void(EventData)>>> subscribers;
 };

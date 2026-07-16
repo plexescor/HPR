@@ -1,25 +1,25 @@
 #pragma once
 
-#include <vector>
 #include <functional>
 #include <string>
+#include <vector>
 
 struct WindowBackend
 {
-    std::string name;
+	std::string name;
 
-    std::function<bool(const std::string& desktopEnvironment)> matchesEnvironment;    
-    std::function<void()> initialize;
-        
-    std::function<std::string()> getCurrentWindow;
-    std::function<std::string()> getCurrentTitle;
-    std::function<std::string()> getCurrentPid;
+	std::function<bool(const std::string &desktopEnvironment)> matchesEnvironment;
+	std::function<void()> initialize;
 
-    bool nativeBackend = true;
+	std::function<std::string()> getCurrentWindow;
+	std::function<std::string()> getCurrentTitle;
+	std::function<std::string()> getCurrentPid;
+
+	bool nativeBackend = true;
 };
 
 extern std::vector<WindowBackend> registeredBackends;
 
-void registerBackend(const WindowBackend& backend);
+void registerBackend(const WindowBackend &backend);
 
-WindowBackend* getBackendByName(const std::string& name);
+WindowBackend *getBackendByName(const std::string &name);

@@ -3,10 +3,10 @@
 
 class Logger
 {
-public:
-    static void log(const std::string message);
+  public:
+	static void log(const std::string message);
 
-private:
-    Logger() = delete;
-    static std::string getLogFilePath();
+  private:
+	Logger() = delete;
+	static std::string getLogFilePath();
 };

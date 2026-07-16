@@ -1,42 +1,43 @@
 #pragma once
+#include <atomic>
 #include <string>
 #include <thread>
-#include <atomic>
 
 #include "windowBackendRegistery.hpp"
 
 class CurrentWindowManager
 {
-public:
-    CurrentWindowManager();
-    ~CurrentWindowManager();
+  public:
+	CurrentWindowManager();
+	~CurrentWindowManager();
 
-    void run();
+	void run();
 
-    void stopTracking();
-    void startTracking();
+	void stopTracking();
+	void startTracking();
 	void detectAndSetBackend();
-    bool isJetbrainsIDE(std::string& windowName);
+	bool isJetbrainsIDE(std::string &windowName);
 
-private:
-    void getCurrentWindow_Loop();
+  private:
+	void getCurrentWindow_Loop();
 
-    std::string getCurrentWindow();
-    std::string getCurrentTitle();
-    std::string getCurrentPid();
+	std::string getCurrentWindow();
+	std::string getCurrentTitle();
+	std::string getCurrentPid();
 
-private:
-    WindowBackend* activeBackend = nullptr;
+  private:
+	WindowBackend *activeBackend = nullptr;
 
-    std::string currentPlatform = "";
-    std::string qdbusCmd = "qdbus6";
-    std::string window = "";
-    std::string previousWindow = "";
+	std::string currentPlatform = "";
+	std::string qdbusCmd = "qdbus6";
+	std::string window = "";
+	std::string previousWindow = "";
 
-    std::string tab = "";
-    std::string project = "";
+	std::string tab = "";
+	std::string project = "";
 
-    std::thread windowPollingThread;
-public:
-    std::atomic<bool> running{true};
+	std::thread windowPollingThread;
+
+  public:
+	std::atomic<bool> running{true};
 };

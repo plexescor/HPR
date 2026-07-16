@@ -1,35 +1,36 @@
 #pragma once
 #include "app-window.h"
 #include "extensionManager.hpp"
-#include <slint.h>
 #include <slint-interpreter.h>
+#include <slint.h>
 class UiEventBridge
 {
-    public:
-       // Compiled UI Constructor
-        UiEventBridge(slint::ComponentHandle<MainWindow>& ui, ExtensionManager* extMgr = nullptr, HPRInterpreter* interpreter = nullptr);
+  public:
+	// Compiled UI Constructor
+	UiEventBridge(slint::ComponentHandle<MainWindow> &ui, ExtensionManager *extMgr = nullptr,
+				  HPRInterpreter *interpreter = nullptr);
 
-        // Interpreted UI Constructor
-        UiEventBridge(slint::ComponentHandle<slint::interpreter::ComponentInstance>& ui,  ExtensionManager* extMgr = nullptr, HPRInterpreter* interpreter = nullptr);
+	// Interpreted UI Constructor
+	UiEventBridge(slint::ComponentHandle<slint::interpreter::ComponentInstance> &ui, ExtensionManager *extMgr = nullptr,
+				  HPRInterpreter *interpreter = nullptr);
 
-        ~UiEventBridge();
+	~UiEventBridge();
 
-    private:
-        void init();
-        void showHistoricalDataSingular();
-        void showHistoricalDataNumber();
-        void showHistoricalDataRange();
-        void showLiveData();
-        void tabViewClicked();
-        void siteViewClicked();
-        void filterViewClicked();
-        void rawViewClicked();
+  private:
+	void init();
+	void showHistoricalDataSingular();
+	void showHistoricalDataNumber();
+	void showHistoricalDataRange();
+	void showLiveData();
+	void tabViewClicked();
+	void siteViewClicked();
+	void filterViewClicked();
+	void rawViewClicked();
 
-
-    private:
-        ExtensionManager* extManager = nullptr;
-        HPRInterpreter* interpreter = nullptr;
-        size_t loadDbSingularId;
-        size_t loadDbNumberId;
-        size_t loadDbRangeId;
+  private:
+	ExtensionManager *extManager = nullptr;
+	HPRInterpreter *interpreter = nullptr;
+	size_t loadDbSingularId;
+	size_t loadDbNumberId;
+	size_t loadDbRangeId;
 };
