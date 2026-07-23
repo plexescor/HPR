@@ -169,6 +169,8 @@ export component MainWindow inherits Window {
 
     //As "LIVE" isnt accurate cz main view can also show historical data
     //so i renamed to it "DATA"
+    in-out property <bool> sidebarPinned: false;
+    property <bool> sidebar-expanded: sidebar-ta.has-hover || root.sidebarPinned;
     property <string> active-view: "DATA";
     property <string> current-view-mode: "Live";
 
@@ -226,7 +228,7 @@ export component MainWindow inherits Window {
                 }
 
                 HorizontalLayout {
-                    padding-left: 18px * Palette.scale;
+                    padding-left: 48px * Palette.scale;
                     padding-right: 18px * Palette.scale;
                     alignment: space-between;
 
@@ -528,7 +530,7 @@ export component MainWindow inherits Window {
             x: 0px;
             y: 0px;
             z: 10;
-            width: self.has-hover ? 54px * Palette.scale : 14px * Palette.scale;
+            width: root.sidebar-expanded ? 54px * Palette.scale : 25px * Palette.scale;
             height: parent.height;
             animate width { duration: 180ms; easing: ease-in-out; }
 
@@ -537,46 +539,26 @@ export component MainWindow inherits Window {
                 width: 100%;
                 height: 100%;
 
-                background: sidebar-ta.has-hover ? Palette.sidebar-bg : transparent;
+                background: root.sidebar-expanded ? Palette.sidebar-bg : transparent;
                 animate background { duration: 240ms; easing: ease-in-out; }
 
                 Rectangle {
                     x: parent.width - 1px * Palette.scale;
                     width: 1px * Palette.scale;
                     height: parent.height;
-                    background: sidebar-ta.has-hover ? Palette.sidebar-border : transparent;
+                    background: root.sidebar-expanded ? Palette.sidebar-border : transparent;
                     animate background { duration: 240ms; easing: ease-in-out; }
                 }
 
-                Rectangle {
-                    visible: !sidebar-ta.has-hover;
-                    x: 0px;
-                    y: (parent.height - self.height) / 2;
-                    width: 14px * Palette.scale;
-                    height: 28px * Palette.scale;
-                    border-radius: 4.5px * Palette.scale;
-                    background: Palette.sidebar-btn-bg;
-                    border-width: 1px * Palette.scale;
-                    border-color: Palette.sidebar-btn-border;
-
-                    Text {
-                        text: "›";
-                        color: Palette.text-muted;
-                        font-size: 16px * Palette.scale;
-                        horizontal-alignment: center;
-                        vertical-alignment: center;
-                        width: 100%;
-                        height: 100%;
-                    }
-                }
-
+                // ── Sidebar Navigation Buttons ────────────────────────────────
                 VerticalLayout {
-                    visible: sidebar-ta.has-hover;
+                    visible: root.sidebar-expanded;
+                    y: 46px * Palette.scale;
                     padding: 2px * Palette.scale;
                     spacing: 8px * Palette.scale;
                     alignment: center;
                     width: 75%;
-                    height: 100%;
+                    height: parent.height - 46px * Palette.scale;
 
                     if !root.allowSidebarCustomization_S || !root.hideSidebarReload_S : SidebarButton {
                         icon: @image-url("./images/reload.svg");
@@ -682,6 +664,48 @@ export component MainWindow inherits Window {
                         tip: "About";
                         clicked => { root.active-view = "ABOUT"; }
                     }
+                }
+            }
+        }
+
+        // ── Hamburger Icon (sibling, topbar-level) ─────────────────────────────
+        Rectangle {
+            visible: !root.sidebar-expanded;
+            x: (48px * Palette.scale - self.width) / 2;
+            y: (46px * Palette.scale - self.height) / 2;
+            z: 11;
+            width: 26px * Palette.scale;
+            height: 22px * Palette.scale;
+            border-radius: 5px * Palette.scale;
+            background: Palette.sidebar-btn-bg;
+            border-width: 1px * Palette.scale;
+            border-color: Palette.sidebar-btn-border;
+
+            VerticalLayout {
+                alignment: center;
+                spacing: 3px * Palette.scale;
+                width: 12px * Palette.scale;
+                height: 10px * Palette.scale;
+                x: (parent.width - self.width) / 2;
+                y: (parent.height - self.height) / 2;
+
+                Rectangle {
+                    width: 12px * Palette.scale;
+                    height: 1.5px * Palette.scale;
+                    border-radius: 1px * Palette.scale;
+                    background: Palette.text-muted;
+                }
+                Rectangle {
+                    width: 12px * Palette.scale;
+                    height: 1.5px * Palette.scale;
+                    border-radius: 1px * Palette.scale;
+                    background: Palette.text-muted;
+                }
+                Rectangle {
+                    width: 12px * Palette.scale;
+                    height: 1.5px * Palette.scale;
+                    border-radius: 1px * Palette.scale;
+                    background: Palette.text-muted;
                 }
             }
         }
