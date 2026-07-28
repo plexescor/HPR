@@ -28,7 +28,7 @@ void NowPlayingManager::init()
 			while (true)
 			{
 				runCycle();
-				std::this_thread::sleep_for(std::chrono::seconds(15));
+				std::this_thread::sleep_for(std::chrono::seconds(90));
 			}
 		})
 		.detach();
