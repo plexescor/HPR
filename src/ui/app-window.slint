@@ -175,6 +175,9 @@ export component MainWindow inherits Window {
     in-out property <bool> trackApps_S: true;
     in-out property <bool> trackBrowser_S: true;
     in-out property <bool> trackProjects_S: true;
+    in-out property <float> dataViewCardHeight_S: 404.0;
+    in-out property <float> projectViewCardHeight_S: 842.0;
+    in-out property <float> tabViewCardHeight_S: 848.0;
     property <bool> sidebar-expanded: sidebar-ta.has-hover || hamburger-ta.has-hover || root.sidebarAlwaysExpanded_S;
     property <bool> sidebar-is-vertical: root.sidebarPosition_S == "left" || root.sidebarPosition_S == "right";
     property <string> active-view: "DATA";
@@ -369,7 +372,9 @@ export component MainWindow inherits Window {
                 trackedTime_S: root.trackedTime_S;
                 timePerApp_S: root.timePerApp_S;
                 switchHistory_S: root.switchHistory_S;
+                topCardHeight_S: root.dataViewCardHeight_S * 1px * Palette.scale;
                 switch-to-live-clicked => { root.loadLiveData(); root.current-view-mode = "Live"; }
+                setConfig(param, val) => { root.setConfig(param, val); }
             }
             
             if active-view == "INSIGHTS" : InsightsView {
@@ -397,16 +402,20 @@ export component MainWindow inherits Window {
                 vertical-stretch: 1;
                 timePerTab_S: root.timePerTab_S;
                 trackedTime_S: root.trackedTime_Tab_S;
+                tabCardHeight_S: root.tabViewCardHeight_S * 1px * Palette.scale;
                 per-tab-clicked => { root.tabViewClicked(); }
                 per-site-clicked => { root.siteViewClicked(); }
+                setConfig(param, val) => { root.setConfig(param, val); }
             }
 
             if active-view == "PROJECT" : ProjectView {
                 vertical-stretch: 1;
                 timePerProject_S: root.timePerProject_S;
                 trackedTime_S: root.trackedTime_Project_S;
+                projectCardHeight_S: root.projectViewCardHeight_S * 1px * Palette.scale;
                 raw-view-clicked => { root.rawViewClicked(); }
                 filter-view-clicked => { root.filterViewClicked(); }
+                setConfig(param, val) => { root.setConfig(param, val); }
             }
             if active-view == "EXTENSIONS" : ExtensionsView {
                 vertical-stretch: 1;

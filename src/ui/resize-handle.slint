@@ -1,0 +1,38 @@
+import { Palette } from "./palette.slint";
+
+export component VerticalResizeHandle inherits Rectangle {
+    height: 8px * Palette.scale;
+    background: ta.has-hover || ta.pressed ? #38bdf825 : transparent;
+    border-radius: 4px * Palette.scale;
+
+    callback drag-moved(length);
+    callback drag-finished;
+    callback double-clicked;
+
+    Rectangle {
+        width: 36px * Palette.scale;
+        height: 3px * Palette.scale;
+        border-radius: 1.5px * Palette.scale;
+        background: ta.has-hover || ta.pressed ? #38bdf8 : Palette.divider;
+        x: (parent.width - self.width) / 2;
+        y: (parent.height - self.height) / 2;
+        animate background { duration: 150ms; }
+    }
+
+    ta := TouchArea {
+        mouse-cursor: row-resize;
+        double-clicked => {
+            root.double-clicked();
+        }
+        moved => {
+            if (self.pressed) {
+                root.drag-moved(self.mouse-y - self.pressed-y);
+            }
+        }
+        pointer-event(evt) => {
+            if (evt.kind == PointerEventKind.up) {
+                root.drag-finished();
+            }
+        }
+    }
+}

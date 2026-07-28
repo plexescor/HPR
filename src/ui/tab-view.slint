@@ -2,6 +2,7 @@ import { Card } from "./card.slint";
 import { SectionHeader } from "./section-header.slint";
 import { TimeLog_Tab } from "./types.slint";
 import { Palette } from "./palette.slint";
+import { VerticalResizeHandle } from "./resize-handle.slint";
 
 component TabRow inherits Rectangle {
     in property <string> tab-title;
@@ -106,7 +107,7 @@ component ViewToggleButton inherits Rectangle {
 
     callback clicked;
 
-    width: 60px * Palette.scale;
+    width: 65px * Palette.scale;
     height: 24px * Palette.scale;
     border-radius: 5px * Palette.scale;
     border-width: 1px * Palette.scale;
@@ -148,14 +149,16 @@ component ViewToggleButton inherits Rectangle {
 export component TabView {
     in property <[TimeLog_Tab]> timePerTab_S;
     in property <int>           trackedTime_S;
+    in-out property <length>    tabCardHeight_S: 848px * Palette.scale;
+
     callback per-tab-clicked;
     callback per-site-clicked;
+    callback setConfig(string, string);
 
     VerticalLayout {
         padding: 12px * Palette.scale;
         padding-top: 0px;
         spacing: 10px * Palette.scale;
-        height: 100%;
 
         HorizontalLayout {
             vertical-stretch: 0;
@@ -199,8 +202,8 @@ export component TabView {
             }
         }
 
-        Card {
-            vertical-stretch: 1;
+        card := Card {
+            height: root.tabCardHeight_S;
 
             Flickable {
                 width: 100%;
@@ -225,6 +228,19 @@ export component TabView {
                         );
                     }
                 }
+            }
+        }
+
+        VerticalResizeHandle {
+            drag-moved(delta) => {
+                root.tabCardHeight_S = Math.max(120px * Palette.scale, Math.min(parent.height - 30px * Palette.scale, root.tabCardHeight_S + delta));
+            }
+            drag-finished => {
+                root.setConfig("tabview-card-height", Math.round(root.tabCardHeight_S / Palette.scale / 1px) + "");
+            }
+            double-clicked => {
+                root.tabCardHeight_S = 848px * Palette.scale;
+                root.setConfig("tabview-card-height", "848");
             }
         }
     }

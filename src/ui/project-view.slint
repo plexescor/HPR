@@ -2,6 +2,7 @@ import { Card } from "./card.slint";
 import { SectionHeader } from "./section-header.slint";
 import { TimeLog_Project } from "./types.slint";
 import { Palette } from "./palette.slint";
+import { VerticalResizeHandle } from "./resize-handle.slint";
 
 component ProjectRow inherits Rectangle {
     in property <string> project-title;
@@ -106,7 +107,7 @@ component ViewToggleButton inherits Rectangle {
 
     callback clicked;
 
-    width: 60px * Palette.scale;
+    width: 65px * Palette.scale;
     height: 24px * Palette.scale;
     border-radius: 5px * Palette.scale;
     border-width: 1px * Palette.scale;
@@ -148,14 +149,16 @@ component ViewToggleButton inherits Rectangle {
 export component ProjectView {
     in property <[TimeLog_Project]> timePerProject_S;
     in property <int>               trackedTime_S;
+    in-out property <length>        projectCardHeight_S: 842px * Palette.scale;
+
     callback raw-view-clicked;
     callback filter-view-clicked;
+    callback setConfig(string, string);
 
     VerticalLayout {
         padding: 12px * Palette.scale;
         padding-top: 0px;
         spacing: 10px * Palette.scale;
-        height: 100%;
 
         HorizontalLayout {
             vertical-stretch: 0;
@@ -199,8 +202,8 @@ export component ProjectView {
             }
         }
 
-        Card {
-            vertical-stretch: 1;
+        card := Card {
+            height: root.projectCardHeight_S;
 
             Flickable {
                 width: 100%;
@@ -225,6 +228,19 @@ export component ProjectView {
                         );
                     }
                 }
+            }
+        }
+
+        VerticalResizeHandle {
+            drag-moved(delta) => {
+                root.projectCardHeight_S = Math.max(120px * Palette.scale, Math.min(parent.height - 30px * Palette.scale, root.projectCardHeight_S + delta));
+            }
+            drag-finished => {
+                root.setConfig("projectview-card-height", Math.round(root.projectCardHeight_S / Palette.scale / 1px) + "");
+            }
+            double-clicked => {
+                root.projectCardHeight_S = 842px * Palette.scale;
+                root.setConfig("projectview-card-height", "842");
             }
         }
     }

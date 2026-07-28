@@ -4,6 +4,7 @@ import { SectionHeader } from "./section-header.slint";
 import { AppRow } from "./app-row.slint";
 import { SwitchRow } from "./switch-row.slint";
 import { TimeLog, SwitchHistory } from "./types.slint";
+import { VerticalResizeHandle } from "./resize-handle.slint";
 
 component ViewToggleButton inherits Rectangle {
     in property <string> label;
@@ -64,8 +65,10 @@ export component DataView {
     in property <int>             trackedTime_S;
     in property <[TimeLog]>       timePerApp_S;
     in property <[SwitchHistory]> switchHistory_S;
+    in-out property <length>      topCardHeight_S: 404px * Palette.scale;
 
     callback switch-to-live-clicked;
+    callback setConfig(string, string);
 
     VerticalLayout {
         padding: 12px * Palette.scale;
@@ -100,8 +103,8 @@ export component DataView {
             }
         }
 
-        Card {
-            vertical-stretch: 1;
+        card := Card {
+            height: root.topCardHeight_S;
             Flickable {
                 width: 100%;
                 height: 100%;
@@ -119,6 +122,19 @@ export component DataView {
                         bar-color: Colors.hsv(mod(entry.name.character-count * 47, 360), 0.75, 0.85);
                     }
                 }
+            }
+        }
+
+        VerticalResizeHandle {
+            drag-moved(delta) => {
+                root.topCardHeight_S = Math.max(100px * Palette.scale, Math.min(parent.height - 80px * Palette.scale, root.topCardHeight_S + delta));
+            }
+            drag-finished => {
+                root.setConfig("dataview-top-card-height", Math.round(root.topCardHeight_S / Palette.scale / 1px) + "");
+            }
+            double-clicked => {
+                root.topCardHeight_S = 404px * Palette.scale;
+                root.setConfig("dataview-top-card-height", "404");
             }
         }
 

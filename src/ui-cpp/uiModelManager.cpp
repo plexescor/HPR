@@ -418,6 +418,12 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
 					AppState::configManager.getConfig<bool>("sidebar-always-expanded", false);
 				std::string sidebarPositionVal =
 					AppState::configManager.getConfig<std::string>("sidebar-position", "left");
+				float dataViewCardHeightVal =
+					AppState::configManager.getConfig<float>("dataview-top-card-height", 404.0f);
+				float projectViewCardHeightVal =
+					AppState::configManager.getConfig<float>("projectview-card-height", 842.0f);
+				float tabViewCardHeightVal = AppState::configManager.getConfig<float>("tabview-card-height", 848.0f);
+
 				bool trackAppsVal;
 				bool trackBrowserVal;
 				bool trackProjectsVal;
@@ -517,6 +523,12 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
 					(*handle)->set_trackBrowser_S(trackBrowserVal);
 				if ((*handle)->get_trackProjects_S() != trackProjectsVal)
 					(*handle)->set_trackProjects_S(trackProjectsVal);
+				if ((*handle)->get_dataViewCardHeight_S() != dataViewCardHeightVal)
+					(*handle)->set_dataViewCardHeight_S(dataViewCardHeightVal);
+				if ((*handle)->get_projectViewCardHeight_S() != projectViewCardHeightVal)
+					(*handle)->set_projectViewCardHeight_S(projectViewCardHeightVal);
+				if ((*handle)->get_tabViewCardHeight_S() != tabViewCardHeightVal)
+					(*handle)->set_tabViewCardHeight_S(tabViewCardHeightVal);
 
 				if ((*handle)->get_nowPlayingTitle_S() != slint::SharedString(nowPlayingTitleVal))
 					(*handle)->set_nowPlayingTitle_S(slint::SharedString(nowPlayingTitleVal));
@@ -1000,6 +1012,12 @@ void UiModelManager::update_Interpreted(
 					AppState::configManager.getConfig<bool>("sidebar-always-expanded", false);
 				std::string sidebarPositionVal =
 					AppState::configManager.getConfig<std::string>("sidebar-position", "left");
+				float dataViewCardHeightVal =
+					AppState::configManager.getConfig<float>("dataview-top-card-height", 404.0f);
+				float projectViewCardHeightVal =
+					AppState::configManager.getConfig<float>("projectview-card-height", 842.0f);
+				float tabViewCardHeightVal = AppState::configManager.getConfig<float>("tabview-card-height", 848.0f);
+
 				bool trackAppsVal;
 				bool trackBrowserVal;
 				bool trackProjectsVal;
@@ -1074,6 +1092,9 @@ void UiModelManager::update_Interpreted(
 				setPropIfChanged("trackApps_S", slint::interpreter::Value(trackAppsVal));
 				setPropIfChanged("trackBrowser_S", slint::interpreter::Value(trackBrowserVal));
 				setPropIfChanged("trackProjects_S", slint::interpreter::Value(trackProjectsVal));
+				setPropIfChanged("dataViewCardHeight_S", slint::interpreter::Value(dataViewCardHeightVal));
+				setPropIfChanged("projectViewCardHeight_S", slint::interpreter::Value(projectViewCardHeightVal));
+				setPropIfChanged("tabViewCardHeight_S", slint::interpreter::Value(tabViewCardHeightVal));
 
 				setPropIfChanged("nowPlayingTitle_S",
 								 slint::interpreter::Value(slint::SharedString(nowPlayingTitleVal)));
