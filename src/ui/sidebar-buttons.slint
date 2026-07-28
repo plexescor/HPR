@@ -1,0 +1,253 @@
+import { SidebarButton } from "./side-bar-button.slint";
+import { Palette } from "./palette.slint";
+
+export component SidebarButtons {
+    in property <bool> is-vertical: true;
+
+    in property <bool> allowSidebarCustomization_S;
+    in property <bool> hideSidebarReload_S;
+    in property <bool> hideSidebarLimits_S;
+    in property <bool> hideSidebarHistory_S;
+    in property <bool> hideSidebarTimeline_S;
+    in property <bool> hideSidebarTab_S;
+    in property <bool> hideSidebarProject_S;
+    in property <bool> hideSidebarInsights_S;
+    in property <bool> hideSidebarLive_S;
+    in property <bool> hideSidebarExtensions_S;
+    in property <bool> hideSidebarKofi_S;
+    in property <bool> hideSidebarFeedback_S;
+    in property <bool> hideSidebarAbout_S;
+    in property <bool> hideSidebarThemes_S;
+    in property <bool> showMiscImagePanel_S;
+
+    callback reloadUi();
+    callback openKofi();
+    callback activeViewChanged(string);
+    callback loadInsights();
+
+    if root.is-vertical : VerticalLayout {
+        width: 38px * Palette.scale;
+        x: (parent.width - self.width) / 2;
+        padding: 2px * Palette.scale;
+        spacing: 8px * Palette.scale;
+        alignment: center;
+
+        if !allowSidebarCustomization_S || !hideSidebarReload_S : SidebarButton {
+            icon: @image-url("./images/reload.svg");
+            icon-light: @image-url("./images/reload-light.svg");
+            tip: "Reload UI";
+            clicked => { root.reloadUi(); }
+        }
+
+        if !allowSidebarCustomization_S || !hideSidebarLimits_S : SidebarButton {
+            icon: @image-url("./images/goals.svg");
+            icon-light: @image-url("./images/goals-light.svg");
+            tip: "Manage per app limits and goals";
+            clicked => { root.activeViewChanged("LIMITS"); }
+        }
+
+        if !allowSidebarCustomization_S || !hideSidebarHistory_S : SidebarButton {
+            icon: @image-url("./images/calendar.svg");
+            icon-light: @image-url("./images/calendar-light.svg");
+            tip: "View historical data";
+            clicked => { root.activeViewChanged("HISTORY_RANGE"); }
+        }
+
+        if !allowSidebarCustomization_S || !hideSidebarTimeline_S : SidebarButton {
+            icon: @image-url("./images/timeline.svg");
+            icon-light: @image-url("./images/timeline-light.svg");
+            tip: "View day timeline";
+            clicked => { root.activeViewChanged("TIMELINE"); }
+        }
+
+        if !allowSidebarCustomization_S || !hideSidebarTab_S : SidebarButton {
+            icon: @image-url("./images/tab.svg");
+            icon-light: @image-url("./images/tab-light.svg");
+            tip: "View usage per tab";
+            clicked => { root.activeViewChanged("TAB"); }
+        }
+
+        if !allowSidebarCustomization_S || !hideSidebarProject_S : SidebarButton {
+            icon: @image-url("./images/project.svg");
+            icon-light: @image-url("./images/project-light.svg");
+            tip: "View usage per project";
+            clicked => { root.activeViewChanged("PROJECT"); }
+        }
+
+        if !allowSidebarCustomization_S || !hideSidebarInsights_S : SidebarButton {
+            icon: @image-url("./images/insights.svg");
+            icon-light: @image-url("./images/insights-light.svg");
+            tip: "View insights";
+            clicked => { root.activeViewChanged("INSIGHTS"); root.loadInsights(); }
+        }
+
+        if !allowSidebarCustomization_S || !hideSidebarLive_S : SidebarButton {
+            icon: @image-url("./images/live.svg");
+            icon-light: @image-url("./images/live-light.svg");
+            tip: "Switch to live view";
+            clicked => { root.activeViewChanged("DATA"); }
+        }
+
+        if !allowSidebarCustomization_S || !hideSidebarExtensions_S : SidebarButton {
+            icon: @image-url("./images/extension.svg");
+            icon-light: @image-url("./images/extension-light.svg");
+            tip: "View loaded extensions";
+            clicked => { root.activeViewChanged("EXTENSIONS"); }
+        }
+
+        if showMiscImagePanel_S : SidebarButton {
+            icon: @image-url("./images/misc-image.svg");
+            icon-light: @image-url("./images/misc-image-light.svg");
+            tip: "Miscellaneous Image Panel";
+            clicked => { root.activeViewChanged("MISC_IMAGE"); }
+        }
+
+        SidebarButton {
+            icon: @image-url("./images/settings.svg");
+            icon-light: @image-url("./images/settings-light.svg");
+            tip: "Settings";
+            clicked => { root.activeViewChanged("SETTINGS"); }
+        }
+
+        if !allowSidebarCustomization_S || !hideSidebarThemes_S : SidebarButton {
+            icon: @image-url("./images/themes.svg");
+            icon-light: @image-url("./images/themes-light.svg");
+            tip: "Themes";
+            clicked => { root.activeViewChanged("THEMES"); }
+        }
+
+        if !allowSidebarCustomization_S || !hideSidebarKofi_S : SidebarButton {
+            icon: @image-url("./images/ko-fi.svg");
+            icon-light: @image-url("./images/ko-fi-light.svg");
+            tip: "Support on Ko-fi";
+            clicked => { root.openKofi(); }
+        }
+
+        if !allowSidebarCustomization_S || !hideSidebarFeedback_S : SidebarButton {
+            icon: @image-url("./images/message.svg");
+            icon-light: @image-url("./images/message-light.svg");
+            tip: "Send Feedback";
+            clicked => { root.activeViewChanged("FEEDBACK"); }
+        }
+
+        if !allowSidebarCustomization_S || !hideSidebarAbout_S : SidebarButton {
+            icon: @image-url("./images/about.svg");
+            icon-light: @image-url("./images/about-light.svg");
+            tip: "About";
+            clicked => { root.activeViewChanged("ABOUT"); }
+        }
+    }
+
+    if !root.is-vertical : HorizontalLayout {
+        height: 38px * Palette.scale;
+        y: (parent.height - self.height) / 2;
+        padding: 2px * Palette.scale;
+        spacing: 8px * Palette.scale;
+        alignment: center;
+
+        if !allowSidebarCustomization_S || !hideSidebarReload_S : SidebarButton {
+            icon: @image-url("./images/reload.svg");
+            icon-light: @image-url("./images/reload-light.svg");
+            tip: "Reload UI";
+            clicked => { root.reloadUi(); }
+        }
+
+        if !allowSidebarCustomization_S || !hideSidebarLimits_S : SidebarButton {
+            icon: @image-url("./images/goals.svg");
+            icon-light: @image-url("./images/goals-light.svg");
+            tip: "Manage per app limits and goals";
+            clicked => { root.activeViewChanged("LIMITS"); }
+        }
+
+        if !allowSidebarCustomization_S || !hideSidebarHistory_S : SidebarButton {
+            icon: @image-url("./images/calendar.svg");
+            icon-light: @image-url("./images/calendar-light.svg");
+            tip: "View historical data";
+            clicked => { root.activeViewChanged("HISTORY_RANGE"); }
+        }
+
+        if !allowSidebarCustomization_S || !hideSidebarTimeline_S : SidebarButton {
+            icon: @image-url("./images/timeline.svg");
+            icon-light: @image-url("./images/timeline-light.svg");
+            tip: "View day timeline";
+            clicked => { root.activeViewChanged("TIMELINE"); }
+        }
+
+        if !allowSidebarCustomization_S || !hideSidebarTab_S : SidebarButton {
+            icon: @image-url("./images/tab.svg");
+            icon-light: @image-url("./images/tab-light.svg");
+            tip: "View usage per tab";
+            clicked => { root.activeViewChanged("TAB"); }
+        }
+
+        if !allowSidebarCustomization_S || !hideSidebarProject_S : SidebarButton {
+            icon: @image-url("./images/project.svg");
+            icon-light: @image-url("./images/project-light.svg");
+            tip: "View usage per project";
+            clicked => { root.activeViewChanged("PROJECT"); }
+        }
+
+        if !allowSidebarCustomization_S || !hideSidebarInsights_S : SidebarButton {
+            icon: @image-url("./images/insights.svg");
+            icon-light: @image-url("./images/insights-light.svg");
+            tip: "View insights";
+            clicked => { root.activeViewChanged("INSIGHTS"); root.loadInsights(); }
+        }
+
+        if !allowSidebarCustomization_S || !hideSidebarLive_S : SidebarButton {
+            icon: @image-url("./images/live.svg");
+            icon-light: @image-url("./images/live-light.svg");
+            tip: "Switch to live view";
+            clicked => { root.activeViewChanged("DATA"); }
+        }
+
+        if !allowSidebarCustomization_S || !hideSidebarExtensions_S : SidebarButton {
+            icon: @image-url("./images/extension.svg");
+            icon-light: @image-url("./images/extension-light.svg");
+            tip: "View loaded extensions";
+            clicked => { root.activeViewChanged("EXTENSIONS"); }
+        }
+
+        if showMiscImagePanel_S : SidebarButton {
+            icon: @image-url("./images/misc-image.svg");
+            icon-light: @image-url("./images/misc-image-light.svg");
+            tip: "Miscellaneous Image Panel";
+            clicked => { root.activeViewChanged("MISC_IMAGE"); }
+        }
+
+        SidebarButton {
+            icon: @image-url("./images/settings.svg");
+            icon-light: @image-url("./images/settings-light.svg");
+            tip: "Settings";
+            clicked => { root.activeViewChanged("SETTINGS"); }
+        }
+
+        if !allowSidebarCustomization_S || !hideSidebarThemes_S : SidebarButton {
+            icon: @image-url("./images/themes.svg");
+            icon-light: @image-url("./images/themes-light.svg");
+            tip: "Themes";
+            clicked => { root.activeViewChanged("THEMES"); }
+        }
+
+        if !allowSidebarCustomization_S || !hideSidebarKofi_S : SidebarButton {
+            icon: @image-url("./images/ko-fi.svg");
+            icon-light: @image-url("./images/ko-fi-light.svg");
+            tip: "Support on Ko-fi";
+            clicked => { root.openKofi(); }
+        }
+
+        if !allowSidebarCustomization_S || !hideSidebarFeedback_S : SidebarButton {
+            icon: @image-url("./images/message.svg");
+            icon-light: @image-url("./images/message-light.svg");
+            tip: "Send Feedback";
+            clicked => { root.activeViewChanged("FEEDBACK"); }
+        }
+
+        if !allowSidebarCustomization_S || !hideSidebarAbout_S : SidebarButton {
+            icon: @image-url("./images/about.svg");
+            icon-light: @image-url("./images/about-light.svg");
+            tip: "About";
+            clicked => { root.activeViewChanged("ABOUT"); }
+        }
+    }
+}

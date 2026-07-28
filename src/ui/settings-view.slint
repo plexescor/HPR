@@ -113,6 +113,8 @@ export component SettingsView {
     in property <bool> hideSidebarAbout_S;
     in property <bool> hideSidebarThemes_S;
     in property <bool> useInterpreter_S;
+    in property <bool> sidebarAlwaysExpanded_S;
+    in property <string> sidebarPosition_S;  // "left" | "right" | "top" | "bottom"
 
     Flickable {
         viewport-height: settingsContent.preferred-height;
@@ -290,6 +292,70 @@ export component SettingsView {
                         description: "Enable this to hide specific sidebar buttons you don't use";
                         checked: root.allowSidebarCustomization_S;
                         toggled(v) => { root.setConfig("allow-sidebar-customization", v ? "true" : "false"); }
+                    }
+
+                    Divider {}
+
+                    ToggleSetting {
+                        label: "Keep Sidebar Always Expanded";
+                        description: "Sidebar stays open permanently instead of collapsing when cursor moves away";
+                        checked: root.sidebarAlwaysExpanded_S;
+                        toggled(v) => { root.setConfig("sidebar-always-expanded", v ? "true" : "false"); }
+                    }
+
+                    Divider {}
+
+                    HorizontalLayout {
+                        alignment: space-between;
+                        spacing: 12px * Palette.scale;
+
+                        VerticalLayout {
+                            alignment: center;
+                            spacing: 4px * Palette.scale;
+                            Text {
+                                text: "Sidebar Position";
+                                font-size: 13px * Palette.scale;
+                                font-weight: 600;
+                                color: Palette.text-primary;
+                            }
+                            Text {
+                                text: "Choose which edge the sidebar appears on";
+                                font-size: 11px * Palette.scale;
+                                color: Palette.text-secondary;
+                            }
+                        }
+
+                        HorizontalLayout {
+                            alignment: end;
+                            spacing: 6px * Palette.scale;
+                            width: 240px * Palette.scale;
+                            y: (parent.height - self.height) / 2;
+
+                            ThemeOptionButton {
+                                label: "LEFT";
+                                active: sidebarPosition_S == "left" || sidebarPosition_S == "";
+                                width: 52px * Palette.scale;
+                                clicked => { root.setConfig("sidebar-position", "left"); }
+                            }
+                            ThemeOptionButton {
+                                label: "RIGHT";
+                                active: sidebarPosition_S == "right";
+                                width: 52px * Palette.scale;
+                                clicked => { root.setConfig("sidebar-position", "right"); }
+                            }
+                            ThemeOptionButton {
+                                label: "TOP";
+                                active: sidebarPosition_S == "top";
+                                width: 52px * Palette.scale;
+                                clicked => { root.setConfig("sidebar-position", "top"); }
+                            }
+                            ThemeOptionButton {
+                                label: "BOTTOM";
+                                active: sidebarPosition_S == "bottom";
+                                width: 64px * Palette.scale;
+                                clicked => { root.setConfig("sidebar-position", "bottom"); }
+                            }
+                        }
                     }
 
                     if root.allowSidebarCustomization_S : VerticalLayout {

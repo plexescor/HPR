@@ -409,6 +409,10 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
 				bool hideSidebarFeedbackVal = AppState::configManager.getConfig<bool>("hide-sidebar-feedback", false);
 				bool hideSidebarAboutVal = AppState::configManager.getConfig<bool>("hide-sidebar-about", false);
 				bool hideSidebarThemesVal = AppState::configManager.getConfig<bool>("hide-sidebar-themes", false);
+				bool sidebarAlwaysExpandedVal =
+					AppState::configManager.getConfig<bool>("sidebar-always-expanded", false);
+				std::string sidebarPositionVal =
+					AppState::configManager.getConfig<std::string>("sidebar-position", "left");
 
 				std::string nowPlayingTitleVal;
 				std::string nowPlayingUrlVal;
@@ -489,6 +493,10 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
 					(*handle)->set_hideSidebarAbout_S(hideSidebarAboutVal);
 				if ((*handle)->get_hideSidebarThemes_S() != hideSidebarThemesVal)
 					(*handle)->set_hideSidebarThemes_S(hideSidebarThemesVal);
+				if ((*handle)->get_sidebarAlwaysExpanded_S() != sidebarAlwaysExpandedVal)
+					(*handle)->set_sidebarAlwaysExpanded_S(sidebarAlwaysExpandedVal);
+				if ((*handle)->get_sidebarPosition_S() != slint::SharedString(sidebarPositionVal))
+					(*handle)->set_sidebarPosition_S(slint::SharedString(sidebarPositionVal));
 
 				if ((*handle)->get_nowPlayingTitle_S() != slint::SharedString(nowPlayingTitleVal))
 					(*handle)->set_nowPlayingTitle_S(slint::SharedString(nowPlayingTitleVal));
@@ -963,6 +971,10 @@ void UiModelManager::update_Interpreted(
 				bool hideSidebarFeedbackVal = AppState::configManager.getConfig<bool>("hide-sidebar-feedback", false);
 				bool hideSidebarAboutVal = AppState::configManager.getConfig<bool>("hide-sidebar-about", false);
 				bool hideSidebarThemesVal = AppState::configManager.getConfig<bool>("hide-sidebar-themes", false);
+				bool sidebarAlwaysExpandedVal =
+					AppState::configManager.getConfig<bool>("sidebar-always-expanded", false);
+				std::string sidebarPositionVal =
+					AppState::configManager.getConfig<std::string>("sidebar-position", "left");
 
 				std::string nowPlayingTitleVal;
 				std::string nowPlayingUrlVal;
@@ -1022,6 +1034,9 @@ void UiModelManager::update_Interpreted(
 				setPropIfChanged("hideSidebarFeedback_S", slint::interpreter::Value(hideSidebarFeedbackVal));
 				setPropIfChanged("hideSidebarAbout_S", slint::interpreter::Value(hideSidebarAboutVal));
 				setPropIfChanged("hideSidebarThemes_S", slint::interpreter::Value(hideSidebarThemesVal));
+				setPropIfChanged("sidebarAlwaysExpanded_S", slint::interpreter::Value(sidebarAlwaysExpandedVal));
+				setPropIfChanged("sidebarPosition_S",
+								 slint::interpreter::Value(slint::SharedString(sidebarPositionVal)));
 
 				setPropIfChanged("nowPlayingTitle_S",
 								 slint::interpreter::Value(slint::SharedString(nowPlayingTitleVal)));

@@ -217,6 +217,32 @@ export component HistoryRangeView {
 
         Card {
             vertical-stretch: 1;
+
+            VerticalLayout {
+                padding: 16px * Palette.scale;
+                spacing: 16px * Palette.scale;
+                vertical-stretch: 1;
+
+                // ── Info Callout Notice ──────────────────────────
+                Rectangle {
+                    border-radius: 6px * Palette.scale;
+                    background: #ffffff08;
+                    border-width: 1px * Palette.scale;
+                    border-color: #ffffff18;
+
+                    HorizontalLayout {
+                        padding: 10px * Palette.scale;
+                        spacing: 8px * Palette.scale;
+
+                        Text {
+                            text: "Selecting a date range loads past usage onto the main dashboard. Your activity is still tracked live in the background. Check the top bar next to HPR for the 'Historical' status badge. To return to live stats, use the 'Switch to Live View' button on the main dashboard.";
+                            color: #ffffff;
+                            font-size: 11px * Palette.scale;
+                            font-weight: 500;
+                            wrap: word-wrap;
+                        }
+                    }
+                }
             
             if root.active-tab == "singular" : VerticalLayout {
                 padding: 16px * Palette.scale;
@@ -443,6 +469,7 @@ export component HistoryRangeView {
                             root.load-historical-data-range(root.start-date, root.end-date, root.selected-mode);
                         }
                     }
+                }
                 }
             }
         }

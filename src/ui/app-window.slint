@@ -16,6 +16,7 @@ import { Card } from "./card.slint";
 import { FeedbackView } from "./feedback-view.slint";
 import { ThemesView } from "./themes-view.slint";
 import { MiscImageView } from "./misc-image-view.slint";
+import { SidebarButtons } from "./sidebar-buttons.slint";
 
 
 
@@ -169,8 +170,10 @@ export component MainWindow inherits Window {
 
     //As "LIVE" isnt accurate cz main view can also show historical data
     //so i renamed to it "DATA"
-    in-out property <bool> sidebarPinned: false;
-    property <bool> sidebar-expanded: sidebar-ta.has-hover || root.sidebarPinned;
+    in-out property <bool> sidebarAlwaysExpanded_S: false;
+    in property <string> sidebarPosition_S;  // "left" | "right" | "top" | "bottom"
+    property <bool> sidebar-expanded: sidebar-ta.has-hover || hamburger-ta.has-hover || root.sidebarAlwaysExpanded_S;
+    property <bool> sidebar-is-vertical: root.sidebarPosition_S == "left" || root.sidebarPosition_S == "right";
     property <string> active-view: "DATA";
     property <string> current-view-mode: "Live";
 
@@ -208,12 +211,19 @@ export component MainWindow inherits Window {
 
         // ── Main content ──────────────────────────────────────────────────
         VerticalLayout {
-            x: 0px;
-            y: 0px;
-            width: parent.width;
-            height: parent.height;
+            x: (root.sidebarAlwaysExpanded_S && root.sidebarPosition_S == "left") ? 56px * Palette.scale : 0px;
+            y: (root.sidebarAlwaysExpanded_S && root.sidebarPosition_S == "top") ? 56px * Palette.scale : 0px;
+            width: (root.sidebarAlwaysExpanded_S && root.sidebar-is-vertical)
+                     ? (parent.width - 56px * Palette.scale) : parent.width;
+            height: (root.sidebarAlwaysExpanded_S && !root.sidebar-is-vertical)
+                     ? (parent.height - 56px * Palette.scale) : parent.height;
             padding: 0px;
             spacing: 0px;
+
+            animate x { duration: 180ms; easing: ease-in-out; }
+            animate y { duration: 180ms; easing: ease-in-out; }
+            animate width { duration: 180ms; easing: ease-in-out; }
+            animate height { duration: 180ms; easing: ease-in-out; }
 
             // ── Topbar ───────────────────────────────────────────────────
             topbar := Rectangle {
@@ -228,9 +238,11 @@ export component MainWindow inherits Window {
                 }
 
                 HorizontalLayout {
-                    padding-left: 48px * Palette.scale;
-                    padding-right: 18px * Palette.scale;
+                    padding-left: (!root.sidebarAlwaysExpanded_S && root.sidebarPosition_S == "left") ? 56px * Palette.scale : 18px * Palette.scale;
+                    padding-right: (!root.sidebarAlwaysExpanded_S && root.sidebarPosition_S == "right") ? 56px * Palette.scale : 18px * Palette.scale;
                     alignment: space-between;
+                    animate padding-left { duration: 180ms; easing: ease-in-out; }
+                    animate padding-right { duration: 180ms; easing: ease-in-out; }
 
                     HorizontalLayout {
                         spacing: 10px * Palette.scale;
@@ -495,6 +507,8 @@ export component MainWindow inherits Window {
                 hideSidebarAbout_S: root.hideSidebarAbout_S;
                 hideSidebarThemes_S: root.hideSidebarThemes_S;
                 showMiscImagePanel_S: root.showMiscImagePanel_S;
+                sidebarAlwaysExpanded_S: root.sidebarAlwaysExpanded_S;
+                sidebarPosition_S: root.sidebarPosition_S;
             }
             if active-view == "FEEDBACK" : FeedbackView {
                 vertical-stretch: 1;
@@ -512,10 +526,10 @@ export component MainWindow inherits Window {
         // Outside the VerticalLayout so the layout engine cannot override its
         // width. 85% wide × 12px tall, pinned to top-left of the root Rectangle.
         drag-ta := TouchArea {
-            x: 0px;
+            x: root.sidebarAlwaysExpanded_S && root.sidebarPosition_S == "left" ? 56px * Palette.scale : 0px;
             y: 0px;
             z: 5;
-            width: root.no-title-bar-enabled ? root.width * 0.87 : 0px;
+            width: root.no-title-bar-enabled ? (root.width - (root.sidebarAlwaysExpanded_S && root.sidebar-is-vertical ? 56px * Palette.scale : 0px)) * 0.87 : 0px;
             height: root.no-title-bar-enabled ? 25.2px * Palette.scale : 0px;
             enabled: root.no-title-bar-enabled;
             pointer-event(event) => {
@@ -525,161 +539,92 @@ export component MainWindow inherits Window {
             }
         }
 
-        // ── Floating Sidebar ──────────────────────────────────────────────
+        // ── Floating Sidebar ─────────────────────────────────────────────
         sidebar-ta := TouchArea {
-            x: 0px;
-            y: 0px;
+            x: root.sidebarPosition_S == "right" ? (parent.width - self.width) : 0px;
+            y: root.sidebarPosition_S == "bottom" ? (parent.height - self.height) : 0px;
             z: 10;
-            width: root.sidebar-expanded ? 54px * Palette.scale : 25px * Palette.scale;
-            height: parent.height;
+            width: root.sidebar-is-vertical
+                     ? (root.sidebar-expanded ? 56px * Palette.scale : 25px * Palette.scale)
+                     : parent.width;
+            height: root.sidebar-is-vertical
+                     ? parent.height
+                     : (root.sidebar-expanded ? 56px * Palette.scale : 25px * Palette.scale);
             animate width { duration: 180ms; easing: ease-in-out; }
+            animate height { duration: 180ms; easing: ease-in-out; }
 
             Rectangle {
                 x: 0px;
                 width: 100%;
                 height: 100%;
-
                 background: root.sidebar-expanded ? Palette.sidebar-bg : transparent;
                 animate background { duration: 240ms; easing: ease-in-out; }
 
+                // border on the inner edge
                 Rectangle {
-                    x: parent.width - 1px * Palette.scale;
-                    width: 1px * Palette.scale;
-                    height: parent.height;
+                    x: root.sidebarPosition_S == "right" ? 0px
+                         : (root.sidebarPosition_S == "left" ? parent.width - 1px * Palette.scale : 0px);
+                    y: root.sidebarPosition_S == "bottom" ? 0px
+                         : (root.sidebarPosition_S == "top" ? parent.height - 1px * Palette.scale : 0px);
+                    width: root.sidebar-is-vertical ? 1px * Palette.scale : parent.width;
+                    height: root.sidebar-is-vertical ? parent.height : 1px * Palette.scale;
                     background: root.sidebar-expanded ? Palette.sidebar-border : transparent;
                     animate background { duration: 240ms; easing: ease-in-out; }
                 }
 
-                // ── Sidebar Navigation Buttons ────────────────────────────────
-                VerticalLayout {
-                    visible: root.sidebar-expanded;
-                    y: 46px * Palette.scale;
-                    padding: 2px * Palette.scale;
-                    spacing: 8px * Palette.scale;
-                    alignment: center;
-                    width: 75%;
-                    height: parent.height - 46px * Palette.scale;
+                if root.sidebar-expanded : SidebarButtons {
+                    is-vertical: root.sidebar-is-vertical;
+                    x: 0px;
+                    y: root.sidebar-is-vertical ? 46px * Palette.scale : 0px;
+                    width: parent.width;
+                    height: root.sidebar-is-vertical ? (parent.height - 46px * Palette.scale) : parent.height;
 
-                    if !root.allowSidebarCustomization_S || !root.hideSidebarReload_S : SidebarButton {
-                        icon: @image-url("./images/reload.svg");
-                        icon-light: @image-url("./images/reload-light.svg");
-                        tip: "Reload UI";
-                        clicked => { root.reloadUi(); }
-                    }
-
-                    if !root.allowSidebarCustomization_S || !root.hideSidebarLimits_S : SidebarButton {
-                        icon: @image-url("./images/goals.svg");
-                        icon-light: @image-url("./images/goals-light.svg");
-                        tip: "Manage per app limits and goals";
-                        clicked => { root.active-view = "LIMITS"; }
-                    }
-
-                    if !root.allowSidebarCustomization_S || !root.hideSidebarHistory_S : SidebarButton {
-                        icon: @image-url("./images/calendar.svg");
-                        icon-light: @image-url("./images/calendar-light.svg");
-                        tip: "View historical data";
-                        clicked => { root.active-view = "HISTORY_RANGE"; }
-                    }
-
-                    if !root.allowSidebarCustomization_S || !root.hideSidebarTimeline_S : SidebarButton {
-                        icon: @image-url("./images/timeline.svg");
-                        icon-light: @image-url("./images/timeline-light.svg");
-                        tip: "View day timeline";
-                        clicked => { root.active-view = "TIMELINE"; }
-                    }
-
-                    if !root.allowSidebarCustomization_S || !root.hideSidebarTab_S : SidebarButton {
-                        icon: @image-url("./images/tab.svg");
-                        icon-light: @image-url("./images/tab-light.svg");
-                        tip: "View usage per tab";
-                        clicked => { root.active-view = "TAB"; }
-                    }
-
-                    if !root.allowSidebarCustomization_S || !root.hideSidebarProject_S : SidebarButton {
-                        icon: @image-url("./images/project.svg");
-                        icon-light: @image-url("./images/project-light.svg");
-                        tip: "View usage per project";
-                        clicked => { root.active-view = "PROJECT"; }
-                    }
-
-                    if !root.allowSidebarCustomization_S || !root.hideSidebarInsights_S : SidebarButton {
-                        icon: @image-url("./images/insights.svg");
-                        icon-light: @image-url("./images/insights-light.svg");
-                        tip: "View insights";
-                        clicked => { root.active-view = "INSIGHTS"; root.loadInsights(); }
-                    }
-
-                    if !root.allowSidebarCustomization_S || !root.hideSidebarLive_S : SidebarButton {
-                        icon: @image-url("./images/live.svg");
-                        icon-light: @image-url("./images/live-light.svg");
-                        tip: "Switch to live view";
-                        clicked => { root.active-view = "DATA" }
-                    }
-
-                    if !root.allowSidebarCustomization_S || !root.hideSidebarExtensions_S : SidebarButton {
-                        icon: @image-url("./images/extension.svg");
-                        icon-light: @image-url("./images/extension-light.svg");
-                        tip: "View loaded extensions";
-                        clicked => { root.active-view = "EXTENSIONS"; }
-                    }
-
-                    if root.showMiscImagePanel_S : SidebarButton {
-                        icon: @image-url("./images/misc-image.svg");
-                        icon-light: @image-url("./images/misc-image-light.svg");
-                        tip: "Miscellaneous Image Panel";
-                        clicked => { root.active-view = "MISC_IMAGE"; }
-                    }
-
-                    SidebarButton {
-                        icon: @image-url("./images/settings.svg");
-                        icon-light: @image-url("./images/settings-light.svg");
-                        tip: "Settings";
-                        clicked => { root.active-view = "SETTINGS"; }
-                    }
-
-                    if !root.allowSidebarCustomization_S || !root.hideSidebarThemes_S : SidebarButton {
-                        icon: @image-url("./images/themes.svg");
-                        icon-light: @image-url("./images/themes-light.svg");
-                        tip: "Themes";
-                        clicked => { root.active-view = "THEMES"; }
-                    }
-
-                    if !root.allowSidebarCustomization_S || !root.hideSidebarKofi_S : SidebarButton {
-                        icon: @image-url("./images/ko-fi.svg");
-                        icon-light: @image-url("./images/ko-fi-light.svg");
-                        tip: "Support on Ko-fi";
-                        clicked => { root.openKofi(); }
-                    }
-
-                    if !root.allowSidebarCustomization_S || !root.hideSidebarFeedback_S : SidebarButton {
-                        icon: @image-url("./images/message.svg");
-                        icon-light: @image-url("./images/message-light.svg");
-                        tip: "Send Feedback";
-                        clicked => { root.active-view = "FEEDBACK"; }
-                    }
-
-                    if !root.allowSidebarCustomization_S || !root.hideSidebarAbout_S : SidebarButton {
-                        icon: @image-url("./images/about.svg");
-                        icon-light: @image-url("./images/about-light.svg");
-                        tip: "About";
-                        clicked => { root.active-view = "ABOUT"; }
-                    }
+                    allowSidebarCustomization_S: root.allowSidebarCustomization_S;
+                    hideSidebarReload_S: root.hideSidebarReload_S;
+                    hideSidebarLimits_S: root.hideSidebarLimits_S;
+                    hideSidebarHistory_S: root.hideSidebarHistory_S;
+                    hideSidebarTimeline_S: root.hideSidebarTimeline_S;
+                    hideSidebarTab_S: root.hideSidebarTab_S;
+                    hideSidebarProject_S: root.hideSidebarProject_S;
+                    hideSidebarInsights_S: root.hideSidebarInsights_S;
+                    hideSidebarLive_S: root.hideSidebarLive_S;
+                    hideSidebarExtensions_S: root.hideSidebarExtensions_S;
+                    hideSidebarKofi_S: root.hideSidebarKofi_S;
+                    hideSidebarFeedback_S: root.hideSidebarFeedback_S;
+                    hideSidebarAbout_S: root.hideSidebarAbout_S;
+                    hideSidebarThemes_S: root.hideSidebarThemes_S;
+                    showMiscImagePanel_S: root.showMiscImagePanel_S;
+                    reloadUi => { root.reloadUi(); }
+                    openKofi => { root.openKofi(); }
+                    activeViewChanged(v) => { root.active-view = v; }
+                    loadInsights => { root.loadInsights(); }
                 }
             }
         }
 
-        // ── Hamburger Icon (sibling, topbar-level) ─────────────────────────────
+        // ── Hamburger Icon (sibling, position-aware) ─────────────────────────
         Rectangle {
-            visible: !root.sidebar-expanded;
-            x: (48px * Palette.scale - self.width) / 2;
-            y: (46px * Palette.scale - self.height) / 2;
+            // x: center within the hover strip on the correct edge
+            x: root.sidebarPosition_S == "right"
+                 ? (parent.width - 56px * Palette.scale + (56px * Palette.scale - self.width) / 2)
+                 : (root.sidebarAlwaysExpanded_S ? 56px : 56px) * Palette.scale / 2 - self.width / 2;
+            // y: center vertically in topbar, or bottom strip
+            y: root.sidebarPosition_S == "bottom"
+                 ? (parent.height - 46px * Palette.scale + (46px * Palette.scale - self.height) / 2)
+                 : (46px * Palette.scale - self.height) / 2;
             z: 11;
             width: 26px * Palette.scale;
             height: 22px * Palette.scale;
             border-radius: 5px * Palette.scale;
-            background: Palette.sidebar-btn-bg;
+            background: root.sidebar-expanded ? Palette.sidebar-btn-bg : transparent;
             border-width: 1px * Palette.scale;
-            border-color: Palette.sidebar-btn-border;
+            border-color: root.sidebar-expanded ? Palette.sidebar-btn-border : transparent;
+            animate x { duration: 180ms; easing: ease-in-out; }
+            animate y { duration: 180ms; easing: ease-in-out; }
+            animate background { duration: 180ms; easing: ease-in-out; }
+            animate border-color { duration: 180ms; easing: ease-in-out; }
+
+            hamburger-ta := TouchArea {}
 
             VerticalLayout {
                 alignment: center;
@@ -693,19 +638,22 @@ export component MainWindow inherits Window {
                     width: 12px * Palette.scale;
                     height: 1.5px * Palette.scale;
                     border-radius: 1px * Palette.scale;
-                    background: Palette.text-muted;
+                    background: root.sidebar-expanded ? Palette.text-primary : Palette.text-secondary;
+                    animate background { duration: 180ms; easing: ease-in-out; }
                 }
                 Rectangle {
                     width: 12px * Palette.scale;
                     height: 1.5px * Palette.scale;
                     border-radius: 1px * Palette.scale;
-                    background: Palette.text-muted;
+                    background: root.sidebar-expanded ? Palette.text-primary : Palette.text-secondary;
+                    animate background { duration: 180ms; easing: ease-in-out; }
                 }
                 Rectangle {
                     width: 12px * Palette.scale;
                     height: 1.5px * Palette.scale;
                     border-radius: 1px * Palette.scale;
-                    background: Palette.text-muted;
+                    background: root.sidebar-expanded ? Palette.text-primary : Palette.text-secondary;
+                    animate background { duration: 180ms; easing: ease-in-out; }
                 }
             }
         }
