@@ -115,6 +115,11 @@ export component SettingsView {
     in property <bool> useInterpreter_S;
     in property <bool> sidebarAlwaysExpanded_S;
     in property <string> sidebarPosition_S;  // "left" | "right" | "top" | "bottom"
+    in property <bool> trackApps_S: true;
+    in property <bool> trackBrowser_S: true;
+    in property <bool> trackProjects_S: true;
+
+    property <string> selected-category: "ALL";
 
     Flickable {
         viewport-height: settingsContent.preferred-height;
@@ -133,8 +138,56 @@ export component SettingsView {
                 SectionHeader { label: "SETTINGS"; }
             }
 
+            // ── CATEGORY FILTER ──────────────────────────────────────────
+            HorizontalLayout {
+                spacing: 8px * Palette.scale;
+                alignment: start;
+
+                ThemeOptionButton {
+                    label: "ALL";
+                    active: root.selected-category == "ALL";
+                    width: 60px * Palette.scale;
+                    clicked => { root.selected-category = "ALL"; }
+                }
+
+                ThemeOptionButton {
+                    label: "APPEARANCE";
+                    active: root.selected-category == "APPEARANCE";
+                    width: 115px * Palette.scale;
+                    clicked => { root.selected-category = "APPEARANCE"; }
+                }
+
+                ThemeOptionButton {
+                    label: "SIDEBAR";
+                    active: root.selected-category == "SIDEBAR";
+                    width: 85px * Palette.scale;
+                    clicked => { root.selected-category = "SIDEBAR"; }
+                }
+
+                ThemeOptionButton {
+                    label: "SYSTEM";
+                    active: root.selected-category == "SYSTEM";
+                    width: 85px * Palette.scale;
+                    clicked => { root.selected-category = "SYSTEM"; }
+                }
+
+                ThemeOptionButton {
+                    label: "TRACKING";
+                    active: root.selected-category == "TRACKING";
+                    width: 95px * Palette.scale;
+                    clicked => { root.selected-category = "TRACKING"; }
+                }
+
+                ThemeOptionButton {
+                    label: "EXTENSIONS";
+                    active: root.selected-category == "EXTENSIONS";
+                    width: 110px * Palette.scale;
+                    clicked => { root.selected-category = "EXTENSIONS"; }
+                }
+            }
+
             // ── APPEARANCE ────────────────────────────────────────────────
-            Card {
+            if root.selected-category == "ALL" || root.selected-category == "APPEARANCE" : Card {
                 VerticalLayout {
                     padding: 24px * Palette.scale;
                     spacing: 16px * Palette.scale;
@@ -262,7 +315,6 @@ export component SettingsView {
                             alignment: space-between;
                             Text {
                                 text: "Window Corner Roundness";
-                                
                                 font-size: 13px * Palette.scale;
                                 font-weight: 600;
                                 color: Palette.text-primary;
@@ -284,17 +336,22 @@ export component SettingsView {
                             }
                         }
                     }
+                }
+            }
 
-                    Divider {}
+            // ── SIDEBAR CUSTOMIZATION ─────────────────────────────────────
+            if root.selected-category == "ALL" || root.selected-category == "SIDEBAR" : Card {
+                VerticalLayout {
+                    padding: 24px * Palette.scale;
+                    spacing: 16px * Palette.scale;
 
-                    ToggleSetting {
-                        label: "Customize Sidebar Buttons";
-                        description: "Enable this to hide specific sidebar buttons you don't use";
-                        checked: root.allowSidebarCustomization_S;
-                        toggled(v) => { root.setConfig("allow-sidebar-customization", v ? "true" : "false"); }
+                    Text {
+                        text: "SIDEBAR CUSTOMIZATION";
+                        font-size: 8px * Palette.scale;
+                        font-weight: 700;
+                        letter-spacing: 2.5px * Palette.scale;
+                        color: Palette.text-muted;
                     }
-
-                    Divider {}
 
                     ToggleSetting {
                         label: "Keep Sidebar Always Expanded";
@@ -356,6 +413,15 @@ export component SettingsView {
                                 clicked => { root.setConfig("sidebar-position", "bottom"); }
                             }
                         }
+                    }
+
+                    Divider {}
+
+                    ToggleSetting {
+                        label: "Customize Sidebar Buttons";
+                        description: "Enable this to hide specific sidebar buttons you don't use";
+                        checked: root.allowSidebarCustomization_S;
+                        toggled(v) => { root.setConfig("allow-sidebar-customization", v ? "true" : "false"); }
                     }
 
                     if root.allowSidebarCustomization_S : VerticalLayout {
@@ -482,7 +548,7 @@ export component SettingsView {
             }
 
             // ── SYSTEM BEHAVIOR ───────────────────────────────────────────
-            Card {
+            if root.selected-category == "ALL" || root.selected-category == "SYSTEM" : Card {
                 VerticalLayout {
                     padding: 24px * Palette.scale;
                     spacing: 16px * Palette.scale;
@@ -524,7 +590,7 @@ export component SettingsView {
             }
 
             // ── TRACKING ─────────────────────────────────────────────────
-            Card {
+            if root.selected-category == "ALL" || root.selected-category == "TRACKING" : Card {
                 VerticalLayout {
                     padding: 24px * Palette.scale;
                     spacing: 16px * Palette.scale;
@@ -538,6 +604,33 @@ export component SettingsView {
                     }
 
                     ToggleSetting {
+                        label: "Enable App Tracking";
+                        description: "Track active desktop application usage";
+                        checked: root.trackApps_S;
+                        toggled(v) => { root.setConfig("track-apps", v ? "true" : "false"); }
+                    }
+
+                    Divider {}
+
+                    ToggleSetting {
+                        label: "Enable Browser Tracking";
+                        description: "Track web browser active tab activity";
+                        checked: root.trackBrowser_S;
+                        toggled(v) => { root.setConfig("track-browser", v ? "true" : "false"); }
+                    }
+
+                    Divider {}
+
+                    ToggleSetting {
+                        label: "Enable Project Tracking";
+                        description: "Track software development project and IDE workspace activity";
+                        checked: root.trackProjects_S;
+                        toggled(v) => { root.setConfig("track-projects", v ? "true" : "false"); }
+                    }
+
+                    Divider {}
+
+                    ToggleSetting {
                         label: "Kill Apps on Limit";
                         description: "Automatically terminate applications when their configured daily time limit is exceeded";
                         checked: root.killApps_S;
@@ -547,7 +640,7 @@ export component SettingsView {
             }
 
             // ── EXTENSIONS ───────────────────────────────────────────────
-            Card {
+            if root.selected-category == "ALL" || root.selected-category == "EXTENSIONS" : Card {
                 VerticalLayout {
                     padding: 24px * Palette.scale;
                     spacing: 16px * Palette.scale;
@@ -589,7 +682,7 @@ export component SettingsView {
             }
 
             // ── PERFORMANCE ───────────────────────────────────────────────
-            Card {
+            if root.selected-category == "ALL" || root.selected-category == "SYSTEM" : Card {
                 VerticalLayout {
                     padding: 24px * Palette.scale;
                     spacing: 16px * Palette.scale;
@@ -612,7 +705,7 @@ export component SettingsView {
             }
 
             // ── PRIVACY & ANALYTICS ───────────────────────────────────────
-            Card {
+            if root.selected-category == "ALL" || root.selected-category == "SYSTEM" : Card {
                 VerticalLayout {
                     padding: 24px * Palette.scale;
                     spacing: 16px * Palette.scale;
@@ -635,7 +728,7 @@ export component SettingsView {
             }
 
             // ── NETWORK ───────────────────────────────────────────────────
-            Card {
+            if root.selected-category == "ALL" || root.selected-category == "SYSTEM" : Card {
                 VerticalLayout {
                     padding: 24px * Palette.scale;
                     spacing: 16px * Palette.scale;

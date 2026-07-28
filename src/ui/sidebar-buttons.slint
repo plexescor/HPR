@@ -3,6 +3,7 @@ import { Palette } from "./palette.slint";
 
 export component SidebarButtons {
     in property <bool> is-vertical: true;
+    in property <string> position: "left";  // "left" | "right" | "top" | "bottom"
 
     in property <bool> allowSidebarCustomization_S;
     in property <bool> hideSidebarReload_S;
@@ -33,6 +34,7 @@ export component SidebarButtons {
         alignment: center;
 
         if !allowSidebarCustomization_S || !hideSidebarReload_S : SidebarButton {
+            position: root.position;
             icon: @image-url("./images/reload.svg");
             icon-light: @image-url("./images/reload-light.svg");
             tip: "Reload UI";
@@ -40,6 +42,7 @@ export component SidebarButtons {
         }
 
         if !allowSidebarCustomization_S || !hideSidebarLimits_S : SidebarButton {
+            position: root.position;
             icon: @image-url("./images/goals.svg");
             icon-light: @image-url("./images/goals-light.svg");
             tip: "Manage per app limits and goals";
@@ -47,6 +50,7 @@ export component SidebarButtons {
         }
 
         if !allowSidebarCustomization_S || !hideSidebarHistory_S : SidebarButton {
+            position: root.position;
             icon: @image-url("./images/calendar.svg");
             icon-light: @image-url("./images/calendar-light.svg");
             tip: "View historical data";
@@ -54,6 +58,7 @@ export component SidebarButtons {
         }
 
         if !allowSidebarCustomization_S || !hideSidebarTimeline_S : SidebarButton {
+            position: root.position;
             icon: @image-url("./images/timeline.svg");
             icon-light: @image-url("./images/timeline-light.svg");
             tip: "View day timeline";
@@ -61,6 +66,7 @@ export component SidebarButtons {
         }
 
         if !allowSidebarCustomization_S || !hideSidebarTab_S : SidebarButton {
+            position: root.position;
             icon: @image-url("./images/tab.svg");
             icon-light: @image-url("./images/tab-light.svg");
             tip: "View usage per tab";
@@ -68,6 +74,7 @@ export component SidebarButtons {
         }
 
         if !allowSidebarCustomization_S || !hideSidebarProject_S : SidebarButton {
+            position: root.position;
             icon: @image-url("./images/project.svg");
             icon-light: @image-url("./images/project-light.svg");
             tip: "View usage per project";
@@ -75,6 +82,7 @@ export component SidebarButtons {
         }
 
         if !allowSidebarCustomization_S || !hideSidebarInsights_S : SidebarButton {
+            position: root.position;
             icon: @image-url("./images/insights.svg");
             icon-light: @image-url("./images/insights-light.svg");
             tip: "View insights";
@@ -82,6 +90,7 @@ export component SidebarButtons {
         }
 
         if !allowSidebarCustomization_S || !hideSidebarLive_S : SidebarButton {
+            position: root.position;
             icon: @image-url("./images/live.svg");
             icon-light: @image-url("./images/live-light.svg");
             tip: "Switch to live view";
@@ -89,6 +98,7 @@ export component SidebarButtons {
         }
 
         if !allowSidebarCustomization_S || !hideSidebarExtensions_S : SidebarButton {
+            position: root.position;
             icon: @image-url("./images/extension.svg");
             icon-light: @image-url("./images/extension-light.svg");
             tip: "View loaded extensions";
@@ -96,6 +106,7 @@ export component SidebarButtons {
         }
 
         if showMiscImagePanel_S : SidebarButton {
+            position: root.position;
             icon: @image-url("./images/misc-image.svg");
             icon-light: @image-url("./images/misc-image-light.svg");
             tip: "Miscellaneous Image Panel";
@@ -103,6 +114,7 @@ export component SidebarButtons {
         }
 
         SidebarButton {
+            position: root.position;
             icon: @image-url("./images/settings.svg");
             icon-light: @image-url("./images/settings-light.svg");
             tip: "Settings";
@@ -110,6 +122,7 @@ export component SidebarButtons {
         }
 
         if !allowSidebarCustomization_S || !hideSidebarThemes_S : SidebarButton {
+            position: root.position;
             icon: @image-url("./images/themes.svg");
             icon-light: @image-url("./images/themes-light.svg");
             tip: "Themes";
@@ -117,6 +130,7 @@ export component SidebarButtons {
         }
 
         if !allowSidebarCustomization_S || !hideSidebarKofi_S : SidebarButton {
+            position: root.position;
             icon: @image-url("./images/ko-fi.svg");
             icon-light: @image-url("./images/ko-fi-light.svg");
             tip: "Support on Ko-fi";
@@ -124,6 +138,7 @@ export component SidebarButtons {
         }
 
         if !allowSidebarCustomization_S || !hideSidebarFeedback_S : SidebarButton {
+            position: root.position;
             icon: @image-url("./images/message.svg");
             icon-light: @image-url("./images/message-light.svg");
             tip: "Send Feedback";
@@ -131,6 +146,7 @@ export component SidebarButtons {
         }
 
         if !allowSidebarCustomization_S || !hideSidebarAbout_S : SidebarButton {
+            position: root.position;
             icon: @image-url("./images/about.svg");
             icon-light: @image-url("./images/about-light.svg");
             tip: "About";
@@ -146,6 +162,7 @@ export component SidebarButtons {
         alignment: center;
 
         if !allowSidebarCustomization_S || !hideSidebarReload_S : SidebarButton {
+            position: root.position;
             icon: @image-url("./images/reload.svg");
             icon-light: @image-url("./images/reload-light.svg");
             tip: "Reload UI";
@@ -153,6 +170,7 @@ export component SidebarButtons {
         }
 
         if !allowSidebarCustomization_S || !hideSidebarLimits_S : SidebarButton {
+            position: root.position;
             icon: @image-url("./images/goals.svg");
             icon-light: @image-url("./images/goals-light.svg");
             tip: "Manage per app limits and goals";
@@ -160,6 +178,7 @@ export component SidebarButtons {
         }
 
         if !allowSidebarCustomization_S || !hideSidebarHistory_S : SidebarButton {
+            position: root.position;
             icon: @image-url("./images/calendar.svg");
             icon-light: @image-url("./images/calendar-light.svg");
             tip: "View historical data";
@@ -167,6 +186,7 @@ export component SidebarButtons {
         }
 
         if !allowSidebarCustomization_S || !hideSidebarTimeline_S : SidebarButton {
+            position: root.position;
             icon: @image-url("./images/timeline.svg");
             icon-light: @image-url("./images/timeline-light.svg");
             tip: "View day timeline";
@@ -174,6 +194,7 @@ export component SidebarButtons {
         }
 
         if !allowSidebarCustomization_S || !hideSidebarTab_S : SidebarButton {
+            position: root.position;
             icon: @image-url("./images/tab.svg");
             icon-light: @image-url("./images/tab-light.svg");
             tip: "View usage per tab";
@@ -181,6 +202,7 @@ export component SidebarButtons {
         }
 
         if !allowSidebarCustomization_S || !hideSidebarProject_S : SidebarButton {
+            position: root.position;
             icon: @image-url("./images/project.svg");
             icon-light: @image-url("./images/project-light.svg");
             tip: "View usage per project";
@@ -188,6 +210,7 @@ export component SidebarButtons {
         }
 
         if !allowSidebarCustomization_S || !hideSidebarInsights_S : SidebarButton {
+            position: root.position;
             icon: @image-url("./images/insights.svg");
             icon-light: @image-url("./images/insights-light.svg");
             tip: "View insights";
@@ -195,6 +218,7 @@ export component SidebarButtons {
         }
 
         if !allowSidebarCustomization_S || !hideSidebarLive_S : SidebarButton {
+            position: root.position;
             icon: @image-url("./images/live.svg");
             icon-light: @image-url("./images/live-light.svg");
             tip: "Switch to live view";
@@ -202,6 +226,7 @@ export component SidebarButtons {
         }
 
         if !allowSidebarCustomization_S || !hideSidebarExtensions_S : SidebarButton {
+            position: root.position;
             icon: @image-url("./images/extension.svg");
             icon-light: @image-url("./images/extension-light.svg");
             tip: "View loaded extensions";
@@ -209,6 +234,7 @@ export component SidebarButtons {
         }
 
         if showMiscImagePanel_S : SidebarButton {
+            position: root.position;
             icon: @image-url("./images/misc-image.svg");
             icon-light: @image-url("./images/misc-image-light.svg");
             tip: "Miscellaneous Image Panel";
@@ -216,6 +242,7 @@ export component SidebarButtons {
         }
 
         SidebarButton {
+            position: root.position;
             icon: @image-url("./images/settings.svg");
             icon-light: @image-url("./images/settings-light.svg");
             tip: "Settings";
@@ -223,6 +250,7 @@ export component SidebarButtons {
         }
 
         if !allowSidebarCustomization_S || !hideSidebarThemes_S : SidebarButton {
+            position: root.position;
             icon: @image-url("./images/themes.svg");
             icon-light: @image-url("./images/themes-light.svg");
             tip: "Themes";
@@ -230,6 +258,7 @@ export component SidebarButtons {
         }
 
         if !allowSidebarCustomization_S || !hideSidebarKofi_S : SidebarButton {
+            position: root.position;
             icon: @image-url("./images/ko-fi.svg");
             icon-light: @image-url("./images/ko-fi-light.svg");
             tip: "Support on Ko-fi";
@@ -237,6 +266,7 @@ export component SidebarButtons {
         }
 
         if !allowSidebarCustomization_S || !hideSidebarFeedback_S : SidebarButton {
+            position: root.position;
             icon: @image-url("./images/message.svg");
             icon-light: @image-url("./images/message-light.svg");
             tip: "Send Feedback";
@@ -244,6 +274,7 @@ export component SidebarButtons {
         }
 
         if !allowSidebarCustomization_S || !hideSidebarAbout_S : SidebarButton {
+            position: root.position;
             icon: @image-url("./images/about.svg");
             icon-light: @image-url("./images/about-light.svg");
             tip: "About";

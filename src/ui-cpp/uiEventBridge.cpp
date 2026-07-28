@@ -198,11 +198,19 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow> &ui, ExtensionMa
 		});
 
 	ui->on_setConfig(
-		[](slint::SharedString paramName, slint::SharedString value)
+		[this](slint::SharedString paramName, slint::SharedString value)
 		{
 			std::string param = std::string(paramName);
 			std::string val = std::string(value);
 			AppState::configManager.setConfig(param, val);
+
+			if (param == "track-apps")
+				appTrackingToggled(val == "true");
+			else if (param == "track-browser")
+				browserTrackingToggled(val == "true");
+			else if (param == "track-projects")
+				projectTrackingToggled(val == "true");
+
 			if (param == "anonymous-telemetry")
 			{
 				AppState::configManager.markTelemetryPromptAnswered();
@@ -978,4 +986,22 @@ void UiEventBridge::rawViewClicked()
 {
 	std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
 	AppState::state.isRawProjectView = true;
+}
+
+void UiEventBridge::appTrackingToggled(bool enabled)
+{
+	std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+	AppState::state.trackApp = enabled;
+}
+
+void UiEventBridge::browserTrackingToggled(bool enabled)
+{
+	std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+	AppState::state.trackTab = enabled;
+}
+
+void UiEventBridge::projectTrackingToggled(bool enabled)
+{
+	std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+	AppState::state.trackProject = enabled;
 }

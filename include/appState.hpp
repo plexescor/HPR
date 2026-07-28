@@ -35,6 +35,10 @@ struct AppState
 	bool useTabView = false;	   // which means data is shown per site and not per tab
 	bool isRawProjectView = false; // which means VSCode projects are shown as
 								   // they are, without aliasing or parsing
+
+	bool trackApp = true;
+	bool trackTab = true;
+	bool trackProject = true;
 	std::string currentPlatform;
 
 	std::string currentError = "";

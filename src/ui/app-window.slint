@@ -172,6 +172,9 @@ export component MainWindow inherits Window {
     //so i renamed to it "DATA"
     in-out property <bool> sidebarAlwaysExpanded_S: false;
     in property <string> sidebarPosition_S;  // "left" | "right" | "top" | "bottom"
+    in-out property <bool> trackApps_S: true;
+    in-out property <bool> trackBrowser_S: true;
+    in-out property <bool> trackProjects_S: true;
     property <bool> sidebar-expanded: sidebar-ta.has-hover || hamburger-ta.has-hover || root.sidebarAlwaysExpanded_S;
     property <bool> sidebar-is-vertical: root.sidebarPosition_S == "left" || root.sidebarPosition_S == "right";
     property <string> active-view: "DATA";
@@ -238,7 +241,7 @@ export component MainWindow inherits Window {
                 }
 
                 HorizontalLayout {
-                    padding-left: (!root.sidebarAlwaysExpanded_S && root.sidebarPosition_S == "left") ? 56px * Palette.scale : 18px * Palette.scale;
+                    padding-left: (!root.sidebarAlwaysExpanded_S && (root.sidebarPosition_S == "left" || root.sidebarPosition_S == "top")) ? 56px * Palette.scale : 18px * Palette.scale;
                     padding-right: (!root.sidebarAlwaysExpanded_S && root.sidebarPosition_S == "right") ? 56px * Palette.scale : 18px * Palette.scale;
                     alignment: space-between;
                     animate padding-left { duration: 180ms; easing: ease-in-out; }
@@ -509,6 +512,9 @@ export component MainWindow inherits Window {
                 showMiscImagePanel_S: root.showMiscImagePanel_S;
                 sidebarAlwaysExpanded_S: root.sidebarAlwaysExpanded_S;
                 sidebarPosition_S: root.sidebarPosition_S;
+                trackApps_S: root.trackApps_S;
+                trackBrowser_S: root.trackBrowser_S;
+                trackProjects_S: root.trackProjects_S;
             }
             if active-view == "FEEDBACK" : FeedbackView {
                 vertical-stretch: 1;
@@ -574,6 +580,7 @@ export component MainWindow inherits Window {
 
                 if root.sidebar-expanded : SidebarButtons {
                     is-vertical: root.sidebar-is-vertical;
+                    position: root.sidebarPosition_S;
                     x: 0px;
                     y: root.sidebar-is-vertical ? 46px * Palette.scale : 0px;
                     width: parent.width;

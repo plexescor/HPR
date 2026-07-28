@@ -5,6 +5,7 @@ export component SidebarButton inherits Rectangle {
     in property <image> icon;
     in property <image> icon-light;
     in property <string> tip;
+    in property <string> position: "left";  // "left" | "right" | "top" | "bottom"
     callback clicked;
 
     height: 35px * Palette.scale;
@@ -24,14 +25,19 @@ export component SidebarButton inherits Rectangle {
         image-fit: contain;
     }
 
-    // Tooltip bubble — floats to the right, z:100 paints over sibling content
+    // Tooltip bubble — floats relative to position, z:100 paints over sibling content
     Rectangle {
         z: 100;
         opacity: ta.has-hover ? 1.0 : 0.0;
-        animate opacity { duration: 175ms; delay: 500ms; easing: ease-out; }
+        animate opacity { duration: 100ms; delay: 100ms; easing: ease-out; }
 
-        x: parent.width + 8px * Palette.scale;
-        y: (parent.height - self.height) / 2;
+        x: root.position == "right" ? (-self.width - 8px * Palette.scale)
+         : (root.position == "top" || root.position == "bottom" ? (parent.width - self.width) / 2
+         : parent.width + 8px * Palette.scale);
+
+        y: root.position == "top" ? (parent.height + 8px * Palette.scale)
+         : (root.position == "bottom" ? (-self.height - 8px * Palette.scale)
+         : (parent.height - self.height) / 2);
         height: tip-text.preferred-height + 8px * Palette.scale;
         width: tip-text.preferred-width + 14px * Palette.scale;
         border-radius: 4px * Palette.scale;

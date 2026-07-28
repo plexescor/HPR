@@ -155,75 +155,96 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 		std::string emitCurrWindow;
 		std::string pid = getCurrentPid();
 
+		bool trackApp;
+		bool trackTab;
+		bool trackProject;
+
+		std::chrono::nanoseconds elapsed;
+		{
+			std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+			trackApp = AppState::state.trackApp;
+			trackTab = AppState::state.trackTab;
+			trackProject = AppState::state.trackProject;
+		}
+
 		{
 			// Update current window in the AppState
 			std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
 			AppState::state.currentWindow = window;
 
 			auto now = std::chrono::steady_clock::now(); // get time now
-
-			if (previousWindow != window)
-			{
-				// This means window was changed
-				// FromWindow = previousWindow, ToWindow = window
-
-				windowChanged = true;
-				emitPrevWindow = previousWindow;
-				emitCurrWindow = window;
-
-				auto nowSystem = std::chrono::system_clock::now();
-				uint64_t t =
-					std::chrono::duration_cast<std::chrono::milliseconds>(nowSystem.time_since_epoch()).count();
-
-				AppState::state.switchHistory[{previousWindow, window}].push_back(t);
-
-				previousWindow = window;
-			}
-
-			AppState::state.previousWindow = previousWindow;
-
-			auto elapsed = now - lastTimestamp;
+			elapsed = now - lastTimestamp;
 			lastTimestamp = now;
-			AppState::state.timeLog_PerApp[window] +=
-				std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
 
-			std::string lowerTabName = tab;
+			if (trackApp)
+			{
+				if (previousWindow != window)
+				{
+					// This means window was changed
+					// FromWindow = previousWindow, ToWindow = window
 
-			// Convert tab to lowercase
-			std::transform(lowerTabName.begin(), lowerTabName.end(), lowerTabName.begin(),
+					windowChanged = true;
+					emitPrevWindow = previousWindow;
+					emitCurrWindow = window;
+
+					auto nowSystem = std::chrono::system_clock::now();
+					uint64_t t =
+						std::chrono::duration_cast<std::chrono::milliseconds>(nowSystem.time_since_epoch()).count();
+
+					AppState::state.switchHistory[{previousWindow, window}].push_back(t);
+
+					previousWindow = window;
+				}
+
+				AppState::state.previousWindow = previousWindow;
+
+				AppState::state.timeLog_PerApp[window] +=
+					std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+				AppState::state.appNamePid[window] = pid;
+			}
+
+			if(trackTab)
+			{
+				std::string lowerTabName = tab;
+				// Convert tab to lowercase
+				std::transform(lowerTabName.begin(), lowerTabName.end(), lowerTabName.begin(),
 						   [](unsigned char c) { return std::tolower(c); });
 
-			std::string lowerProjectName = project;
-
-			// Convert project to lowercase
-			std::transform(lowerProjectName.begin(), lowerProjectName.end(), lowerProjectName.begin(),
-						   [](unsigned char c) { return std::tolower(c); });
-
-			if (!tab.empty() &&
+				if (!tab.empty() &&
 				(lowerTabName.contains("chrome") || lowerTabName.contains("edge") || lowerTabName.contains("firefox") ||
-				 lowerTabName.contains("brave") || lowerTabName.contains("zen")))
+					lowerTabName.contains("brave") || lowerTabName.contains("zen")))
+				{
+					AppState::state.currentTab = tab;
+					AppState::state.timeLog_PerTab[tab] +=
+						std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+				}
+			}				
+
+			if (trackProject)
 			{
-				AppState::state.currentTab = tab;
-				AppState::state.timeLog_PerTab[tab] +=
-					std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+				std::string lowerProjectName = project;
+				// Convert project to lowercase
+				std::transform(lowerProjectName.begin(), lowerProjectName.end(), lowerProjectName.begin(),
+							[](unsigned char c) { return std::tolower(c); });
+
+				
+
+				if (!project.empty() && (lowerProjectName.contains("visual studio code") ||
+										lowerProjectName.contains("vscode") || lowerProjectName.contains("code")))
+				{
+					AppState::state.timeLog_PerProject[project] +=
+						std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+				}
+
+				else if (!project.empty() && (isJetbrainsIDE(lowerProjectName))) // because jetbrain dont put
+																				// ide name in title
+				{
+					// fuck need to do this
+					AppState::state.timeLog_PerProject["jetbrains: " + project] +=
+						std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
+				}
 			}
 
-			if (!project.empty() && (lowerProjectName.contains("visual studio code") ||
-									 lowerProjectName.contains("vscode") || lowerProjectName.contains("code")))
-			{
-				AppState::state.timeLog_PerProject[project] +=
-					std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
-			}
-
-			else if (!project.empty() && (isJetbrainsIDE(lowerProjectName))) // because jetbrain dont put
-																			 // ide name in title
-			{
-				// fuck need to do this
-				AppState::state.timeLog_PerProject["jetbrains: " + project] +=
-					std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
-			}
-
-			AppState::state.appNamePid[window] = pid;
 		}
 
 		if (windowChanged)

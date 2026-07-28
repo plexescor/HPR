@@ -26,6 +26,9 @@ class UiEventBridge
 	void siteViewClicked();
 	void filterViewClicked();
 	void rawViewClicked();
+	void appTrackingToggled(bool enabled);
+	void browserTrackingToggled(bool enabled);
+	void projectTrackingToggled(bool enabled);
 
   private:
 	ExtensionManager *extManager = nullptr;

@@ -164,7 +164,12 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
 	{
 		for (const auto &[raw, duration] : rawTimeLog_Project)
 		{
-			translatedTimeLog_Project[raw] += duration;
+			std::string cleaned = raw;
+			if (auto pos = cleaned.find("jetbrains: "); pos != std::string::npos)
+			{
+				cleaned.erase(pos, std::string("jetbrains: ").length());
+			}
+			translatedTimeLog_Project[cleaned] += duration;
 			totalTrackedTime_Project += duration;
 		}
 	}
@@ -413,6 +418,15 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
 					AppState::configManager.getConfig<bool>("sidebar-always-expanded", false);
 				std::string sidebarPositionVal =
 					AppState::configManager.getConfig<std::string>("sidebar-position", "left");
+				bool trackAppsVal;
+				bool trackBrowserVal;
+				bool trackProjectsVal;
+				{
+					std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+					trackAppsVal = AppState::state.trackApp;
+					trackBrowserVal = AppState::state.trackTab;
+					trackProjectsVal = AppState::state.trackProject;
+				}
 
 				std::string nowPlayingTitleVal;
 				std::string nowPlayingUrlVal;
@@ -497,6 +511,12 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
 					(*handle)->set_sidebarAlwaysExpanded_S(sidebarAlwaysExpandedVal);
 				if ((*handle)->get_sidebarPosition_S() != slint::SharedString(sidebarPositionVal))
 					(*handle)->set_sidebarPosition_S(slint::SharedString(sidebarPositionVal));
+				if ((*handle)->get_trackApps_S() != trackAppsVal)
+					(*handle)->set_trackApps_S(trackAppsVal);
+				if ((*handle)->get_trackBrowser_S() != trackBrowserVal)
+					(*handle)->set_trackBrowser_S(trackBrowserVal);
+				if ((*handle)->get_trackProjects_S() != trackProjectsVal)
+					(*handle)->set_trackProjects_S(trackProjectsVal);
 
 				if ((*handle)->get_nowPlayingTitle_S() != slint::SharedString(nowPlayingTitleVal))
 					(*handle)->set_nowPlayingTitle_S(slint::SharedString(nowPlayingTitleVal));
@@ -686,7 +706,12 @@ void UiModelManager::update_Interpreted(
 	{
 		for (const auto &[raw, duration] : rawTimeLog_Project)
 		{
-			translatedTimeLog_Project[raw] += duration;
+			std::string cleaned = raw;
+			if (auto pos = cleaned.find("jetbrains: "); pos != std::string::npos)
+			{
+				cleaned.erase(pos, std::string("jetbrains: ").length());
+			}
+			translatedTimeLog_Project[cleaned] += duration;
 			totalTrackedTime_Project += duration;
 		}
 	}
@@ -975,6 +1000,15 @@ void UiModelManager::update_Interpreted(
 					AppState::configManager.getConfig<bool>("sidebar-always-expanded", false);
 				std::string sidebarPositionVal =
 					AppState::configManager.getConfig<std::string>("sidebar-position", "left");
+				bool trackAppsVal;
+				bool trackBrowserVal;
+				bool trackProjectsVal;
+				{
+					std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+					trackAppsVal = AppState::state.trackApp;
+					trackBrowserVal = AppState::state.trackTab;
+					trackProjectsVal = AppState::state.trackProject;
+				}
 
 				std::string nowPlayingTitleVal;
 				std::string nowPlayingUrlVal;
@@ -1037,6 +1071,9 @@ void UiModelManager::update_Interpreted(
 				setPropIfChanged("sidebarAlwaysExpanded_S", slint::interpreter::Value(sidebarAlwaysExpandedVal));
 				setPropIfChanged("sidebarPosition_S",
 								 slint::interpreter::Value(slint::SharedString(sidebarPositionVal)));
+				setPropIfChanged("trackApps_S", slint::interpreter::Value(trackAppsVal));
+				setPropIfChanged("trackBrowser_S", slint::interpreter::Value(trackBrowserVal));
+				setPropIfChanged("trackProjects_S", slint::interpreter::Value(trackProjectsVal));
 
 				setPropIfChanged("nowPlayingTitle_S",
 								 slint::interpreter::Value(slint::SharedString(nowPlayingTitleVal)));

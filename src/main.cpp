@@ -34,6 +34,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	DatabaseManager dbm;
 	dbm.run();
 
+	{
+		std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+		AppState::state.trackApp = AppState::configManager.getConfig<bool>("track-apps", true);
+		AppState::state.trackTab = AppState::configManager.getConfig<bool>("track-browser", true);
+		AppState::state.trackProject = AppState::configManager.getConfig<bool>("track-projects", true);
+	}
+
 	LimitsManager lim;
 	lim.run();
 	AppState::limitsManager = &lim;
@@ -156,6 +163,13 @@ int main()
 
 	DatabaseManager dbm;
 	dbm.run();
+
+	{
+		std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+		AppState::state.trackApp = AppState::configManager.getConfig<bool>("track-apps", true);
+		AppState::state.trackTab = AppState::configManager.getConfig<bool>("track-browser", true);
+		AppState::state.trackProject = AppState::configManager.getConfig<bool>("track-projects", true);
+	}
 
 	LimitsManager lim;
 	lim.run();
