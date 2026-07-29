@@ -17,11 +17,9 @@ set EXTERNAL_DIR=%SCRIPT_DIR%external
 set LSP_INSTALL_DIR=C:\Program Files\slint-lsp
 set VIEWER_INSTALL_DIR=C:\Program Files\slint-viewer
 
-set SDK_URL=https://github.com/slint-ui/slint/releases/download/v%SLINT_VERSION%/Slint-cpp-%SLINT_VERSION%-win64-MSVC-AMD64.exe
 set LSP_URL=https://github.com/slint-ui/slint/releases/download/v%SLINT_VERSION%/slint-lsp-windows-x86_64.zip
 set VIEWER_URL=https://github.com/slint-ui/slint/releases/download/v%SLINT_VERSION%/slint-viewer-windows-x86_64.zip
 
-set SDK_FILE=%EXTERNAL_DIR%\Slint-cpp-%SLINT_VERSION%-win64-MSVC-AMD64.exe
 set LSP_FILE=%EXTERNAL_DIR%\slint-lsp-windows-x86_64.zip
 set VIEWER_FILE=%EXTERNAL_DIR%\slint-viewer-windows-x86_64.zip
 
@@ -56,6 +54,13 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
+where cargo >nul 2>&1
+if %errorlevel% neq 0 (
+    echo [WARN]  cargo (Rust toolchain) is not found in PATH.
+    echo         Slint will be compiled from source during CMake configuration.
+    echo         Please install Rust from https://rustup.rs if build fails.
+)
+
 :: PowerShell is used for Expand-Archive as a fallback check
 where powershell >nul 2>&1
 if %errorlevel% neq 0 (
@@ -77,7 +82,6 @@ if not exist "%EXTERNAL_DIR%" mkdir "%EXTERNAL_DIR%"
 echo.
 echo [INFO]  Downloading Slint v%SLINT_VERSION% release artifacts...
 
-call :download "%SDK_URL%" "%SDK_FILE%" "Slint C++ SDK installer"
 call :download "%LSP_URL%" "%LSP_FILE%"  "slint-lsp zip"
 call :download "%VIEWER_URL%" "%VIEWER_FILE%" "slint-viewer zip"
 
@@ -113,30 +117,6 @@ if exist "%VIEWER_EXTRACT_DIR%" (
         powershell -NoProfile -Command "Expand-Archive -Path '%VIEWER_FILE%' -DestinationPath '%VIEWER_EXTRACT_DIR%' -Force"
     )
     echo [OK]    Extracted to: %VIEWER_EXTRACT_DIR%
-)
-
-:: ---------------------------------------------------------------------------
-:: Step 4 - Run the Slint C++ SDK installer
-:: ---------------------------------------------------------------------------
-echo.
-echo [INFO]  Running Slint C++ SDK installer...
-echo         (The installer UI will open. Follow the prompts.)
-echo         Recommended install path: C:\Program Files\Slint-cpp-%SLINT_VERSION%
-echo.
-
-if not exist "%SDK_FILE%" (
-    echo [ERROR] SDK installer not found: %SDK_FILE%
-    pause
-    exit /b 1
-)
-
-:: Launch installer and wait for it to finish
-start /wait "" "%SDK_FILE%"
-if %errorlevel% neq 0 (
-    echo [WARN]  SDK installer returned a non-zero exit code: %errorlevel%
-    echo         This may be normal if the user cancelled. Continuing...
-) else (
-    echo [OK]    Slint C++ SDK installer completed.
 )
 
 :: ---------------------------------------------------------------------------

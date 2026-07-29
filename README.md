@@ -552,7 +552,7 @@ For the complete UI contract and required bindings, refer to [hpr-cpp.netlify.ap
 **Requirements:**
 - CMake 3.21+
 - GCC 13+, Clang 16+, or MSVC 2022+ with C++23 support
-- Slint 1.16.1 (the install script handles this)
+- Rust toolchain (`cargo` / `rustc`) — Slint is compiled directly from source during CMake configuration
 - Linux only: `jq`, `gdbus`, `libdbus-1-dev`, `libcurl4-openssl-dev` (or distro equivalents)
 - Windows only: bundled `WinToast` compiles out-of-the-box
 
@@ -561,31 +561,21 @@ git clone https://github.com/plexescor/HPR
 cd HPR
 ```
 
-**Linux - install Slint (choose one):**
+**Install Dependencies (choose one):**
 ```bash
-# System-wide (requires sudo)
-sudo ./installDependencies.sh
-
-# User-local (no sudo)
+# Linux system-wide / user-local dependencies (DBus, Curl, Rust, dev tools):
 ./installDependencies.sh
 ```
 
-**Windows:** run `installDependencies.bat`. Pulls Slint 1.16.1, `slint-lsp`, and `slint-viewer` from GitHub releases.
+**Windows:** run `installDependencies.bat`.
 
 **Build:**
 ```bash
-mkdir build && cd build
-
-# If you ran the install script without sudo:
-cmake .. -DCMAKE_PREFIX_PATH="$HOME/.local"
-
-# If you ran with sudo:
-cmake ..
-
-cmake --build . --parallel 8
+cmake -B build
+cmake --build build --parallel 8
 ```
 
-HPR uses slightly patched versions of `sol2`, `lua`, and `sqlite3` in `external/` to avoid compile errors under C++23 strict mode. Use the bundled ones for a clean build. CMake copies `aliases.csv`, `config.csv`, `ui/`, `assets/`, and the install scripts next to the output binary automatically - a fresh build is immediately runnable from the build directory.
+HPR uses slightly patched versions of `sol2`, `lua`, and `sqlite3` in `external/` to avoid compile errors under C++23 strict mode. Use the bundled ones for a clean build. CMake automatically downloads and compiles Slint from source via `FetchContent` using Cargo, static-linking it for maximum runtime performance and lowest memory footprint. It also copies `aliases.csv`, `config.csv`, `ui/`, `assets/`, and install scripts next to the output binary automatically - a fresh build is immediately runnable from the build directory.
 
 
 
