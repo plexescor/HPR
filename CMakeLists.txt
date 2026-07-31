@@ -8,21 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_BUILD_PARALLEL_LEVEL 8)
 
-include(FetchContent)
-
-# Configure Slint compilation options for maximum performance & lowest memory footprint
-set(SLINT_FEATURE_BACKEND_QT OFF CACHE BOOL "Disable Qt backend for lower RAM footprint" FORCE)
-set(SLINT_FEATURE_RENDERER_FEMTOVG ON CACHE BOOL "Enable FemtoVG renderer" FORCE)
-set(SLINT_FEATURE_TESTING OFF CACHE BOOL "Disable testing" FORCE)
-set(SLINT_FEATURE_EXPERIMENTAL OFF CACHE BOOL "Disable experimental features" FORCE)
-
-FetchContent_Declare(
-    Slint
-    GIT_REPOSITORY https://github.com/slint-ui/slint.git
-    GIT_TAG v1.17.1
-    GIT_SHALLOW TRUE
-)
-FetchContent_MakeAvailable(Slint)
+find_package(Slint QUIET)
 
 # Find libdbus-1 on Linu
 if(LINUX)
@@ -196,5 +182,26 @@ if(UNIX)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         ${CMAKE_SOURCE_DIR}/shippedWithBinary/installWindowCallsExtension.sh
         $<TARGET_FILE_DIR:HPR>/installWindowCallsExtension.sh
+    )
+
+    find_library(SLINT_SO
+        NAMES slint_cpp
+        HINTS "${Slint_DIR}/../.."
+              "${Slint_DIR}/../../.."
+    )
+
+    if(SLINT_SO)
+        add_custom_command(TARGET HPR POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${SLINT_SO}"
+                $<TARGET_FILE_DIR:HPR>
+        )
+    else()
+        message(WARNING "[HPR] Could not find libslint_cpp.so — you may need to copy it manually next to the binary")
+    endif()
+
+    set_target_properties(HPR PROPERTIES
+        BUILD_RPATH "$ORIGIN"
+        INSTALL_RPATH "$ORIGIN"
     )
 endif()

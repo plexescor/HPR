@@ -92,7 +92,6 @@ install_pkg() {
 
 install_pkg "dbus-1 (dev)"  pkg-config "--exists dbus-1"  "dbus"         "libdbus-1-dev"    "dbus-devel"   "dbus-1-devel"
 install_pkg "libcurl (dev)" pkg-config "--exists libcurl"  "curl"         "libcurl4-openssl-dev" "libcurl-devel" "libcurl-devel"
-install_pkg "Rust toolchain" command "-v cargo"            "rust"         "cargo"               "rust"         "rust"
 
 # ── Print mode ────────────────────────────────────────────────────────────────
 if [[ "${INSTALL_MODE}" == "system" ]]; then
@@ -112,8 +111,9 @@ mkdir -p \
     "${DEST_LIB}" \
     "${DEST_CMAKE}"
 
-# ── URLs (Dev Tools) ──────────────────────────────────────────────────────────
+# ── URLs ──────────────────────────────────────────────────────────────────────
 declare -A URLS=(
+    ["Slint-cpp-${SLINT_VERSION}-Linux-x86_64.tar.gz"]="https://github.com/slint-ui/slint/releases/download/v${SLINT_VERSION}/Slint-cpp-${SLINT_VERSION}-Linux-x86_64.tar.gz"
     ["slint-lsp-linux.tar.gz"]="https://github.com/slint-ui/slint/releases/download/v${SLINT_VERSION}/slint-lsp-linux.tar.gz"
     ["slint-viewer-linux.tar.gz"]="https://github.com/slint-ui/slint/releases/download/v${SLINT_VERSION}/slint-viewer-linux.tar.gz"
 )
@@ -131,7 +131,15 @@ for filename in "${!URLS[@]}"; do
     fi
 done
 
-# ── Extract Dev Tools ─────────────────────────────────────────────────────────
+# ── Extract ───────────────────────────────────────────────────────────────────
+CPP_ARCHIVE="${EXTERNAL_DIR}/Slint-cpp-${SLINT_VERSION}-Linux-x86_64.tar.gz"
+CPP_EXTRACT_DIR="${EXTERNAL_DIR}/Slint-cpp-${SLINT_VERSION}-Linux-x86_64"
+
+if [[ ! -d "${CPP_EXTRACT_DIR}" ]]; then
+    info "Extracting Slint C++ SDK"
+    tar -xzf "${CPP_ARCHIVE}" -C "${EXTERNAL_DIR}/"
+fi
+
 LSP_EXTRACT_DIR="${EXTERNAL_DIR}/slint-lsp"
 if [[ ! -d "${LSP_EXTRACT_DIR}" ]]; then
     mkdir -p "${LSP_EXTRACT_DIR}"
@@ -146,21 +154,43 @@ if [[ ! -d "${VIEWER_EXTRACT_DIR}" ]]; then
     tar -xzf "${EXTERNAL_DIR}/slint-viewer-linux.tar.gz" -C "${VIEWER_EXTRACT_DIR}/"
 fi
 
-# ── Install dev tool binaries ─────────────────────────────────────────────────
-LSP_BIN="$(find "${LSP_EXTRACT_DIR}" -type f -name "slint-lsp" | head -n1)"
-if [[ -n "${LSP_BIN}" ]]; then
-    install -Dm755 "${LSP_BIN}" "${DEST_BIN}/slint-lsp"
+# ── Install SDK headers ───────────────────────────────────────────────────────
+if [[ -d "${CPP_EXTRACT_DIR}/include" ]]; then
+    info "Installing headers"
+    cp -r "${CPP_EXTRACT_DIR}/include/." "${DEST_INC}/"
 fi
 
-VIEWER_BIN="$(find "${VIEWER_EXTRACT_DIR}" -type f -name "slint-viewer" | head -n1)"
-if [[ -n "${VIEWER_BIN}" ]]; then
-    install -Dm755 "${VIEWER_BIN}" "${DEST_BIN}/slint-viewer"
+# ── Install libs + CMake config ───────────────────────────────────────────────
+if [[ -d "${CPP_EXTRACT_DIR}/lib" ]]; then
+    info "Installing libraries"
+    find "${CPP_EXTRACT_DIR}/lib" -maxdepth 1 \
+        \( -name "*.so*" -o -name "*.a" \) \
+        -exec cp -P {} "${DEST_LIB}/" \;
+
+    if [[ -d "${CPP_EXTRACT_DIR}/lib/cmake" ]]; then
+        mkdir -p "${DEST_CMAKE}"
+        cp -r "${CPP_EXTRACT_DIR}/lib/cmake/." "${DEST_CMAKE}/"
+    fi
 fi
+
+# ── Install binaries ──────────────────────────────────────────────────────────
+for sdk_bin in slint-compiler; do
+    bin_path="$(find "${CPP_EXTRACT_DIR}/bin" -maxdepth 1 -type f -name "${sdk_bin}" | head -n1)"
+    if [[ -n "${bin_path}" ]]; then
+        info "Installing ${sdk_bin}"
+        install -Dm755 "${bin_path}" "${DEST_BIN}/${sdk_bin}"
+    fi
+done
+
+LSP_BIN="$(find "${LSP_EXTRACT_DIR}" -type f -name "slint-lsp" | head -n1)"
+install -Dm755 "${LSP_BIN}" "${DEST_BIN}/slint-lsp"
+
+VIEWER_BIN="$(find "${VIEWER_EXTRACT_DIR}" -type f -name "slint-viewer" | head -n1)"
+install -Dm755 "${VIEWER_BIN}" "${DEST_BIN}/slint-viewer"
 
 # ── Done ──────────────────────────────────────────────────────────────────────
 echo ""
-success "System dependencies and Slint developer tools ready."
-info "Slint UI engine will be compiled automatically from source during 'cmake -B build'."
+success "Slint ${SLINT_VERSION} installed (${INSTALL_MODE})."
 echo ""
 
 # ── Install gnome extension from shippedWithBinary ────────────────────────────
