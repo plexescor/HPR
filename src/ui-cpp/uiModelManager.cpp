@@ -429,7 +429,7 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
 				std::string sidebarPositionVal =
 					AppState::configManager.getConfig<std::string>("sidebar-position", "left");
 				float dataViewCardHeightVal =
-					AppState::configManager.getConfig<float>("dataview-top-card-height", 404.0f);
+					AppState::configManager.getConfig<float>("dataview-top-card-height", 255.0f);
 				float projectViewCardHeightVal =
 					AppState::configManager.getConfig<float>("projectview-card-height", 842.0f);
 				float tabViewCardHeightVal = AppState::configManager.getConfig<float>("tabview-card-height", 848.0f);
@@ -1049,7 +1049,7 @@ void UiModelManager::update_Interpreted(
 				std::string sidebarPositionVal =
 					AppState::configManager.getConfig<std::string>("sidebar-position", "left");
 				float dataViewCardHeightVal =
-					AppState::configManager.getConfig<float>("dataview-top-card-height", 404.0f);
+					AppState::configManager.getConfig<float>("dataview-top-card-height", 255.0f);
 				float projectViewCardHeightVal =
 					AppState::configManager.getConfig<float>("projectview-card-height", 842.0f);
 				float tabViewCardHeightVal = AppState::configManager.getConfig<float>("tabview-card-height", 848.0f);
