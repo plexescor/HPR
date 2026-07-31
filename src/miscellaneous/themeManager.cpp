@@ -34,6 +34,8 @@ void ThemeManager::reload()
 				std::string themeName = content["name"];
 				std::string themeVersion = content["version"];
 
+				if (themeVersion.starts_with("v")) themeVersion.erase(0, 1);
+
 				availableThemes[{themeName, themeVersion}] = entry.path().string() + "/app-window.slint";
 				availableThemes_Bare[themeName] = entry.path().string() + "/app-window.slint";
 

@@ -18,7 +18,14 @@
 
 CurrentWindowManager::CurrentWindowManager() { registerBuiltinBackends(); }
 
-CurrentWindowManager::~CurrentWindowManager() { running = false; }
+CurrentWindowManager::~CurrentWindowManager()
+{
+	running = false;
+	if (windowPollingThread.joinable())
+	{
+		windowPollingThread.join();
+	}
+}
 
 void CurrentWindowManager::run()
 {
