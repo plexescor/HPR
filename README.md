@@ -369,14 +369,14 @@ Themes live in:
 - **Linux**: `~/.config/HPR/themes/`
 - **Windows**: `%APPDATA%\HPR\HPR_Config\themes\`
 
-Each theme is a subfolder containing an `app-window.slint` (the layout), an required `metadata.csv` (name, version info), and up to 9 preview images (`1.png` through `9.png`).
+Each theme is a subfolder containing an `app-window.slint` (the layout), a required `metadata.csv` (name, author, version info), and up to 9 preview images (`1.png` through `9.png`).
 
 The **Themes View** in the sidebar shows all discovered themes with a horizontal preview carousel, description, version info, and apply/refresh controls. Applying a theme reloads the Slint component live with no restart. Selecting **default** reverts to the built-in layout.
 
 > [!WARNING]
 > Theme management requires `use-interpreter,true` in `config.csv`. Interpreter mode increases RAM usage by 20-50% due to Slint's runtime compiler and decoded preview image buffers.
 
-For a starting point, download the [Minimal Boilerplate Theme](https://hpr-cpp.netlify.app/assets/boilerplate-theme.zip). Full theme authoring guide at [hpr-cpp.netlify.app/themes.html](https://hpr-cpp.netlify.app/themes.html).
+Full theme authoring guide at [hpr-cpp.netlify.app/themes.html](https://hpr-cpp.netlify.app/themes.html).
 
 ---
 
@@ -531,7 +531,7 @@ Themes are loaded from:
 - **Linux**: `~/.config/HPR/themes\`
 
 Each theme lives in its own subdirectory and must contain:
-1. **`metadata.csv`**: Properties like `name,My Theme` and `version,1.0`.
+1. **`metadata.csv`**: Properties like `name,My Theme`, `author,My Name`, and `version,0.9.6`.
 2. **`types.slint`**: Defines data models. (Optional; omitting specific properties or models is fine, but you won't receive data for those fields).
 3. **`app-window.slint`**: The main layout file, loaded at runtime.
 4. **Previews (Optional)**: Up to 9 screenshots (`1.png` through `9.png`) shown in the Themes carousel.

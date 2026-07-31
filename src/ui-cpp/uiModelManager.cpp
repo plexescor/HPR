@@ -62,7 +62,7 @@ UiModelManager::UiModelManager(slint::ComponentHandle<slint::interpreter::Compon
 	themesListModel_interp = std::make_shared<slint::VectorModel<slint::interpreter::Value>>();
 	themePreviewsModel_interp = std::make_shared<slint::VectorModel<slint::interpreter::Value>>();
 
-	currentSelectedTheme = AppState::configManager.getConfig("custom-theme", std::string("default"));
+	currentSelectedTheme = AppState::configManager.getConfig("custom-theme", std::string("Default"));
 	lastLoadedPreviewThemePtr = std::make_shared<std::string>("");
 
 	slint::ComponentWeakHandle<slint::interpreter::ComponentInstance> weak(ui_interp.value());
@@ -92,8 +92,18 @@ UiModelManager::UiModelManager(slint::ComponentHandle<slint::interpreter::Compon
 
 				// Set initial theme values immediately!
 				setPropSafe("currentTheme_S", slint::interpreter::Value(slint::SharedString(currentSelectedTheme)));
-				std::string activeTheme = AppState::configManager.getConfig("custom-theme", std::string("default"));
+				std::string activeTheme = AppState::configManager.getConfig("custom-theme", std::string("Default"));
 				setPropSafe("activeTheme_S", slint::interpreter::Value(slint::SharedString(activeTheme)));
+
+				std::string currentAuthor = AppState::themeManager.availableThemes_Author.contains(currentSelectedTheme)
+												? AppState::themeManager.availableThemes_Author[currentSelectedTheme]
+												: "Unknown";
+				std::string activeAuthor = AppState::themeManager.availableThemes_Author.contains(activeTheme)
+											   ? AppState::themeManager.availableThemes_Author[activeTheme]
+											   : "Unknown";
+				setPropSafe("currentThemeAuthor_S", slint::interpreter::Value(slint::SharedString(currentAuthor)));
+				setPropSafe("activeThemeAuthor_S", slint::interpreter::Value(slint::SharedString(activeAuthor)));
+				setPropSafe("themeAuthor_S", slint::interpreter::Value(slint::SharedString(currentAuthor)));
 			}
 		});
 }
@@ -654,6 +664,32 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
 				}
 				syncModel(timelineBlocksModel, slintVec_Timeline);
 				syncModel(timelineMarkersModel, slintVec_TimelineMarkers);
+
+				// Sync theme configuration details (compiled branch)
+				bool useThemes = AppState::configManager.getConfig("use-interpreter", false);
+				(*handle)->set_useThemesEnabled_S(useThemes);
+				(*handle)->set_hprVersion_S(slint::SharedString(AppState::APP_VERSION));
+				(*handle)->set_themesAvailable_S(AppState::themeManager.areThemesAvailable);
+				(*handle)->set_currentTheme_S(slint::SharedString(currentSelectedTheme));
+
+				std::string activeTheme = AppState::configManager.getConfig("custom-theme", std::string("Default"));
+				(*handle)->set_activeTheme_S(slint::SharedString(activeTheme));
+
+				std::string themeVersionStr = (currentSelectedTheme == "Default") ? std::string(AppState::APP_VERSION) : "";
+				for (const auto &[key, path] : AppState::themeManager.availableThemes)
+				{
+					if (key.first == currentSelectedTheme)
+					{
+						themeVersionStr = key.second;
+						break;
+					}
+				}
+				(*handle)->set_themeVersion_S(slint::SharedString(themeVersionStr));
+
+				std::string currentAuthor = AppState::themeManager.availableThemes_Author.contains(currentSelectedTheme)
+												? AppState::themeManager.availableThemes_Author[currentSelectedTheme]
+												: "Unknown";
+				(*handle)->set_themeAuthor_S(slint::SharedString(currentAuthor));
 			}
 		});
 }
@@ -1217,12 +1253,12 @@ void UiModelManager::update_Interpreted(
 				(*handle)->set_property("currentTheme_S",
 										slint::interpreter::Value(slint::SharedString(currentSelectedTheme)));
 
-				std::string activeTheme = AppState::configManager.getConfig("custom-theme", std::string("default"));
+				std::string activeTheme = AppState::configManager.getConfig("custom-theme", std::string("Default"));
 				(*handle)->set_property("activeTheme_S", slint::interpreter::Value(slint::SharedString(activeTheme)));
 
 				// Sync themes list to drop-down model
 				std::vector<slint::interpreter::Value> slintVec_ThemesList;
-				slintVec_ThemesList.push_back(slint::interpreter::Value(slint::SharedString("default")));
+				slintVec_ThemesList.push_back(slint::interpreter::Value(slint::SharedString("Default")));
 				for (const auto &[key, path] : AppState::themeManager.availableThemes)
 				{
 					slint::interpreter::Value themeNameVal(slint::SharedString(key.first));
@@ -1242,18 +1278,37 @@ void UiModelManager::update_Interpreted(
 				}
 				syncModel(themesListModel_interp, slintVec_ThemesList);
 
-				// Sync currently selected theme's compatibility version
-				std::string themeVersionStr = "";
+				// Sync currently selected theme's compatibility version and author
+				std::string themeVersionStr = (currentSelectedTheme == "Default") ? std::string(AppState::APP_VERSION) : "";
+				std::string activeVersionStr = (activeTheme == "Default") ? std::string(AppState::APP_VERSION) : "";
 				for (const auto &[key, path] : AppState::themeManager.availableThemes)
 				{
 					if (key.first == currentSelectedTheme)
 					{
 						themeVersionStr = key.second;
-						break;
+					}
+					if (key.first == activeTheme)
+					{
+						activeVersionStr = key.second;
 					}
 				}
 				(*handle)->set_property("themeVersion_S",
 										slint::interpreter::Value(slint::SharedString(themeVersionStr)));
+				(*handle)->set_property("activeThemeVersion_S",
+										slint::interpreter::Value(slint::SharedString(activeVersionStr)));
+
+				std::string currentAuthor = AppState::themeManager.availableThemes_Author.contains(currentSelectedTheme)
+												? AppState::themeManager.availableThemes_Author[currentSelectedTheme]
+												: "Unknown";
+				std::string activeAuthor = AppState::themeManager.availableThemes_Author.contains(activeTheme)
+											   ? AppState::themeManager.availableThemes_Author[activeTheme]
+											   : "Unknown";
+				(*handle)->set_property("currentThemeAuthor_S",
+										slint::interpreter::Value(slint::SharedString(currentAuthor)));
+				(*handle)->set_property("activeThemeAuthor_S",
+										slint::interpreter::Value(slint::SharedString(activeAuthor)));
+				(*handle)->set_property("themeAuthor_S",
+										slint::interpreter::Value(slint::SharedString(currentAuthor)));
 
 				// Check if themes tab is open in Slint UI to unload preview
 				// images when not in use

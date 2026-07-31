@@ -47,6 +47,7 @@ hardcoded in HPR's C++ backend. Satisfying this contract is optional; omitting a
   mostSwitchedTo_S    (string)
   longestFocus_S      (string)
   peakHour_S          (string)
+  themeAuthor_S       (string)
 
 
 -- Callbacks (HPR wires these at startup) --

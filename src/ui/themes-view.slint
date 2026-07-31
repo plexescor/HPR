@@ -10,6 +10,7 @@ export component ThemesView {
     in-out property <int> currentImageIndex: 0;
     in property <string> appVersion;
     in property <string> themeVersion;
+    in property <string> themeAuthor;
     in property <bool> useThemesEnabled;
     in-out property <string> currentTheme;
     in property <string> activeTheme;
@@ -139,7 +140,6 @@ export component ThemesView {
                     HorizontalLayout {
                         spacing: 12px * Palette.scale;
                         alignment: start;
-                        height: root.btn-height;
 
                         custom-dropdown := Rectangle {
                             width: 220px * Palette.scale;
@@ -254,8 +254,53 @@ export component ThemesView {
                             }
                         }
 
+                        Rectangle { width: 12px * Palette.scale; }
+
+                        VerticalLayout {
+                            alignment: center;
+                            spacing: 2px * Palette.scale;
+
+                            if root.themeVersion != "" : HorizontalLayout {
+                                spacing: 6px * Palette.scale;
+                                Text {
+                                    text: "VERSION:";
+                                    font-size: 9px * Palette.scale;
+                                    font-weight: 800;
+                                    color: Palette.text-secondary;
+                                    vertical-alignment: center;
+                                }
+                                Text {
+                                    text: "v" + root.themeVersion;
+                                    font-size: 11px * Palette.scale;
+                                    font-weight: 700;
+                                    color: #fbbf24;
+                                    vertical-alignment: center;
+                                }
+                            }
+
+                            if root.themeAuthor != "" : HorizontalLayout {
+                                spacing: 6px * Palette.scale;
+                                Text {
+                                    text: "AUTHOR:";
+                                    font-size: 9px * Palette.scale;
+                                    font-weight: 800;
+                                    color: Palette.text-secondary;
+                                    vertical-alignment: center;
+                                }
+                                Text {
+                                    text: root.themeAuthor;
+                                    font-size: 11px * Palette.scale;
+                                    font-weight: 700;
+                                    color: #a78bfa;
+                                    vertical-alignment: center;
+                                }
+                            }
+                        }
+
+                        Rectangle { width: 16px * Palette.scale; }
+
                         Text {
-                            text: "Current theme: " + root.activeTheme;
+                            text: "Applied theme: " + root.activeTheme;
                             font-size: 11px * Palette.scale;
                             color: Palette.text-secondary;
                             vertical-alignment: center;

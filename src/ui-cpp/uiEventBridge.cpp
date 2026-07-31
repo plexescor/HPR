@@ -518,9 +518,9 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<slint::interpreter::Componen
 								 [this]()
 								 {
 									 std::string savedTheme =
-										 AppState::configManager.getConfig("custom-theme", std::string("default"));
+										 AppState::configManager.getConfig("custom-theme", std::string("Default"));
 									 std::string path = "";
-									 if (savedTheme != "default" &&
+									 if (savedTheme != "Default" &&
 										 AppState::themeManager.availableThemes_Bare.contains(savedTheme))
 									 {
 										 path = AppState::themeManager.availableThemes_Bare[savedTheme];
@@ -699,10 +699,10 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<slint::interpreter::Componen
 									 this->interpreter->reload(themePath);
 									 AppState::configManager.setConfig("custom-theme", themeName);
 								 }
-								 else if (themeName == "default")
+								 else if (themeName == "Default" || themeName == "default")
 								 {
 									 this->interpreter->reload("");
-									 AppState::configManager.setConfig("custom-theme", std::string("default"));
+									 AppState::configManager.setConfig("custom-theme", std::string("Default"));
 								 }
 							 }
 						 }

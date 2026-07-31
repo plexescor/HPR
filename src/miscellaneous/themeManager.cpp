@@ -22,7 +22,11 @@ void ThemeManager::reload()
 {
 	availableThemes.clear();
 	availableThemes_Bare.clear();
+	availableThemes_Author.clear();
 	themePreview.clear();
+
+	availableThemes_Author["Default"] = "Plexescor";
+
 	for (auto const &entry : std::filesystem::directory_iterator{themeDirectory})
 	{
 		if (entry.is_directory() && std::filesystem::exists(entry.path() / "metadata.csv"))
@@ -32,11 +36,13 @@ void ThemeManager::reload()
 			if (content.contains("name") && content.contains("version"))
 			{
 				std::string themeName = content["name"];
+				std::string authorName = content.contains("author") ? content["author"] : "Unknown"; //get yeeted
 				std::string themeVersion = content["version"];
 
 				if (themeVersion.starts_with("v")) themeVersion.erase(0, 1);
 
 				availableThemes[{themeName, themeVersion}] = entry.path().string() + "/app-window.slint";
+				availableThemes_Author[themeName] = authorName;
 				availableThemes_Bare[themeName] = entry.path().string() + "/app-window.slint";
 
 				std::vector<std::string> previews;

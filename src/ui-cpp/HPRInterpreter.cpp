@@ -36,9 +36,9 @@ HPRInterpreter::HPRInterpreter(ExtensionManager *extMgr)
 	if (!initialiseSlintUiPath())
 		exit(1);
 
-	std::string savedTheme = AppState::configManager.getConfig("custom-theme", std::string("default"));
+	std::string savedTheme = AppState::configManager.getConfig("custom-theme", std::string("Default"));
 	std::string pathToLoad = (filePath / fileName).string();
-	if (savedTheme != "default" && AppState::themeManager.availableThemes_Bare.contains(savedTheme))
+	if (savedTheme != "Default" && savedTheme != "default" && AppState::themeManager.availableThemes_Bare.contains(savedTheme))
 	{
 		pathToLoad = AppState::themeManager.availableThemes_Bare[savedTheme];
 	}

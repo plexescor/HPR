@@ -128,6 +128,7 @@ export component MainWindow inherits Window {
     in property <int>             themePreviewImageCount_S;
     in property <string>          hprVersion_S;
     in property <string>          themeVersion_S;
+    in property <string>          themeAuthor_S;
     in property <bool>            useThemesEnabled_S;
     in property <string>          currentTheme_S;
     in property <string>          activeTheme_S;
@@ -482,6 +483,7 @@ export component MainWindow inherits Window {
                 activeTheme: root.activeTheme_S;
                 appVersion: root.hprVersion_S;
                 themeVersion: root.themeVersion_S;
+                themeAuthor: root.themeAuthor_S;
                 useThemesEnabled: root.useThemesEnabled_S;
 
                 themeSelected(theme) => { root.themeSelected(theme); }

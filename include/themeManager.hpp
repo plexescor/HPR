@@ -16,6 +16,7 @@ class ThemeManager
   public:
 	// Names version and  paths
 	std::map<std::pair<std::string, std::string>, std::string> availableThemes;
+	std::map<std::string, std::string> availableThemes_Author;
 	std::map<std::string, std::vector<std::string>> themePreview;
 	std::map<std::string, std::string> availableThemes_Bare;
 
