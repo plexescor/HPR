@@ -1,0 +1,168 @@
+import { Palette } from "./palette.slint";
+import { Card } from "./card.slint";
+
+// Compact action used in the dashboard header.
+export component DashboardButton inherits Rectangle {
+    in property <string> label;
+    in property <bool> primary: false;
+    callback clicked;
+
+    property <color> primary-accent: #38bdf8;
+
+    width: button-label.preferred-width + 20px * Palette.scale;
+    height: 26px * Palette.scale;
+    border-radius: 6px * Palette.scale;
+    border-width: 1px * Palette.scale;
+    border-color: primary ? primary-accent.mix(#00000000, 0.30) : Palette.input-border;
+    background: primary
+        ? (button-area.pressed
+            ? primary-accent.mix(#00000000, 0.22)
+            : (button-area.has-hover
+                ? primary-accent.mix(#00000000, 0.16)
+                : primary-accent.mix(#00000000, 0.09)))
+        : (button-area.pressed ? Palette.input-bg-press : (button-area.has-hover ? Palette.input-bg-hover : Palette.input-bg));
+
+    animate background { duration: 100ms; }
+    animate border-color { duration: 100ms; }
+
+    button-label := Text {
+        text: root.label;
+        color: root.primary ? root.primary-accent : Palette.text-secondary;
+        font-size: 9px * Palette.scale;
+        font-weight: 700;
+        letter-spacing: 1px * Palette.scale;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+    }
+
+    button-area := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+}
+
+// Displays one high-level metric and its short supporting context.
+export component DashboardKpi inherits Card {
+    in property <string> label;
+    in property <string> value;
+    in property <string> detail;
+    in property <color> accent: #38bdf8;
+
+    height: 78px * Palette.scale;
+
+    VerticalLayout {
+        padding: 13px * Palette.scale;
+        spacing: 4px * Palette.scale;
+
+        Text {
+            text: root.label;
+            color: Palette.text-muted;
+            font-size: 8px * Palette.scale;
+            font-weight: 700;
+            letter-spacing: 1.4px * Palette.scale;
+            overflow: elide;
+        }
+
+        Text {
+            text: root.value == "" ? "—" : root.value;
+            color: Palette.text-primary;
+            font-size: 16px * Palette.scale;
+            font-weight: 700;
+            overflow: elide;
+        }
+
+        Text {
+            text: root.detail;
+            color: root.accent;
+            font-size: 9px * Palette.scale;
+            overflow: elide;
+        }
+    }
+}
+
+// Renders a ranked application with its duration and normalized usage bar.
+export component DashboardAppRow inherits Rectangle {
+    in property <string> app-name;
+    in property <string> duration;
+    in property <float> ratio;
+    in property <color> accent;
+    in property <bool> show-row: true;
+
+    visible: show-row;
+    height: show-row ? 36px * Palette.scale : 0px;
+
+    VerticalLayout {
+        spacing: 5px * Palette.scale;
+
+        HorizontalLayout {
+            alignment: space-between;
+
+            HorizontalLayout {
+                spacing: 7px * Palette.scale;
+                Rectangle {
+                    width: 7px * Palette.scale;
+                    height: 7px * Palette.scale;
+                    border-radius: 4px * Palette.scale;
+                    background: root.accent;
+                    y: (parent.height - self.height) / 2;
+                }
+                Text {
+                    text: root.app-name;
+                    color: Palette.text-secondary;
+                    font-size: 10px * Palette.scale;
+                    overflow: elide;
+                    vertical-alignment: center;
+                }
+            }
+
+            Text {
+                text: root.duration + "  " + Math.round(root.ratio * 100) + "%";
+                color: Palette.text-muted;
+                font-size: 9px * Palette.scale;
+                vertical-alignment: center;
+            }
+        }
+
+        Rectangle {
+            height: 4px * Palette.scale;
+            border-radius: 2px * Palette.scale;
+            background: Palette.bar-track;
+
+            Rectangle {
+                width: parent.width * Math.min(1.0, Math.max(0.0, root.ratio));
+                height: parent.height;
+                border-radius: 2px * Palette.scale;
+                background: @linear-gradient(90deg, root.accent 0%, root.accent.mix(#ffffff, 0.25) 100%);
+                animate width { duration: 350ms; easing: ease-out; }
+            }
+        }
+    }
+}
+
+// Presents one compact insight inside the focus summary.
+export component InsightLine inherits Rectangle {
+    in property <string> label;
+    in property <string> value;
+    in property <color> accent: #38bdf8;
+
+    height: 37px * Palette.scale;
+    background: transparent;
+
+    VerticalLayout {
+        spacing: 2px * Palette.scale;
+        Text {
+            text: root.label;
+            color: Palette.text-muted;
+            font-size: 8px * Palette.scale;
+            font-weight: 700;
+            letter-spacing: 1px * Palette.scale;
+        }
+        Text {
+            text: root.value == "" ? "—" : root.value;
+            color: root.accent;
+            font-size: 11px * Palette.scale;
+            font-weight: 600;
+            overflow: elide;
+        }
+    }
+}

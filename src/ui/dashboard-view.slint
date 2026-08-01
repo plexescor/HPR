@@ -1,168 +1,13 @@
 import { Palette } from "./palette.slint";
 import { Card } from "./card.slint";
-import { TimeLog, SwitchHistory, TimelineBlock, TimelineMarker } from "./types.slint";
+import { TimeLog, TimelineBlock, TimelineMarker } from "./types.slint";
+import { DashboardButton, DashboardKpi, DashboardAppRow, InsightLine } from "./dashboard-components.slint";
 
-component DashboardButton inherits Rectangle {
-    in property <string> label;
-    in property <bool> primary: false;
-    callback clicked;
-
-    width: button-label.preferred-width + 20px * Palette.scale;
-    height: 26px * Palette.scale;
-    border-radius: 6px * Palette.scale;
-    border-width: 1px * Palette.scale;
-    border-color: primary ? #38bdf850 : Palette.input-border;
-    background: primary
-        ? (button-area.pressed ? #38bdf838 : (button-area.has-hover ? #38bdf828 : #38bdf816))
-        : (button-area.pressed ? Palette.input-bg-press : (button-area.has-hover ? Palette.input-bg-hover : Palette.input-bg));
-
-    animate background { duration: 100ms; }
-    animate border-color { duration: 100ms; }
-
-    button-label := Text {
-        text: root.label;
-        color: root.primary ? #38bdf8 : Palette.text-secondary;
-        font-size: 9px * Palette.scale;
-        font-weight: 700;
-        letter-spacing: 1px * Palette.scale;
-        horizontal-alignment: center;
-        vertical-alignment: center;
-    }
-
-    button-area := TouchArea {
-        mouse-cursor: pointer;
-        clicked => { root.clicked(); }
-    }
-}
-
-component DashboardKpi inherits Card {
-    in property <string> label;
-    in property <string> value;
-    in property <string> detail;
-    in property <color> accent: #38bdf8;
-
-    height: 78px * Palette.scale;
-
-    VerticalLayout {
-        padding: 13px * Palette.scale;
-        spacing: 4px * Palette.scale;
-
-        Text {
-            text: root.label;
-            color: Palette.text-muted;
-            font-size: 8px * Palette.scale;
-            font-weight: 700;
-            letter-spacing: 1.4px * Palette.scale;
-            overflow: elide;
-        }
-
-        Text {
-            text: root.value == "" ? "—" : root.value;
-            color: Palette.text-primary;
-            font-size: 16px * Palette.scale;
-            font-weight: 700;
-            overflow: elide;
-        }
-
-        Text {
-            text: root.detail;
-            color: root.accent;
-            font-size: 9px * Palette.scale;
-            overflow: elide;
-        }
-    }
-}
-
-component DashboardAppRow inherits Rectangle {
-    in property <string> app-name;
-    in property <string> duration;
-    in property <float> ratio;
-    in property <color> accent;
-    in property <bool> show-row: true;
-
-    visible: show-row;
-    height: show-row ? 36px * Palette.scale : 0px;
-
-    VerticalLayout {
-        spacing: 5px * Palette.scale;
-
-        HorizontalLayout {
-            alignment: space-between;
-
-            HorizontalLayout {
-                spacing: 7px * Palette.scale;
-                Rectangle {
-                    width: 7px * Palette.scale;
-                    height: 7px * Palette.scale;
-                    border-radius: 4px * Palette.scale;
-                    background: root.accent;
-                    y: (parent.height - self.height) / 2;
-                }
-                Text {
-                    text: root.app-name;
-                    color: Palette.text-secondary;
-                    font-size: 10px * Palette.scale;
-                    overflow: elide;
-                    vertical-alignment: center;
-                }
-            }
-
-            Text {
-                text: root.duration + "  " + Math.round(root.ratio * 100) + "%";
-                color: Palette.text-muted;
-                font-size: 9px * Palette.scale;
-                vertical-alignment: center;
-            }
-        }
-
-        Rectangle {
-            height: 4px * Palette.scale;
-            border-radius: 2px * Palette.scale;
-            background: Palette.bar-track;
-
-            Rectangle {
-                width: parent.width * Math.min(1.0, Math.max(0.0, root.ratio));
-                height: parent.height;
-                border-radius: 2px * Palette.scale;
-                background: @linear-gradient(90deg, root.accent 0%, root.accent.mix(#ffffff, 0.25) 100%);
-                animate width { duration: 350ms; easing: ease-out; }
-            }
-        }
-    }
-}
-
-component InsightLine inherits Rectangle {
-    in property <string> label;
-    in property <string> value;
-    in property <color> accent: #38bdf8;
-
-    height: 37px * Palette.scale;
-    background: transparent;
-
-    VerticalLayout {
-        spacing: 2px * Palette.scale;
-        Text {
-            text: root.label;
-            color: Palette.text-muted;
-            font-size: 8px * Palette.scale;
-            font-weight: 700;
-            letter-spacing: 1px * Palette.scale;
-        }
-        Text {
-            text: root.value == "" ? "—" : root.value;
-            color: root.accent;
-            font-size: 11px * Palette.scale;
-            font-weight: 600;
-            overflow: elide;
-        }
-    }
-}
-
+// Presentation-only overview. All values come from the existing MainWindow contract.
 export component DashboardView {
     in property <float> trackedTime_S;
     in property <string> windowName_S;
     in property <[TimeLog]> timePerApp_S;
-    in property <[SwitchHistory]> switchHistory_S;
     in property <[TimelineBlock]> timelineBlocks_S;
     in property <[TimelineMarker]> timelineMarkers_S;
 
@@ -179,6 +24,8 @@ export component DashboardView {
     callback load-insights;
     callback open-details;
 
+    // The backend sorts applications by duration. Slint returns a default value
+    // for an out-of-range model access, so these bindings also cover short lists.
     property <float> first-ratio: trackedTime_S > 0 ? timePerApp_S[0].duration_i / trackedTime_S : 0.0;
     property <float> second-ratio: trackedTime_S > 0 ? timePerApp_S[1].duration_i / trackedTime_S : 0.0;
     property <float> third-ratio: trackedTime_S > 0 ? timePerApp_S[2].duration_i / trackedTime_S : 0.0;
@@ -187,6 +34,16 @@ export component DashboardView {
     property <color> second-color: Colors.hsv(mod(timePerApp_S[1].name.character-count * 47, 360), 0.72, 0.88);
     property <color> third-color: Colors.hsv(mod(timePerApp_S[2].name.character-count * 47, 360), 0.72, 0.88);
     property <color> fourth-color: Colors.hsv(mod(timePerApp_S[3].name.character-count * 47, 360), 0.72, 0.88);
+
+    property <int> ranked-app-count: 5;
+    property <int> distribution-app-count: 4;
+    property <int> donut-segment-count: 40;
+
+    property <color> info-accent: #38bdf8;
+    property <color> focus-accent: #34d399;
+    property <color> switch-accent: #f472b6;
+    property <color> peak-accent: #c084fc;
+    property <color> transition-accent: #fb923c;
 
     Flickable {
         width: 100%;
@@ -202,6 +59,7 @@ export component DashboardView {
             padding-bottom: 14px * Palette.scale;
             spacing: 10px * Palette.scale;
 
+            // Header and dashboard actions
             HorizontalLayout {
                 height: 34px * Palette.scale;
                 alignment: space-between;
@@ -242,6 +100,7 @@ export component DashboardView {
                 }
             }
 
+            // High-level metrics
             HorizontalLayout {
                 height: 78px * Palette.scale;
                 spacing: 8px * Palette.scale;
@@ -251,7 +110,7 @@ export component DashboardView {
                     label: "TRACKED TIME";
                     value: root.totalTrackedTime_S;
                     detail: root.timePerApp_S.length > 0 ? root.timePerApp_S.length + " active apps" : "Waiting for activity";
-                    accent: #38bdf8;
+                    accent: root.info-accent;
                 }
                 DashboardKpi {
                     horizontal-stretch: 1;
@@ -265,17 +124,18 @@ export component DashboardView {
                     label: "APP SWITCHES";
                     value: root.totalSwitches_S;
                     detail: root.mostSwitchedTo_S == "" ? "Switch history" : "Most often to " + root.mostSwitchedTo_S;
-                    accent: #f472b6;
+                    accent: root.switch-accent;
                 }
                 DashboardKpi {
                     horizontal-stretch: 1;
                     label: "LONGEST FOCUS";
                     value: root.longestFocus_S;
                     detail: root.peakHour_S == "" ? "Peak hour unavailable" : "Peak at " + root.peakHour_S;
-                    accent: #34d399;
+                    accent: root.focus-accent;
                 }
             }
 
+            // Application ranking and distribution
             HorizontalLayout {
                 height: 228px * Palette.scale;
                 spacing: 10px * Palette.scale;
@@ -327,7 +187,7 @@ export component DashboardView {
                         VerticalLayout {
                             spacing: 4px * Palette.scale;
                             for entry[i] in root.timePerApp_S : DashboardAppRow {
-                                show-row: i < 5;
+                                show-row: i < root.ranked-app-count;
                                 app-name: entry.name;
                                 duration: entry.duration;
                                 ratio: root.trackedTime_S > 0 ? entry.duration_i / root.trackedTime_S : 0.0;
@@ -369,13 +229,14 @@ export component DashboardView {
                                 height: 118px * Palette.scale;
                                 background: transparent;
 
-                                for unused[segment-index] in 40 : Rectangle {
-                                    property <float> segment-ratio: (segment-index + 0.5) / 40;
+                                // Colored dots approximate a donut without a custom renderer.
+                                for unused[segment-index] in root.donut-segment-count : Rectangle {
+                                    property <float> segment-ratio: (segment-index + 0.5) / root.donut-segment-count;
                                     width: 7px * Palette.scale;
                                     height: 7px * Palette.scale;
                                     border-radius: 4px * Palette.scale;
-                                    x: parent.width / 2 + Math.cos(segment-index * 9deg - 90deg) * 49px * Palette.scale - self.width / 2;
-                                    y: parent.height / 2 + Math.sin(segment-index * 9deg - 90deg) * 49px * Palette.scale - self.height / 2;
+                                    x: parent.width / 2 + Math.cos(segment-index * (360deg / root.donut-segment-count) - 90deg) * 49px * Palette.scale - self.width / 2;
+                                    y: parent.height / 2 + Math.sin(segment-index * (360deg / root.donut-segment-count) - 90deg) * 49px * Palette.scale - self.height / 2;
                                     background: self.segment-ratio <= root.first-ratio ? root.first-color
                                         : self.segment-ratio <= root.first-ratio + root.second-ratio ? root.second-color
                                         : self.segment-ratio <= root.first-ratio + root.second-ratio + root.third-ratio ? root.third-color
@@ -413,8 +274,8 @@ export component DashboardView {
                                 spacing: 8px * Palette.scale;
 
                                 for entry[i] in root.timePerApp_S : HorizontalLayout {
-                                    visible: i < 4;
-                                    height: i < 4 ? 18px * Palette.scale : 0px;
+                                    visible: i < root.distribution-app-count;
+                                    height: i < root.distribution-app-count ? 18px * Palette.scale : 0px;
                                     spacing: 6px * Palette.scale;
                                     Rectangle {
                                         width: 7px * Palette.scale;
@@ -444,6 +305,7 @@ export component DashboardView {
                 }
             }
 
+            // Focus insights and the existing timeline model
             HorizontalLayout {
                 height: 154px * Palette.scale;
                 spacing: 10px * Palette.scale;
@@ -477,19 +339,19 @@ export component DashboardView {
                                 horizontal-stretch: 1;
                                 label: "AVERAGE SESSION";
                                 value: root.avgFocusSession_S;
-                                accent: #34d399;
+                                accent: root.focus-accent;
                             }
                             InsightLine {
                                 horizontal-stretch: 1;
                                 label: "PEAK HOUR";
                                 value: root.peakHour_S;
-                                accent: #c084fc;
+                                accent: root.peak-accent;
                             }
                             InsightLine {
                                 horizontal-stretch: 1;
                                 label: "MOST SWITCHED TO";
                                 value: root.mostSwitchedTo_S;
-                                accent: #fb923c;
+                                accent: root.transition-accent;
                             }
                         }
                     }
@@ -521,7 +383,7 @@ export component DashboardView {
                             }
                             Text {
                                 text: root.windowName_S == "" ? "WAITING" : "●  " + root.windowName_S;
-                                color: root.windowName_S == "" ? Palette.text-muted : #34d399;
+                                color: root.windowName_S == "" ? Palette.text-muted : root.focus-accent;
                                 font-size: 8px * Palette.scale;
                                 font-weight: 600;
                                 overflow: elide;
