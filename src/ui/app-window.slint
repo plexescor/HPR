@@ -2,6 +2,7 @@ import { DatePickerPopup, Palette as StdPalette } from "std-widgets.slint";
 import { LiveDot } from "./live-dot.slint";
 import { SidebarButton } from "./side-bar-button.slint";
 import { DataView } from "./data-view.slint";
+import { DashboardView } from "./dashboard-view.slint";
 import { InsightsView } from "./insights-view.slint";
 import { TabView } from "./tab-view.slint";
 import { ProjectView } from "./project-view.slint";
@@ -184,7 +185,7 @@ export component MainWindow inherits Window {
     property <bool> sidebar-expanded: sidebar-ta.has-hover || hamburger-ta.has-hover || root.sidebarAlwaysExpanded_S;
     property <bool> is-pushing: root.sidebarType_S == "pushing" && root.sidebar-expanded;
     property <bool> sidebar-is-vertical: root.sidebarPosition_S == "left" || root.sidebarPosition_S == "right" || root.sidebarPosition_S == "";
-    property <string> active-view: "DATA";
+    property <string> active-view: "DASHBOARD";
     property <string> current-view-mode: "Live";
 
     title: "HPR";
@@ -371,6 +372,27 @@ export component MainWindow inherits Window {
             }
 
             // ── Body ─────────────────────────────────────────────────────
+            if active-view == "DASHBOARD" : DashboardView {
+                vertical-stretch: 1;
+                trackedTime_S: root.trackedTime_S;
+                windowName_S: root.windowName_S;
+                timePerApp_S: root.timePerApp_S;
+                switchHistory_S: root.switchHistory_S;
+                timelineBlocks_S: root.timelineBlocks_S;
+                timelineMarkers_S: root.timelineMarkers_S;
+                currentViewMode_S: root.current-view-mode;
+                mostUsedApp_S: root.mostUsedApp_S;
+                totalTrackedTime_S: root.totalTrackedTime_S;
+                totalSwitches_S: root.totalSwitches_S;
+                longestFocus_S: root.longestFocus_S;
+                peakHour_S: root.peakHour_S;
+                avgFocusSession_S: root.avgFocusSession_S;
+                mostSwitchedTo_S: root.mostSwitchedTo_S;
+                load-live-data => { root.loadLiveData(); root.current-view-mode = "Live"; }
+                load-insights => { root.loadInsights(); }
+                open-details => { root.active-view = "DATA"; }
+            }
+
             if active-view == "DATA" : DataView {
                 vertical-stretch: 1;
                 trackedTime_S: root.trackedTime_S;
