@@ -407,6 +407,7 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
 				bool allowCustomVal = AppState::configManager.getConfig<bool>("allow-custom-backends", false);
 				bool allowNetworkVal = AppState::configManager.getConfig<bool>("allow-network-activity", true);
 				bool allowNativeLibrariesVal = AppState::configManager.getConfig<bool>("allow-native-libraries", false);
+				bool fullBrightnessBarsVal = AppState::configManager.getConfig<bool>("full-brightness-bars", false);
 
 				bool allowSidebarCustomizationVal =
 					AppState::configManager.getConfig<bool>("allow-sidebar-customization", false);
@@ -428,6 +429,8 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
 					AppState::configManager.getConfig<bool>("sidebar-always-expanded", false);
 				std::string sidebarPositionVal =
 					AppState::configManager.getConfig<std::string>("sidebar-position", "left");
+				std::string sidebarTypeVal =
+					AppState::configManager.getConfig<std::string>("sidebar-type", "floating");
 				float dataViewCardHeightVal =
 					AppState::configManager.getConfig<float>("dataview-top-card-height", 255.0f);
 				float projectViewCardHeightVal =
@@ -494,6 +497,8 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
 					(*handle)->set_allowNetworkActivity_S(allowNetworkVal);
 				if ((*handle)->get_allowNativeLibraries_S() != allowNativeLibrariesVal)
 					(*handle)->set_allowNativeLibraries_S(allowNativeLibrariesVal);
+				if ((*handle)->get_fullBrightnessBars_S() != fullBrightnessBarsVal)
+					(*handle)->set_fullBrightnessBars_S(fullBrightnessBarsVal);
 
 				if ((*handle)->get_allowSidebarCustomization_S() != allowSidebarCustomizationVal)
 					(*handle)->set_allowSidebarCustomization_S(allowSidebarCustomizationVal);
@@ -527,6 +532,8 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
 					(*handle)->set_sidebarAlwaysExpanded_S(sidebarAlwaysExpandedVal);
 				if ((*handle)->get_sidebarPosition_S() != slint::SharedString(sidebarPositionVal))
 					(*handle)->set_sidebarPosition_S(slint::SharedString(sidebarPositionVal));
+				if ((*handle)->get_sidebarType_S() != slint::SharedString(sidebarTypeVal))
+					(*handle)->set_sidebarType_S(slint::SharedString(sidebarTypeVal));
 				if ((*handle)->get_trackApps_S() != trackAppsVal)
 					(*handle)->set_trackApps_S(trackAppsVal);
 				if ((*handle)->get_trackBrowser_S() != trackBrowserVal)
@@ -1027,6 +1034,7 @@ void UiModelManager::update_Interpreted(
 				bool allowCustomVal = AppState::configManager.getConfig<bool>("allow-custom-backends", false);
 				bool allowNetworkVal = AppState::configManager.getConfig<bool>("allow-network-activity", true);
 				bool allowNativeLibrariesVal = AppState::configManager.getConfig<bool>("allow-native-libraries", false);
+				bool fullBrightnessBarsVal = AppState::configManager.getConfig<bool>("full-brightness-bars", false);
 
 				bool allowSidebarCustomizationVal =
 					AppState::configManager.getConfig<bool>("allow-sidebar-customization", false);
@@ -1048,6 +1056,8 @@ void UiModelManager::update_Interpreted(
 					AppState::configManager.getConfig<bool>("sidebar-always-expanded", false);
 				std::string sidebarPositionVal =
 					AppState::configManager.getConfig<std::string>("sidebar-position", "left");
+				std::string sidebarTypeVal =
+					AppState::configManager.getConfig<std::string>("sidebar-type", "floating");
 				float dataViewCardHeightVal =
 					AppState::configManager.getConfig<float>("dataview-top-card-height", 255.0f);
 				float projectViewCardHeightVal =
@@ -1106,6 +1116,7 @@ void UiModelManager::update_Interpreted(
 				setPropIfChanged("allowCustomBackends_S", slint::interpreter::Value(allowCustomVal));
 				setPropIfChanged("allowNetworkActivity_S", slint::interpreter::Value(allowNetworkVal));
 				setPropIfChanged("allowNativeLibraries_S", slint::interpreter::Value(allowNativeLibrariesVal));
+				setPropIfChanged("fullBrightnessBars_S", slint::interpreter::Value(fullBrightnessBarsVal));
 
 				setPropIfChanged("allowSidebarCustomization_S",
 								 slint::interpreter::Value(allowSidebarCustomizationVal));
@@ -1125,6 +1136,8 @@ void UiModelManager::update_Interpreted(
 				setPropIfChanged("sidebarAlwaysExpanded_S", slint::interpreter::Value(sidebarAlwaysExpandedVal));
 				setPropIfChanged("sidebarPosition_S",
 								 slint::interpreter::Value(slint::SharedString(sidebarPositionVal)));
+				setPropIfChanged("sidebarType_S",
+								 slint::interpreter::Value(slint::SharedString(sidebarTypeVal)));
 				setPropIfChanged("trackApps_S", slint::interpreter::Value(trackAppsVal));
 				setPropIfChanged("trackBrowser_S", slint::interpreter::Value(trackBrowserVal));
 				setPropIfChanged("trackProjects_S", slint::interpreter::Value(trackProjectsVal));

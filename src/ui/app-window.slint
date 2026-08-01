@@ -106,6 +106,7 @@ export component MainWindow inherits Window {
     in property <bool>            allowCustomBackends_S;
     in property <bool>            allowNetworkActivity_S;
     in property <bool>            allowNativeLibraries_S;
+    in property <bool>            fullBrightnessBars_S;
 
     in property <bool>            allowSidebarCustomization_S;
     in property <bool>            hideSidebarReload_S;
@@ -172,6 +173,7 @@ export component MainWindow inherits Window {
     //As "LIVE" isnt accurate cz main view can also show historical data
     //so i renamed to it "DATA"
     in-out property <bool> sidebarAlwaysExpanded_S: false;
+    in property <string> sidebarType_S;      // "floating" | "pushing"
     in property <string> sidebarPosition_S;  // "left" | "right" | "top" | "bottom"
     in-out property <bool> trackApps_S: true;
     in-out property <bool> trackBrowser_S: true;
@@ -180,7 +182,8 @@ export component MainWindow inherits Window {
     in-out property <float> projectViewCardHeight_S: 842.0;
     in-out property <float> tabViewCardHeight_S: 848.0;
     property <bool> sidebar-expanded: sidebar-ta.has-hover || hamburger-ta.has-hover || root.sidebarAlwaysExpanded_S;
-    property <bool> sidebar-is-vertical: root.sidebarPosition_S == "left" || root.sidebarPosition_S == "right";
+    property <bool> is-pushing: root.sidebarType_S == "pushing" && root.sidebar-expanded;
+    property <bool> sidebar-is-vertical: root.sidebarPosition_S == "left" || root.sidebarPosition_S == "right" || root.sidebarPosition_S == "";
     property <string> active-view: "DATA";
     property <string> current-view-mode: "Live";
 
@@ -218,11 +221,11 @@ export component MainWindow inherits Window {
 
         // ── Main content ──────────────────────────────────────────────────
         VerticalLayout {
-            x: (root.sidebarAlwaysExpanded_S && root.sidebarPosition_S == "left") ? 56px * Palette.scale : 0px;
-            y: (root.sidebarAlwaysExpanded_S && root.sidebarPosition_S == "top") ? 56px * Palette.scale : 0px;
-            width: (root.sidebarAlwaysExpanded_S && root.sidebar-is-vertical)
+            x: (root.is-pushing && (root.sidebarPosition_S == "left" || root.sidebarPosition_S == "")) ? 56px * Palette.scale : 0px;
+            y: (root.is-pushing && root.sidebarPosition_S == "top") ? 56px * Palette.scale : 0px;
+            width: (root.is-pushing && root.sidebar-is-vertical)
                      ? (parent.width - 56px * Palette.scale) : parent.width;
-            height: (root.sidebarAlwaysExpanded_S && !root.sidebar-is-vertical)
+            height: (root.is-pushing && !root.sidebar-is-vertical)
                      ? (parent.height - 56px * Palette.scale) : parent.height;
             padding: 0px;
             spacing: 0px;
@@ -373,6 +376,7 @@ export component MainWindow inherits Window {
                 trackedTime_S: root.trackedTime_S;
                 timePerApp_S: root.timePerApp_S;
                 switchHistory_S: root.switchHistory_S;
+                fullBrightnessBars_S: root.fullBrightnessBars_S;
                 topCardHeight_S: root.dataViewCardHeight_S * 1px * Palette.scale;
                 switch-to-live-clicked => { root.loadLiveData(); root.current-view-mode = "Live"; }
                 setConfig(param, val) => { root.setConfig(param, val); }
@@ -403,6 +407,7 @@ export component MainWindow inherits Window {
                 vertical-stretch: 1;
                 timePerTab_S: root.timePerTab_S;
                 trackedTime_S: root.trackedTime_Tab_S;
+                fullBrightnessBars_S: root.fullBrightnessBars_S;
                 tabCardHeight_S: root.tabViewCardHeight_S * 1px * Palette.scale;
                 per-tab-clicked => { root.tabViewClicked(); }
                 per-site-clicked => { root.siteViewClicked(); }
@@ -413,6 +418,7 @@ export component MainWindow inherits Window {
                 vertical-stretch: 1;
                 timePerProject_S: root.timePerProject_S;
                 trackedTime_S: root.trackedTime_Project_S;
+                fullBrightnessBars_S: root.fullBrightnessBars_S;
                 projectCardHeight_S: root.projectViewCardHeight_S * 1px * Palette.scale;
                 raw-view-clicked => { root.rawViewClicked(); }
                 filter-view-clicked => { root.filterViewClicked(); }
@@ -504,6 +510,7 @@ export component MainWindow inherits Window {
                 allowCustomBackends_S: root.allowCustomBackends_S;
                 allowNetworkActivity_S: root.allowNetworkActivity_S;
                 allowNativeLibraries_S: root.allowNativeLibraries_S;
+                fullBrightnessBars_S: root.fullBrightnessBars_S;
                 useInterpreter_S: root.useThemesEnabled_S;
                 setConfig(param, val) => { root.setConfig(param, val); }
                 allowSidebarCustomization_S: root.allowSidebarCustomization_S;
@@ -522,6 +529,7 @@ export component MainWindow inherits Window {
                 hideSidebarThemes_S: root.hideSidebarThemes_S;
                 showMiscImagePanel_S: root.showMiscImagePanel_S;
                 sidebarAlwaysExpanded_S: root.sidebarAlwaysExpanded_S;
+                sidebarType_S: root.sidebarType_S;
                 sidebarPosition_S: root.sidebarPosition_S;
                 trackApps_S: root.trackApps_S;
                 trackBrowser_S: root.trackBrowser_S;
@@ -543,10 +551,10 @@ export component MainWindow inherits Window {
         // Outside the VerticalLayout so the layout engine cannot override its
         // width. 85% wide × 12px tall, pinned to top-left of the root Rectangle.
         drag-ta := TouchArea {
-            x: root.sidebarAlwaysExpanded_S && root.sidebarPosition_S == "left" ? 56px * Palette.scale : 0px;
+            x: root.is-pushing && (root.sidebarPosition_S == "left" || root.sidebarPosition_S == "") ? 56px * Palette.scale : 0px;
             y: 0px;
             z: 5;
-            width: root.no-title-bar-enabled ? (root.width - (root.sidebarAlwaysExpanded_S && root.sidebar-is-vertical ? 56px * Palette.scale : 0px)) * 0.87 : 0px;
+            width: root.no-title-bar-enabled ? (root.width - (root.is-pushing && root.sidebar-is-vertical ? 56px * Palette.scale : 0px)) * 0.87 : 0px;
             height: root.no-title-bar-enabled ? 25.2px * Palette.scale : 0px;
             enabled: root.no-title-bar-enabled;
             pointer-event(event) => {

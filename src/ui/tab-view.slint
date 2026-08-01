@@ -11,6 +11,7 @@ component TabRow inherits Rectangle {
     in property <bool>   is-even;
     in property <int>    row-index;
     in property <color>  bar-color;
+    in property <bool>   full-brightness-bars;
 
     height: 48px * Palette.scale;
     border-radius: 5px * Palette.scale;
@@ -37,7 +38,7 @@ component TabRow inherits Rectangle {
             width: 3px * Palette.scale;
             height: 20px * Palette.scale;
             border-radius: 2px * Palette.scale;
-            background: ta.has-hover ? bar-color : bar-color.mix(#00000000, 0.45);
+            background: (full-brightness-bars || ta.has-hover) ? bar-color : bar-color.mix(#00000000, 0.45);
             animate background { duration: 100ms; }
             y: (parent.height - self.height) / 2;
         }
@@ -61,7 +62,7 @@ component TabRow inherits Rectangle {
 
                 Text {
                     text: duration;
-                    color: ta.has-hover ? bar-color : bar-color.mix(#00000000, 0.45);
+                    color: (full-brightness-bars || ta.has-hover) ? bar-color : bar-color.mix(#00000000, 0.45);
                     font-size: 10px * Palette.scale;
                     font-weight: 600;
                     vertical-alignment: center;
@@ -79,7 +80,7 @@ component TabRow inherits Rectangle {
                     height: 4px * Palette.scale;
                     border-radius: 2px * Palette.scale;
                     width: parent.width * ratio;
-                    background: ta.has-hover
+                    background: (full-brightness-bars || ta.has-hover)
                         ? @linear-gradient(90deg, bar-color 0%, bar-color.mix(#ffffff, 0.3) 100%)
                         : @linear-gradient(90deg, bar-color.mix(#00000000, 0.45) 0%, bar-color.mix(#ffffff, 0.15).mix(#00000000, 0.45) 100%);
                     animate background { duration: 100ms; }
@@ -149,6 +150,7 @@ component ViewToggleButton inherits Rectangle {
 export component TabView {
     in property <[TimeLog_Tab]> timePerTab_S;
     in property <int>           trackedTime_S;
+    in property <bool>          fullBrightnessBars_S;
     in-out property <length>    tabCardHeight_S: 848px * Palette.scale;
 
     callback per-tab-clicked;
@@ -174,15 +176,15 @@ export component TabView {
 
                 ViewToggleButton {
                     label: "Per-Tab";
-                    base-color: #c084fc;
-                    hover-color: #d8b4fe;
-                    pressed-color: #e9d5ff;
-                    normal-bg-color: #c084fc12;
-                    hover-bg-color: #c084fc25;
-                    pressed-bg-color: #c084fc35;
-                    normal-border-color: #c084fc35;
-                    hover-border-color: #c084fc60;
-                    pressed-border-color: #c084fc80;
+                    base-color: #38bdf8;
+                    hover-color: #7dd3fc;
+                    pressed-color: #bae6fd;
+                    normal-bg-color: #38bdf812;
+                    hover-bg-color: #38bdf825;
+                    pressed-bg-color: #38bdf835;
+                    normal-border-color: #38bdf835;
+                    hover-border-color: #38bdf860;
+                    pressed-border-color: #38bdf880;
                     clicked => { root.per-tab-clicked(); }
                 }
 
@@ -215,6 +217,7 @@ export component TabView {
                     width: 100%;
                     for entry[i] in timePerTab_S: TabRow {
                         tab-title: entry.name;
+                        full-brightness-bars: root.fullBrightnessBars_S;
                         ratio: trackedTime_S > 0
                             ? (entry.duration_i * 1.0) / (trackedTime_S * 1.0)
                             : 0.0;

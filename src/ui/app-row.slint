@@ -9,6 +9,7 @@ export component AppRow inherits Rectangle {
     in property <int>    row-index;
 
     in property <color> bar-color: Colors.hsv(mod(app-name.character-count * 47, 360), 0.75, 0.85);
+    in property <bool>  full-brightness-bars;
 
     height: 48px * Palette.scale;
     border-radius: 5px * Palette.scale;
@@ -39,7 +40,7 @@ export component AppRow inherits Rectangle {
 
             Text {
                 text: duration;
-                color: ta.has-hover ? bar-color : bar-color.mix(#00000000, 0.45);
+                color: (full-brightness-bars || ta.has-hover) ? bar-color : bar-color.mix(#00000000, 0.45);
                 font-size: 10px * Palette.scale;
                 font-weight: 600;
                 vertical-alignment: center;
@@ -58,7 +59,7 @@ export component AppRow inherits Rectangle {
                 height: 4px * Palette.scale;
                 border-radius: 2px * Palette.scale;
                 width: parent.width * ratio;
-                background: ta.has-hover
+                background: (full-brightness-bars || ta.has-hover)
                     ? @linear-gradient(90deg, bar-color 0%, bar-color.mix(#ffffff, 0.3) 100%)
                     : @linear-gradient(90deg, bar-color.mix(#00000000, 0.45) 0%, bar-color.mix(#ffffff, 0.15).mix(#00000000, 0.45) 100%);
                 animate background { duration: 100ms; }

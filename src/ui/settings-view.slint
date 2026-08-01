@@ -96,6 +96,7 @@ export component SettingsView {
     in property <bool> showMiscImagePanel_S;
     in property <bool> trueHeadless_S;
     in property <bool> allowNativeLibraries_S;
+    in property <bool> fullBrightnessBars_S;
     callback setConfig(string, string);
 
     in property <bool> allowSidebarCustomization_S;
@@ -114,6 +115,7 @@ export component SettingsView {
     in property <bool> hideSidebarThemes_S;
     in property <bool> useInterpreter_S;
     in property <bool> sidebarAlwaysExpanded_S;
+    in property <string> sidebarType_S;      // "floating" | "pushing"
     in property <string> sidebarPosition_S;  // "left" | "right" | "top" | "bottom"
     in property <bool> trackApps_S: true;
     in property <bool> trackBrowser_S: true;
@@ -241,6 +243,7 @@ export component SettingsView {
                                 width: 80px * Palette.scale;
                                 clicked => {
                                     root.setConfig("theme", "dark");
+                                    root.setConfig("full-brightness-bars", "false");
                                 }
                             }
 
@@ -250,9 +253,19 @@ export component SettingsView {
                                 width: 80px * Palette.scale;
                                 clicked => {
                                     root.setConfig("theme", "light");
+                                    root.setConfig("full-brightness-bars", "true");
                                 }
                             }
                         }
+                    }
+
+                    Divider {}
+
+                    ToggleSetting {
+                        label: "Full Brightness Gradient Bars";
+                        description: "Render application, tab, and project usage bars at 100% brightness instead of dimmed";
+                        checked: root.fullBrightnessBars_S;
+                        toggled(v) => { root.setConfig("full-brightness-bars", v ? "true" : "false"); }
                     }
 
                     Divider {}
@@ -357,7 +370,56 @@ export component SettingsView {
                         label: "Keep Sidebar Always Expanded";
                         description: "Sidebar stays open permanently instead of collapsing when cursor moves away";
                         checked: root.sidebarAlwaysExpanded_S;
-                        toggled(v) => { root.setConfig("sidebar-always-expanded", v ? "true" : "false"); }
+                        toggled(v) => {
+                            root.setConfig("sidebar-always-expanded", v ? "true" : "false");
+                            if (v) {
+                                root.setConfig("sidebar-type", "pushing");
+                            }
+                        }
+                    }
+
+                    Divider {}
+
+                    HorizontalLayout {
+                        alignment: space-between;
+                        spacing: 12px * Palette.scale;
+
+                        VerticalLayout {
+                            alignment: center;
+                            spacing: 4px * Palette.scale;
+                            Text {
+                                text: "Sidebar Type";
+                                font-size: 13px * Palette.scale;
+                                font-weight: 600;
+                                color: Palette.text-primary;
+                            }
+                            Text {
+                                text: "Floating overlays window content; Pushing shifts content to the side";
+                                font-size: 11px * Palette.scale;
+                                color: Palette.text-secondary;
+                            }
+                        }
+
+                        HorizontalLayout {
+                            alignment: end;
+                            spacing: 6px * Palette.scale;
+                            width: 180px * Palette.scale;
+                            y: (parent.height - self.height) / 2;
+
+                            ThemeOptionButton {
+                                label: "FLOATING";
+                                active: sidebarType_S == "floating" || sidebarType_S == "";
+                                width: 85px * Palette.scale;
+                                clicked => { root.setConfig("sidebar-type", "floating"); }
+                            }
+
+                            ThemeOptionButton {
+                                label: "PUSHING";
+                                active: sidebarType_S == "pushing";
+                                width: 85px * Palette.scale;
+                                clicked => { root.setConfig("sidebar-type", "pushing"); }
+                            }
+                        }
                     }
 
                     Divider {}
