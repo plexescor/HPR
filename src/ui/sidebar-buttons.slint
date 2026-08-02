@@ -93,8 +93,8 @@ export component SidebarButtons {
             position: root.position;
             icon: @image-url("./images/live.svg");
             icon-light: @image-url("./images/live-light.svg");
-            tip: "Switch to live view";
-            clicked => { root.activeViewChanged("DATA"); }
+            tip: "Open dashboard";
+            clicked => { root.activeViewChanged("DASHBOARD"); root.loadInsights(); }
         }
 
         if !allowSidebarCustomization_S || !hideSidebarExtensions_S : SidebarButton {
@@ -221,8 +221,8 @@ export component SidebarButtons {
             position: root.position;
             icon: @image-url("./images/live.svg");
             icon-light: @image-url("./images/live-light.svg");
-            tip: "Switch to live view";
-            clicked => { root.activeViewChanged("DATA"); }
+            tip: "Open dashboard";
+            clicked => { root.activeViewChanged("DASHBOARD"); root.loadInsights(); }
         }
 
         if !allowSidebarCustomization_S || !hideSidebarExtensions_S : SidebarButton {

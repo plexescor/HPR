@@ -1,0 +1,437 @@
+import { Palette } from "./palette.slint";
+import { Card } from "./card.slint";
+import { TimeLog, TimelineBlock, TimelineMarker } from "./types.slint";
+import { DashboardButton, DashboardKpi, DashboardAppRow, InsightLine } from "./dashboard-components.slint";
+
+// Presentation-only overview. All values come from the existing MainWindow contract.
+export component DashboardView {
+    in property <float> trackedTime_S;
+    in property <string> windowName_S;
+    in property <[TimeLog]> timePerApp_S;
+    in property <[TimelineBlock]> timelineBlocks_S;
+    in property <[TimelineMarker]> timelineMarkers_S;
+
+    in property <string> currentViewMode_S;
+    in property <string> mostUsedApp_S;
+    in property <string> totalTrackedTime_S;
+    in property <string> totalSwitches_S;
+    in property <string> longestFocus_S;
+    in property <string> peakHour_S;
+    in property <string> avgFocusSession_S;
+    in property <string> mostSwitchedTo_S;
+
+    callback load-live-data;
+    callback load-insights;
+    callback open-details;
+
+    // The backend sorts applications by duration. Slint returns a default value
+    // for an out-of-range model access, so these bindings also cover short lists.
+    property <float> first-ratio: trackedTime_S > 0 ? timePerApp_S[0].duration_i / trackedTime_S : 0.0;
+    property <float> second-ratio: trackedTime_S > 0 ? timePerApp_S[1].duration_i / trackedTime_S : 0.0;
+    property <float> third-ratio: trackedTime_S > 0 ? timePerApp_S[2].duration_i / trackedTime_S : 0.0;
+    property <float> fourth-ratio: trackedTime_S > 0 ? timePerApp_S[3].duration_i / trackedTime_S : 0.0;
+    property <color> first-color: Colors.hsv(mod(timePerApp_S[0].name.character-count * 47, 360), 0.72, 0.88);
+    property <color> second-color: Colors.hsv(mod(timePerApp_S[1].name.character-count * 47, 360), 0.72, 0.88);
+    property <color> third-color: Colors.hsv(mod(timePerApp_S[2].name.character-count * 47, 360), 0.72, 0.88);
+    property <color> fourth-color: Colors.hsv(mod(timePerApp_S[3].name.character-count * 47, 360), 0.72, 0.88);
+
+    property <int> ranked-app-count: 5;
+    property <int> distribution-app-count: 4;
+    property <int> donut-segment-count: 40;
+
+    property <color> info-accent: #38bdf8;
+    property <color> focus-accent: #34d399;
+    property <color> switch-accent: #f472b6;
+    property <color> peak-accent: #c084fc;
+    property <color> transition-accent: #fb923c;
+
+    Flickable {
+        width: 100%;
+        height: 100%;
+        interactive: true;
+        viewport-height: dashboard-content.preferred-height;
+
+        dashboard-content := VerticalLayout {
+            width: 100%;
+            padding-left: 14px * Palette.scale;
+            padding-right: 14px * Palette.scale;
+            padding-top: 10px * Palette.scale;
+            padding-bottom: 14px * Palette.scale;
+            spacing: 10px * Palette.scale;
+
+            // Header and dashboard actions
+            HorizontalLayout {
+                height: 34px * Palette.scale;
+                alignment: space-between;
+
+                VerticalLayout {
+                    spacing: 2px * Palette.scale;
+                    Text {
+                        text: "DASHBOARD";
+                        color: Palette.text-primary;
+                        font-size: 12px * Palette.scale;
+                        font-weight: 700;
+                        letter-spacing: 2px * Palette.scale;
+                    }
+                    Text {
+                        text: root.currentViewMode_S == "" ? "Activity overview" : root.currentViewMode_S + " activity overview";
+                        color: Palette.text-muted;
+                        font-size: 9px * Palette.scale;
+                    }
+                }
+
+                HorizontalLayout {
+                    spacing: 6px * Palette.scale;
+                    alignment: end;
+
+                    DashboardButton {
+                        label: "DETAILS";
+                        clicked => { root.open-details(); }
+                    }
+                    DashboardButton {
+                        label: "REFRESH";
+                        clicked => { root.load-insights(); }
+                    }
+                    DashboardButton {
+                        label: "LIVE DATA";
+                        primary: true;
+                        clicked => { root.load-live-data(); }
+                    }
+                }
+            }
+
+            // High-level metrics
+            HorizontalLayout {
+                height: 78px * Palette.scale;
+                spacing: 8px * Palette.scale;
+
+                DashboardKpi {
+                    horizontal-stretch: 1;
+                    label: "TRACKED TIME";
+                    value: root.totalTrackedTime_S;
+                    detail: root.timePerApp_S.length > 0 ? root.timePerApp_S.length + " active apps" : "Waiting for activity";
+                    accent: root.info-accent;
+                }
+                DashboardKpi {
+                    horizontal-stretch: 1;
+                    label: "TOP APPLICATION";
+                    value: root.mostUsedApp_S;
+                    detail: root.timePerApp_S.length > 0 ? Math.round(root.first-ratio * 100) + "% of tracked time" : "No data yet";
+                    accent: root.first-color;
+                }
+                DashboardKpi {
+                    horizontal-stretch: 1;
+                    label: "APP SWITCHES";
+                    value: root.totalSwitches_S;
+                    detail: root.mostSwitchedTo_S == "" ? "Switch history" : "Most often to " + root.mostSwitchedTo_S;
+                    accent: root.switch-accent;
+                }
+                DashboardKpi {
+                    horizontal-stretch: 1;
+                    label: "LONGEST FOCUS";
+                    value: root.longestFocus_S;
+                    detail: root.peakHour_S == "" ? "Peak hour unavailable" : "Peak at " + root.peakHour_S;
+                    accent: root.focus-accent;
+                }
+            }
+
+            // Application ranking and distribution
+            HorizontalLayout {
+                height: 228px * Palette.scale;
+                spacing: 10px * Palette.scale;
+
+                Card {
+                    horizontal-stretch: 3;
+
+                    VerticalLayout {
+                        padding: 14px * Palette.scale;
+                        spacing: 10px * Palette.scale;
+
+                        HorizontalLayout {
+                            height: 26px * Palette.scale;
+                            alignment: space-between;
+                            VerticalLayout {
+                                spacing: 2px * Palette.scale;
+                                Text {
+                                    text: "TOP APPLICATIONS";
+                                    color: Palette.text-primary;
+                                    font-size: 11px * Palette.scale;
+                                    font-weight: 700;
+                                }
+                                Text {
+                                    text: "Share of tracked time";
+                                    color: Palette.text-muted;
+                                    font-size: 8px * Palette.scale;
+                                }
+                            }
+                            Text {
+                                text: root.timePerApp_S.length + " TOTAL";
+                                color: Palette.text-label;
+                                font-size: 8px * Palette.scale;
+                                font-weight: 700;
+                                letter-spacing: 1px * Palette.scale;
+                                vertical-alignment: center;
+                            }
+                        }
+
+                        if root.timePerApp_S.length == 0 : Text {
+                            text: "NO ACTIVITY RECORDED";
+                            color: Palette.text-muted;
+                            font-size: 10px * Palette.scale;
+                            font-weight: 700;
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                            vertical-stretch: 1;
+                        }
+
+                        VerticalLayout {
+                            spacing: 4px * Palette.scale;
+                            for entry[i] in root.timePerApp_S : DashboardAppRow {
+                                show-row: i < root.ranked-app-count;
+                                app-name: entry.name;
+                                duration: entry.duration;
+                                ratio: root.trackedTime_S > 0 ? entry.duration_i / root.trackedTime_S : 0.0;
+                                accent: Colors.hsv(mod(entry.name.character-count * 47, 360), 0.72, 0.88);
+                            }
+                        }
+                    }
+                }
+
+                Card {
+                    horizontal-stretch: 2;
+
+                    VerticalLayout {
+                        padding: 14px * Palette.scale;
+                        spacing: 8px * Palette.scale;
+
+                        VerticalLayout {
+                            height: 28px * Palette.scale;
+                            spacing: 2px * Palette.scale;
+                            Text {
+                                text: "DISTRIBUTION";
+                                color: Palette.text-primary;
+                                font-size: 11px * Palette.scale;
+                                font-weight: 700;
+                            }
+                            Text {
+                                text: "Top applications";
+                                color: Palette.text-muted;
+                                font-size: 8px * Palette.scale;
+                            }
+                        }
+
+                        HorizontalLayout {
+                            spacing: 12px * Palette.scale;
+                            alignment: center;
+
+                            donut := Rectangle {
+                                width: 118px * Palette.scale;
+                                height: 118px * Palette.scale;
+                                background: transparent;
+
+                                // Colored dots approximate a donut without a custom renderer.
+                                for unused[segment-index] in root.donut-segment-count : Rectangle {
+                                    property <float> segment-ratio: (segment-index + 0.5) / root.donut-segment-count;
+                                    width: 7px * Palette.scale;
+                                    height: 7px * Palette.scale;
+                                    border-radius: 4px * Palette.scale;
+                                    x: parent.width / 2 + Math.cos(segment-index * (360deg / root.donut-segment-count) - 90deg) * 49px * Palette.scale - self.width / 2;
+                                    y: parent.height / 2 + Math.sin(segment-index * (360deg / root.donut-segment-count) - 90deg) * 49px * Palette.scale - self.height / 2;
+                                    background: self.segment-ratio <= root.first-ratio ? root.first-color
+                                        : self.segment-ratio <= root.first-ratio + root.second-ratio ? root.second-color
+                                        : self.segment-ratio <= root.first-ratio + root.second-ratio + root.third-ratio ? root.third-color
+                                        : self.segment-ratio <= root.first-ratio + root.second-ratio + root.third-ratio + root.fourth-ratio ? root.fourth-color
+                                        : Palette.bar-track;
+                                }
+
+                                VerticalLayout {
+                                    width: 66px * Palette.scale;
+                                    height: 46px * Palette.scale;
+                                    x: (parent.width - self.width) / 2;
+                                    y: (parent.height - self.height) / 2;
+                                    spacing: 1px * Palette.scale;
+                                    alignment: center;
+                                    Text {
+                                        text: Math.round(root.first-ratio * 100) + "%";
+                                        color: Palette.text-primary;
+                                        font-size: 17px * Palette.scale;
+                                        font-weight: 700;
+                                        horizontal-alignment: center;
+                                    }
+                                    Text {
+                                        text: "LEADER";
+                                        color: Palette.text-muted;
+                                        font-size: 7px * Palette.scale;
+                                        font-weight: 700;
+                                        letter-spacing: 1px * Palette.scale;
+                                        horizontal-alignment: center;
+                                    }
+                                }
+                            }
+
+                            VerticalLayout {
+                                horizontal-stretch: 1;
+                                spacing: 8px * Palette.scale;
+
+                                for entry[i] in root.timePerApp_S : HorizontalLayout {
+                                    visible: i < root.distribution-app-count;
+                                    height: i < root.distribution-app-count ? 18px * Palette.scale : 0px;
+                                    spacing: 6px * Palette.scale;
+                                    Rectangle {
+                                        width: 7px * Palette.scale;
+                                        height: 7px * Palette.scale;
+                                        border-radius: 4px * Palette.scale;
+                                        background: Colors.hsv(mod(entry.name.character-count * 47, 360), 0.72, 0.88);
+                                        y: (parent.height - self.height) / 2;
+                                    }
+                                    Text {
+                                        horizontal-stretch: 1;
+                                        text: entry.name;
+                                        color: Palette.text-secondary;
+                                        font-size: 9px * Palette.scale;
+                                        overflow: elide;
+                                        vertical-alignment: center;
+                                    }
+                                    Text {
+                                        text: Math.round((root.trackedTime_S > 0 ? entry.duration_i / root.trackedTime_S : 0.0) * 100) + "%";
+                                        color: Palette.text-muted;
+                                        font-size: 8px * Palette.scale;
+                                        vertical-alignment: center;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Focus insights and the existing timeline model
+            HorizontalLayout {
+                height: 154px * Palette.scale;
+                spacing: 10px * Palette.scale;
+
+                Card {
+                    horizontal-stretch: 2;
+
+                    VerticalLayout {
+                        padding: 14px * Palette.scale;
+                        spacing: 9px * Palette.scale;
+
+                        VerticalLayout {
+                            height: 28px * Palette.scale;
+                            spacing: 2px * Palette.scale;
+                            Text {
+                                text: "FOCUS SNAPSHOT";
+                                color: Palette.text-primary;
+                                font-size: 11px * Palette.scale;
+                                font-weight: 700;
+                            }
+                            Text {
+                                text: "Patterns from current selection";
+                                color: Palette.text-muted;
+                                font-size: 8px * Palette.scale;
+                            }
+                        }
+
+                        HorizontalLayout {
+                            spacing: 16px * Palette.scale;
+                            InsightLine {
+                                horizontal-stretch: 1;
+                                label: "AVERAGE SESSION";
+                                value: root.avgFocusSession_S;
+                                accent: root.focus-accent;
+                            }
+                            InsightLine {
+                                horizontal-stretch: 1;
+                                label: "PEAK HOUR";
+                                value: root.peakHour_S;
+                                accent: root.peak-accent;
+                            }
+                            InsightLine {
+                                horizontal-stretch: 1;
+                                label: "MOST SWITCHED TO";
+                                value: root.mostSwitchedTo_S;
+                                accent: root.transition-accent;
+                            }
+                        }
+                    }
+                }
+
+                Card {
+                    horizontal-stretch: 3;
+
+                    VerticalLayout {
+                        padding: 14px * Palette.scale;
+                        spacing: 10px * Palette.scale;
+
+                        HorizontalLayout {
+                            height: 28px * Palette.scale;
+                            alignment: space-between;
+                            VerticalLayout {
+                                spacing: 2px * Palette.scale;
+                                Text {
+                                    text: "DAY CONSTRUCTION";
+                                    color: Palette.text-primary;
+                                    font-size: 11px * Palette.scale;
+                                    font-weight: 700;
+                                }
+                                Text {
+                                    text: "Sequence of active windows";
+                                    color: Palette.text-muted;
+                                    font-size: 8px * Palette.scale;
+                                }
+                            }
+                            Text {
+                                text: root.windowName_S == "" ? "WAITING" : "●  " + root.windowName_S;
+                                color: root.windowName_S == "" ? Palette.text-muted : root.focus-accent;
+                                font-size: 8px * Palette.scale;
+                                font-weight: 600;
+                                overflow: elide;
+                                max-width: 180px * Palette.scale;
+                                vertical-alignment: center;
+                            }
+                        }
+
+                        Rectangle {
+                            height: 34px * Palette.scale;
+                            border-radius: 6px * Palette.scale;
+                            background: Palette.timeline-bar-bg;
+                            border-width: 1px * Palette.scale;
+                            border-color: Palette.divider;
+                            clip: true;
+
+                            if root.timelineBlocks_S.length == 0 : Text {
+                                text: "NO TIMELINE DATA";
+                                color: Palette.text-muted;
+                                font-size: 8px * Palette.scale;
+                                font-weight: 700;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                            }
+
+                            for block in root.timelineBlocks_S : Rectangle {
+                                x: block.x * parent.width;
+                                width: block.width * parent.width;
+                                height: parent.height;
+                                background: block.color;
+                                border-width: 1px * Palette.scale;
+                                border-color: Palette.background;
+                            }
+                        }
+
+                        Rectangle {
+                            height: 12px * Palette.scale;
+                            for marker in root.timelineMarkers_S : Text {
+                                x: marker.x * parent.width - self.preferred-width / 2;
+                                text: marker.label;
+                                color: Palette.timeline-marker;
+                                font-size: 7px * Palette.scale;
+                                font-weight: 600;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
