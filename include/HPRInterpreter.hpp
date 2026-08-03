@@ -33,6 +33,7 @@ class HPRInterpreter
 	void trackingLoop(); // runs on separate thread so that it polls shit
 						 // continously (correct spelling?)
 	bool initialiseSlintUiPath();
+	void saveWindowGeometry();
 
   private:
 	ExtensionManager *extManager;

@@ -30,6 +30,7 @@ class HPR
   private:
 	void trackingLoop(); // runs on separate thread so that it polls shit
 						 // continously (correct spelling?)
+	void saveWindowGeometry();
 
   private:
 	ExtensionManager *extManager;

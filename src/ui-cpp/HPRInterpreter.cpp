@@ -68,6 +68,48 @@ HPRInterpreter::HPRInterpreter(ExtensionManager *extMgr)
 #endif
 }
 
+void HPRInterpreter::saveWindowGeometry()
+{
+	if (!instance.has_value())
+		return;
+
+	auto weak = slint::ComponentWeakHandle<slint::interpreter::ComponentInstance>(instance.value());
+	slint::invoke_from_event_loop(
+		[weak]()
+		{
+			if (auto handle = weak.lock())
+			{
+				static int lastWidth = -1;
+				static int lastHeight = -1;
+				static int lastX = -1;
+				static int lastY = -1;
+
+				auto size = (*handle)->window().size();
+				auto pos = (*handle)->window().position();
+
+				int w = static_cast<int>(size.width);
+				int h = static_cast<int>(size.height);
+				int x = pos.x;
+				int y = pos.y;
+
+				if (w > 200 && h > 200)
+				{
+					if (w != lastWidth || h != lastHeight || x != lastX || y != lastY)
+					{
+						AppState::configManager.setConfig("window-width", w);
+						AppState::configManager.setConfig("window-height", h);
+						AppState::configManager.setConfig("window-pos-x", x);
+						AppState::configManager.setConfig("window-pos-y", y);
+						lastWidth = w;
+						lastHeight = h;
+						lastX = x;
+						lastY = y;
+					}
+				}
+			}
+		});
+}
+
 HPRInterpreter::~HPRInterpreter()
 {
 	running = false;
@@ -209,6 +251,7 @@ void HPRInterpreter::show()
 
 void HPRInterpreter::quit()
 {
+	saveWindowGeometry();
 	slint::invoke_from_event_loop([]() { slint::quit_event_loop(); });
 }
 
@@ -220,13 +263,20 @@ void HPRInterpreter::hide()
 		paused = true;
 	}
 
-	auto weak = slint::ComponentWeakHandle<slint::interpreter::ComponentInstance>(instance.value());
-	slint::invoke_from_event_loop(
-		[weak]()
-		{
-			if (auto handle = weak.lock())
-				(*handle)->hide();
-		});
+	saveWindowGeometry();
+
+	if (instance.has_value())
+	{
+		auto weak = slint::ComponentWeakHandle<slint::interpreter::ComponentInstance>(instance.value());
+		slint::invoke_from_event_loop(
+			[weak]()
+			{
+				if (auto handle = weak.lock())
+				{
+					(*handle)->hide();
+				}
+			});
+	}
 }
 
 void HPRInterpreter::trackingLoop()
@@ -413,6 +463,8 @@ void HPRInterpreter::trackingLoop()
 				remaining -= sleepTime;
 			}
 		}
+
+		saveWindowGeometry();
 	}
 }
 
@@ -424,11 +476,33 @@ void HPRInterpreter::run()
 
 	uiEventBridge.emplace(inst, extManager, this);
 
-#ifdef _WIN32
+	int savedWidth = AppState::configManager.getConfig<int>("window-width", 1000);
+	int savedHeight = AppState::configManager.getConfig<int>("window-height", 700);
+	int savedX = AppState::configManager.getConfig<int>("window-pos-x", -1);
+	int savedY = AppState::configManager.getConfig<int>("window-pos-y", -1);
+
 	auto weak_inst = slint::ComponentWeakHandle<slint::interpreter::ComponentInstance>(inst);
+	slint::invoke_from_event_loop(
+		[weak_inst, savedWidth, savedHeight, savedX, savedY]()
+		{
+			if (auto handle = weak_inst.lock())
+			{
+				if (savedWidth > 200 && savedHeight > 200)
+				{
+					const_cast<slint::Window &>((*handle)->window()).set_size(slint::PhysicalSize(slint::Size<uint32_t>{static_cast<uint32_t>(savedWidth), static_cast<uint32_t>(savedHeight)}));
+				}
+				if (savedX >= 0 && savedY >= 0)
+				{
+					const_cast<slint::Window &>((*handle)->window()).set_position(slint::PhysicalPosition(slint::Point<int32_t>{savedX, savedY}));
+				}
+			}
+		});
+
+#ifdef _WIN32
 	inst->window().on_close_requested(
 		[this, weak_inst]() -> slint::CloseRequestResponse
 		{
+			saveWindowGeometry();
 			if (auto locked = weak_inst.lock())
 			{
 				(*locked)->hide();
@@ -439,6 +513,7 @@ void HPRInterpreter::run()
 	inst->window().on_close_requested(
 		[this]() -> slint::CloseRequestResponse
 		{
+			saveWindowGeometry();
 			this->hide();
 			return slint::CloseRequestResponse::KeepWindowShown;
 		});
@@ -485,6 +560,7 @@ void HPRInterpreter::run()
 	tracker = std::thread(&HPRInterpreter::trackingLoop, this);
 
 	slint::run_event_loop(slint::EventLoopMode::RunUntilQuit);
+	saveWindowGeometry();
 	running = false; // safety net
 }
 

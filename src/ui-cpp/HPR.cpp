@@ -35,6 +35,45 @@ HPR::HPR(ExtensionManager *extMgr) : ui(MainWindow::create()), modelManager(ui)
 #endif
 }
 
+void HPR::saveWindowGeometry()
+{
+	auto weak = slint::ComponentWeakHandle<MainWindow>(ui);
+	slint::invoke_from_event_loop(
+		[weak]()
+		{
+			if (auto handle = weak.lock())
+			{
+				static int lastWidth = -1;
+				static int lastHeight = -1;
+				static int lastX = -1;
+				static int lastY = -1;
+
+				auto size = (*handle)->window().size();
+				auto pos = (*handle)->window().position();
+
+				int w = static_cast<int>(size.width);
+				int h = static_cast<int>(size.height);
+				int x = pos.x;
+				int y = pos.y;
+
+				if (w > 200 && h > 200)
+				{
+					if (w != lastWidth || h != lastHeight || x != lastX || y != lastY)
+					{
+						AppState::configManager.setConfig("window-width", w);
+						AppState::configManager.setConfig("window-height", h);
+						AppState::configManager.setConfig("window-pos-x", x);
+						AppState::configManager.setConfig("window-pos-y", y);
+						lastWidth = w;
+						lastHeight = h;
+						lastX = x;
+						lastY = y;
+					}
+				}
+			}
+		});
+}
+
 HPR::~HPR()
 {
 	running = false;
@@ -89,6 +128,7 @@ void HPR::show()
 
 void HPR::quit()
 {
+	saveWindowGeometry();
 	slint::invoke_from_event_loop([]() { slint::quit_event_loop(); });
 }
 
@@ -100,12 +140,16 @@ void HPR::hide()
 		paused = true;
 	}
 
+	saveWindowGeometry();
+
 	auto weak = slint::ComponentWeakHandle<MainWindow>(ui);
 	slint::invoke_from_event_loop(
 		[weak]()
 		{
 			if (auto handle = weak.lock())
+			{
 				(*handle)->hide();
+			}
 		});
 }
 
@@ -282,6 +326,8 @@ void HPR::trackingLoop()
 				remaining -= sleepTime;
 			}
 		}
+
+		saveWindowGeometry();
 	}
 }
 
@@ -289,10 +335,33 @@ void HPR::run()
 {
 	UiEventBridge uiEventBridge(ui, extManager);
 
+	int savedWidth = AppState::configManager.getConfig<int>("window-width", 1000);
+	int savedHeight = AppState::configManager.getConfig<int>("window-height", 700);
+	int savedX = AppState::configManager.getConfig<int>("window-pos-x", -1);
+	int savedY = AppState::configManager.getConfig<int>("window-pos-y", -1);
+
+	auto weak = slint::ComponentWeakHandle<MainWindow>(ui);
+	slint::invoke_from_event_loop(
+		[weak, savedWidth, savedHeight, savedX, savedY]()
+		{
+			if (auto handle = weak.lock())
+			{
+				if (savedWidth > 200 && savedHeight > 200)
+				{
+					const_cast<slint::Window &>((*handle)->window()).set_size(slint::PhysicalSize(slint::Size<uint32_t>{static_cast<uint32_t>(savedWidth), static_cast<uint32_t>(savedHeight)}));
+				}
+				if (savedX >= 0 && savedY >= 0)
+				{
+					const_cast<slint::Window &>((*handle)->window()).set_position(slint::PhysicalPosition(slint::Point<int32_t>{savedX, savedY}));
+				}
+			}
+		});
+
 #ifdef _WIN32
 	ui->window().on_close_requested(
 		[this]() -> slint::CloseRequestResponse
 		{
+			saveWindowGeometry();
 			ui->hide();
 			return slint::CloseRequestResponse::KeepWindowShown;
 		});
@@ -301,6 +370,7 @@ void HPR::run()
 	ui->window().on_close_requested(
 		[this]() -> slint::CloseRequestResponse
 		{
+			saveWindowGeometry();
 			ui->hide();
 			return slint::CloseRequestResponse::KeepWindowShown;
 		});
@@ -347,6 +417,7 @@ void HPR::run()
 
 	tracker = std::thread(&HPR::trackingLoop, this);
 	slint::run_event_loop(slint::EventLoopMode::RunUntilQuit);
+	saveWindowGeometry();
 	running = false; // safety net
 }
 

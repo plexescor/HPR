@@ -6,7 +6,7 @@ import { SwitchRow } from "./switch-row.slint";
 import { TimeLog, SwitchHistory } from "./types.slint";
 import { VerticalResizeHandle } from "./resize-handle.slint";
 
-component ViewToggleButton inherits Rectangle {
+export component ViewToggleButton inherits Rectangle {
     in property <string> label;
     in property <color> base-color;
     in property <color> hover-color;
@@ -68,7 +68,6 @@ export component DataView {
     in property <bool>            fullBrightnessBars_S;
     in-out property <length>      topCardHeight_S: 404px * Palette.scale;
 
-    callback switch-to-live-clicked;
     callback setConfig(string, string);
 
     VerticalLayout {
@@ -82,25 +81,6 @@ export component DataView {
             SectionHeader {
                 label: "TIME PER APP";
                 horizontal-stretch: 1;
-            }
-
-            HorizontalLayout {
-                spacing: 4px * Palette.scale;
-                alignment: end;
-
-                ViewToggleButton {
-                    label: "Switch to Live View";
-                    base-color: #38bdf8;
-                    hover-color: #7dd3fc;
-                    pressed-color: #bae6fd;
-                    normal-bg-color: #38bdf812;
-                    hover-bg-color: #38bdf825;
-                    pressed-bg-color: #38bdf835;
-                    normal-border-color: #38bdf835;
-                    hover-border-color: #38bdf860;
-                    pressed-border-color: #38bdf880;
-                    clicked => { root.switch-to-live-clicked(); }
-                }
             }
         }
 

@@ -3,6 +3,7 @@ import { LiveDot } from "./live-dot.slint";
 import { SidebarButton } from "./side-bar-button.slint";
 import { DataView } from "./data-view.slint";
 import { DashboardView } from "./dashboard-view.slint";
+import { DashboardButton } from "./dashboard-components.slint";
 import { InsightsView } from "./insights-view.slint";
 import { TabView } from "./tab-view.slint";
 import { ProjectView } from "./project-view.slint";
@@ -301,6 +302,16 @@ export component MainWindow inherits Window {
                                 vertical-alignment: center;
                             }
                         }
+
+                        if current-view-mode != "" && current-view-mode != "Live" : DashboardButton {
+                            label: "SWITCH TO LIVE VIEW";
+                            primary: true;
+                            y: (parent.height - self.height) / 2;
+                            clicked => {
+                                root.loadLiveData();
+                                root.current-view-mode = "Live";
+                            }
+                        }
                     }
 
                     HorizontalLayout {
@@ -377,8 +388,6 @@ export component MainWindow inherits Window {
                 trackedTime_S: root.trackedTime_S;
                 windowName_S: root.windowName_S;
                 timePerApp_S: root.timePerApp_S;
-                timelineBlocks_S: root.timelineBlocks_S;
-                timelineMarkers_S: root.timelineMarkers_S;
                 currentViewMode_S: root.current-view-mode;
                 mostUsedApp_S: root.mostUsedApp_S;
                 totalTrackedTime_S: root.totalTrackedTime_S;
@@ -399,7 +408,6 @@ export component MainWindow inherits Window {
                 switchHistory_S: root.switchHistory_S;
                 fullBrightnessBars_S: root.fullBrightnessBars_S;
                 topCardHeight_S: root.dataViewCardHeight_S * 1px * Palette.scale;
-                switch-to-live-clicked => { root.loadLiveData(); root.current-view-mode = "Live"; }
                 setConfig(param, val) => { root.setConfig(param, val); }
             }
             

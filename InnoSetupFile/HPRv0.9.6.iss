@@ -2,13 +2,13 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 ; Non-commercial use only
 #define MyAppName "HPR"
-#define MyAppVersion "v0.9.6"
+#define MyAppVersion "v0.9.7"
 #define MyAppPublisher "Plexescor"
 #define MyAppURL "github.com/plexescor/HPR"
 #define MyAppExeName "HPR.exe"
 
 [Setup]
-AppId={{5A5C9793-0BDC-4E75-A376-FB7112138859}
+AppId={{5A5C9793-0BDC-4E75-A376-FB7112138859}}
 AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppPublisher={#MyAppPublisher}
@@ -20,9 +20,9 @@ UninstallDisplayIcon={app}\{#MyAppExeName}
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 DisableProgramGroupPage=yes
-OutputDir=C:\HPR\INNO\v0.9.6
-OutputBaseFilename=HPRv0.9.6
-SetupIconFile=C:\HPR\v0.9.6\assets\icon.ico
+OutputDir=C:\HPR\INNO\v0.9.7
+OutputBaseFilename=HPRv0.9.7
+SetupIconFile=C:\HPR\v0.9.7\assets\icon.ico
 SolidCompression=yes
 WizardStyle=modern dark windows11
 
@@ -35,23 +35,23 @@ Name: "startupicon"; Description: "Start HPR automatically at Windows startup"; 
 
 [Files]
 ; -- App binaries --
-Source: "C:\HPR\v0.9.6\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\HPR\v0.9.6\slint_cpp.dll"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\HPR\v0.9.7\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\HPR\v0.9.7\slint_cpp.dll"; DestDir: "{app}"; Flags: ignoreversion
 
 ; -- aliases.csv and config.csv: Pascal handles overwrite logic --
-Source: "C:\HPR\v0.9.6\aliases.csv"; DestDir: "{userappdata}\HPR\HPR_Config"; Flags: ignoreversion; Check: ShouldCopyAliases
-Source: "C:\HPR\v0.9.6\tabAliases.csv"; DestDir: "{userappdata}\HPR\HPR_Config"; Flags: ignoreversion; Check: ShouldCopyTabAliases
-Source: "C:\HPR\v0.9.6\config.csv"; DestDir: "{userappdata}\HPR\HPR_Config"; Flags: ignoreversion; Check: ShouldCopyConfig
-Source: "C:\HPR\v0.9.6\projectAliases.csv"; DestDir: "{userappdata}\HPR\HPR_Config"; Flags: ignoreversion; Check: ShouldCopyProjectAliases
+Source: "C:\HPR\v0.9.7\aliases.csv"; DestDir: "{userappdata}\HPR\HPR_Config"; Flags: ignoreversion; Check: ShouldCopyAliases
+Source: "C:\HPR\v0.9.7\tabAliases.csv"; DestDir: "{userappdata}\HPR\HPR_Config"; Flags: ignoreversion; Check: ShouldCopyTabAliases
+Source: "C:\HPR\v0.9.7\config.csv"; DestDir: "{userappdata}\HPR\HPR_Config"; Flags: ignoreversion; Check: ShouldCopyConfig
+Source: "C:\HPR\v0.9.7\projectAliases.csv"; DestDir: "{userappdata}\HPR\HPR_Config"; Flags: ignoreversion; Check: ShouldCopyProjectAliases
 
 ; -- assets: always silently overwrite --
-Source: "C:\HPR\v0.9.6\assets\*"; DestDir: "{userappdata}\HPR\HPR_Config\assets"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "C:\HPR\v0.9.7\assets\*"; DestDir: "{userappdata}\HPR\HPR_Config\assets"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 ; -- ui-REFERENCEONLY: always silently overwrite --
-Source: "C:\HPR\v0.9.6\ui\*"; DestDir: "{userappdata}\HPR\HPR_Config\ui-REFERENCEONLY"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "C:\HPR\v0.9.7\ui\*"; DestDir: "{userappdata}\HPR\HPR_Config\ui-REFERENCEONLY"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 ; -- ui: BeforeInstall deletes folder if user confirmed, onlyifdoesntexist skips if user said no --
-Source: "C:\HPR\v0.9.6\ui\*"; DestDir: "{userappdata}\HPR\HPR_Config\ui"; Flags: ignoreversion recursesubdirs createallsubdirs onlyifdoesntexist; BeforeInstall: DeleteUIIfConfirmed
+Source: "C:\HPR\v0.9.7\ui\*"; DestDir: "{userappdata}\HPR\HPR_Config\ui"; Flags: ignoreversion recursesubdirs createallsubdirs onlyifdoesntexist; BeforeInstall: DeleteUIIfConfirmed
 
 [Dirs]
 Name: "{userappdata}\HPR\HPR_Config"
