@@ -530,7 +530,7 @@ void ExtensionManager::unloadExtension(std::string authorName, std::string exten
 			{
 				currentWindowManager->stopTracking();
 			}
-			unregisterNonNativeBackends();
+			unregisterBackendByOwner(authorName, extensionName);
 			if (currentWindowManager)
 			{
 				currentWindowManager->detectAndSetBackend();
@@ -1063,7 +1063,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 			return getCurrentPid();
 		};
 
-		registerBackend_E(name, safeMatches, safeInitialize, safeGetCurrentWindow, safeGetCurrentTitle,
+		registerBackend_E(name, ext.identity.first, ext.identity.second, safeMatches, safeInitialize, safeGetCurrentWindow, safeGetCurrentTitle,
 						  safeGetCurrentPid, currentWindowManager);
 	};
 

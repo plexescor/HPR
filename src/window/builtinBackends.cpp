@@ -228,7 +228,7 @@ std::string kdeGetActiveWindowPid()
 void registerBuiltinBackends()
 {
 	registerBackend(
-		{"GNOME", [](const std::string &desktopEnvironment) { return desktopEnvironment.contains("GNOME"); },
+		{"GNOME", "", "", [](const std::string &desktopEnvironment) { return desktopEnvironment.contains("GNOME"); },
 
 		 []()
 		 {
@@ -327,7 +327,7 @@ void registerBuiltinBackends()
 		 true});
 
 #ifdef __linux__
-	registerBackend({"KDE", [](const std::string &env) { return env.contains("KDE"); },
+	registerBackend({"KDE", "", "", [](const std::string &env) { return env.contains("KDE"); },
 
 					 []() {},
 
@@ -352,7 +352,7 @@ void registerBuiltinBackends()
 	});
 #endif
 
-	registerBackend({"Hyprland",
+	registerBackend({"Hyprland", "", "",
 
 					 [](const std::string &env) { return env.contains("Hyprland"); },
 
@@ -409,7 +409,7 @@ void registerBuiltinBackends()
 					 true});
 
 	registerBackend(
-		{"Windows",
+		{"Windows", "", "",
 
 		 // matchesEnvironment
 		 [](const std::string &env)
@@ -499,7 +499,7 @@ void registerBuiltinBackends()
 
 		});
 
-	registerBackend({"niri",
+	registerBackend({"niri", "", "",
 
 					 [](const std::string &env) { return (env.contains("niri") || env.contains("Niri")); },
 
@@ -555,7 +555,7 @@ void registerBuiltinBackends()
 					 },
 					 true});
 
-	registerBackend({"Cinnamon",
+	registerBackend({"Cinnamon", "", "",
 
 					 [](const std::string &env) { return env.contains("Cinnamon"); },
 

@@ -35,13 +35,14 @@ std::string getCurrentTitle_E()
 	return AppState::state.currentTitle;
 }
 
-void registerBackend_E(std::string name, std::function<bool(const std::string &)> matchesEnvironment,
+void registerBackend_E(std::string name, std::string ownerAuthor, std::string ownerExtension,
+					   std::function<bool(const std::string &)> matchesEnvironment,
 					   std::function<void()> initialize, std::function<std::string()> getCurrentWindow,
 					   std::function<std::string()> getCurrentTitle, std::function<std::string()> getCurrentPid,
 					   CurrentWindowManager* currentWindowManager)
 {
 	registerBackend({
-		name, matchesEnvironment, initialize, getCurrentWindow, getCurrentTitle, getCurrentPid,
+		name, ownerAuthor, ownerExtension, matchesEnvironment, initialize, getCurrentWindow, getCurrentTitle, getCurrentPid,
 		false // nativeBackend is false for backends registered via extension
 	});
 	if (currentWindowManager)

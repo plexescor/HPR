@@ -27,3 +27,15 @@ void unregisterNonNativeBackends()
 					   [](const WindowBackend &b) { return !b.nativeBackend; }),
 		registeredBackends.end());
 }
+
+void unregisterBackendByOwner(const std::string &authorName, const std::string &extensionName)
+{
+	registeredBackends.erase(
+		std::remove_if(registeredBackends.begin(), registeredBackends.end(),
+					   [&](const WindowBackend &b)
+					   {
+						   return !b.nativeBackend && b.ownerAuthor == authorName &&
+								  b.ownerExtension == extensionName;
+					   }),
+		registeredBackends.end());
+}

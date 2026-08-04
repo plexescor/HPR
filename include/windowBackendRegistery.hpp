@@ -7,6 +7,8 @@
 struct WindowBackend
 {
 	std::string name;
+	std::string ownerAuthor;
+	std::string ownerExtension;
 
 	std::function<bool(const std::string &desktopEnvironment)> matchesEnvironment;
 	std::function<void()> initialize;
@@ -25,3 +27,5 @@ void registerBackend(const WindowBackend &backend);
 WindowBackend *getBackendByName(const std::string &name);
 
 void unregisterNonNativeBackends();
+
+void unregisterBackendByOwner(const std::string &authorName, const std::string &extensionName);
