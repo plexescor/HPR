@@ -1,4 +1,5 @@
 #include "themeManager.hpp"
+#include "appState.hpp"
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
@@ -17,6 +18,22 @@ ThemeManager::ThemeManager()
 }
 
 std::string ThemeManager::getPathByName(std::string name) { return availableThemes_Bare[name]; }
+
+std::vector<std::string> ThemeManager::getThemeNames()
+{
+	std::vector<std::string> names;
+	for (const auto &entry : availableThemes_Bare)
+	{
+		names.push_back(entry.first);
+	}
+	return names;
+}
+
+std::string ThemeManager::getCurrentThemeName()
+{
+	std::string activeTheme = AppState::configManager.getConfig("custom-theme", std::string("Default"));
+	return activeTheme;
+}
 
 void ThemeManager::reload()
 {

@@ -1939,6 +1939,16 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 			}
 		}
 	};
+
+	lua["HPR"]["getThemeNames_E"] = [this]() -> std::vector<std::string>
+	{
+		return AppState::themeManager.getThemeNames();
+	};
+
+	lua["HPR"]["getCurrentThemeName_E"] = [this]() -> std::string
+	{
+		return AppState::themeManager.getCurrentThemeName();
+	};
 }
 
 void ExtensionManager::updateExtensionPath()

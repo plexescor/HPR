@@ -12,6 +12,8 @@ class ThemeManager
 	void reload();
 	void initialisePath();
 	std::string getPathByName(std::string name);
+	std::vector<std::string> getThemeNames();
+	std::string getCurrentThemeName();
 
   public:
 	// Names version and  paths
