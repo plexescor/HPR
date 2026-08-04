@@ -940,15 +940,20 @@ bool startHttpServer(int port, sol::function handler, LoadedExtension &ext)
 	address.sin_addr.s_addr = htonl(INADDR_LOOPBACK); // Localhost only for safety & simplicity!
 	address.sin_port = htons(port);
 
-	if (bind(serverFd, (struct sockaddr *)&address, sizeof(address)) == SOCKET_ERROR_VAL)
+	int bindAttempts = 0;
+	while (bind(serverFd, (struct sockaddr *)&address, sizeof(address)) == SOCKET_ERROR_VAL)
 	{
-		std::cerr << "[HPR HTTP Server] Failed to bind to port " << port << std::endl;
-		Logger::log("[HPR HTTP Server] Failed to bind to port " + std::to_string(port));
-		CLOSE_SOCKET(serverFd);
+		if (++bindAttempts >= 10)
+		{
+			std::cerr << "[HPR HTTP Server] Failed to bind to port " << port << std::endl;
+			Logger::log("[HPR HTTP Server] Failed to bind to port " + std::to_string(port));
+			CLOSE_SOCKET(serverFd);
 #ifdef _WIN32
-		WSACleanup();
+			WSACleanup();
 #endif
-		return false;
+			return false;
+		}
+		std::this_thread::sleep_for(std::chrono::milliseconds(200));
 	}
 
 	if (listen(serverFd, 10) == SOCKET_ERROR_VAL)

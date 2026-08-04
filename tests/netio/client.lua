@@ -24,7 +24,7 @@ HPR.authorName = "Plexescor"
 local testPort = 18888
 
 function init()
-    HPR.sleep_E(1500) -- Wait for server.lua to bind port 18888
+    HPR.sleep_E(2500) -- Wait for server.lua to bind port 18888 and write its CSV entry
 
     local host = "127.0.0.1:" .. testPort
 

@@ -8,9 +8,9 @@
 | Metric | Count |
 |---|---|
 | **Total API surface** | 71 |
-| **Covered** | 18 |
-| **Uncovered** | 53 |
-| **Coverage** | 25.35% |
+| **Covered** | 25 |
+| **Uncovered** | 46 |
+| **Coverage** | 35.21% |
 
 ---
 
@@ -34,6 +34,13 @@
 | `HPR.parseISO8601_E` | Time | `netio` |
 | `HPR.parseJSON_E` | Serialisation | `netio` |
 | `HPR.toJSON_E` | Serialisation | `netio` |
+| `HPR.convertToDate_DDMMYY_E` | Time | `time` |
+| `HPR.convertToDate_MMYY_E` | Time | `time` |
+| `HPR.convertToTime_HHMMSS_12_E` | Time | `time` |
+| `HPR.formatTime_HHMMSS_E` | Time | `time` |
+| `HPR.parseDate_DDMMYY_E` | Time | `time` |
+| `HPR.parseDate_MMYY_E` | Time | `time` |
+| `HPR.extractMMYY_from_DDMMYY_E` | Time | `time` |
 
 > **Note:** `getExtensionDir_E` and `getExtensionPath_E` share the same implementation — covering one implicitly covers the other.
 
@@ -46,13 +53,6 @@
 | `HPR.getExtensionPath_E` | Paths | Alias of `getExtensionDir_E` — returns relative extension subdir path |
 | `HPR.getTime_MS_E` | Time | Current wall-clock time in milliseconds (Unix epoch) |
 | `HPR.sleep_E` | Time | Sleep for N ms, respecting extension shutdown signal |
-| `HPR.convertToDate_DDMMYY_E` | Time | Convert Unix ms → `DD/MM/YY` string |
-| `HPR.convertToDate_MMYY_E` | Time | Convert Unix ms → `MM/YY` string |
-| `HPR.convertToTime_HHMMSS_12_E` | Time | Convert Unix ms → 12-hour `HH:MM:SS AM/PM` string |
-| `HPR.formatTime_HHMMSS_E` | Time | Format a duration in ms as `HH:MM:SS` |
-| `HPR.parseDate_DDMMYY_E` | Time | Parse `DD/MM/YY` string → Unix ms |
-| `HPR.parseDate_MMYY_E` | Time | Parse `MM/YY` string → Unix ms |
-| `HPR.extractMMYY_from_DDMMYY_E` | Time | Extract `MM/YY` portion from a `DD/MM/YY` string |
 | `HPR.stopTracking_E` | Window | Pause window focus tracking |
 | `HPR.startTracking_E` | Window | Resume window focus tracking |
 | `HPR.registerBackend_E` | Window | Register a custom window-tracking backend (Lua-implemented) |

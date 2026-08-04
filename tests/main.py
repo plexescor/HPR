@@ -29,6 +29,7 @@ TEST_SUITES: list[str] = [
     "csvio",
     "windowbackends",
     "netio",
+    "time",
     # "test_my_new_suite",
 ]
 
@@ -36,6 +37,7 @@ TEST_SUITES: list[str] = [
 LIFECYCLEHOOKS_KEYS: list[str] = ["Init", "Tick", "Exit"]
 OTHEREXTENSIONS_KEYS: list[str] = ["GetLoadedExtensions", "UnloadExtension"]
 CSVIO_KEYS: list[str] = ["WriteCSV", "ReadCSV"]
+TIME_KEYS: list[str] = ["FormatTime_HHMMSS", "ConvertToDate_DDMMYY", "ConvertToDate_MMYY", "ConvertToTime_HHMMSS_12", "ParseDate_DDMMYY", "ParseDate_MMYY", "ExtractMMYY_from_DDMMYY"]
 WINDOWBACKENDS_KEYS: list[str] = ["GetCurrentWindow", "GetCurrentTitle", "RegisterBackend"]
 NETIO_KEYS: list[str] = [
     "StartServer",
@@ -55,6 +57,7 @@ EXPECTED_CSV_KEYS: dict[str, list[str]] = {
     "csvio": CSVIO_KEYS,
     "windowbackends": WINDOWBACKENDS_KEYS,
     "netio": NETIO_KEYS,
+    "time": TIME_KEYS,
 }
 
 

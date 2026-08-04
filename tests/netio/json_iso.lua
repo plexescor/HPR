@@ -1,4 +1,4 @@
-﻿-- =============================================================================
+-- =============================================================================
 -- Test Suite Component: Net I/O JSON & ISO 8601 Utilities
 -- =============================================================================
 -- Verifies JSON serialization/parsing and ISO 8601 date parsing APIs:
@@ -36,6 +36,8 @@ function init()
         HPR.writeCsv_E(HPR.getExtensionDir_E() .. "output/netio.csv", "ParseISO8601", "FAILED")
     end
 
+    HPR.sleep_E(200) -- Stagger file writes
+
     -- 2. Test HPR.parseJSON_E (table parsing & nested dot-path extraction)
     local rawJson = '{"name":"firefox","active":true,"data":{"url":"https://example.com","port":8080}}'
     local tbl = HPR.parseJSON_E(rawJson)
@@ -47,6 +49,8 @@ function init()
         HPR.log_E("NetIOJsonIso", "parseJSON_E failed")
         HPR.writeCsv_E(HPR.getExtensionDir_E() .. "output/netio.csv", "ParseJSON", "FAILED")
     end
+
+    HPR.sleep_E(200) -- Stagger file writes
 
     -- 3. Test HPR.toJSON_E (serializing Lua table to JSON string)
     local inputTable = { name = "firefox", active = true }

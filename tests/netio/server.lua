@@ -19,25 +19,36 @@ HPR.authorName = "Plexescor"
 local testPort = 18888
 
 function init()
-    local started = HPR.startServer_E(testPort, function(req)
-        HPR.log_E("NetIOServer", "Server received request: " .. (req.method or "") .. " " .. (req.path or ""))
-        
-        if req.method == "GET" then
-            return { status = 200, body = "HELLO_GET" }
-        elseif req.method == "POST" then
-            return { status = 201, body = "HELLO_POST:" .. (req.body or "") }
-        elseif req.method == "PUT" then
-            return { status = 200, body = "HELLO_PUT:" .. (req.body or "") }
-        elseif req.method == "DELETE" then
-            return { status = 200, body = "HELLO_DELETE" }
+    HPR.sleep_E(1000) -- Stagger startup to prevent CSV write collisions
+    local started = false
+    local attempts = 0
+    while not started and attempts < 5 do
+        started = HPR.startServer_E(testPort, function(req)
+            HPR.log_E("NetIOServer", "Server received request: " .. (req.method or "") .. " " .. (req.path or ""))
+            
+            if req.method == "GET" then
+                return { status = 200, body = "HELLO_GET" }
+            elseif req.method == "POST" then
+                return { status = 201, body = "HELLO_POST:" .. (req.body or "") }
+            elseif req.method == "PUT" then
+                return { status = 200, body = "HELLO_PUT:" .. (req.body or "") }
+            elseif req.method == "DELETE" then
+                return { status = 200, body = "HELLO_DELETE" }
+            end
+            return { status = 404, body = "NOT_FOUND" }
+        end)
+        if not started then
+            attempts = attempts + 1
+            HPR.sleep_E(300)
         end
-        return { status = 404, body = "NOT_FOUND" }
-    end)
+    end
 
     if started then
-        HPR.writeCsv_E(HPR.getExtensionDir_E() .. "output/netio.csv", "StartServer", "PASSED")
+        local success = HPR.writeCsv_E(HPR.getExtensionDir_E() .. "output/netio.csv", "StartServer", "PASSED")
+        HPR.log_E("NetIOServer", "writeCsv_E PASSED success: " .. tostring(success))
     else
-        HPR.writeCsv_E(HPR.getExtensionDir_E() .. "output/netio.csv", "StartServer", "FAILED")
+        local success = HPR.writeCsv_E(HPR.getExtensionDir_E() .. "output/netio.csv", "StartServer", "FAILED")
+        HPR.log_E("NetIOServer", "writeCsv_E FAILED success: " .. tostring(success))
     end
 
     return 1000
