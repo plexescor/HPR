@@ -1,3 +1,21 @@
+-- =============================================================================
+-- Test Suite: Other Extensions / System APIs
+-- =============================================================================
+-- Verifies extension management and query APIs:
+--
+--   HPR.getLoadedExtensions_E()  Returns list of loaded extension table items
+--                                containing authorName and extensionName.
+--   HPR.unloadExtension_E(a, n)  Unloads a target extension dynamically by
+--                                author and extension name.
+--
+-- Expected output (written to output/extensiontester.csv):
+--   GetLoadedExtensions,PASSED
+--   UnloadExtension,PASSED
+--
+-- How to run:
+--   python tests/main.py  ->  select "otherextensions" suite, then close HPR.
+-- =============================================================================
+
 HPR.extensionName = "ExtensionTester"
 HPR.authorName = "Plexescor"
 

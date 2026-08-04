@@ -8,9 +8,9 @@
 | Metric | Count |
 |---|---|
 | **Total API surface** | 71 |
-| **Covered** | 5 |
-| **Uncovered** | 66 |
-| **Coverage** | 7.04% |
+| **Covered** | 12 |
+| **Uncovered** | 59 |
+| **Coverage** | 16.90% |
 
 ---
 
@@ -18,11 +18,20 @@
 
 | API | Category | Covered by Suite |
 |---|---|---|
-| `init()` | Lifecycle hook | `lifecyclehooks` |
-| `onTick(delta)` | Lifecycle hook | `lifecyclehooks` |
+| `init()` | Lifecycle hook | `lifecyclehooks`, `csvio`, `otherextensions`, `windowbackends` |
+| `onTick(delta)` | Lifecycle hook | `lifecyclehooks`, `csvio`, `windowbackends` |
 | `onExit()` | Lifecycle hook | `lifecyclehooks` |
+| `HPR.getExtensionDir_E` | Paths | `lifecyclehooks`, `csvio`, `windowbackends` |
+| `HPR.log_E` | Logging | `lifecyclehooks`, `csvio`, `otherextensions` |
+| `HPR.writeCsv_E` | File I/O | `lifecyclehooks`, `csvio`, `otherextensions`, `windowbackends` |
+| `HPR.readCsv_E` | File I/O | `csvio` |
+| `HPR.deleteCsv_E` | File I/O | `csvio` |
 | `HPR.getLoadedExtensions_E` | System | `otherextensions` |
 | `HPR.unloadExtension_E` | System | `otherextensions` |
+| `HPR.getCurrentWindow_E` | Window | `windowbackends` |
+| `HPR.getCurrentTitle_E` | Window | `windowbackends` |
+
+> **Note:** `getExtensionDir_E` and `getExtensionPath_E` share the same implementation — covering one implicitly covers the other.
 
 ---
 
@@ -30,9 +39,6 @@
 
 | API | Category | Description |
 |---|---|---|
-| `HPR.writeCsv_E` | File I/O | Write key-value pair to a CSV file in the extension dir |
-| `HPR.getExtensionDir_E` | Paths | Get relative path of current extension directory |
-| `HPR.log_E` | Logging | Log a message to HPR log output |
 | `HPR.getExtensionPath_E` | Paths | Alias of `getExtensionDir_E` — returns relative extension subdir path |
 | `HPR.startServer_E` | Networking | Start an embedded HTTP server on a given port with a request handler |
 | `HPR.httpGet_E` | Networking | HTTP GET request (host, path, secure?, headers?) → (body, status) |
@@ -51,8 +57,6 @@
 | `HPR.parseDate_DDMMYY_E` | Time | Parse `DD/MM/YY` string → Unix ms |
 | `HPR.parseDate_MMYY_E` | Time | Parse `MM/YY` string → Unix ms |
 | `HPR.extractMMYY_from_DDMMYY_E` | Time | Extract `MM/YY` portion from a `DD/MM/YY` string |
-| `HPR.getCurrentWindow_E` | Window | Name of the currently focused application window |
-| `HPR.getCurrentTitle_E` | Window | Title of the currently focused application window |
 | `HPR.stopTracking_E` | Window | Pause window focus tracking |
 | `HPR.startTracking_E` | Window | Resume window focus tracking |
 | `HPR.registerBackend_E` | Window | Register a custom window-tracking backend (Lua-implemented) |
@@ -77,8 +81,6 @@
 | `HPR.getReverseAlias_Tab_E` | Aliases | Reverse lookup: alias name → raw tab name |
 | `HPR.getReverseAlias_Project_E` | Aliases | Reverse lookup: alias name → raw project name |
 | `HPR.getSystemConfig_E` | Config | Read a value from HPR's `config.csv` by key |
-| `HPR.readCsv_E` | File I/O | Read all or a single key from a CSV file in the extension dir |
-| `HPR.deleteCsv_E` | File I/O | Delete a CSV file in the extension dir |
 | `HPR.setUiProperty_E` | UI | Set a Slint UI property by name from Lua |
 | `HPR.setUiImage_E` | UI | Push a raw RGBA pixel buffer to a Slint image property |
 | `HPR.registerUiCallback_E` | UI | Register a Lua function as a Slint UI callback |

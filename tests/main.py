@@ -20,18 +20,34 @@ import subprocess
 import sys
 from pathlib import Path
 
-# ---------------------------------------------------------------------------
-# CONFIGURATION — add new test-suite folder names here
-# ---------------------------------------------------------------------------
+
+# CONFIGURATION — add new test-suite folder names and expected keys here
+
 TEST_SUITES: list[str] = [
     "lifecyclehooks",
     "otherextensions",
+    "csvio",
+    "windowbackends"
     # "test_my_new_suite",
 ]
 
-# ---------------------------------------------------------------------------
+# Suite-specific expected CSV key lists
+LIFECYCLEHOOKS_KEYS: list[str] = ["Init", "Tick", "Exit"]
+OTHEREXTENSIONS_KEYS: list[str] = ["GetLoadedExtensions", "UnloadExtension"]
+CSVIO_KEYS: list[str] = ["WriteCSV", "ReadCSV"]
+WINDOWBACKENDS_KEYS: list[str] = ["GetCurrentWindow", "GetCurrentTitle", "RegisterBackend"]
+
+# Master dictionary mapping suite names to their sublists of expected keys
+EXPECTED_CSV_KEYS: dict[str, list[str]] = {
+    "lifecyclehooks": LIFECYCLEHOOKS_KEYS,
+    "otherextensions": OTHEREXTENSIONS_KEYS,
+    "csvio": CSVIO_KEYS,
+    "windowbackends": WINDOWBACKENDS_KEYS,
+}
+
+
 # Paths
-# ---------------------------------------------------------------------------
+
 SCRIPT_DIR = Path(__file__).resolve().parent   # tests/
 REPO_ROOT  = SCRIPT_DIR.parent                 # HPR/
 BUILD_DIR  = REPO_ROOT / "build"
@@ -81,9 +97,9 @@ def find_hpr_binaries() -> list[Path]:
     return candidates
 
 
-# ---------------------------------------------------------------------------
+
 # Prompt helpers
-# ---------------------------------------------------------------------------
+
 
 def prompt_int(prompt: str, lo: int, hi: int) -> int:
     """Ask for an integer in [lo, hi] and keep asking until we get one."""
@@ -131,9 +147,9 @@ def choose_binary(binaries: list[Path]) -> Path:
     return binaries[choice - 1]
 
 
-# ---------------------------------------------------------------------------
+
 # Copy / cleanup
-# ---------------------------------------------------------------------------
+
 
 # Tracks what we copied so cleanup is surgical
 _copied_dirs: list[Path] = []
@@ -162,10 +178,11 @@ def copy_suites(suites: list[str], ext_dir: Path) -> None:
         _copied_dirs.append(dst)
         print(f"[INFO] Copied  {src.name}  ->  {dst}")
 
+
 def print_results() -> None:
     """
-    For each copied suite, scan every CSV file inside its output/ directory
-    and print each key-value pair one by one, grouped by file.
+    For each copied suite, scan every CSV file inside its output/ directory,
+    validate every key against EXPECTED_CSV_KEYS, and report results.
     Prints a grand summary (total / passed / failed / rates) at the end.
     """
     print("\n" + "=" * 60)
@@ -181,13 +198,20 @@ def print_results() -> None:
         print(f"\n  Suite: {suite.name}")
         print("  " + "-" * 40)
 
+        expected_keys = EXPECTED_CSV_KEYS.get(suite.name, [])
+        seen_keys: set[str] = set()
+
         if not output_dir.is_dir():
-            print("    [WARN] No output/ directory found — did HPR run long enough?")
+            print("    ✗ [FAILED] No output/ directory found — did HPR run long enough?")
+            total_tests += len(expected_keys) if expected_keys else 1
+            total_failed += len(expected_keys) if expected_keys else 1
             continue
 
         csv_files = sorted(output_dir.glob("*.csv"))
         if not csv_files:
-            print("    [WARN] No CSV files found in output/")
+            print("    ✗ [FAILED] No CSV files found in output/")
+            total_tests += len(expected_keys) if expected_keys else 1
+            total_failed += len(expected_keys) if expected_keys else 1
             continue
 
         for csv_file in csv_files:
@@ -205,26 +229,37 @@ def print_results() -> None:
                     if len(parts) == 2:
                         key   = parts[0].strip()
                         value = parts[1].strip()
+                        seen_keys.add(key)
                         total_tests += 1
-                        if value.upper() == "PASSED":
-                            total_passed += 1
-                            marker = "✓"
-                        elif value.upper() == "FAILED":
+
+                        # Validate key against expected suite keys
+                        if expected_keys and key not in expected_keys:
                             total_failed += 1
-                            marker = "✗"
+                            print(f"      ✗ {key:<29} -> {value} (UNEXPECTED KEY)")
+                        elif value.upper() == "PASSED":
+                            total_passed += 1
+                            print(f"      ✓ {key:<29} -> {value}")
                         else:
-                            marker = "?"
-                        display_value = value if value else "(empty)"
-                        print(f"      {marker} {key:<29} -> {display_value}")
+                            total_failed += 1
+                            display_val = value if value else "(empty)"
+                            print(f"      ✗ {key:<29} -> {display_val}")
                     else:
                         # Single-column row — print as-is
                         print(f"        {line}")
             if not any_row:
                 print("      (empty file)")
 
-    # -------------------------------------------------------------------------
+        # Check for any expected keys that were NOT found in the CSV output
+        if expected_keys:
+            missing_keys = [k for k in expected_keys if k not in seen_keys]
+            for mk in missing_keys:
+                total_tests += 1
+                total_failed += 1
+                print(f"      ✗ {mk:<29} -> MISSING (FAILED)")
+
+    
     # Grand summary
-    # -------------------------------------------------------------------------
+    
     success_rate = (total_passed / total_tests * 100) if total_tests else 0.0
     failure_rate = (total_failed / total_tests * 100) if total_tests else 0.0
 
@@ -257,9 +292,9 @@ def _signal_handler(sig, frame):
     sys.exit(0)
 
 
-# ---------------------------------------------------------------------------
+
 # Main
-# ---------------------------------------------------------------------------
+
 
 def main() -> None:
     print("=" * 60)
