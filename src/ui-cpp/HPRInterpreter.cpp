@@ -126,68 +126,69 @@ HPRInterpreter::~HPRInterpreter()
 
 void HPRInterpreter::reload(std::string path)
 {
-	// local compiler, no need to store it — just swap definition + instance
-	slint::interpreter::ComponentCompiler newCompiler;
-
-	std::optional<slint::interpreter::ComponentDefinition> newDef;
-
-	if (path == "")
-		newDef = newCompiler.build_from_path((filePath / fileName).string());
-	else
-		newDef = newCompiler.build_from_path(path);
-
-	if (!newDef.has_value())
-	{
-		EventHub::emit(Event::APP_ERROR, ErrorGui{"Hot reload failed: compile error"});
-		for (auto &diag : newCompiler.diagnostics())
-			fprintf(stderr, "[HotReload] → %s\n", diag.message.data());
-		return;
-	}
-
-	// ComponentHandle is NOT optional, create() returns it directly
-	auto newInst = newDef->create();
-
-	// grab old geometry before touching anything
-	auto oldPos = instance.value()->window().position();
-
-	// lock so trackingLoop doesn't touch modelManager mid-swap
-	{
-		std::lock_guard<std::mutex> lock(reloadMutex);
-		UiRegistry::registerInstance(newInst);
-		modelManager.emplace(newInst);
-	}
-
-	// re-wire UI event callbacks on new instance
-	uiEventBridge.emplace(newInst, extManager, this);
-
-	// show new BEFORE hiding oldanti-flicker
-	newInst->show();
-	instance.value()->hide();
-
-	// restore geometry
-	// this shit already runs on event thread
-	// so this is fine
-	const_cast<slint::Window &>(newInst->window()).set_position(oldPos);
-
-	// swap
-	{
-		std::lock_guard<std::mutex> lock(reloadMutex);
-		definition = std::move(newDef);
-		instance = newInst;
-		weak_instance = newInst;
-	}
-
-// re-wire close handler
-#ifdef _WIN32
-	instance.value()->window().on_close_requested(
-		[this]() -> slint::CloseRequestResponse
-		{
-			instance.value()->hide();
-			return slint::CloseRequestResponse::KeepWindowShown;
-		});
 	slint::invoke_from_event_loop(
-		[]()
+		[this, path]()
 		{
+			// local compiler, no need to store it — just swap definition + instance
+			slint::interpreter::ComponentCompiler newCompiler;
+
+			std::optional<slint::interpreter::ComponentDefinition> newDef;
+
+			if (path == "")
+				newDef = newCompiler.build_from_path((filePath / fileName).string());
+			else
+				newDef = newCompiler.build_from_path(path);
+
+			if (!newDef.has_value())
+			{
+				EventHub::emit(Event::APP_ERROR, ErrorGui{"Hot reload failed: compile error"});
+				for (auto &diag : newCompiler.diagnostics())
+					fprintf(stderr, "[HotReload] → %s\n", diag.message.data());
+				return;
+			}
+
+			// ComponentHandle is NOT optional, create() returns it directly
+			auto newInst = newDef->create();
+
+			// grab old geometry before touching anything
+			auto oldPos = instance.value()->window().position();
+
+			// lock so trackingLoop doesn't touch modelManager mid-swap
+			{
+				std::lock_guard<std::mutex> lock(reloadMutex);
+				UiRegistry::registerInstance(newInst);
+				modelManager.emplace(newInst);
+			}
+
+			// re-wire UI event callbacks on new instance
+			uiEventBridge.emplace(newInst, extManager, this);
+
+			// show new BEFORE hiding oldanti-flicker
+			newInst->show();
+			instance.value()->hide();
+
+			// restore geometry
+			// this shit already runs on event thread
+			// so this is fine
+			const_cast<slint::Window &>(newInst->window()).set_position(oldPos);
+
+			// swap
+			{
+				std::lock_guard<std::mutex> lock(reloadMutex);
+				definition = std::move(newDef);
+				instance = newInst;
+				weak_instance = newInst;
+			}
+
+		// re-wire close handler
+		#ifdef _WIN32
+			instance.value()->window().on_close_requested(
+				[this]() -> slint::CloseRequestResponse
+				{
+					instance.value()->hide();
+					return slint::CloseRequestResponse::KeepWindowShown;
+				});
+
 			HWND hwnd = FindWindowW(nullptr, L"HPR");
 			if (hwnd)
 			{
@@ -200,15 +201,15 @@ void HPRInterpreter::reload(std::string path)
 				if (hIconSmall)
 					SendMessage(hwnd, WM_SETICON, ICON_SMALL, (LPARAM)hIconSmall);
 			}
+		#else
+			instance.value()->window().on_close_requested(
+				[this]() -> slint::CloseRequestResponse
+				{
+					this->hide();
+					return slint::CloseRequestResponse::KeepWindowShown;
+				});
+		#endif
 		});
-#else
-	instance.value()->window().on_close_requested(
-		[this]() -> slint::CloseRequestResponse
-		{
-			this->hide();
-			return slint::CloseRequestResponse::KeepWindowShown;
-		});
-#endif
 }
 
 void HPRInterpreter::show()

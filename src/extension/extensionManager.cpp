@@ -1932,26 +1932,32 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		path = AppState::themeManager.getPathByName(themeName);
 
 		if (!path.empty())
-		{
+		{	
 			if (interpreterApp)
 			{
 				interpreterApp->reload(path);
+				AppState::configManager.setConfig("custom-theme", themeName);
 			}
+		}
+		else if (themeName == "Default" || themeName == "default")
+		{
+			if (interpreterApp)
+			{
+				interpreterApp->reload("");
+			}
+			AppState::configManager.setConfig("custom-theme", std::string("Default"));
 		}
 	};
 
-	lua["HPR"]["getThemeNames_E"] = [this]() -> sol::table
+	lua["HPR"]["getThemeNames_E"] = [this, &lua]() -> sol::table
 	{
-		std::vector<std::string> themeNames = AppState::themeManager.getThemeNames();
+		auto themeNames = AppState::themeManager.getThemeNames();
 
 		sol::table listTable = lua.create_table();
 		int index = 1;
-		for (const auto &name : themeNames)
-		{
-			sol::table entryTable = lua.create_table();
-			entryTable["name"] = name;
-			listTable[index++] = entryTable;
-		}
+		for (const auto& name : themeNames)
+			listTable[index++] = name;
+
 		return listTable;
 	};
 
