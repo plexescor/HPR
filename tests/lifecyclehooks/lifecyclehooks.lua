@@ -23,7 +23,7 @@
 --   python tests/main.py  ->  select "lifecyclehooks" suite, then close HPR.
 -- =============================================================================
 
-HPR.extensionName = "TestLifecycleHooks"
+HPR.extensionName = "LifecycleHooks"
 HPR.authorName = "Plexescor"
 
 local iteration = 0
@@ -38,10 +38,10 @@ function onTick(delta)
     if (iteration ~= 0) then
         if math.abs(delta - expectedDelta) <= 100 then
             HPR.writeCsv_E(HPR.getExtensionDir_E() .. "output/lifecyclehooks.csv", "Tick", "PASSED")
-            HPR.log_E("Tick delta: " .. delta .. "ms, expected: " .. expectedDelta .. "ms")
+            -- HPR.log_E("Tick delta: " .. delta .. "ms, expected: " .. expectedDelta .. "ms")
         else
             HPR.writeCsv_E(HPR.getExtensionDir_E() .. "output/lifecyclehooks.csv", "Tick", "FAILED")
-            HPR.log_E("Tick delta: " .. delta .. "ms, expected: " .. expectedDelta .. "ms")
+            -- HPR.log_E("Tick delta: " .. delta .. "ms, expected: " .. expectedDelta .. "ms")
         end
     end
 

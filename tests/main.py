@@ -25,6 +25,7 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 TEST_SUITES: list[str] = [
     "lifecyclehooks",
+    "otherextensions",
     # "test_my_new_suite",
 ]
 
@@ -142,6 +143,14 @@ def copy_suites(suites: list[str], ext_dir: Path) -> None:
     """Copy each suite folder into the HPR extensions directory."""
     ext_dir.mkdir(parents=True, exist_ok=True)
 
+    # First, wipe all known test suite folders from the HPR extensions dir
+    # so old files don't interfere when testing only 1 suite
+    for suite_name in TEST_SUITES:
+        old_dir = ext_dir / suite_name
+        if old_dir.exists():
+            shutil.rmtree(old_dir)
+
+    # Copy selected suite(s) exactly the same way
     for suite in suites:
         src = SCRIPT_DIR / suite
         if not src.is_dir():
@@ -149,15 +158,11 @@ def copy_suites(suites: list[str], ext_dir: Path) -> None:
             continue
 
         dst = ext_dir / suite
-        if dst.exists():
-            print(f"[WARN] Destination already exists, removing first: {dst}")
-            shutil.rmtree(dst)
-
         shutil.copytree(src, dst)
         _copied_dirs.append(dst)
         print(f"[INFO] Copied  {src.name}  ->  {dst}")
 
-def printResults() -> None:
+def print_results() -> None:
     """
     For each copied suite, scan every CSV file inside its output/ directory
     and print each key-value pair one by one, grouped by file.
@@ -304,7 +309,7 @@ def main() -> None:
         print(f"[ERROR] Could not launch HPR binary: {hpr_binary}")
 
     # Explicit call in case atexit ordering is unpredictable
-    printResults();
+    print_results()
     cleanup()
 
 
