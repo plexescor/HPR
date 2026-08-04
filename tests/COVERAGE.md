@@ -8,9 +8,9 @@
 | Metric | Count |
 |---|---|
 | **Total API surface** | 71 |
-| **Covered** | 6 |
-| **Uncovered** | 65 |
-| **Coverage** | 8.5% |
+| **Covered** | 5 |
+| **Uncovered** | 66 |
+| **Coverage** | 7.04% |
 
 ---
 
@@ -21,11 +21,8 @@
 | `init()` | Lifecycle hook | `lifecyclehooks` |
 | `onTick(delta)` | Lifecycle hook | `lifecyclehooks` |
 | `onExit()` | Lifecycle hook | `lifecyclehooks` |
-| `HPR.writeCsv_E` | File I/O | `lifecyclehooks` |
-| `HPR.getExtensionDir_E` | Paths | `lifecyclehooks` |
-| `HPR.log_E` | Logging | `lifecyclehooks` |
-
-> **Note:** `getExtensionDir_E` and `getExtensionPath_E` share the same implementation — covering one implicitly covers the other.
+| `HPR.getLoadedExtensions_E` | System | `otherextensions` |
+| `HPR.unloadExtension_E` | System | `otherextensions` |
 
 ---
 
@@ -33,6 +30,9 @@
 
 | API | Category | Description |
 |---|---|---|
+| `HPR.writeCsv_E` | File I/O | Write key-value pair to a CSV file in the extension dir |
+| `HPR.getExtensionDir_E` | Paths | Get relative path of current extension directory |
+| `HPR.log_E` | Logging | Log a message to HPR log output |
 | `HPR.getExtensionPath_E` | Paths | Alias of `getExtensionDir_E` — returns relative extension subdir path |
 | `HPR.startServer_E` | Networking | Start an embedded HTTP server on a given port with a request handler |
 | `HPR.httpGet_E` | Networking | HTTP GET request (host, path, secure?, headers?) → (body, status) |
@@ -99,8 +99,6 @@
 | `HPR.getMostProductiveHour_E` | Analytics | Most productive hour-of-day string |
 | `HPR.getOsName_E` | System | Returns `"Windows"`, `"Linux"`, or `"Apple"` |
 | `HPR.getEnvironmentName_E` | System | Returns `$XDG_CURRENT_DESKTOP` on Linux; empty on Windows |
-| `HPR.getLoadedExtensions_E` | System | Table of `{authorName, extensionName}` for all loaded extensions |
-| `HPR.unloadExtension_E` | System | Unload another extension by author + name |
 | `HPR.reloadExtension_E` | System | Reload another extension by author + name |
 | `HPR.refreshExtensions_E` | System | Hot-load any new `.lua` files dropped into the extensions dir |
 | `HPR.applyTheme_E` | System | Apply a UI theme by name (interpreter mode only) |

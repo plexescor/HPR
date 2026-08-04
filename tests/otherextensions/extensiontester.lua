@@ -10,6 +10,7 @@ local extensionAuthor_Common = "Plexescor"
 function init()
 
     local findCount = 0
+    HPR.sleep_E(2000)
 
     local extensions = HPR.getLoadedExtensions_E()
     for i, ext in ipairs(extensions) do
@@ -34,27 +35,27 @@ function init()
     findCount = 0
 
     -- HPR.sleep_E(5000)
-    -- HPR.unloadExtension_E(extensionAuthor_Common, extension1)
-    -- HPR.unloadExtension_E(extensionAuthor_Common, extension2)
+    HPR.unloadExtension_E(extensionAuthor_Common, extension1)
+    HPR.unloadExtension_E(extensionAuthor_Common, extension2)
 
     extensions = HPR.getLoadedExtensions_E()
 
     for i, ext in ipairs(extensions) do
         if (ext.extensionName == extension1 and ext.authorName == extensionAuthor_Common) then
             findCount = findCount + 1
-            HPR.log_E("ExtensionTester", "Found loaded extension: " .. ext.extensionName .. " by " .. ext.authorName)
-            HPR.writeCsv_E(HPR.getExtensionDir_E() .. "output/extensiontester.csv", "GetLoadedExtensions", "PASSED")
-        
+
         elseif (ext.extensionName == extension2 and ext.authorName == extensionAuthor_Common) then
             findCount = findCount + 1
-            HPR.log_E("ExtensionTester", "Found loaded extension: " .. ext.extensionName .. " by " .. ext.authorName)
-            HPR.writeCsv_E(HPR.getExtensionDir_E() .. "output/extensiontester.csv", "GetLoadedExtensions", "PASSED")
+
         end
     end
 
-    if (foundCount ~= 0) then
+    if (findCount ~= 0) then
         HPR.log_E("ExtensionTester", "Found extensions that should have been unloaded. Found: " .. findCount)
         HPR.writeCsv_E(HPR.getExtensionDir_E() .. "output/extensiontester.csv", "UnloadExtension", "FAILED")
+    else
+        HPR.log_E("ExtensionTester", "Successfully unloaded both extensions.")
+        HPR.writeCsv_E(HPR.getExtensionDir_E() .. "output/extensiontester.csv", "UnloadExtension", "PASSED")
     end
 end
 

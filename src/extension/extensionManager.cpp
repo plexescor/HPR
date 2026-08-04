@@ -587,9 +587,8 @@ void ExtensionManager::unloadExtension(std::string authorName, std::string exten
 				loaded.erase(std::remove_if(loaded.begin(), loaded.end(), [&](const auto &e)
 											{ return e.first == authorName && e.second == extensionName; }),
 							 loaded.end());
+				it = extensions.erase(it);
 			}
-
-			it = extensions.erase(it);
 		}
 		else
 		{
@@ -1985,9 +1984,22 @@ std::filesystem::path resolveAndSecurePath(const std::string &userPath, const st
 std::optional<CppValue> ExtensionManager::dispatchOverride(const std::string &overrideName,
 														   const std::vector<CppValue> &args)
 {
-	for (auto &ext : extensions)
+	std::vector<std::shared_ptr<LoadedExtension>> extCopy;
 	{
-		std::lock_guard<std::recursive_mutex> luaLock(ext->luaMutex);
+		std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+		extCopy = extensions;
+	}
+
+	for (auto &ext : extCopy)
+	{
+		if (!ext || !ext->running)
+			continue;
+
+		std::unique_lock<std::recursive_mutex> luaLock(ext->luaMutex, std::defer_lock);
+		if (!luaLock.try_lock())
+		{
+			continue;
+		}
 
 		sol::table HPR = ext->lua["HPR"];
 		if (!HPR.valid())
