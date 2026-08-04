@@ -1,4 +1,4 @@
-﻿# HPR Lua Extension API — Test Coverage
+# HPR Lua Extension API — Test Coverage
 
 > Auto-derived from [`extensionManager.cpp`](../src/extension/extensionManager.cpp).
 > Update this document whenever a new suite is added or a new API is registered.
@@ -8,9 +8,9 @@
 | Metric | Count |
 |---|---|
 | **Total API surface** | 71 |
-| **Covered** | 12 |
-| **Uncovered** | 59 |
-| **Coverage** | 16.90% |
+| **Covered** | 18 |
+| **Uncovered** | 53 |
+| **Coverage** | 25.35% |
 
 ---
 
@@ -18,18 +18,22 @@
 
 | API | Category | Covered by Suite |
 |---|---|---|
-| `init()` | Lifecycle hook | `lifecyclehooks`, `csvio`, `otherextensions`, `windowbackends` |
-| `onTick(delta)` | Lifecycle hook | `lifecyclehooks`, `csvio`, `windowbackends` |
-| `onExit()` | Lifecycle hook | `lifecyclehooks` |
-| `HPR.getExtensionDir_E` | Paths | `lifecyclehooks`, `csvio`, `windowbackends` |
-| `HPR.log_E` | Logging | `lifecyclehooks`, `csvio`, `otherextensions` |
-| `HPR.writeCsv_E` | File I/O | `lifecyclehooks`, `csvio`, `otherextensions`, `windowbackends` |
-| `HPR.readCsv_E` | File I/O | `csvio` |
-| `HPR.deleteCsv_E` | File I/O | `csvio` |
+| `init()` / `onTick()` / `onExit()` | Lifecycle hook | `lifecyclehooks` |
 | `HPR.getLoadedExtensions_E` | System | `otherextensions` |
 | `HPR.unloadExtension_E` | System | `otherextensions` |
+| `HPR.writeCsv_E` | File I/O | `csvio` |
+| `HPR.readCsv_E` | File I/O | `csvio` |
 | `HPR.getCurrentWindow_E` | Window | `windowbackends` |
 | `HPR.getCurrentTitle_E` | Window | `windowbackends` |
+| `HPR.registerBackend_E` | Window | `windowbackends` |
+| `HPR.startServer_E` | Networking | `netio` |
+| `HPR.httpGet_E` | Networking | `netio` |
+| `HPR.httpPost_E` | Networking | `netio` |
+| `HPR.httpPut_E` | Networking | `netio` |
+| `HPR.httpDelete_E` | Networking | `netio` |
+| `HPR.parseISO8601_E` | Time | `netio` |
+| `HPR.parseJSON_E` | Serialisation | `netio` |
+| `HPR.toJSON_E` | Serialisation | `netio` |
 
 > **Note:** `getExtensionDir_E` and `getExtensionPath_E` share the same implementation — covering one implicitly covers the other.
 
@@ -40,16 +44,8 @@
 | API | Category | Description |
 |---|---|---|
 | `HPR.getExtensionPath_E` | Paths | Alias of `getExtensionDir_E` — returns relative extension subdir path |
-| `HPR.startServer_E` | Networking | Start an embedded HTTP server on a given port with a request handler |
-| `HPR.httpGet_E` | Networking | HTTP GET request (host, path, secure?, headers?) → (body, status) |
-| `HPR.httpPost_E` | Networking | HTTP POST request with body → (body, status) |
-| `HPR.httpPut_E` | Networking | HTTP PUT request with body → (body, status) |
-| `HPR.httpDelete_E` | Networking | HTTP DELETE request → (body, status) |
-| `HPR.parseJSON_E` | Serialisation | Parse a JSON string; optional field-path to extract a nested value |
-| `HPR.toJSON_E` | Serialisation | Serialise a Lua table to a JSON string |
 | `HPR.getTime_MS_E` | Time | Current wall-clock time in milliseconds (Unix epoch) |
 | `HPR.sleep_E` | Time | Sleep for N ms, respecting extension shutdown signal |
-| `HPR.parseISO8601_E` | Time | Parse ISO-8601 datetime string → Unix ms timestamp |
 | `HPR.convertToDate_DDMMYY_E` | Time | Convert Unix ms → `DD/MM/YY` string |
 | `HPR.convertToDate_MMYY_E` | Time | Convert Unix ms → `MM/YY` string |
 | `HPR.convertToTime_HHMMSS_12_E` | Time | Convert Unix ms → 12-hour `HH:MM:SS AM/PM` string |

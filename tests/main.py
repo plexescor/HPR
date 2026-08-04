@@ -27,7 +27,8 @@ TEST_SUITES: list[str] = [
     "lifecyclehooks",
     "otherextensions",
     "csvio",
-    "windowbackends"
+    "windowbackends",
+    "netio",
     # "test_my_new_suite",
 ]
 
@@ -36,6 +37,16 @@ LIFECYCLEHOOKS_KEYS: list[str] = ["Init", "Tick", "Exit"]
 OTHEREXTENSIONS_KEYS: list[str] = ["GetLoadedExtensions", "UnloadExtension"]
 CSVIO_KEYS: list[str] = ["WriteCSV", "ReadCSV"]
 WINDOWBACKENDS_KEYS: list[str] = ["GetCurrentWindow", "GetCurrentTitle", "RegisterBackend"]
+NETIO_KEYS: list[str] = [
+    "StartServer",
+    "HTTPGet",
+    "HTTPPost",
+    "HTTPPut",
+    "HTTPDelete",
+    "ParseISO8601",
+    "ParseJSON",
+    "ToJSON",
+]
 
 # Master dictionary mapping suite names to their sublists of expected keys
 EXPECTED_CSV_KEYS: dict[str, list[str]] = {
@@ -43,6 +54,7 @@ EXPECTED_CSV_KEYS: dict[str, list[str]] = {
     "otherextensions": OTHEREXTENSIONS_KEYS,
     "csvio": CSVIO_KEYS,
     "windowbackends": WINDOWBACKENDS_KEYS,
+    "netio": NETIO_KEYS,
 }
 
 
