@@ -61,9 +61,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		ext.currentWindowManager = &cwm;
 		ext.app = nullptr;
 
-		ext.run();
-
 		cwm.detectAndSetBackend();
+		ext.run();
 		cwm.run();
 
 		// block main thread indefinitely
@@ -115,9 +114,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		ext.currentWindowManager = &cwm;
 		ext.app = &app;
 
-		ext.run();
-
 		cwm.detectAndSetBackend();
+		ext.run();
 		cwm.run();
 
 		app.run(); // blocking call, run on main
@@ -139,8 +137,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 		ext.currentWindowManager = &cwm;
 		ext.interpreterApp = &app;
 
-		ext.run();
 		cwm.detectAndSetBackend();
+		ext.run();
 		cwm.run();
 
 		app.run(); // blocking call, run on main
