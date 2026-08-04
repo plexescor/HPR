@@ -1940,9 +1940,19 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		}
 	};
 
-	lua["HPR"]["getThemeNames_E"] = [this]() -> std::vector<std::string>
+	lua["HPR"]["getThemeNames_E"] = [this]() -> sol::table
 	{
-		return AppState::themeManager.getThemeNames();
+		std::vector<std::string> themeNames = AppState::themeManager.getThemeNames();
+
+		sol::table listTable = lua.create_table();
+		int index = 1;
+		for (const auto &name : themeNames)
+		{
+			sol::table entryTable = lua.create_table();
+			entryTable["name"] = name;
+			listTable[index++] = entryTable;
+		}
+		return listTable;
 	};
 
 	lua["HPR"]["getCurrentThemeName_E"] = [this]() -> std::string
