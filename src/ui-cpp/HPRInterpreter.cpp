@@ -181,13 +181,17 @@ void HPRInterpreter::reload(std::string path)
 				weak_instance = newInst;
 			}
 
-		// re-wire close handler
 		#ifdef _WIN32
 			instance.value()->window().on_close_requested(
 				[this]() -> slint::CloseRequestResponse
 				{
+#ifndef NDEBUG
+					this->quit();
+					return slint::CloseRequestResponse::HideWindow;
+#else
 					instance.value()->hide();
 					return slint::CloseRequestResponse::KeepWindowShown;
+#endif
 				});
 
 			HWND hwnd = FindWindowW(nullptr, L"HPR");
@@ -206,8 +210,13 @@ void HPRInterpreter::reload(std::string path)
 			instance.value()->window().on_close_requested(
 				[this]() -> slint::CloseRequestResponse
 				{
+#ifndef NDEBUG
+					this->quit();
+					return slint::CloseRequestResponse::HideWindow;
+#else
 					this->hide();
 					return slint::CloseRequestResponse::KeepWindowShown;
+#endif
 				});
 		#endif
 		});
@@ -525,20 +534,30 @@ void HPRInterpreter::run()
 	inst->window().on_close_requested(
 		[this, weak_inst]() -> slint::CloseRequestResponse
 		{
+#ifndef NDEBUG
+			this->quit();
+			return slint::CloseRequestResponse::HideWindow;
+#else
 			saveWindowGeometry();
 			if (auto locked = weak_inst.lock())
 			{
 				(*locked)->hide();
 			}
 			return slint::CloseRequestResponse::KeepWindowShown;
+#endif
 		});
 #else
 	inst->window().on_close_requested(
 		[this]() -> slint::CloseRequestResponse
 		{
+#ifndef NDEBUG
+			this->quit();
+			return slint::CloseRequestResponse::HideWindow;
+#else
 			saveWindowGeometry();
 			this->hide();
 			return slint::CloseRequestResponse::KeepWindowShown;
+#endif
 		});
 #endif
 

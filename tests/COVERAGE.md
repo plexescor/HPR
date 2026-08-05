@@ -8,9 +8,9 @@
 | Metric | Count |
 |---|---|
 | **Total API surface** | 79 |
-| **Covered** | 28 |
-| **Uncovered** | 51 |
-| **Coverage** | 35.44% |
+| **Covered** | 29 |
+| **Uncovered** | 50 |
+| **Coverage** | 36.71% |
 
 ---
 
@@ -44,6 +44,7 @@
 | `HPR.parseDate_DDMMYY` | Time | `time` |
 | `HPR.parseDate_MMYY` | Time | `time` |
 | `HPR.extractMMYY_from_DDMMYY` | Time | `time` |
+| `HPR.showUiPopup` | UI | `ui` |
 
 > **Note:** `getExtensionDir` and `getExtensionPath` share the same implementation, covering one implicitly covers the other.
 
@@ -85,7 +86,6 @@
 | `HPR.hideUi` | UI | Hide the HPR window |
 | `HPR.quitUi` | UI | Quit the application |
 | `HPR.showNotification` | UI | Show an OS desktop notification |
-| `HPR.showUiPopup` | UI | Show a custom popup with left/right buttons executing a callback (auto-dismisses after N milliseconds returning -1) |
 | `HPR.connect` | Events | Subscribe to a system or custom event by name |
 | `HPR.disconnect` | Events | Unsubscribe from an event by name and connection ID |
 | `HPR.emit` | Events | Emit a system or custom event with optional payload |
