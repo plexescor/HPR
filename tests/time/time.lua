@@ -1,7 +1,7 @@
 -- =============================================================================
 -- Test Suite: Time Utilities
 -- =============================================================================
--- Verifies HPR's native time conversion, formatting, and date parsing APIs:
+-- Verifies HPR's native Sleep, time conversion, formatting, and date parsing APIs:
 --
 --   HPR.formatTime_HHMMSS(ms)        Formats duration in ms -> "Xh Ym Zs".
 --   HPR.convertToDate_DDMMYY(ms)    Converts ms timestamp -> "DD-MM-YY".
@@ -10,6 +10,7 @@
 --   HPR.parseDate_DDMMYY(str)       Parses "DD-MM-YY" -> Unix ms timestamp.
 --   HPR.parseDate_MMYY(str)         Parses "MM-YY" -> Unix ms timestamp (1st of month).
 --   HPR.extractMMYY_from_DDMMYY(str)Extracts "MM-YY" substring from "DD-MM-YY".
+--   HPR.sleep(ms)                     Sleeps for specified ms duration.
 --
 --   TIMEZONE NOTE:
 --   Date & time formatting functions use the system's local timezone (e.g. IST UTC+5:30).
@@ -24,6 +25,7 @@
 --   ParseDate_DDMMYY,PASSED
 --   ParseDate_MMYY,PASSED
 --   ExtractMMYY_from_DDMMYY,PASSED
+--   Sleep,PASSED
 --
 -- How to run:
 --   python tests/main.py  ->  select "time" suite, then close HPR.
@@ -91,6 +93,47 @@ function init()
         HPR.writeCsv(HPR.getExtensionDir() .. "output/time.csv", "ExtractMMYY_from_DDMMYY", "PASSED")
     else
         HPR.writeCsv(HPR.getExtensionDir() .. "output/time.csv", "ExtractMMYY_from_DDMMYY", "FAILED")
+    end
+
+
+    -- Sleep test
+    local sleepStart = HPR.getTime_MS()
+    HPR.sleep(767)
+    local sleepEnd = HPR.getTime_MS()
+    
+    -- HPR.log(HPR.extensionName, "Sleep test: expected ~767ms, got " .. (sleepEnd - sleepStart) .. "ms")
+    -- Windows jitters a bit, so allow 200ms margin of error
+    if math.abs((sleepEnd - sleepStart) - 767) < 200 then
+        HPR.writeCsv(HPR.getExtensionDir() .. "output/time.csv", "Sleep", "PASSED")
+    else
+        HPR.writeCsv(HPR.getExtensionDir() .. "output/time.csv", "Sleep", "FAILED")
+    end
+
+
+    --GetTimeMS test
+
+    local timeMs = HPR.getTime_MS()
+    local dateStr = HPR.convertToDate_DDMMYY(timeMs)
+    local day = string.sub(dateStr, 1, 2)
+    local month = string.sub(dateStr, 4, 5)
+    local year = "20" .. string.sub(dateStr, 7, 8)
+    local logDate = year .. "-" .. month .. "-" .. day
+
+    --What we will do check if log file for today exists and has content. 
+    --If so, we can assume getTime_MS working correctly.
+    local result = ""
+    if string.find(HPR.getOsName() or "", "Windows", 1, true) then
+        local appdata = HPR.runSystemCommand("echo %APPDATA%")
+        appdata = appdata:gsub("[\r\n]", "")
+        result = HPR.runSystemCommand("type \"" .. appdata .. "\\HPR\\HPR_Config\\logs\\" .. logDate .. ".log\"")
+    else
+        result = HPR.runSystemCommand("cat ~/.config/HPR/logs/" .. logDate .. ".log")
+    end
+
+    if string.len(result) > 7 then
+        HPR.writeCsv(HPR.getExtensionDir() .. "output/time.csv", "GetTime_MS", "PASSED")
+    else
+        HPR.writeCsv(HPR.getExtensionDir() .. "output/time.csv", "GetTime_MS", "FAILED")
     end
 end
 
