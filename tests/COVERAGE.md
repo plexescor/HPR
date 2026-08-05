@@ -7,10 +7,10 @@
 
 | Metric | Count |
 |---|---|
-| **Total API surface** | 79 |
-| **Covered** | 29 |
+| **Total API surface** | 80 |
+| **Covered** | 30 |
 | **Uncovered** | 50 |
-| **Coverage** | 36.71% |
+| **Coverage** | 37.50% |
 
 ---
 
@@ -45,6 +45,7 @@
 | `HPR.parseDate_MMYY` | Time | `time` |
 | `HPR.extractMMYY_from_DDMMYY` | Time | `time` |
 | `HPR.showUiPopup` | UI | `ui` |
+| `HPR.log` | Logger | `logger` |
 
 > **Note:** `getExtensionDir` and `getExtensionPath` share the same implementation, covering one implicitly covers the other.
 

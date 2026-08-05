@@ -1,3 +1,21 @@
+-- =============================================================================
+-- Test Suite: UI
+-- =============================================================================
+-- Verifies HPR's UI popup extension API:
+--
+--   HPR.showUiPopup(text, leftBtnText, rightBtnText, callback)
+--                             Shows a modal popup dialog. Callback receives:
+--                               0  = left button clicked
+--                               1  = right button clicked
+--                              -1  = auto-dismissed after 7500ms timeout
+--
+-- Expected output (written to output/ui.csv):
+--   ShowUIPopup,PASSED
+--
+-- How to run:
+--   python tests/main.py  ->  select "ui" suite, then close HPR.
+-- =============================================================================
+
 HPR.extensionName = "UI"
 HPR.authorName = "Plexescor"
 
