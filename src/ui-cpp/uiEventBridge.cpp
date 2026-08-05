@@ -99,6 +99,30 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow> &ui, ExtensionMa
 	if (interpreter)
 		this->interpreter = interpreter;
 
+	auto mgr = extManager ? extManager : AppState::extManager;
+	if (mgr)
+	{
+		mgr->compiledUiWeak = ui;
+		ui->on_uiPopupButtonClicked_S([mgr](int btn) {
+			if (mgr->currentPopupCallback)
+			{
+				auto cb = mgr->currentPopupCallback;
+				mgr->currentPopupCallback = nullptr;
+				cb(btn);
+			}
+
+			std::lock_guard<std::mutex> lock(mgr->queueMutex);
+			if (!mgr->popupQueue.empty())
+			{
+				mgr->showNextPopup_Unlocked();
+			}
+			else
+			{
+				mgr->isPopupActive = false;
+			}
+		});
+	}
+
 	// Connect to event hub
 	init();
 
@@ -404,6 +428,41 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<slint::interpreter::Componen
 
 	if (interpreter)
 		this->interpreter = interpreter;
+
+	auto mgr = extManager ? extManager : AppState::extManager;
+	if (mgr)
+	{
+		mgr->interpretedUiWeak = ui;
+		ui->set_callback("uiPopupButtonClicked_S",
+						 [mgr](auto args) -> slint::interpreter::Value
+						 {
+							 if (args.size() > 0)
+							 {
+								 auto opt_btn = args[0].to_number();
+								 if (opt_btn.has_value())
+								 {
+									 int btn = static_cast<int>(opt_btn.value());
+									 if (mgr->currentPopupCallback)
+									 {
+										 auto cb = mgr->currentPopupCallback;
+										 mgr->currentPopupCallback = nullptr;
+										 cb(btn);
+									 }
+
+									 std::lock_guard<std::mutex> lock(mgr->queueMutex);
+									 if (!mgr->popupQueue.empty())
+									 {
+										 mgr->showNextPopup_Unlocked();
+									 }
+									 else
+									 {
+										 mgr->isPopupActive = false;
+									 }
+								 }
+							 }
+							 return slint::interpreter::Value();
+						 });
+	}
 
 	// Connect to event hub
 	init();

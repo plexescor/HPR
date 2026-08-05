@@ -1863,6 +1863,22 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 			interpreterApp->quit();
 	};
 
+	lua["HPR"]["showUiPopup" + suffix] = [this, &ext](std::string text, std::string leftText, std::string rightText, sol::function luaCallback)
+	{
+		this->showUiPopup(text, leftText, rightText, [luaCallback, &ext](int btn) {
+			std::lock_guard<std::recursive_mutex> lock(ext.luaMutex);
+			if (luaCallback.valid())
+			{
+				auto res = luaCallback(btn);
+				if (!res.valid())
+				{
+					sol::error err = res;
+					std::cerr << "showUiPopup callback failed: " << err.what() << "\n";
+				}
+			}
+		});
+	};
+
 	lua["HPR"]["showNotification" + suffix] = [](std::string title, std::string message)
 	{
 		Logger::log("[HPR Extension Notification] " + title + ": " + message);
@@ -2177,4 +2193,50 @@ std::optional<CppValue> ExtensionManager::dispatchOverride(const std::string &ov
 		}
 	}
 	return std::nullopt;
+}
+
+void ExtensionManager::showUiPopup(const std::string &text, const std::string &leftBtnText, const std::string &rightBtnText, std::function<void(int)> callback)
+{
+	std::lock_guard<std::mutex> lock(queueMutex);
+	popupQueue.push({text, leftBtnText, rightBtnText, callback});
+	if (!isPopupActive)
+	{
+		showNextPopup_Unlocked();
+	}
+}
+
+void ExtensionManager::showNextPopup_Unlocked()
+{
+	if (popupQueue.empty())
+	{
+		return;
+	}
+
+	isPopupActive = true;
+	PopupRequest req = popupQueue.front();
+	popupQueue.pop();
+	currentPopupCallback = req.callback;
+
+	if (auto handle = compiledUiWeak.lock())
+	{
+		slint::invoke_from_event_loop(
+			[handle, text = req.text, left = req.leftBtnText, right = req.rightBtnText]()
+			{
+				(*handle)->set_uiPopupText_S(slint::SharedString(text));
+				(*handle)->set_uiPopupLeftBtnText_S(slint::SharedString(left));
+				(*handle)->set_uiPopupRightBtnText_S(slint::SharedString(right));
+				(*handle)->set_showUiPopup_S(true);
+			});
+	}
+	else if (auto handle_int = interpretedUiWeak.lock())
+	{
+		slint::invoke_from_event_loop(
+			[handle_int, text = req.text, left = req.leftBtnText, right = req.rightBtnText]()
+			{
+				(*handle_int)->set_property("uiPopupText_S", slint::interpreter::Value(slint::SharedString(text)));
+				(*handle_int)->set_property("uiPopupLeftBtnText_S", slint::interpreter::Value(slint::SharedString(left)));
+				(*handle_int)->set_property("uiPopupRightBtnText_S", slint::interpreter::Value(slint::SharedString(right)));
+				(*handle_int)->set_property("showUiPopup_S", slint::interpreter::Value(true));
+			});
+	}
 }

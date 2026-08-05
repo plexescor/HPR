@@ -13,6 +13,7 @@
 #include "uiEventBridge.hpp"
 #include "uiRegistry.hpp"
 #include "windowUtilities.hpp"
+#include "telemetryManager.hpp"
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
@@ -248,6 +249,27 @@ void HPRInterpreter::show()
 #endif
 			}
 		});
+
+	if (AppState::configManager.isFirstLaunch() && !AppState::configManager.isTelemetryPromptAnswered())
+	{
+		if (extManager)
+		{
+			std::string promptText = "Help Improve HPR? HPR is local-first. We would like to collect two anonymous numbers: total unique installations and the frequency of regular weekly users. No window titles, websites, or personal data ever leave your machine.";
+			extManager->showUiPopup(promptText, "NO THANKS", "I AGREE", [](int btn) {
+				if (btn == 1) // YES / OK
+				{
+					AppState::configManager.setConfig("anonymous-telemetry", std::string("true"));
+					AppState::configManager.markTelemetryPromptAnswered();
+					std::thread([]() { TelemetryManager::checkAndSend(); }).detach();
+				}
+				else // NO / CANCEL
+				{
+					AppState::configManager.setConfig("anonymous-telemetry", std::string("false"));
+					AppState::configManager.markTelemetryPromptAnswered();
+				}
+			});
+		}
+	}
 }
 
 void HPRInterpreter::quit()

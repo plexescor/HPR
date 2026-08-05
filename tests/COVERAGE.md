@@ -7,10 +7,10 @@
 
 | Metric | Count |
 |---|---|
-| **Total API surface** | 78 |
+| **Total API surface** | 79 |
 | **Covered** | 28 |
-| **Uncovered** | 50 |
-| **Coverage** | 35.90% |
+| **Uncovered** | 51 |
+| **Coverage** | 35.44% |
 
 ---
 
@@ -85,6 +85,7 @@
 | `HPR.hideUi` | UI | Hide the HPR window |
 | `HPR.quitUi` | UI | Quit the application |
 | `HPR.showNotification` | UI | Show an OS desktop notification |
+| `HPR.showUiPopup` | UI | Show a custom popup with left/right buttons executing a callback |
 | `HPR.connect` | Events | Subscribe to a system or custom event by name |
 | `HPR.disconnect` | Events | Unsubscribe from an event by name and connection ID |
 | `HPR.emit` | Events | Emit a system or custom event with optional payload |

@@ -19,12 +19,27 @@
 #include <map>
 #include <mutex>
 #include <optional>
+#include <queue>
+#include <slint.h>
+#include <slint-interpreter.h>
 
 #include "appEvents.hpp"
 
 // FORWARD DECLARE TO AVOID CIRCULAR DEPENDENCIES
 class HPR;
 class HPRInterpreter;
+class MainWindow;
+namespace slint::interpreter {
+class ComponentInstance;
+}
+
+struct PopupRequest
+{
+	std::string text;
+	std::string leftBtnText;
+	std::string rightBtnText;
+	std::function<void(int)> callback;
+};
 
 struct LoadedExtension
 {
@@ -79,6 +94,19 @@ class ExtensionManager
 	bool didTimeoutDuringUnload = false;
 
   public:
+	// Slint handles
+	slint::ComponentWeakHandle<MainWindow> compiledUiWeak;
+	slint::ComponentWeakHandle<slint::interpreter::ComponentInstance> interpretedUiWeak;
+
+	// Popup queue & state
+	std::queue<PopupRequest> popupQueue;
+	std::function<void(int)> currentPopupCallback = nullptr;
+	bool isPopupActive = false;
+	std::mutex queueMutex;
+
+	void showUiPopup(const std::string &text, const std::string &leftBtnText, const std::string &rightBtnText, std::function<void(int)> callback);
+	void showNextPopup_Unlocked();
+
 	// some shit
 	DatabaseManager *dbManager = nullptr;
 	TrayManager *trayManager = nullptr;

@@ -99,7 +99,11 @@ export component MainWindow inherits Window {
     in property <bool>            telemetry_S;
     in property <bool>            no-title-bar-enabled;
     in property <float>           cornerRoundness_S;
-    in property <bool>            showTelemetryPrompt_S;
+    in-out property <bool>        showUiPopup_S: false;
+    in-out property <string>       uiPopupText_S: "";
+    in-out property <string>       uiPopupLeftBtnText_S: "NO";
+    in-out property <string>       uiPopupRightBtnText_S: "YES";
+    callback uiPopupButtonClicked_S(int);
     in-out property <float>       uiScale_S <=> Palette.ui-scale;
     in-out property <bool>        isDarkMode <=> Palette.is-dark;
 
@@ -713,7 +717,7 @@ export component MainWindow inherits Window {
             }
         }
 
-        if showTelemetryPrompt_S : Rectangle {
+        if showUiPopup_S : Rectangle {
             background: #000000cc;
             z: 100;
             width: 100%;
@@ -725,7 +729,7 @@ export component MainWindow inherits Window {
 
             Card {
                 width: 440px * Palette.scale;
-                height: 250px * Palette.scale;
+                height: 240px * Palette.scale;
                 x: (parent.width - self.width) / 2;
                 y: (parent.height - self.height) / 2;
 
@@ -738,7 +742,7 @@ export component MainWindow inherits Window {
                         spacing: 6px * Palette.scale;
 
                         Text {
-                            text: "PRIVACY & ANALYTICS";
+                            text: "NOTICE";
                             font-size: 8px * Palette.scale;
                             font-weight: 800;
                             letter-spacing: 2.5px * Palette.scale;
@@ -747,51 +751,43 @@ export component MainWindow inherits Window {
                         }
 
                         Text {
-                            text: "Help Improve HPR?";
-                            font-size: 18px * Palette.scale;
-                            font-weight: 800;
-                            letter-spacing: 0.5px * Palette.scale;
+                            text: root.uiPopupText_S;
+                            font-size: 11px * Palette.scale;
+                            font-weight: 500;
                             color: Palette.text-primary;
+                            wrap: word-wrap;
                             horizontal-alignment: center;
                         }
-                    }
-
-                    Text {
-                        text: "HPR is local-first. We would like to collect two anonymous numbers: total unique installations and the frequency of regular weekly users. No window titles, websites, or personal data ever leave your machine.";
-                        font-size: 11px * Palette.scale;
-                        font-weight: 500;
-                        color: Palette.text-secondary;
-                        wrap: word-wrap;
-                        horizontal-alignment: center;
                     }
 
                     HorizontalLayout {
                         spacing: 16px * Palette.scale;
                         alignment: center;
 
-                        // Decline
-                        decl-btn := Rectangle {
+                        // Left Button (returns 0)
+                        Rectangle {
                             width: 130px * Palette.scale;
                             height: 32px * Palette.scale;
                             border-radius: 6px * Palette.scale;
                             border-width: 1px * Palette.scale;
                             border-color: Palette.card-border;
-                            background: ta-decl.pressed ? Palette.input-bg-press : 
-                                        ta-decl.has-hover ? Palette.input-bg-hover : 
+                            background: ta-left.pressed ? Palette.input-bg-press : 
+                                        ta-left.has-hover ? Palette.input-bg-hover : 
                                         Palette.input-bg;
 
                             animate background { duration: 100ms; }
                             animate border-color { duration: 100ms; }
 
-                            ta-decl := TouchArea {
+                            ta-left := TouchArea {
                                 mouse-cursor: pointer;
                                 clicked => {
-                                    root.setConfig("anonymous-telemetry", "false");
+                                    root.showUiPopup_S = false;
+                                    root.uiPopupButtonClicked_S(0);
                                 }
                             }
 
                             Text {
-                                text: "NO THANKS";
+                                text: root.uiPopupLeftBtnText_S;
                                 font-size: 9px * Palette.scale;
                                 font-weight: 800;
                                 letter-spacing: 1.5px * Palette.scale;
@@ -801,24 +797,25 @@ export component MainWindow inherits Window {
                             }
                         }
 
-                        // Agree
-                        agree-btn := Rectangle {
+                        // Right Button (returns 1)
+                        Rectangle {
                             width: 130px * Palette.scale;
                             height: 32px * Palette.scale;
                             border-radius: 6px * Palette.scale;
-                            background: ta-agree.pressed ? @linear-gradient(135deg, #0284c7 0%, #0369a1 100%) : 
-                                        ta-agree.has-hover ? @linear-gradient(135deg, #7dd3fc 0%, #38bdf8 100%) : 
+                            background: ta-right.pressed ? @linear-gradient(135deg, #0284c7 0%, #0369a1 100%) : 
+                                        ta-right.has-hover ? @linear-gradient(135deg, #7dd3fc 0%, #38bdf8 100%) : 
                                         @linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
 
-                            ta-agree := TouchArea {
+                            ta-right := TouchArea {
                                 mouse-cursor: pointer;
                                 clicked => {
-                                    root.setConfig("anonymous-telemetry", "true");
+                                    root.showUiPopup_S = false;
+                                    root.uiPopupButtonClicked_S(1);
                                 }
                             }
 
                             Text {
-                                text: "I AGREE";
+                                text: root.uiPopupRightBtnText_S;
                                 font-size: 9px * Palette.scale;
                                 font-weight: 800;
                                 letter-spacing: 1.5px * Palette.scale;

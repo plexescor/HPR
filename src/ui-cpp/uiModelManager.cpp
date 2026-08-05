@@ -475,8 +475,6 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
 					(*handle)->set_cornerRoundness_S(cornerRoundnessVal);
 				if ((*handle)->get_uiScale_S() != uiScaleVal)
 					(*handle)->set_uiScale_S(uiScaleVal);
-				if ((*handle)->get_showTelemetryPrompt_S() != showPromptVal)
-					(*handle)->set_showTelemetryPrompt_S(showPromptVal);
 				if ((*handle)->get_windowName_S() != slint::SharedString(currentWindowName))
 					(*handle)->set_windowName_S(slint::SharedString(currentWindowName));
 
@@ -1105,7 +1103,6 @@ void UiModelManager::update_Interpreted(
 				setPropIfChanged("no_title_bar_enabled", slint::interpreter::Value(noTitleBarVal));
 				setPropIfChanged("cornerRoundness_S", slint::interpreter::Value((double)cornerRoundnessVal));
 				setPropIfChanged("uiScale_S", slint::interpreter::Value((double)uiScaleVal));
-				setPropIfChanged("showTelemetryPrompt_S", slint::interpreter::Value(showPromptVal));
 				setPropIfChanged("windowName_S", slint::interpreter::Value(slint::SharedString(currentWindowName)));
 				setPropIfChanged("trackedTime_S", slint::interpreter::Value((double)totalTrackedTime));
 				setPropIfChanged("trackedTime_Tab_S", slint::interpreter::Value((double)totalTrackedTime_Tab));
