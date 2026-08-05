@@ -727,100 +727,104 @@ export component MainWindow inherits Window {
                 // block click through
             }
 
-            Card {
-                width: 440px * Palette.scale;
-                x: (parent.width - self.width) / 2;
-                y: (parent.height - self.height) / 2;
+            VerticalLayout {
+                alignment: center;
+                HorizontalLayout {
+                    alignment: center;
+                    Card {
+                        width: 440px * Palette.scale;
 
-                VerticalLayout {
-                    padding: 24px * Palette.scale;
-                    spacing: 16px * Palette.scale;
-                    alignment: space-between;
+                        VerticalLayout {
+                            padding: 24px * Palette.scale;
+                            spacing: 16px * Palette.scale;
+                            alignment: space-between;
 
-                    VerticalLayout {
-                        spacing: 6px * Palette.scale;
+                            VerticalLayout {
+                                spacing: 6px * Palette.scale;
 
-                        Text {
-                            text: "NOTICE";
-                            font-size: 8px * Palette.scale;
-                            font-weight: 800;
-                            letter-spacing: 2.5px * Palette.scale;
-                            color: #38bdf8;
-                            horizontal-alignment: center;
-                        }
+                                Text {
+                                    text: "NOTICE";
+                                    font-size: 8px * Palette.scale;
+                                    font-weight: 800;
+                                    letter-spacing: 2.5px * Palette.scale;
+                                    color: #38bdf8;
+                                    horizontal-alignment: center;
+                                }
 
-                        Text {
-                            text: root.uiPopupText_S;
-                            font-size: 11px * Palette.scale;
-                            font-weight: 500;
-                            color: Palette.text-primary;
-                            wrap: word-wrap;
-                            horizontal-alignment: center;
-                        }
-                    }
-
-                    HorizontalLayout {
-                        spacing: 16px * Palette.scale;
-                        alignment: center;
-
-                        // Left Button (returns 0)
-                        Rectangle {
-                            width: 130px * Palette.scale;
-                            height: 32px * Palette.scale;
-                            border-radius: 6px * Palette.scale;
-                            border-width: 1px * Palette.scale;
-                            border-color: Palette.card-border;
-                            background: ta-left.pressed ? Palette.input-bg-press : 
-                                        ta-left.has-hover ? Palette.input-bg-hover : 
-                                        Palette.input-bg;
-
-                            animate background { duration: 100ms; }
-                            animate border-color { duration: 100ms; }
-
-                            ta-left := TouchArea {
-                                mouse-cursor: pointer;
-                                clicked => {
-                                    root.showUiPopup_S = false;
-                                    root.uiPopupButtonClicked_S(0);
+                                Text {
+                                    text: root.uiPopupText_S;
+                                    font-size: 11px * Palette.scale;
+                                    font-weight: 500;
+                                    color: Palette.text-primary;
+                                    wrap: word-wrap;
+                                    horizontal-alignment: center;
                                 }
                             }
 
-                            Text {
-                                text: root.uiPopupLeftBtnText_S;
-                                font-size: 9px * Palette.scale;
-                                font-weight: 800;
-                                letter-spacing: 1.5px * Palette.scale;
-                                color: Palette.text-primary;
-                                horizontal-alignment: center;
-                                vertical-alignment: center;
-                            }
-                        }
+                            HorizontalLayout {
+                                spacing: 16px * Palette.scale;
+                                alignment: center;
 
-                        // Right Button (returns 1)
-                        Rectangle {
-                            width: 130px * Palette.scale;
-                            height: 32px * Palette.scale;
-                            border-radius: 6px * Palette.scale;
-                            background: ta-right.pressed ? @linear-gradient(135deg, #0284c7 0%, #0369a1 100%) : 
-                                        ta-right.has-hover ? @linear-gradient(135deg, #7dd3fc 0%, #38bdf8 100%) : 
-                                        @linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+                                // Left Button (returns 0)
+                                Rectangle {
+                                    width: 130px * Palette.scale;
+                                    height: 32px * Palette.scale;
+                                    border-radius: 6px * Palette.scale;
+                                    border-width: 1px * Palette.scale;
+                                    border-color: Palette.card-border;
+                                    background: ta-left.pressed ? Palette.input-bg-press : 
+                                                ta-left.has-hover ? Palette.input-bg-hover : 
+                                                Palette.input-bg;
 
-                            ta-right := TouchArea {
-                                mouse-cursor: pointer;
-                                clicked => {
-                                    root.showUiPopup_S = false;
-                                    root.uiPopupButtonClicked_S(1);
+                                    animate background { duration: 100ms; }
+                                    animate border-color { duration: 100ms; }
+
+                                    ta-left := TouchArea {
+                                        mouse-cursor: pointer;
+                                        clicked => {
+                                            root.showUiPopup_S = false;
+                                            root.uiPopupButtonClicked_S(0);
+                                        }
+                                    }
+
+                                    Text {
+                                        text: root.uiPopupLeftBtnText_S;
+                                        font-size: 9px * Palette.scale;
+                                        font-weight: 800;
+                                        letter-spacing: 1.5px * Palette.scale;
+                                        color: Palette.text-primary;
+                                        horizontal-alignment: center;
+                                        vertical-alignment: center;
+                                    }
                                 }
-                            }
 
-                            Text {
-                                text: root.uiPopupRightBtnText_S;
-                                font-size: 9px * Palette.scale;
-                                font-weight: 800;
-                                letter-spacing: 1.5px * Palette.scale;
-                                color: #ffffff;
-                                horizontal-alignment: center;
-                                vertical-alignment: center;
+                                // Right Button (returns 1)
+                                Rectangle {
+                                    width: 130px * Palette.scale;
+                                    height: 32px * Palette.scale;
+                                    border-radius: 6px * Palette.scale;
+                                    background: ta-right.pressed ? @linear-gradient(135deg, #0284c7 0%, #0369a1 100%) : 
+                                                ta-right.has-hover ? @linear-gradient(135deg, #7dd3fc 0%, #38bdf8 100%) : 
+                                                @linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+
+                                    ta-right := TouchArea {
+                                        mouse-cursor: pointer;
+                                        clicked => {
+                                            root.showUiPopup_S = false;
+                                            root.uiPopupButtonClicked_S(1);
+                                        }
+                                    }
+
+                                    Text {
+                                        text: root.uiPopupRightBtnText_S;
+                                        font-size: 9px * Palette.scale;
+                                        font-weight: 800;
+                                        letter-spacing: 1.5px * Palette.scale;
+                                        color: #ffffff;
+                                        horizontal-alignment: center;
+                                        vertical-alignment: center;
+                                    }
+                                }
                             }
                         }
                     }
