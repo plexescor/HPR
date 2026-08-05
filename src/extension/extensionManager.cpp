@@ -2241,7 +2241,7 @@ void ExtensionManager::showNextPopup_Unlocked()
 	if (req.isLua)
 	{
 		std::thread([this, req_id = req.id]() {
-			int timeoutMs = AppState::configManager.getConfig<int>("extension-popup-timeout", 5000);
+			int timeoutMs = AppState::configManager.getConfig<int>("extension-popup-timeout", 7500);
 			std::this_thread::sleep_for(std::chrono::milliseconds(timeoutMs));
 
 			std::lock_guard<std::mutex> lock(this->queueMutex);
