@@ -953,8 +953,23 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		return dir;
 	};
 
+	auto getExtensionAbsoluteDir = [&ext]() -> std::string
+	{
+		std::string dir = ext.path.parent_path().string();
+		if (!dir.empty() && dir.back() != '/' && dir.back() != '\\')
+		{
+#ifdef _WIN32
+			dir += "\\";
+#else
+			dir += "/";
+#endif
+		}
+		return dir;
+	};
+
 	lua["HPR"]["getExtensionDir" + suffix] = getExtensionRelativeDir;
 	lua["HPR"]["getExtensionPath" + suffix] = getExtensionRelativeDir;
+	lua["HPR"]["getExtensionAbsoluteDir" + suffix] = getExtensionAbsoluteDir;
 
 	lua["HPR"]["sleep" + suffix] = [&ext](int ms)
 	{
