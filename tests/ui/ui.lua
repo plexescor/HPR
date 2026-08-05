@@ -6,13 +6,16 @@ function init()
 
     HPR.showUiPopup("Can you see this?", "No", "Yes", function(btn)
         if btn == 1 then
-            HPR.log("User clicked Yes!")
-            HPR.writeCsv(HPR.getExtensionDir_E() .. "output/ui.csv", "ShowUiPopup", "PASSED")
+            HPR.log( "UI","User clicked Yes!")
+            HPR.writeCsv(HPR.getExtensionDir_E() .. "output/ui.csv", "ShowUIPopup", "PASSED")
+        elseif btn == 0 then
+            HPR.log("UI", "User clicked No!")
+            HPR.writeCsv(HPR.getExtensionDir_E() .. "output/ui.csv", "ShowUIPopup", "PASSED")
         else
-            HPR.log("User clicked No!")
-            HPR.writeCsv(HPR.getExtensionDir_E() .. "output/ui.csv", "ShowUiPopup", "PASSED")
+            HPR.log("UI", "Timeout reached, no button clicked.")
+            HPR.writeCsv(HPR.getExtensionDir_E() .. "output/ui.csv", "ShowUIPopup", "FAILED")
         end
-end)
+    end)
 end
 
 function onTick(delta)

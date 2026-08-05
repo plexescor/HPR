@@ -30,6 +30,7 @@ TEST_SUITES: list[str] = [
     "windowbackends",
     "netio",
     "time",
+    "ui",
     # "test_my_new_suite",
 ]
 
@@ -49,6 +50,7 @@ NETIO_KEYS: list[str] = [
     "ParseJSON",
     "ToJSON",
 ]
+UI_KEYS: list[str] = ["ShowUIPopup"]
 
 # Master dictionary mapping suite names to their sublists of expected keys
 EXPECTED_CSV_KEYS: dict[str, list[str]] = {
@@ -58,6 +60,7 @@ EXPECTED_CSV_KEYS: dict[str, list[str]] = {
     "windowbackends": WINDOWBACKENDS_KEYS,
     "netio": NETIO_KEYS,
     "time": TIME_KEYS,
+    "ui": UI_KEYS,
 }
 
 

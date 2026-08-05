@@ -2219,28 +2219,24 @@ void ExtensionManager::showNextPopup_Unlocked()
 	currentPopupCallback = req.callback;
 	activePopupId = req.id;
 
-	if (auto handle = compiledUiWeak.lock())
-	{
-		slint::invoke_from_event_loop(
-			[handle, text = req.text, left = req.leftBtnText, right = req.rightBtnText]()
+	slint::invoke_from_event_loop(
+		[weak_compiled = compiledUiWeak, weak_interpreted = interpretedUiWeak, text = req.text, left = req.leftBtnText, right = req.rightBtnText]()
+		{
+			if (auto handle = weak_compiled.lock())
 			{
 				(*handle)->set_uiPopupText_S(slint::SharedString(text));
 				(*handle)->set_uiPopupLeftBtnText_S(slint::SharedString(left));
 				(*handle)->set_uiPopupRightBtnText_S(slint::SharedString(right));
 				(*handle)->set_showUiPopup_S(true);
-			});
-	}
-	else if (auto handle_int = interpretedUiWeak.lock())
-	{
-		slint::invoke_from_event_loop(
-			[handle_int, text = req.text, left = req.leftBtnText, right = req.rightBtnText]()
+			}
+			else if (auto handle_int = weak_interpreted.lock())
 			{
 				(*handle_int)->set_property("uiPopupText_S", slint::interpreter::Value(slint::SharedString(text)));
 				(*handle_int)->set_property("uiPopupLeftBtnText_S", slint::interpreter::Value(slint::SharedString(left)));
 				(*handle_int)->set_property("uiPopupRightBtnText_S", slint::interpreter::Value(slint::SharedString(right)));
 				(*handle_int)->set_property("showUiPopup_S", slint::interpreter::Value(true));
-			});
-	}
+			}
+		});
 
 	if (req.isLua)
 	{
@@ -2251,9 +2247,9 @@ void ExtensionManager::showNextPopup_Unlocked()
 			std::lock_guard<std::mutex> lock(this->queueMutex);
 			if (this->isPopupActive && this->activePopupId == req_id)
 			{
-				if (auto handle = this->compiledUiWeak.lock())
-				{
-					slint::invoke_from_event_loop([handle, this]() {
+				slint::invoke_from_event_loop([weak_compiled = this->compiledUiWeak, weak_interpreted = this->interpretedUiWeak, this]() {
+					if (auto handle = weak_compiled.lock())
+					{
 						(*handle)->set_showUiPopup_S(false);
 
 						if (this->currentPopupCallback)
@@ -2272,11 +2268,9 @@ void ExtensionManager::showNextPopup_Unlocked()
 						{
 							this->isPopupActive = false;
 						}
-					});
-				}
-				else if (auto handle_int = this->interpretedUiWeak.lock())
-				{
-					slint::invoke_from_event_loop([handle_int, this]() {
+					}
+					else if (auto handle_int = weak_interpreted.lock())
+					{
 						(*handle_int)->set_property("showUiPopup_S", slint::interpreter::Value(false));
 
 						if (this->currentPopupCallback)
@@ -2295,8 +2289,8 @@ void ExtensionManager::showNextPopup_Unlocked()
 						{
 							this->isPopupActive = false;
 						}
-					});
-				}
+					}
+				});
 			}
 		}).detach();
 	}
