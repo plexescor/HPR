@@ -25,6 +25,8 @@ local extension1 = "Helper_ExtensionAPI1"
 local extension2 = "Helper_ExtensionAPI2"
 local extensionAuthor_Common = "Plexescor"
 
+HPR.useLegacyAPISuffix = true
+
 function init()
 
     local findCount = 0

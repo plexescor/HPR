@@ -30,18 +30,18 @@ local iteration = 0
 local expectedDelta = 500
 
 function init()
-    HPR.writeCsv_E(HPR.getExtensionDir_E() .. "output/lifecyclehooks.csv", "Init", "PASSED")
+    HPR.writeCsv(HPR.getExtensionDir() .. "output/lifecyclehooks.csv", "Init", "PASSED")
     return expectedDelta
 end
 
 function onTick(delta)
     if (iteration ~= 0) then
         if math.abs(delta - expectedDelta) <= 100 then
-            HPR.writeCsv_E(HPR.getExtensionDir_E() .. "output/lifecyclehooks.csv", "Tick", "PASSED")
-            -- HPR.log_E("Tick delta: " .. delta .. "ms, expected: " .. expectedDelta .. "ms")
+            HPR.writeCsv(HPR.getExtensionDir() .. "output/lifecyclehooks.csv", "Tick", "PASSED")
+            -- HPR.log("Tick delta: " .. delta .. "ms, expected: " .. expectedDelta .. "ms")
         else
-            HPR.writeCsv_E(HPR.getExtensionDir_E() .. "output/lifecyclehooks.csv", "Tick", "FAILED")
-            -- HPR.log_E("Tick delta: " .. delta .. "ms, expected: " .. expectedDelta .. "ms")
+            HPR.writeCsv(HPR.getExtensionDir() .. "output/lifecyclehooks.csv", "Tick", "FAILED")
+            -- HPR.log("Tick delta: " .. delta .. "ms, expected: " .. expectedDelta .. "ms")
         end
     end
 
@@ -49,5 +49,5 @@ function onTick(delta)
 end
 
 function onExit()
-    HPR.writeCsv_E(HPR.getExtensionDir_E() .. "output/lifecyclehooks.csv", "Exit", "PASSED")
+    HPR.writeCsv(HPR.getExtensionDir() .. "output/lifecyclehooks.csv", "Exit", "PASSED")
 end

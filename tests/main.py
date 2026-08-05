@@ -36,7 +36,7 @@ TEST_SUITES: list[str] = [
 # Suite-specific expected CSV key lists
 LIFECYCLEHOOKS_KEYS: list[str] = ["Init", "Tick", "Exit"]
 OTHEREXTENSIONS_KEYS: list[str] = ["GetLoadedExtensions", "UnloadExtension"]
-CSVIO_KEYS: list[str] = ["WriteCSV", "ReadCSV"]
+CSVIO_KEYS: list[str] = ["WriteCSV", "ReadCSV", "DeleteCSV", "GetExtensionDir", "GetExtensionPath"]
 TIME_KEYS: list[str] = ["FormatTime_HHMMSS", "ConvertToDate_DDMMYY", "ConvertToDate_MMYY", "ConvertToTime_HHMMSS_12", "ParseDate_DDMMYY", "ParseDate_MMYY", "ExtractMMYY_from_DDMMYY"]
 WINDOWBACKENDS_KEYS: list[str] = ["GetCurrentWindow", "GetCurrentTitle", "RegisterBackend"]
 NETIO_KEYS: list[str] = [
@@ -293,11 +293,11 @@ def cleanup() -> None:
     if not _copied_dirs:
         return
     print()
-    print("[INFO] Cleaning up copied test suite(s)...")
+    # print("[INFO] Cleaning up copied test suite(s)...")
     for d in list(_copied_dirs):
         if d.exists():
             shutil.rmtree(d)
-            print(f"[INFO] Removed {d}")
+            # print(f"[INFO] Removed {d}")
     _copied_dirs.clear()
 
 

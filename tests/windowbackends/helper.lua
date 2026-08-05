@@ -4,8 +4,8 @@ HPR.authorName = "Plexescor"
 function init()
 
     --Windows
-    if string.find(HPR.getOsName_E() or "", "Windows", 1, true) then
-        HPR.registerBackend_E(
+    if string.find(HPR.getOsName() or "", "Windows", 1, true) then
+        HPR.registerBackend(
             "Windows",
             function(env) return true end,
             function() print("Windows backend is active!") end,
@@ -14,8 +14,8 @@ function init()
             function() return "69" end
         )
     
-    elseif string.find(HPR.getEnvironmentName_E() or "", "Hyprland", 1, true) then
-        HPR.registerBackend_E(
+    elseif string.find(HPR.getEnvironmentName() or "", "Hyprland", 1, true) then
+        HPR.registerBackend(
             "Hyprland",
             function(env) return true end,
             function() print("Hyprland backend is active!") end,
@@ -24,8 +24,8 @@ function init()
             function() return "69" end
         )
     
-    elseif string.find(HPR.getEnvironmentName_E() or "", "KDE", 1, true) then
-        HPR.registerBackend_E(
+    elseif string.find(HPR.getEnvironmentName() or "", "KDE", 1, true) then
+        HPR.registerBackend(
             "KDE",
             function(env) return true end,
             function() print("KDE backend is active!") end,
@@ -34,8 +34,8 @@ function init()
             function() return "69" end
         )
     
-    elseif string.find(HPR.getEnvironmentName_E() or "", "GNOME", 1, true) then
-        HPR.registerBackend_E(
+    elseif string.find(HPR.getEnvironmentName() or "", "GNOME", 1, true) then
+        HPR.registerBackend(
             "GNOME",
             function(env) return true end,
             function() print("GNOME backend is active!") end,
@@ -44,8 +44,8 @@ function init()
             function() return "69" end
         )
     
-    elseif string.find(HPR.getEnvironmentName_E() or "", "Cinnamon", 1, true) then
-        HPR.registerBackend_E(
+    elseif string.find(HPR.getEnvironmentName() or "", "Cinnamon", 1, true) then
+        HPR.registerBackend(
             "Cinnamon",
             function(env) return true end,
             function() print("Cinnamon backend is active!") end,
@@ -54,8 +54,8 @@ function init()
             function() return "69" end
         )
     --niri manager
-    elseif string.find(HPR.getEnvironmentName_E() or "", "niri", 1, true) then
-        HPR.registerBackend_E(
+    elseif string.find(HPR.getEnvironmentName() or "", "niri", 1, true) then
+        HPR.registerBackend(
             "niri",
             function(env) return true end,
             function() print("niri backend is active!") end,

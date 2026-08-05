@@ -349,13 +349,22 @@ void ExtensionManager::loadExtensions()
 				auto ext = std::make_shared<LoadedExtension>();
 				ext->path = entry.path();
 
-				registerFunctions(*ext);
+				// Pre-initialize Lua state so the script can execute and set config flags
+				bool allowNativeLibraries = AppState::configManager.getConfig<bool>("allow-native-libraries", false);
+				if (allowNativeLibraries)
+				{
+					ext->lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::table, sol::lib::math, sol::lib::package);
+				}
+				else
+				{
+					ext->lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::table, sol::lib::math);
+				}
+				ext->lua["HPR"] = ext->lua.create_table();
+				ext->lua["HPR"]["overrides"] = ext->lua.create_table();
 
 				try
 				{
 					ext->lua.script_file(entry.path().string());
-					// initFn is now run on the background thread inside
-					// runExtension()
 				}
 				catch (const std::exception &e)
 				{
@@ -363,6 +372,14 @@ void ExtensionManager::loadExtensions()
 					Logger::log("Failed to load extension: " + entry.path().string() + "\nError: " + e.what());
 					continue;
 				}
+
+				sol::optional<bool> useLegacyAPISuffix = ext->lua["HPR"]["useLegacyAPISuffix"];
+				if (useLegacyAPISuffix.has_value())
+				{
+					ext->useLegacyAPISuffix = useLegacyAPISuffix.value();
+				}
+
+				registerFunctions(*ext);
 
 				extensions.push_back(std::move(ext));
 			}
@@ -389,6 +406,8 @@ void ExtensionManager::runExtension(std::shared_ptr<LoadedExtension> ext_ptr)
 		sol::optional<std::string> authorName = ext.lua["HPR"]["authorName"];
 		sol::optional<std::string> extensionName = ext.lua["HPR"]["extensionName"];
 
+		sol::optional<bool> useLegacyAPISuffix = ext.lua["HPR"]["useLegacyAPISuffix"];
+
 		// IF EXTENSION DOESNT HAVE a name or author name then make it random AF
 		auto genRandom = []() -> std::string
 		{
@@ -402,6 +421,11 @@ void ExtensionManager::runExtension(std::shared_ptr<LoadedExtension> ext_ptr)
 
 		std::string resolvedAuthor = authorName.value_or("anon_" + genRandom());
 		std::string resolvedName = extensionName.value_or("ext_" + genRandom());
+
+		if (useLegacyAPISuffix.has_value())
+		{
+			ext.useLegacyAPISuffix = useLegacyAPISuffix.value();
+		}
 
 		ext.identity = {resolvedAuthor, resolvedName};
 		{
@@ -615,11 +639,23 @@ void ExtensionManager::reloadExtension(std::string authorName, std::string exten
 
 	auto newExt = std::make_shared<LoadedExtension>();
 	newExt->path = extPath;
-	registerFunctions(*newExt);
+
+	// Pre-initialize Lua state so the script can execute and set config flags
+	bool allowNativeLibraries = AppState::configManager.getConfig<bool>("allow-native-libraries", false);
+	if (allowNativeLibraries)
+	{
+		newExt->lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::table, sol::lib::math, sol::lib::package);
+	}
+	else
+	{
+		newExt->lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::table, sol::lib::math);
+	}
+	newExt->lua["HPR"] = newExt->lua.create_table();
+	newExt->lua["HPR"]["overrides"] = newExt->lua.create_table();
+
 	try
 	{
 		newExt->lua.script_file(extPath.string());
-		// initFn is run on the background thread in runExtension()
 	}
 	catch (const std::exception &e)
 	{
@@ -627,6 +663,14 @@ void ExtensionManager::reloadExtension(std::string authorName, std::string exten
 		Logger::log("[HPR] Failed to reload extension: " + extPath.string() + "\nError: " + e.what() + "\n");
 		return;
 	}
+
+	sol::optional<bool> useLegacyAPISuffix = newExt->lua["HPR"]["useLegacyAPISuffix"];
+	if (useLegacyAPISuffix.has_value())
+	{
+		newExt->useLegacyAPISuffix = useLegacyAPISuffix.value();
+	}
+
+	registerFunctions(*newExt);
 	auto ext_copy = newExt;
 	newExt->thread = std::thread(&ExtensionManager::runExtension, this, ext_copy);
 	extensions.push_back(std::move(newExt));
@@ -701,11 +745,23 @@ void ExtensionManager::reloadAllExtensions()
 	{
 		auto newExt = std::make_shared<LoadedExtension>();
 		newExt->path = path;
-		registerFunctions(*newExt);
+
+		// Pre-initialize Lua state so the script can execute and set config flags
+		bool allowNativeLibraries = AppState::configManager.getConfig<bool>("allow-native-libraries", false);
+		if (allowNativeLibraries)
+		{
+			newExt->lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::table, sol::lib::math, sol::lib::package);
+		}
+		else
+		{
+			newExt->lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::table, sol::lib::math);
+		}
+		newExt->lua["HPR"] = newExt->lua.create_table();
+		newExt->lua["HPR"]["overrides"] = newExt->lua.create_table();
+
 		try
 		{
 			newExt->lua.script_file(path.string());
-			// initFn is run on the background thread in runExtension()
 		}
 		catch (const std::exception &e)
 		{
@@ -713,6 +769,14 @@ void ExtensionManager::reloadAllExtensions()
 			Logger::log("[HPR] Failed to reload extension: " + path.string() + "\nError: " + e.what() + "\n");
 			continue;
 		}
+
+		sol::optional<bool> useLegacyAPISuffix = newExt->lua["HPR"]["useLegacyAPISuffix"];
+		if (useLegacyAPISuffix.has_value())
+		{
+			newExt->useLegacyAPISuffix = useLegacyAPISuffix.value();
+		}
+
+		registerFunctions(*newExt);
 		extensions.push_back(std::move(newExt));
 	}
 
@@ -753,12 +817,22 @@ void ExtensionManager::refresh()
 				auto ext = std::make_shared<LoadedExtension>();
 				ext->path = entry.path();
 
-				registerFunctions(*ext);
+				// Pre-initialize Lua state so the script can execute and set config flags
+				bool allowNativeLibraries = AppState::configManager.getConfig<bool>("allow-native-libraries", false);
+				if (allowNativeLibraries)
+				{
+					ext->lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::table, sol::lib::math, sol::lib::package);
+				}
+				else
+				{
+					ext->lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::table, sol::lib::math);
+				}
+				ext->lua["HPR"] = ext->lua.create_table();
+				ext->lua["HPR"]["overrides"] = ext->lua.create_table();
 
 				try
 				{
 					ext->lua.script_file(entry.path().string());
-					// initFn is run on the background thread in runExtension()
 				}
 				catch (const std::exception &e)
 				{
@@ -766,6 +840,14 @@ void ExtensionManager::refresh()
 					Logger::log("Failed to load extension: " + entry.path().string() + "\nError: " + e.what());
 					continue;
 				}
+
+				sol::optional<bool> useLegacyAPISuffix = ext->lua["HPR"]["useLegacyAPISuffix"];
+				if (useLegacyAPISuffix.has_value())
+				{
+					ext->useLegacyAPISuffix = useLegacyAPISuffix.value();
+				}
+
+				registerFunctions(*ext);
 
 				extensions.push_back(std::move(ext));
 				auto ext_copy = extensions.back();
@@ -787,6 +869,17 @@ void ExtensionManager::refresh()
 
 void ExtensionManager::registerFunctions(LoadedExtension &ext)
 {
+	std::string suffix = "";
+	//if useLegacyAPISuffix is true, then we will use the legacy API suffix by changing the string to
+	//_E
+	if (ext.useLegacyAPISuffix)
+	{
+		suffix = "_E";
+		std::cerr << "[HPR] Warning: Extension " << ext.path
+				  << " is using the legacy API suffix. This is deprecated but works.\n";
+		Logger::log("[HPR] Warning: Extension " + ext.path.string() +
+					" is using the legacy API suffix. This is deprecated but works.");
+	}
 	sol::state &lua = ext.lua;
 	// Functions exposed to lua
 	bool allowNativeLibraries = AppState::configManager.getConfig<bool>("allow-native-libraries", false);
@@ -799,15 +892,21 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::table, sol::lib::math);
 	}
 
-	lua["HPR"] = lua.create_table();
-	lua["HPR"]["overrides"] = lua.create_table();
+	if (!lua["HPR"].valid())
+	{
+		lua["HPR"] = lua.create_table();
+	}
+	if (!lua["HPR"]["overrides"].valid())
+	{
+		lua["HPR"]["overrides"] = lua.create_table();
+	}
 
-	lua["HPR"]["startServer_E"] = [&ext](int port, sol::function handler) -> bool
+	lua["HPR"]["startServer" + suffix] = [&ext](int port, sol::function handler) -> bool
 	{ return NativeNet::startHttpServer(port, handler, ext); };
 
-	lua["HPR"]["log_E"] = [](std::string name, std::string msg) { Logger::log("[" + name + "] " + msg); };
+	lua["HPR"]["log" + suffix] = [](std::string name, std::string msg) { Logger::log("[" + name + "] " + msg); };
 
-	lua["HPR"]["getTime_MS_E"] = []() -> uint64_t
+	lua["HPR"]["getTime_MS" + suffix] = []() -> uint64_t
 	{
 		if (AppState::extManager)
 		{
@@ -854,10 +953,10 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		return dir;
 	};
 
-	lua["HPR"]["getExtensionDir_E"] = getExtensionRelativeDir;
-	lua["HPR"]["getExtensionPath_E"] = getExtensionRelativeDir;
+	lua["HPR"]["getExtensionDir" + suffix] = getExtensionRelativeDir;
+	lua["HPR"]["getExtensionPath" + suffix] = getExtensionRelativeDir;
 
-	lua["HPR"]["sleep_E"] = [&ext](int ms)
+	lua["HPR"]["sleep" + suffix] = [&ext](int ms)
 	{
 		int slept = 0;
 		while (slept < ms && ext.running)
@@ -868,7 +967,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		}
 	};
 
-	lua["HPR"]["parseISO8601_E"] = [](std::string str) -> uint64_t
+	lua["HPR"]["parseISO8601" + suffix] = [](std::string str) -> uint64_t
 	{
 		int y = 0, m = 0, d = 0, h = 0, min = 0;
 		float sec_fraction = 0.0f;
@@ -899,7 +998,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		return static_cast<uint64_t>(epoch_sec) * 1000 + ms;
 	};
 
-	lua["HPR"]["httpGet_E"] = [](std::string host, std::string path, sol::optional<bool> secure,
+	lua["HPR"]["httpGet" + suffix] = [](std::string host, std::string path, sol::optional<bool> secure,
 								 sol::optional<sol::table> headers) -> std::tuple<std::string, int>
 	{
 		std::map<std::string, std::string> cppHeaders;
@@ -918,7 +1017,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		return std::make_tuple(result.first, result.second);
 	};
 
-	lua["HPR"]["httpPost_E"] = [](std::string host, std::string path, std::string body, sol::optional<bool> secure,
+	lua["HPR"]["httpPost" + suffix] = [](std::string host, std::string path, std::string body, sol::optional<bool> secure,
 								  sol::optional<sol::table> headers) -> std::tuple<std::string, int>
 	{
 		std::map<std::string, std::string> cppHeaders;
@@ -937,7 +1036,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		return std::make_tuple(result.first, result.second);
 	};
 
-	lua["HPR"]["httpPut_E"] = [](std::string host, std::string path, std::string body, sol::optional<bool> secure,
+	lua["HPR"]["httpPut" + suffix] = [](std::string host, std::string path, std::string body, sol::optional<bool> secure,
 								 sol::optional<sol::table> headers) -> std::tuple<std::string, int>
 	{
 		std::map<std::string, std::string> cppHeaders;
@@ -956,7 +1055,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		return std::make_tuple(result.first, result.second);
 	};
 
-	lua["HPR"]["httpDelete_E"] = [](std::string host, std::string path, sol::optional<bool> secure,
+	lua["HPR"]["httpDelete" + suffix] = [](std::string host, std::string path, sol::optional<bool> secure,
 									sol::optional<sol::table> headers) -> std::tuple<std::string, int>
 	{
 		std::map<std::string, std::string> cppHeaders;
@@ -975,34 +1074,34 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		return std::make_tuple(result.first, result.second);
 	};
 
-	lua["HPR"]["parseJSON_E"] = [&lua](std::string jsonStr, sol::optional<std::string> fieldPath)
+	lua["HPR"]["parseJSON" + suffix] = [&lua](std::string jsonStr, sol::optional<std::string> fieldPath)
 	{ return JsonParser::parseJSON_E(lua, jsonStr, fieldPath); };
 
-	lua["HPR"]["toJSON_E"] = [](sol::object luaTable) { return JsonParser::toJSON_E(luaTable); };
+	lua["HPR"]["toJSON" + suffix] = [](sol::object luaTable) { return JsonParser::toJSON_E(luaTable); };
 
-	lua["HPR"]["getCurrentWindow_E"] = []() { return getCurrentWindow_E(); };
+	lua["HPR"]["getCurrentWindow" + suffix] = []() { return getCurrentWindow_E(); };
 
-	lua["HPR"]["getCurrentTitle_E"] = []() { return getCurrentTitle_E(); };
+	lua["HPR"]["getCurrentTitle" + suffix] = []() { return getCurrentTitle_E(); };
 
-	lua["HPR"]["runSystemCommand_E"] = [](std::string command) { return runSystemCommand(command); };
+	lua["HPR"]["runSystemCommand" + suffix] = [](std::string command) { return runSystemCommand(command); };
 
-	lua["HPR"]["getAlias_E"] = [](std::string command) { return AppState::aliasManager.getAlias(command); };
+	lua["HPR"]["getAlias" + suffix] = [](std::string command) { return AppState::aliasManager.getAlias(command); };
 
-	lua["HPR"]["getAlias_Tab_E"] = [](std::string command) { return AppState::aliasManager.getAlias_Tab(command); };
+	lua["HPR"]["getAlias_Tab" + suffix] = [](std::string command) { return AppState::aliasManager.getAlias_Tab(command); };
 
-	lua["HPR"]["getAlias_Project_E"] = [](std::string command)
+	lua["HPR"]["getAlias_Project" + suffix] = [](std::string command)
 	{ return AppState::aliasManager.getAlias_Project(command); };
 
-	lua["HPR"]["getReverseAlias_E"] = [](std::string aliasName)
+	lua["HPR"]["getReverseAlias" + suffix] = [](std::string aliasName)
 	{ return AppState::aliasManager.getReverseAlias(aliasName); };
 
-	lua["HPR"]["getReverseAlias_Tab_E"] = [](std::string aliasName)
+	lua["HPR"]["getReverseAlias_Tab" + suffix] = [](std::string aliasName)
 	{ return AppState::aliasManager.getReverseAlias_Tab(aliasName); };
 
-	lua["HPR"]["getReverseAlias_Project_E"] = [](std::string aliasName)
+	lua["HPR"]["getReverseAlias_Project" + suffix] = [](std::string aliasName)
 	{ return AppState::aliasManager.getReverseAlias_Project(aliasName); };
 
-	lua["HPR"]["stopTracking_E"] = [this]()
+	lua["HPR"]["stopTracking" + suffix] = [this]()
 	{
 		if (AppState::extManager)
 		{
@@ -1015,7 +1114,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		currentWindowManager->stopTracking();
 	};
 
-	lua["HPR"]["startTracking_E"] = [this]()
+	lua["HPR"]["startTracking" + suffix] = [this]()
 	{
 		if (AppState::extManager)
 		{
@@ -1028,7 +1127,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		currentWindowManager->startTracking();
 	};
 
-	lua["HPR"]["registerBackend_E"] = [&ext, this](std::string name, sol::function matchesEnvironment,
+	lua["HPR"]["registerBackend" + suffix] = [&ext, this](std::string name, sol::function matchesEnvironment,
 											 sol::function initialize, sol::function getCurrentWindow,
 											 sol::function getCurrentTitle, sol::function getCurrentPid)
 	{
@@ -1067,15 +1166,15 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 						  safeGetCurrentPid, currentWindowManager);
 	};
 
-	lua["HPR"]["dbExecute_E"] = [this](std::string sql, sol::optional<std::vector<std::string>> params)
+	lua["HPR"]["dbExecute" + suffix] = [this](std::string sql, sol::optional<std::vector<std::string>> params)
 	{ dbManager->executeSQL(sql, params.value_or(std::vector<std::string>{})); };
 
-	lua["HPR"]["dbQuery_E"] = [this](std::string sql, sol::optional<std::vector<std::string>> params)
+	lua["HPR"]["dbQuery" + suffix] = [this](std::string sql, sol::optional<std::vector<std::string>> params)
 	{ return dbManager->querySQL(sql, params.value_or(std::vector<std::string>{})); };
 
-	lua["HPR"]["getLoadedHistDbPath_E"] = [this]() { return dbManager->getLoadedHistDbPath(); };
+	lua["HPR"]["getLoadedHistDbPath" + suffix] = [this]() { return dbManager->getLoadedHistDbPath(); };
 
-	lua["HPR"]["dbQueryHistorical_E"] = [this](std::string sql, sol::optional<std::vector<std::string>> params)
+	lua["HPR"]["dbQueryHistorical" + suffix] = [this](std::string sql, sol::optional<std::vector<std::string>> params)
 	{
 		if (AppState::extManager)
 		{
@@ -1141,15 +1240,15 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		return dbManager->querySQL_Path(histPath, sql, params.value_or(std::vector<std::string>{}));
 	};
 
-	lua["HPR"]["getDbPathForDate_E"] = [](std::string date) -> std::string
+	lua["HPR"]["getDbPathForDate" + suffix] = [](std::string date) -> std::string
 	{ return DatabaseManager::getDbPathForDate(date); };
 
-	lua["HPR"]["dbQueryPath_E"] =
+	lua["HPR"]["dbQueryPath" + suffix] =
 		[this](std::string dbPath, std::string sql, sol::optional<std::vector<std::string>> params)
 	{ return dbManager->querySQL_Path(dbPath, sql, params.value_or(std::vector<std::string>{})); };
 
-	lua["HPR"]["dbQueryNumber_E"] =
-		[this](int days, std::string mode, std::string sql,
+	lua["HPR"]["dbQueryNumber" + suffix] =
+		[this, suffix](int days, std::string mode, std::string sql,
 			   sol::optional<std::vector<std::string>> params) -> std::vector<std::map<std::string, std::string>>
 	{
 		auto p = params.value_or(std::vector<std::string>{});
@@ -1158,15 +1257,15 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 
 		if (fut.wait_for(std::chrono::milliseconds(7500)) == std::future_status::timeout)
 		{
-			std::cerr << "[HPR] dbQueryNumber_E timed out after 7500ms\n";
-			Logger::log("[HPR] dbQueryNumber_E timed out after 7500ms");
+			std::cerr << "[HPR] dbQueryNumber" + suffix + " timed out after 7500ms\n";
+			Logger::log("[HPR] dbQueryNumber" + suffix + " timed out after 7500ms");
 			return {};
 		}
 		return fut.get().rows;
 	};
 
-	lua["HPR"]["dbQueryRange_E"] =
-		[this](std::string dateFrom, std::string dateTo, std::string mode, std::string sql,
+	lua["HPR"]["dbQueryRange" + suffix] =
+		[this, suffix](std::string dateFrom, std::string dateTo, std::string mode, std::string sql,
 			   sol::optional<std::vector<std::string>> params) -> std::vector<std::map<std::string, std::string>>
 	{
 		auto p = params.value_or(std::vector<std::string>{});
@@ -1175,31 +1274,31 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 
 		if (fut.wait_for(std::chrono::milliseconds(7500)) == std::future_status::timeout)
 		{
-			std::cerr << "[HPR] dbQueryRange_E timed out after 7500ms\n";
-			Logger::log("[HPR] dbQueryRange_E timed out after 7500ms");
+			std::cerr << "[HPR] dbQueryRange" + suffix + " timed out after 7500ms\n";
+			Logger::log("[HPR] dbQueryRange" + suffix + " timed out after 7500ms");
 			return {};
 		}
 		return fut.get().rows;
 	};
 
-	lua["HPR"]["convertToDate_DDMMYY_E"] = [](uint64_t ms) { return convertToDate_DDMMYY(ms); };
+	lua["HPR"]["convertToDate_DDMMYY" + suffix] = [](uint64_t ms) { return convertToDate_DDMMYY(ms); };
 
-	lua["HPR"]["convertToDate_MMYY_E"] = [](uint64_t ms) { return convertToDate_MMYY(ms); };
+	lua["HPR"]["convertToDate_MMYY" + suffix] = [](uint64_t ms) { return convertToDate_MMYY(ms); };
 
-	lua["HPR"]["convertToTime_HHMMSS_12_E"] = [](uint64_t ms) { return convertToTime_HHMMSS_12(ms); };
+	lua["HPR"]["convertToTime_HHMMSS_12" + suffix] = [](uint64_t ms) { return convertToTime_HHMMSS_12(ms); };
 
-	lua["HPR"]["formatTime_HHMMSS_E"] = [](uint64_t ms) { return formatTime_HHMMSS(ms); };
+	lua["HPR"]["formatTime_HHMMSS" + suffix] = [](uint64_t ms) { return formatTime_HHMMSS(ms); };
 
-	lua["HPR"]["parseDate_DDMMYY_E"] = [](std::string dateStr) { return parseDate_DDMMYY(dateStr); };
+	lua["HPR"]["parseDate_DDMMYY" + suffix] = [](std::string dateStr) { return parseDate_DDMMYY(dateStr); };
 
-	lua["HPR"]["parseDate_MMYY_E"] = [](std::string dateStr) { return parseDate_MMYY(dateStr); };
+	lua["HPR"]["parseDate_MMYY" + suffix] = [](std::string dateStr) { return parseDate_MMYY(dateStr); };
 
-	lua["HPR"]["extractMMYY_from_DDMMYY_E"] = [](std::string dateStr) { return extractMMYY_from_DDMMYY(dateStr); };
+	lua["HPR"]["extractMMYY_from_DDMMYY" + suffix] = [](std::string dateStr) { return extractMMYY_from_DDMMYY(dateStr); };
 
-	lua["HPR"]["getSystemConfig_E"] = [](std::string key) -> std::string
+	lua["HPR"]["getSystemConfig" + suffix] = [](std::string key) -> std::string
 	{ return AppState::configManager.getConfig(key, std::string("")); };
 
-	lua["HPR"]["setUiImage_E"] = [](std::string propertyName, int width, int height, std::string rgbaBytes)
+	lua["HPR"]["setUiImage" + suffix] = [](std::string propertyName, int width, int height, std::string rgbaBytes)
 	{
 		if (rgbaBytes.size() < static_cast<size_t>(width * height * 4))
 			return;
@@ -1228,7 +1327,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		}
 	};
 
-	lua["HPR"]["setUiProperty_E"] = [](std::string name, sol::object value)
+	lua["HPR"]["setUiProperty" + suffix] = [](std::string name, sol::object value)
 	{
 		if (AppState::extManager)
 		{
@@ -1263,7 +1362,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 			});
 	};
 
-	lua["HPR"]["registerUiCallback_E"] = [&ext](std::string name, sol::function luaCallback)
+	lua["HPR"]["registerUiCallback" + suffix] = [&ext](std::string name, sol::function luaCallback)
 	{
 		if (AppState::extManager)
 		{
@@ -1323,7 +1422,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 	};
 
 	// Connect to system or custom dynamic events
-	lua["HPR"]["connect_E"] = [&lua, &ext](std::string eventName, sol::function callback) -> size_t
+	lua["HPR"]["connect" + suffix] = [&lua, &ext](std::string eventName, sol::function callback) -> size_t
 	{
 		EventKey eventKey;
 		if (eventName == "LOAD_DATABASE_SINGULAR")
@@ -1363,7 +1462,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 	};
 
 	// Unsubscribe from a registered event
-	lua["HPR"]["disconnect_E"] = [&ext](std::string eventName, size_t id)
+	lua["HPR"]["disconnect" + suffix] = [&ext](std::string eventName, size_t id)
 	{
 		EventKey eventKey;
 		if (eventName == "LOAD_DATABASE_SINGULAR")
@@ -1395,7 +1494,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 	};
 
 	// Emit system or custom dynamic events
-	lua["HPR"]["emit_E"] = [](std::string eventName, sol::optional<sol::object> luaData)
+	lua["HPR"]["emit" + suffix] = [](std::string eventName, sol::optional<sol::object> luaData)
 	{
 		EventKey eventKey;
 		if (eventName == "LOAD_DATABASE_SINGULAR")
@@ -1461,7 +1560,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		return sol::make_object(luaState, rawValue);
 	};
 
-	lua["HPR"]["readCsv_E"] = [this, &ext, &lua, trim, parseValue](std::string userPath,
+	lua["HPR"]["readCsv" + suffix] = [this, &ext, &lua, trim, parseValue](std::string userPath,
 																   sol::optional<sol::object> keyOpt,
 																   sol::this_state ts) -> sol::variadic_results
 	{
@@ -1549,7 +1648,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		}
 	};
 
-	lua["HPR"]["writeCsv_E"] = [this, &ext, &lua](std::string userPath, sol::object key, sol::object value) -> bool
+	lua["HPR"]["writeCsv" + suffix] = [this, &ext, &lua](std::string userPath, sol::object key, sol::object value) -> bool
 	{
 		std::string err;
 		std::filesystem::path securedPath = resolveAndSecurePath(userPath, this->extensionPath, err);
@@ -1663,7 +1762,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		return true;
 	};
 
-	lua["HPR"]["deleteCsv_E"] = [this, &ext](std::string userPath) -> bool
+	lua["HPR"]["deleteCsv" + suffix] = [this, &ext](std::string userPath) -> bool
 	{
 		std::string err;
 		std::filesystem::path securedPath = resolveAndSecurePath(userPath, this->extensionPath, err);
@@ -1692,55 +1791,55 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		}
 	};
 
-	lua["HPR"]["generateInsights_E"] = []()
+	lua["HPR"]["generateInsights" + suffix] = []()
 	{
 		std::lock_guard<std::mutex> lock(AppState::patternAnalyzerMutex);
 		AppState::patternAnalyzer.generateInsights();
 	};
 
-	lua["HPR"]["getMostUsed_E"] = []() -> std::string
+	lua["HPR"]["getMostUsed" + suffix] = []() -> std::string
 	{
 		std::lock_guard<std::mutex> lock(AppState::patternAnalyzerMutex);
 		return AppState::patternAnalyzer.getMostUsed();
 	};
 
-	lua["HPR"]["getTotalTrackedTime_E"] = []() -> std::string
+	lua["HPR"]["getTotalTrackedTime" + suffix] = []() -> std::string
 	{
 		std::lock_guard<std::mutex> lock(AppState::patternAnalyzerMutex);
 		return AppState::patternAnalyzer.getTotalTrackedTime();
 	};
 
-	lua["HPR"]["getSwitchCount_E"] = []() -> std::string
+	lua["HPR"]["getSwitchCount" + suffix] = []() -> std::string
 	{
 		std::lock_guard<std::mutex> lock(AppState::patternAnalyzerMutex);
 		return AppState::patternAnalyzer.getSwitchCount();
 	};
 
-	lua["HPR"]["getMostSwitchedFrom_E"] = []() -> std::string
+	lua["HPR"]["getMostSwitchedFrom" + suffix] = []() -> std::string
 	{
 		std::lock_guard<std::mutex> lock(AppState::patternAnalyzerMutex);
 		return AppState::patternAnalyzer.getMostSwitchedFrom();
 	};
 
-	lua["HPR"]["getMostSwitchedTo_E"] = []() -> std::string
+	lua["HPR"]["getMostSwitchedTo" + suffix] = []() -> std::string
 	{
 		std::lock_guard<std::mutex> lock(AppState::patternAnalyzerMutex);
 		return AppState::patternAnalyzer.getMostSwitchedTo();
 	};
 
-	lua["HPR"]["getMostFocusedSession_E"] = []() -> std::string
+	lua["HPR"]["getMostFocusedSession" + suffix] = []() -> std::string
 	{
 		std::lock_guard<std::mutex> lock(AppState::patternAnalyzerMutex);
 		return AppState::patternAnalyzer.getMostFocusedSession();
 	};
 
-	lua["HPR"]["getMostProductiveHour_E"] = []() -> std::string
+	lua["HPR"]["getMostProductiveHour" + suffix] = []() -> std::string
 	{
 		std::lock_guard<std::mutex> lock(AppState::patternAnalyzerMutex);
 		return AppState::patternAnalyzer.getMostProductiveHour();
 	};
 
-	lua["HPR"]["showUi_E"] = [this]()
+	lua["HPR"]["showUi" + suffix] = [this]()
 	{
 		if (app)
 			app->show();
@@ -1748,7 +1847,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 			interpreterApp->show();
 	};
 
-	lua["HPR"]["hideUi_E"] = [this]()
+	lua["HPR"]["hideUi" + suffix] = [this]()
 	{
 		if (app)
 			app->hide();
@@ -1756,7 +1855,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 			interpreterApp->hide();
 	};
 
-	lua["HPR"]["quitUi_E"] = [this]()
+	lua["HPR"]["quitUi" + suffix] = [this]()
 	{
 		if (app)
 			app->quit();
@@ -1764,13 +1863,13 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 			interpreterApp->quit();
 	};
 
-	lua["HPR"]["showNotification_E"] = [](std::string title, std::string message)
+	lua["HPR"]["showNotification" + suffix] = [](std::string title, std::string message)
 	{
 		Logger::log("[HPR Extension Notification] " + title + ": " + message);
 		showNotification(title, message);
 	};
 
-	lua["HPR"]["getOsName_E"] = []() -> std::string
+	lua["HPR"]["getOsName" + suffix] = []() -> std::string
 	{
 #ifdef _WIN32
 		return "Windows";
@@ -1781,7 +1880,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 #endif
 	};
 
-	lua["HPR"]["getEnvironmentName_E"] = []() -> std::string
+	lua["HPR"]["getEnvironmentName" + suffix] = []() -> std::string
 	{
 #ifdef _WIN32
 		return "";
@@ -1793,7 +1892,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 #endif
 	};
 
-	lua["HPR"]["getLoadedExtensions_E"] = [&lua]() -> sol::table
+	lua["HPR"]["getLoadedExtensions" + suffix] = [&lua]() -> sol::table
 	{
 		std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
 		sol::table listTable = lua.create_table();
@@ -1808,7 +1907,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		return listTable;
 	};
 
-	lua["HPR"]["crash_E"] = [](sol::optional<std::string> message)
+	lua["HPR"]["crash" + suffix] = [suffix](sol::optional<std::string> message)
 	{
 		if (message.has_value())
 		{
@@ -1818,9 +1917,9 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		else
 		{
 			Logger::log("[HPR Extension Crash] HPR has been intentionally crashed "
-						"via HPR.crash_E() by an extension!");
+						"via HPR.crash" + suffix + "() by an extension!");
 			std::cerr << "[HPR Extension Crash] HPR has been intentionally crashed "
-						 "via HPR.crash_E() by an extension!"
+						 "via HPR.crash" + suffix + "() by an extension!"
 					  << std::endl;
 		}
 #ifdef _WIN32
@@ -1830,7 +1929,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 #endif
 	};
 
-	lua["HPR"]["getLiveTimeLogPerApp_E"] = [&lua]() -> sol::table
+	lua["HPR"]["getLiveTimeLogPerApp" + suffix] = [&lua]() -> sol::table
 	{
 		std::map<std::string, uint64_t> copy = getLiveTimeLogPerApp_E();
 		sol::table result = lua.create_table();
@@ -1841,7 +1940,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		return result;
 	};
 
-	lua["HPR"]["getLiveTimeLogPerTab_E"] = [&lua]() -> sol::table
+	lua["HPR"]["getLiveTimeLogPerTab" + suffix] = [&lua]() -> sol::table
 	{
 		std::map<std::string, uint64_t> copy = getLiveTimeLogPerTab_E();
 		sol::table result = lua.create_table();
@@ -1852,7 +1951,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		return result;
 	};
 
-	lua["HPR"]["getLiveTimeLogPerProject_E"] = [&lua]() -> sol::table
+	lua["HPR"]["getLiveTimeLogPerProject" + suffix] = [&lua]() -> sol::table
 	{
 		std::map<std::string, uint64_t> copy = getLiveTimeLogPerProject_E();
 		sol::table result = lua.create_table();
@@ -1863,13 +1962,13 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		return result;
 	};
 
-	lua["HPR"]["getPid_E"] = [](std::string rawName) -> std::string
+	lua["HPR"]["getPid" + suffix] = [](std::string rawName) -> std::string
 	{
 		std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
 		return AppState::state.appNamePid[rawName];
 	};
 
-	lua["HPR"]["killPid_E"] = [](std::string pid)
+	lua["HPR"]["killPid" + suffix] = [](std::string pid)
 	{
 #ifdef _WIN32
 		std::string cmd = "taskkill /F /PID " + pid;
@@ -1880,7 +1979,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 #endif
 	};
 
-	lua["HPR"]["setLimit_E"] = [](std::string name, int minutes)
+	lua["HPR"]["setLimit" + suffix] = [](std::string name, int minutes)
 	{
 		std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
 		if (AppState::limitsManager)
@@ -1889,7 +1988,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		}
 	};
 
-	lua["HPR"]["getLimit_E"] = [](std::string name) -> int
+	lua["HPR"]["getLimit" + suffix] = [](std::string name) -> int
 	{
 		std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
 		if (AppState::state.appLimits.find(name) == AppState::state.appLimits.end())
@@ -1899,7 +1998,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		return AppState::state.appLimits[name];
 	};
 
-	lua["HPR"]["setGoal_E"] = [](std::string name, int minutes)
+	lua["HPR"]["setGoal" + suffix] = [](std::string name, int minutes)
 	{
 		std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
 		if (AppState::limitsManager)
@@ -1908,7 +2007,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		}
 	};
 
-	lua["HPR"]["getGoal_E"] = [](std::string name) -> int
+	lua["HPR"]["getGoal" + suffix] = [](std::string name) -> int
 	{
 		std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
 		if (AppState::state.appGoals.find(name) == AppState::state.appGoals.end())
@@ -1918,15 +2017,15 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		return AppState::state.appGoals[name];
 	};
 
-	lua["HPR"]["unloadExtension_E"] = [this](std::string authorName, std::string extensionName)
+	lua["HPR"]["unloadExtension" + suffix] = [this](std::string authorName, std::string extensionName)
 	{ unloadExtension(authorName, extensionName); };
 
-	lua["HPR"]["reloadExtension_E"] = [this](std::string authorName, std::string extensionName)
+	lua["HPR"]["reloadExtension" + suffix] = [this](std::string authorName, std::string extensionName)
 	{ reloadExtension(authorName, extensionName); };
 
-	lua["HPR"]["refreshExtensions_E"] = [this]() { refresh(); };
+	lua["HPR"]["refreshExtensions" + suffix] = [this]() { refresh(); };
 
-	lua["HPR"]["applyTheme_E"] = [this](std::string themeName)
+	lua["HPR"]["applyTheme" + suffix] = [this](std::string themeName)
 	{
 		std::string path;
 		path = AppState::themeManager.getPathByName(themeName);
@@ -1949,7 +2048,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		}
 	};
 
-	lua["HPR"]["getThemeNames_E"] = [this, &lua]() -> sol::table
+	lua["HPR"]["getThemeNames" + suffix] = [this, &lua]() -> sol::table
 	{
 		auto themeNames = AppState::themeManager.getThemeNames();
 
@@ -1961,7 +2060,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		return listTable;
 	};
 
-	lua["HPR"]["getCurrentThemeName_E"] = [this]() -> std::string
+	lua["HPR"]["getCurrentThemeName" + suffix] = [this]() -> std::string
 	{
 		return AppState::themeManager.getCurrentThemeName();
 	};

@@ -44,6 +44,8 @@ struct LoadedExtension
 	std::mutex eventQueueMutex;
 	std::vector<std::pair<std::string, CppValue>> pendingEvents;
 
+	bool useLegacyAPISuffix = false;
+
 	LoadedExtension() = default;
 	~LoadedExtension();
 	LoadedExtension(const LoadedExtension &) = delete;

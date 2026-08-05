@@ -3,7 +3,7 @@
 -- =============================================================================
 -- Starts the embedded HTTP server on port 18888 on its own extension thread:
 --
---   HPR.startServer_E(port, handler) Starts an embedded HTTP server on the given
+--   HPR.startServer(port, handler) Starts an embedded HTTP server on the given
 --                                    port and registers a Lua request handler.
 --
 -- Expected output (written to output/netio.csv):
@@ -19,12 +19,12 @@ HPR.authorName = "Plexescor"
 local testPort = 18888
 
 function init()
-    HPR.sleep_E(1000) -- Stagger startup to prevent CSV write collisions
+    HPR.sleep(1000) -- Stagger startup to prevent CSV write collisions
     local started = false
     local attempts = 0
     while not started and attempts < 5 do
-        started = HPR.startServer_E(testPort, function(req)
-            HPR.log_E("NetIOServer", "Server received request: " .. (req.method or "") .. " " .. (req.path or ""))
+        started = HPR.startServer(testPort, function(req)
+            HPR.log("NetIOServer", "Server received request: " .. (req.method or "") .. " " .. (req.path or ""))
             
             if req.method == "GET" then
                 return { status = 200, body = "HELLO_GET" }
@@ -39,16 +39,16 @@ function init()
         end)
         if not started then
             attempts = attempts + 1
-            HPR.sleep_E(300)
+            HPR.sleep(300)
         end
     end
 
     if started then
-        local success = HPR.writeCsv_E(HPR.getExtensionDir_E() .. "output/netio.csv", "StartServer", "PASSED")
-        HPR.log_E("NetIOServer", "writeCsv_E PASSED success: " .. tostring(success))
+        local success = HPR.writeCsv(HPR.getExtensionDir() .. "output/netio.csv", "StartServer", "PASSED")
+        HPR.log("NetIOServer", "writeCsv PASSED success: " .. tostring(success))
     else
-        local success = HPR.writeCsv_E(HPR.getExtensionDir_E() .. "output/netio.csv", "StartServer", "FAILED")
-        HPR.log_E("NetIOServer", "writeCsv_E FAILED success: " .. tostring(success))
+        local success = HPR.writeCsv(HPR.getExtensionDir() .. "output/netio.csv", "StartServer", "FAILED")
+        HPR.log("NetIOServer", "writeCsv FAILED success: " .. tostring(success))
     end
 
     return 1000
