@@ -1865,7 +1865,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 
 	lua["HPR"]["showUiPopup" + suffix] = [this, &ext](std::string text, std::string leftText, std::string rightText, sol::function luaCallback)
 	{
-		this->showUiPopup(text, leftText, rightText, [luaCallback, &ext](int btn) {
+		this->showUiPopup(text, leftText, rightText, true, [luaCallback, &ext](int btn) {
 			std::lock_guard<std::recursive_mutex> lock(ext.luaMutex);
 			if (luaCallback.valid())
 			{
@@ -2195,10 +2195,11 @@ std::optional<CppValue> ExtensionManager::dispatchOverride(const std::string &ov
 	return std::nullopt;
 }
 
-void ExtensionManager::showUiPopup(const std::string &text, const std::string &leftBtnText, const std::string &rightBtnText, std::function<void(int)> callback)
+void ExtensionManager::showUiPopup(const std::string &text, const std::string &leftBtnText, const std::string &rightBtnText, bool isLua, std::function<void(int)> callback)
 {
 	std::lock_guard<std::mutex> lock(queueMutex);
-	popupQueue.push({text, leftBtnText, rightBtnText, callback});
+	uint64_t reqId = nextPopupId++;
+	popupQueue.push({reqId, text, leftBtnText, rightBtnText, isLua, callback});
 	if (!isPopupActive)
 	{
 		showNextPopup_Unlocked();
@@ -2216,6 +2217,7 @@ void ExtensionManager::showNextPopup_Unlocked()
 	PopupRequest req = popupQueue.front();
 	popupQueue.pop();
 	currentPopupCallback = req.callback;
+	activePopupId = req.id;
 
 	if (auto handle = compiledUiWeak.lock())
 	{
@@ -2238,5 +2240,64 @@ void ExtensionManager::showNextPopup_Unlocked()
 				(*handle_int)->set_property("uiPopupRightBtnText_S", slint::interpreter::Value(slint::SharedString(right)));
 				(*handle_int)->set_property("showUiPopup_S", slint::interpreter::Value(true));
 			});
+	}
+
+	if (req.isLua)
+	{
+		std::thread([this, req_id = req.id]() {
+			int timeoutMs = AppState::configManager.getConfig<int>("extension-popup-timeout", 5000);
+			std::this_thread::sleep_for(std::chrono::milliseconds(timeoutMs));
+
+			std::lock_guard<std::mutex> lock(this->queueMutex);
+			if (this->isPopupActive && this->activePopupId == req_id)
+			{
+				if (auto handle = this->compiledUiWeak.lock())
+				{
+					slint::invoke_from_event_loop([handle, this]() {
+						(*handle)->set_showUiPopup_S(false);
+
+						if (this->currentPopupCallback)
+						{
+							auto cb = this->currentPopupCallback;
+							this->currentPopupCallback = nullptr;
+							cb(-1);
+						}
+
+						std::lock_guard<std::mutex> lock2(this->queueMutex);
+						if (!this->popupQueue.empty())
+						{
+							this->showNextPopup_Unlocked();
+						}
+						else
+						{
+							this->isPopupActive = false;
+						}
+					});
+				}
+				else if (auto handle_int = this->interpretedUiWeak.lock())
+				{
+					slint::invoke_from_event_loop([handle_int, this]() {
+						(*handle_int)->set_property("showUiPopup_S", slint::interpreter::Value(false));
+
+						if (this->currentPopupCallback)
+						{
+							auto cb = this->currentPopupCallback;
+							this->currentPopupCallback = nullptr;
+							cb(-1);
+						}
+
+						std::lock_guard<std::mutex> lock2(this->queueMutex);
+						if (!this->popupQueue.empty())
+						{
+							this->showNextPopup_Unlocked();
+						}
+						else
+						{
+							this->isPopupActive = false;
+						}
+					});
+				}
+			}
+		}).detach();
 	}
 }

@@ -35,9 +35,11 @@ class ComponentInstance;
 
 struct PopupRequest
 {
+	uint64_t id;
 	std::string text;
 	std::string leftBtnText;
 	std::string rightBtnText;
+	bool isLua;
 	std::function<void(int)> callback;
 };
 
@@ -103,8 +105,10 @@ class ExtensionManager
 	std::function<void(int)> currentPopupCallback = nullptr;
 	bool isPopupActive = false;
 	std::mutex queueMutex;
+	uint64_t nextPopupId = 1;
+	uint64_t activePopupId = 0;
 
-	void showUiPopup(const std::string &text, const std::string &leftBtnText, const std::string &rightBtnText, std::function<void(int)> callback);
+	void showUiPopup(const std::string &text, const std::string &leftBtnText, const std::string &rightBtnText, bool isLua, std::function<void(int)> callback);
 	void showNextPopup_Unlocked();
 
 	// some shit

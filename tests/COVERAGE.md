@@ -85,7 +85,7 @@
 | `HPR.hideUi` | UI | Hide the HPR window |
 | `HPR.quitUi` | UI | Quit the application |
 | `HPR.showNotification` | UI | Show an OS desktop notification |
-| `HPR.showUiPopup` | UI | Show a custom popup with left/right buttons executing a callback |
+| `HPR.showUiPopup` | UI | Show a custom popup with left/right buttons executing a callback (auto-dismisses after N milliseconds returning -1) |
 | `HPR.connect` | Events | Subscribe to a system or custom event by name |
 | `HPR.disconnect` | Events | Unsubscribe from an event by name and connection ID |
 | `HPR.emit` | Events | Emit a system or custom event with optional payload |
