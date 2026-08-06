@@ -2173,6 +2173,11 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 	{
 		return AppState::themeManager.getCurrentThemeName();
 	};
+
+	lua["HPR"]["amICompatible" + suffix] = [this, &ext]() -> bool
+	{
+		return ext.isCompatible;
+	};
 }
 
 void ExtensionManager::updateExtensionPath()
