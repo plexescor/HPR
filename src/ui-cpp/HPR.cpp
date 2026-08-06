@@ -321,13 +321,13 @@ void HPR::trackingLoop()
 				firstRun = false;
 			}
 
-			std::vector<std::pair<std::string, std::string>> extensionsCopy;
+			std::map<std::pair<std::string, std::string>, AppState::ExtensionInfo> extensionMapCopy;
 			{
 				std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
-				extensionsCopy = AppState::state.loadedExtensions;
+				extensionMapCopy = AppState::state.extensionMap;
 			}
-			modelManager.showExtensions(extensionsCopy);
-			modelManager.showFunStats(getCpuUsage(), getRamUsage(), std::to_string(extensionsCopy.size()),
+			modelManager.showExtensions(extensionMapCopy);
+			modelManager.showFunStats(getCpuUsage(), getRamUsage(), std::to_string(extensionMapCopy.size()),
 									  getThreadCount());
 		}
 		if (!uiReady)

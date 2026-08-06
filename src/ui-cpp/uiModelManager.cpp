@@ -17,7 +17,7 @@
 
 UiModelManager::UiModelManager(slint::ComponentHandle<MainWindow> &ui_handle) : ui(ui_handle)
 {
-	this->ui = ui;
+	this->ui = ui_handle;
 	// make shared so they aint null and no thing crashes
 	timeLogModel = std::make_shared<slint::VectorModel<TimeLog>>();
 	timeLogModelTab = std::make_shared<slint::VectorModel<TimeLog_Tab>>();
@@ -1491,17 +1491,20 @@ void UiModelManager::showInsights_Interpreted(const std::string mostUsed, const 
 		});
 }
 
-void UiModelManager::showExtensions(const std::vector<std::pair<std::string, std::string>> &extensions)
+void UiModelManager::showExtensions(const std::map<std::pair<std::string, std::string>, AppState::ExtensionInfo> &extensionsMap)
 {
-	if (extensions == lastKnownExtensions)
+	if (extensionsMap == lastKnownExtensionsMap)
 		return;
-	lastKnownExtensions = extensions;
+	lastKnownExtensionsMap = extensionsMap;
 
 	if (!ui.has_value())
 		return;
 	std::vector<LoadedExtension_S> vec;
-	for (const auto &[author, name] : extensions)
-		vec.push_back({slint::SharedString(author), slint::SharedString(name)});
+	for (const auto &[key, info] : extensionsMap)
+	{
+		vec.push_back({slint::SharedString(info.author), slint::SharedString(info.name), info.isCompatible,
+					   slint::SharedString(info.warningMessage)});
+	}
 
 	slint::ComponentWeakHandle<MainWindow> weak(ui.value());
 	slint::invoke_from_event_loop(
@@ -1516,18 +1519,20 @@ void UiModelManager::showExtensions(const std::vector<std::pair<std::string, std
 		});
 }
 
-void UiModelManager::showExtensions_Interpreted(const std::vector<std::pair<std::string, std::string>> &extensions)
+void UiModelManager::showExtensions_Interpreted(const std::map<std::pair<std::string, std::string>, AppState::ExtensionInfo> &extensionsMap)
 {
-	if (extensions == lastKnownExtensions)
+	if (extensionsMap == lastKnownExtensionsMap)
 		return;
-	lastKnownExtensions = extensions;
+	lastKnownExtensionsMap = extensionsMap;
 
 	std::vector<slint::interpreter::Value> vec;
-	for (const auto &[author, name] : extensions)
+	for (const auto &[key, info] : extensionsMap)
 	{
 		slint::interpreter::Struct entry;
-		entry.set_field("author-name", slint::interpreter::Value(slint::SharedString(author)));
-		entry.set_field("extension-name", slint::interpreter::Value(slint::SharedString(name)));
+		entry.set_field("author-name", slint::interpreter::Value(slint::SharedString(info.author)));
+		entry.set_field("extension-name", slint::interpreter::Value(slint::SharedString(info.name)));
+		entry.set_field("is-compatible", slint::interpreter::Value(info.isCompatible));
+		entry.set_field("compatibility-warning", slint::interpreter::Value(slint::SharedString(info.warningMessage)));
 		vec.push_back(slint::interpreter::Value(entry));
 	}
 

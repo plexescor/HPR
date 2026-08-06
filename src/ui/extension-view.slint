@@ -5,6 +5,8 @@ import { Palette } from "./palette.slint";
 export struct LoadedExtension_S {
     author-name: string,
     extension-name: string,
+    is-compatible: bool,
+    compatibility-warning: string,
 }
 
 export component ExtensionsView {
@@ -109,12 +111,24 @@ export component ExtensionsView {
                             alignment: space-between;
                             vertical-stretch: 1;
 
-                            Text {
-                                text: ext.author-name;
-                                font-size: 10px * Palette.scale;
-                                font-weight: 700;
-                                letter-spacing: 1.5px * Palette.scale;
-                                color: #c084fc;
+                            HorizontalLayout {
+                                spacing: 8px * Palette.scale;
+
+                                Text {
+                                    text: ext.author-name;
+                                    font-size: 10px * Palette.scale;
+                                    font-weight: 700;
+                                    letter-spacing: 1.5px * Palette.scale;
+                                    color: #c084fc;
+                                }
+
+                                if !ext.is-compatible : Text {
+                                    text: ext.compatibility-warning;
+                                    font-size: 11px * Palette.scale;
+                                    font-weight: 600;
+                                    color: #facc15;
+                                    wrap: word-wrap;
+                                }
                             }
 
                             Text {

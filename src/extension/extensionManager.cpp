@@ -385,8 +385,8 @@ void ExtensionManager::loadExtensions()
 			}
 			else if (entry.is_regular_file())
 			{
-				std::cerr << "Skipping non-lua file: " << entry.path() << '\n';
-				Logger::log("Skipping non-lua file: " + entry.path().string());
+				// std::cerr << "Skipping non-lua file: " << entry.path() << '\n';
+				// Logger::log("Skipping non-lua file: " + entry.path().string());
 			}
 		}
 	}
@@ -428,9 +428,86 @@ void ExtensionManager::runExtension(std::shared_ptr<LoadedExtension> ext_ptr)
 		}
 
 		ext.identity = {resolvedAuthor, resolvedName};
+
+		sol::optional<sol::object> versionSupportObj = ext.lua["HPR"]["versionSupport"];
+		std::vector<std::string> versionsVec;
+		bool hasVersionSupport = false;
+
+		if (versionSupportObj.has_value() && versionSupportObj.value().is<sol::table>())
+		{
+			hasVersionSupport = true;
+			sol::table vTable = versionSupportObj.value().as<sol::table>();
+			for (auto &pair : vTable)
+			{
+				if (pair.second.is<std::string>())
+				{
+					std::string vStr = pair.second.as<std::string>();
+					if (!vStr.empty() && (vStr[0] == 'v' || vStr[0] == 'V'))
+					{
+						vStr = vStr.substr(1);
+					}
+					versionsVec.push_back(vStr);
+				}
+			}
+		}
+
+		ext.versionSupport = versionsVec;
+		ext.hasVersionSupport = hasVersionSupport;
+
+		std::string currentAppVer = AppState::APP_VERSION;
+		if (!currentAppVer.empty() && (currentAppVer[0] == 'v' || currentAppVer[0] == 'V'))
+		{
+			currentAppVer = currentAppVer.substr(1);
+		}
+
+		if (!hasVersionSupport)
+		{
+			ext.isCompatible = false;
+			ext.warningMessage = "Unknown version compatibility for HPR " + currentAppVer;
+		}
+		else
+		{
+			bool matchFound = false;
+			for (const auto &v : versionsVec)
+			{
+				if (v == currentAppVer)
+				{
+					matchFound = true;
+					break;
+				}
+			}
+			if (matchFound)
+			{
+				ext.isCompatible = true;
+				ext.warningMessage = "";
+			}
+			else
+			{
+				ext.isCompatible = false;
+				std::string supportedStr;
+				for (size_t i = 0; i < versionsVec.size(); ++i)
+				{
+					if (i > 0)
+						supportedStr += ", ";
+					supportedStr += versionsVec[i];
+				}
+				ext.warningMessage = "This extension is incompatible with HPR " + currentAppVer +
+									 ", the versions supported by the extension are: (" + supportedStr + ")";
+			}
+		}
+
+		AppState::ExtensionInfo info;
+		info.author = resolvedAuthor;
+		info.name = resolvedName;
+		info.versionSupport = ext.versionSupport;
+		info.hasVersionSupport = ext.hasVersionSupport;
+		info.isCompatible = ext.isCompatible;
+		info.warningMessage = ext.warningMessage;
+
 		{
 			std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
 			AppState::state.loadedExtensions.push_back(ext.identity);
+			AppState::state.extensionMap[ext.identity] = info;
 		}
 		int sleepTime = 1000; // ms
 		sol::function init = ext.lua["init"];
@@ -611,6 +688,7 @@ void ExtensionManager::unloadExtension(std::string authorName, std::string exten
 				loaded.erase(std::remove_if(loaded.begin(), loaded.end(), [&](const auto &e)
 											{ return e.first == authorName && e.second == extensionName; }),
 							 loaded.end());
+				AppState::state.extensionMap.erase({authorName, extensionName});
 				it = extensions.erase(it);
 			}
 		}
@@ -855,8 +933,8 @@ void ExtensionManager::refresh()
 			}
 			else if (entry.is_regular_file())
 			{
-				std::cerr << "Skipping non-lua file: " << entry.path() << '\n';
-				Logger::log("Skipping non-lua file: " + entry.path().string());
+				// std::cerr << "Skipping non-lua file: " << entry.path() << '\n';
+				// Logger::log("Skipping non-lua file: " + entry.path().string());
 			}
 		}
 	}

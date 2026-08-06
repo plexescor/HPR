@@ -26,9 +26,29 @@ enum CurrentView
 	HISTORICAL_RANGE
 };
 
+struct ExtensionInfo
+{
+	std::string author;
+	std::string name;
+	std::vector<std::string> versionSupport;
+	bool hasVersionSupport = false;
+	bool isCompatible = true;
+	std::string warningMessage;
+
+	bool operator==(const ExtensionInfo &other) const
+	{
+		return author == other.author && name == other.name &&
+			   versionSupport == other.versionSupport &&
+			   hasVersionSupport == other.hasVersionSupport &&
+			   isCompatible == other.isCompatible &&
+			   warningMessage == other.warningMessage;
+	}
+};
+
 struct AppState
 {
 	std::vector<std::pair<std::string, std::string>> loadedExtensions;
+	std::map<std::pair<std::string, std::string>, ExtensionInfo> extensionMap;
 
 	CurrentView currentView = CurrentView::LIVE;
 

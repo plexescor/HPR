@@ -63,6 +63,11 @@ struct LoadedExtension
 
 	bool useLegacyAPISuffix = false;
 
+	std::vector<std::string> versionSupport;
+	bool hasVersionSupport = false;
+	bool isCompatible = true;
+	std::string warningMessage;
+
 	LoadedExtension() = default;
 	~LoadedExtension();
 	LoadedExtension(const LoadedExtension &) = delete;

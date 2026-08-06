@@ -1,6 +1,5 @@
 #pragma once
-#include <map>
-
+#include "appState.hpp"
 #include "aliasManager.hpp"
 
 // Slint stuff
@@ -48,8 +47,8 @@ class UiModelManager
 								  const std::string screenTimeVsAvg, const std::string focusDipHour,
 								  const std::string deepWorkBeforeNoon, const std::string weekendVsWeekday);
 
-	void showExtensions(const std::vector<std::pair<std::string, std::string>> &extensions);
-	void showExtensions_Interpreted(const std::vector<std::pair<std::string, std::string>> &extensions);
+	void showExtensions(const std::map<std::pair<std::string, std::string>, AppState::ExtensionInfo> &extensionsMap);
+	void showExtensions_Interpreted(const std::map<std::pair<std::string, std::string>, AppState::ExtensionInfo> &extensionsMap);
 
 	void showFunStats(const std::string &cpu, const std::string &ram, const std::string &ext,
 					  const std::string &threads);
@@ -59,7 +58,7 @@ class UiModelManager
 
   private:
 	std::optional<slint::ComponentHandle<MainWindow>> ui;
-	std::vector<std::pair<std::string, std::string>> lastKnownExtensions;
+	std::map<std::pair<std::string, std::string>, AppState::ExtensionInfo> lastKnownExtensionsMap;
 
 	// Slint models
 	std::shared_ptr<slint::VectorModel<TimeLog>> timeLogModel;
