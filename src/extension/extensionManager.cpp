@@ -699,6 +699,41 @@ void ExtensionManager::unloadExtension(std::string authorName, std::string exten
 	}
 }
 
+void ExtensionManager::callActionFunction(std::string authorName, std::string extensionName)
+{
+	std::shared_ptr<LoadedExtension> targetExt = nullptr;
+	for (const auto &ext : extensions)
+	{
+		if (ext->identity.first == authorName && ext->identity.second == extensionName)
+		{
+			targetExt = ext;
+			break;
+		}
+	}
+	if (!targetExt)
+	{
+		return;
+	}
+
+	std::lock_guard<std::recursive_mutex> lock(targetExt->luaMutex);
+	sol::protected_function actionFunc = targetExt->lua["onAction"];
+	if (!actionFunc.valid())
+	{
+		actionFunc = targetExt->lua["HPR"]["onAction"];
+	}
+
+	if (actionFunc.valid())
+	{
+		sol::protected_function_result result = actionFunc();
+		if (!result.valid())
+		{
+			sol::error err = result;
+			std::cerr << "onAction() failed in extension (" << authorName << "/" << extensionName << "): " << err.what() << "\n";
+			Logger::log("[HPR] onAction() failed in extension (" + authorName + "/" + extensionName + "): " + err.what() + "\n");
+		}
+	}
+}
+
 void ExtensionManager::reloadExtension(std::string authorName, std::string extensionName)
 {
 	std::filesystem::path extPath;

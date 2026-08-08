@@ -186,6 +186,11 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow> &ui, ExtensionMa
 							{ extManager->reloadExtension(auth, nm); })
 					.detach();
 			});
+		ui->on_actionExtension(
+			[this](slint::SharedString author, slint::SharedString name)
+			{
+				extManager->callActionFunction(std::string(author), std::string(name));
+			});
 	}
 
 	// no need to do shit in compiled mode
@@ -630,6 +635,22 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<slint::interpreter::Componen
 						std::thread([this, auth = std::string(opt_author.value()), nm = std::string(opt_name.value())]()
 									{ extManager->reloadExtension(auth, nm); })
 							.detach();
+					}
+				}
+				return slint::interpreter::Value();
+			});
+
+		ui->set_callback(
+			"actionExtension",
+			[this](auto args) -> slint::interpreter::Value
+			{
+				if (args.size() > 1)
+				{
+					auto opt_author = args[0].to_string();
+					auto opt_name = args[1].to_string();
+					if (opt_author.has_value() && opt_name.has_value())
+					{
+						extManager->callActionFunction(std::string(opt_author.value()), std::string(opt_name.value()));
 					}
 				}
 				return slint::interpreter::Value();

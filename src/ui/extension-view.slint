@@ -15,6 +15,7 @@ export component ExtensionsView {
     callback refresh-extensions();
     callback disable-extension(string, string);
     callback reload-extension(string, string);
+    callback action-extension(string, string);
 
     VerticalLayout {
         padding: 12px * Palette.scale;
@@ -100,7 +101,7 @@ export component ExtensionsView {
                 }
 
                 for ext in loadedExtensions_S : Card {
-                    height: 72px * Palette.scale;
+                    height: 86px * Palette.scale;
 
                     HorizontalLayout {
                         padding: 14px * Palette.scale;
@@ -116,7 +117,7 @@ export component ExtensionsView {
 
                                 Text {
                                     text: ext.author-name;
-                                    font-size: 10px * Palette.scale;
+                                    font-size: 12.5px * Palette.scale;
                                     font-weight: 700;
                                     letter-spacing: 1.5px * Palette.scale;
                                     color: #c084fc;
@@ -133,97 +134,141 @@ export component ExtensionsView {
 
                             Text {
                                 text: ext.extension-name;
-                                font-size: 13px * Palette.scale;
+                                font-size: 14.82px * Palette.scale;
                                 font-weight: 600;
                                 color: #a3e635;
                             }
                         }
 
-                        
-                        HorizontalLayout {
+                        VerticalLayout {
                             alignment: center;
-                            spacing: 6px * Palette.scale;
-                            y: (parent.height - self.height) / 1.5;
+                            spacing: 5px * Palette.scale;
 
-                            disableBtn := Rectangle {
-                                width: 66px * Palette.scale;
-                                height: 28px * Palette.scale;
+                            actionBtn := Rectangle {
+                                width: 138px * Palette.scale;
+                                height: 24px * Palette.scale;
                                 border-radius: 6px * Palette.scale;
                                 border-width: 1px * Palette.scale;
 
                                 animate background { duration: 100ms; }
                                 animate border-color { duration: 100ms; }
 
-                                ta-disable := TouchArea {
+                                ta-action := TouchArea {
                                     mouse-cursor: pointer;
-                                    clicked => { root.disable-extension(ext.author-name, ext.extension-name); }
+                                    clicked => { root.action-extension(ext.author-name, ext.extension-name); }
                                 }
 
                                 states [
-                                    pressed when ta-disable.pressed: {
-                                        background: #ff605c35;
-                                        border-color: #ff605c80;
+                                    pressed when ta-action.pressed: {
+                                        background: #facc1535;
+                                        border-color: #facc1580;
                                     }
-                                    hovered when ta-disable.has-hover: {
-                                        background: #ff605c25;
-                                        border-color: #ff605c60;
+                                    hovered when ta-action.has-hover: {
+                                        background: #facc1525;
+                                        border-color: #facc1560;
                                     }
-                                    normal when !ta-disable.has-hover: {
-                                        background: #ff605c12;
-                                        border-color: #ff605c35;
+                                    normal when !ta-action.has-hover: {
+                                        background: #facc1512;
+                                        border-color: #facc1535;
                                     }
                                 ]
 
                                 Text {
-                                    text: "DISABLE";
+                                    text: "ACTION";
                                     font-size: 8px * Palette.scale;
                                     font-weight: 700;
                                     letter-spacing: 1.5px * Palette.scale;
-                                    color: ta-disable.pressed ? #ff8582 : ta-disable.has-hover ? #ff7572 : #ff605c;
+                                    color: ta-action.pressed ? #fef08a : ta-action.has-hover ? #fde047 : #facc15;
                                     horizontal-alignment: center;
                                     vertical-alignment: center;
                                     animate color { duration: 100ms; }
                                 }
                             }
 
-                            reloadBtn := Rectangle {
-                                width: 66px * Palette.scale;
-                                height: 28px * Palette.scale;
-                                border-radius: 6px * Palette.scale;
-                                border-width: 1px * Palette.scale;
+                            HorizontalLayout {
+                                alignment: center;
+                                spacing: 6px * Palette.scale;
 
-                                animate background { duration: 100ms; }
-                                animate border-color { duration: 100ms; }
+                                disableBtn := Rectangle {
+                                    width: 66px * Palette.scale;
+                                    height: 28px * Palette.scale;
+                                    border-radius: 6px * Palette.scale;
+                                    border-width: 1px * Palette.scale;
 
-                                ta-reload := TouchArea {
-                                    mouse-cursor: pointer;
-                                    clicked => { root.reload-extension(ext.author-name, ext.extension-name); }
+                                    animate background { duration: 100ms; }
+                                    animate border-color { duration: 100ms; }
+
+                                    ta-disable := TouchArea {
+                                        mouse-cursor: pointer;
+                                        clicked => { root.disable-extension(ext.author-name, ext.extension-name); }
+                                    }
+
+                                    states [
+                                        pressed when ta-disable.pressed: {
+                                            background: #ff605c35;
+                                            border-color: #ff605c80;
+                                        }
+                                        hovered when ta-disable.has-hover: {
+                                            background: #ff605c25;
+                                            border-color: #ff605c60;
+                                        }
+                                        normal when !ta-disable.has-hover: {
+                                            background: #ff605c12;
+                                            border-color: #ff605c35;
+                                        }
+                                    ]
+
+                                    Text {
+                                        text: "DISABLE";
+                                        font-size: 8px * Palette.scale;
+                                        font-weight: 700;
+                                        letter-spacing: 1.5px * Palette.scale;
+                                        color: ta-disable.pressed ? #ff8582 : ta-disable.has-hover ? #ff7572 : #ff605c;
+                                        horizontal-alignment: center;
+                                        vertical-alignment: center;
+                                        animate color { duration: 100ms; }
+                                    }
                                 }
 
-                                states [
-                                    pressed when ta-reload.pressed: {
-                                        background: #38bdf835;
-                                        border-color: #38bdf880;
-                                    }
-                                    hovered when ta-reload.has-hover: {
-                                        background: #38bdf825;
-                                        border-color: #38bdf860;
-                                    }
-                                    normal when !ta-reload.has-hover: {
-                                        background: #38bdf812;
-                                        border-color: #38bdf835;
-                                    }
-                                ]
+                                reloadBtn := Rectangle {
+                                    width: 66px * Palette.scale;
+                                    height: 28px * Palette.scale;
+                                    border-radius: 6px * Palette.scale;
+                                    border-width: 1px * Palette.scale;
 
-                                Text {
-                                    text: "RELOAD";
-                                    font-size: 8px * Palette.scale;
-                                    font-weight: 700;
-                                    letter-spacing: 1.5px * Palette.scale;
-                                    color: ta-reload.pressed ? #7dd8fb : ta-reload.has-hover ? #5dcffa : #38bdf8;
-                                    horizontal-alignment: center;
-                                    vertical-alignment: center;
-                                    animate color { duration: 100ms; }
+                                    animate background { duration: 100ms; }
+                                    animate border-color { duration: 100ms; }
+
+                                    ta-reload := TouchArea {
+                                        mouse-cursor: pointer;
+                                        clicked => { root.reload-extension(ext.author-name, ext.extension-name); }
+                                    }
+
+                                    states [
+                                        pressed when ta-reload.pressed: {
+                                            background: #38bdf835;
+                                            border-color: #38bdf880;
+                                        }
+                                        hovered when ta-reload.has-hover: {
+                                            background: #38bdf825;
+                                            border-color: #38bdf860;
+                                        }
+                                        normal when !ta-reload.has-hover: {
+                                            background: #38bdf812;
+                                            border-color: #38bdf835;
+                                        }
+                                    ]
+
+                                    Text {
+                                        text: "RELOAD";
+                                        font-size: 8px * Palette.scale;
+                                        font-weight: 700;
+                                        letter-spacing: 1.5px * Palette.scale;
+                                        color: ta-reload.pressed ? #7dd8fb : ta-reload.has-hover ? #5dcffa : #38bdf8;
+                                        horizontal-alignment: center;
+                                        vertical-alignment: center;
+                                        animate color { duration: 100ms; }
+                                    }
                                 }
                             }
                         }
