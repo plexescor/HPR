@@ -36,7 +36,7 @@ TEST_SUITES: list[str] = [
 ]
 
 # Suite-specific expected CSV key lists
-LIFECYCLEHOOKS_KEYS: list[str] = ["Init", "Tick", "Exit"]
+LIFECYCLEHOOKS_KEYS: list[str] = ["Init", "Tick", "Exit", "Action"]
 OTHEREXTENSIONS_KEYS: list[str] = ["GetLoadedExtensions", "UnloadExtension"]
 CSVIO_KEYS: list[str] = ["WriteCSV", "ReadCSV", "DeleteCSV", "GetExtensionDir", "GetExtensionPath"]
 TIME_KEYS: list[str] = [
