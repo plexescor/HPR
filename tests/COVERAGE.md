@@ -7,10 +7,10 @@
 
 | Metric | Count |
 |---|---|
-| **Total API surface** | 80 |
-| **Covered** | 30 |
-| **Uncovered** | 50 |
-| **Coverage** | 37.50% |
+| **Total API surface** | 88 |
+| **Covered** | 31 |
+| **Uncovered** | 57 |
+| **Coverage** | 35.23% |
 
 ---
 
@@ -18,7 +18,7 @@
 
 | API | Category | Covered by Suite |
 |---|---|---|
-| `init()` / `onTick()` / `onExit()` | Lifecycle hook | `lifecyclehooks` |
+| `init()` / `onTick()` / `onExit()` / `onAction()`| Lifecycle hook | `lifecyclehooks` |
 | `HPR.getLoadedExtensions` | System | `otherextensions` |
 | `HPR.unloadExtension` | System | `otherextensions` |
 | `HPR.writeCsv` | File I/O | `csvio` |
@@ -37,6 +37,7 @@
 | `HPR.parseISO8601` | Time | `netio` |
 | `HPR.parseJSON` | Serialisation | `netio` |
 | `HPR.toJSON` | Serialisation | `netio` |
+| `HPR.sleep` | Time | `time` |
 | `HPR.convertToDate_DDMMYY` | Time | `time` |
 | `HPR.convertToDate_MMYY` | Time | `time` |
 | `HPR.convertToTime_HHMMSS_12` | Time | `time` |
@@ -55,8 +56,8 @@
 
 | API | Category | Description |
 |---|---|---|
+| `HPR.getExtensionAbsoluteDir` | Paths | Absolute filesystem directory path of the extension |
 | `HPR.getTime_MS` | Time | Current wall-clock time in milliseconds (Unix epoch) |
-| `HPR.sleep` | Time | Sleep for N ms, respecting extension shutdown signal |
 | `HPR.stopTracking` | Window | Pause window focus tracking |
 | `HPR.startTracking` | Window | Resume window focus tracking |
 | `HPR.getLiveTimeLogPerApp` | Live Data | Map of app name → ms tracked today (live, current session) |
@@ -98,10 +99,17 @@
 | `HPR.getMostSwitchedTo` | Analytics | App switched to most often |
 | `HPR.getMostFocusedSession` | Analytics | Longest focused session string |
 | `HPR.getMostProductiveHour` | Analytics | Most productive hour-of-day string |
+| `HPR.setLimit` | Limits | Set minute time limit for app, tab, or project |
+| `HPR.getLimit` | Limits | Get configured minute time limit for app, tab, or project |
+| `HPR.setGoal` | Goals | Set minute daily target goal for app, tab, or project |
+| `HPR.getGoal` | Goals | Get configured minute daily target goal for app, tab, or project |
 | `HPR.getOsName` | System | Returns `"Windows"`, `"Linux"`, or `"Apple"` |
 | `HPR.getEnvironmentName` | System | Returns `$XDG_CURRENT_DESKTOP` on Linux; empty on Windows |
 | `HPR.reloadExtension` | System | Reload another extension by author + name |
 | `HPR.refreshExtensions` | System | Hot-load any new `.lua` files dropped into the extensions dir |
 | `HPR.applyTheme` | System | Apply a UI theme by name (interpreter mode only) |
+| `HPR.getThemeNames` | System | Returns array of all available UI theme names |
+| `HPR.getCurrentThemeName` | System | Returns the name of the currently active UI theme |
+| `HPR.amICompatible` | System | Returns whether extension is marked compatible with current HPR version |
 | `HPR.crash` | Debug | Intentionally crash HPR with an optional message |
 | `HPR.overrides` | Override table | Register override functions (`HPR.overrides.stopTracking`, etc.) |
