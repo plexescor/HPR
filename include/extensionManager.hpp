@@ -24,6 +24,13 @@
 #include <slint-interpreter.h>
 
 #include "appEvents.hpp"
+#ifdef _WIN32
+#define HPR_API __declspec(dllexport)
+#else
+#define HPR_API
+#endif
+extern "C" HPR_API void HPR_invokeOnSlintThread(void(*fn)(void*), void* userdata);
+
 
 // FORWARD DECLARE TO AVOID CIRCULAR DEPENDENCIES
 class HPR;

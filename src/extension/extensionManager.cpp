@@ -37,6 +37,14 @@
 #include "windowUtilities.hpp"
 #include "window_E.hpp"
 
+extern "C" HPR_API void HPR_invokeOnSlintThread(void(*fn)(void*), void* userdata)
+{
+    slint::invoke_from_event_loop([fn, userdata]()
+    {
+        fn(userdata);
+    });
+}
+
 namespace
 {
 CppValue luaToCpp_Internal(const sol::object &obj, std::unordered_set<const void *> &visited)
