@@ -90,6 +90,7 @@ class ExtensionManager
 	void loadExtensions();
 
 	void reloadExtension(std::string authorName, std::string extensionName);
+	void reloadMyself(LoadedExtension &ext);
 	void unloadExtension(std::string authorName, std::string extensionName);
 	void callActionFunction(std::string authorName, std::string extensionName);
 	void reloadAllExtensions();

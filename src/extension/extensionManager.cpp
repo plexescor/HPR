@@ -361,7 +361,8 @@ void ExtensionManager::loadExtensions()
 				bool allowNativeLibraries = AppState::configManager.getConfig<bool>("allow-native-libraries", false);
 				if (allowNativeLibraries)
 				{
-					ext->lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::table, sol::lib::math, sol::lib::package);
+					ext->lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::table, sol::lib::math,
+											sol::lib::package);
 				}
 				else
 				{
@@ -736,10 +737,26 @@ void ExtensionManager::callActionFunction(std::string authorName, std::string ex
 		if (!result.valid())
 		{
 			sol::error err = result;
-			std::cerr << "onAction() failed in extension (" << authorName << "/" << extensionName << "): " << err.what() << "\n";
-			Logger::log("[HPR] onAction() failed in extension (" + authorName + "/" + extensionName + "): " + err.what() + "\n");
+			std::cerr << "onAction() failed in extension (" << authorName << "/" << extensionName << "): " << err.what()
+					  << "\n";
+			Logger::log("[HPR] onAction() failed in extension (" + authorName + "/" + extensionName +
+						"): " + err.what() + "\n");
 		}
 	}
+}
+
+void ExtensionManager::reloadMyself(LoadedExtension &ext)
+{
+	std::string authorName = ext.identity.first;
+	std::string extensionName = ext.identity.second;
+	std::cout << "[HPR] reloadMyself requested for: " << authorName << " / " << extensionName << std::endl;
+	std::thread(
+		[this, authorName, extensionName]()
+		{
+			std::this_thread::sleep_for(std::chrono::milliseconds(50));
+			reloadExtension(authorName, extensionName);
+		})
+		.detach();
 }
 
 void ExtensionManager::reloadExtension(std::string authorName, std::string extensionName)
@@ -765,7 +782,8 @@ void ExtensionManager::reloadExtension(std::string authorName, std::string exten
 	bool allowNativeLibraries = AppState::configManager.getConfig<bool>("allow-native-libraries", false);
 	if (allowNativeLibraries)
 	{
-		newExt->lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::table, sol::lib::math, sol::lib::package);
+		newExt->lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::table, sol::lib::math,
+								   sol::lib::package);
 	}
 	else
 	{
@@ -871,7 +889,8 @@ void ExtensionManager::reloadAllExtensions()
 		bool allowNativeLibraries = AppState::configManager.getConfig<bool>("allow-native-libraries", false);
 		if (allowNativeLibraries)
 		{
-			newExt->lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::table, sol::lib::math, sol::lib::package);
+			newExt->lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::table, sol::lib::math,
+									   sol::lib::package);
 		}
 		else
 		{
@@ -942,7 +961,8 @@ void ExtensionManager::refresh()
 				bool allowNativeLibraries = AppState::configManager.getConfig<bool>("allow-native-libraries", false);
 				if (allowNativeLibraries)
 				{
-					ext->lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::table, sol::lib::math, sol::lib::package);
+					ext->lua.open_libraries(sol::lib::base, sol::lib::string, sol::lib::table, sol::lib::math,
+											sol::lib::package);
 				}
 				else
 				{
@@ -991,7 +1011,7 @@ void ExtensionManager::refresh()
 void ExtensionManager::registerFunctions(LoadedExtension &ext)
 {
 	std::string suffix = "";
-	//if useLegacyAPISuffix is true, then we will use the legacy API suffix by changing the string to
+	// if useLegacyAPISuffix is true, then we will use the legacy API suffix by changing the string to
 	//_E
 	if (ext.useLegacyAPISuffix)
 	{
@@ -1135,7 +1155,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 	};
 
 	lua["HPR"]["httpGet" + suffix] = [](std::string host, std::string path, sol::optional<bool> secure,
-								 sol::optional<sol::table> headers) -> std::tuple<std::string, int>
+										sol::optional<sol::table> headers) -> std::tuple<std::string, int>
 	{
 		std::map<std::string, std::string> cppHeaders;
 		if (headers.has_value())
@@ -1153,8 +1173,9 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		return std::make_tuple(result.first, result.second);
 	};
 
-	lua["HPR"]["httpPost" + suffix] = [](std::string host, std::string path, std::string body, sol::optional<bool> secure,
-								  sol::optional<sol::table> headers) -> std::tuple<std::string, int>
+	lua["HPR"]["httpPost" + suffix] = [](std::string host, std::string path, std::string body,
+										 sol::optional<bool> secure,
+										 sol::optional<sol::table> headers) -> std::tuple<std::string, int>
 	{
 		std::map<std::string, std::string> cppHeaders;
 		if (headers.has_value())
@@ -1172,8 +1193,9 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		return std::make_tuple(result.first, result.second);
 	};
 
-	lua["HPR"]["httpPut" + suffix] = [](std::string host, std::string path, std::string body, sol::optional<bool> secure,
-								 sol::optional<sol::table> headers) -> std::tuple<std::string, int>
+	lua["HPR"]["httpPut" + suffix] = [](std::string host, std::string path, std::string body,
+										sol::optional<bool> secure,
+										sol::optional<sol::table> headers) -> std::tuple<std::string, int>
 	{
 		std::map<std::string, std::string> cppHeaders;
 		if (headers.has_value())
@@ -1192,7 +1214,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 	};
 
 	lua["HPR"]["httpDelete" + suffix] = [](std::string host, std::string path, sol::optional<bool> secure,
-									sol::optional<sol::table> headers) -> std::tuple<std::string, int>
+										   sol::optional<sol::table> headers) -> std::tuple<std::string, int>
 	{
 		std::map<std::string, std::string> cppHeaders;
 		if (headers.has_value())
@@ -1223,7 +1245,8 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 
 	lua["HPR"]["getAlias" + suffix] = [](std::string command) { return AppState::aliasManager.getAlias(command); };
 
-	lua["HPR"]["getAlias_Tab" + suffix] = [](std::string command) { return AppState::aliasManager.getAlias_Tab(command); };
+	lua["HPR"]["getAlias_Tab" + suffix] = [](std::string command)
+	{ return AppState::aliasManager.getAlias_Tab(command); };
 
 	lua["HPR"]["getAlias_Project" + suffix] = [](std::string command)
 	{ return AppState::aliasManager.getAlias_Project(command); };
@@ -1264,8 +1287,8 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 	};
 
 	lua["HPR"]["registerBackend" + suffix] = [&ext, this](std::string name, sol::function matchesEnvironment,
-											 sol::function initialize, sol::function getCurrentWindow,
-											 sol::function getCurrentTitle, sol::function getCurrentPid)
+														  sol::function initialize, sol::function getCurrentWindow,
+														  sol::function getCurrentTitle, sol::function getCurrentPid)
 	{
 		auto safeMatches = [&ext, matchesEnvironment](const std::string &env) -> bool
 		{
@@ -1298,8 +1321,8 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 			return getCurrentPid();
 		};
 
-		registerBackend_E(name, ext.identity.first, ext.identity.second, safeMatches, safeInitialize, safeGetCurrentWindow, safeGetCurrentTitle,
-						  safeGetCurrentPid, currentWindowManager);
+		registerBackend_E(name, ext.identity.first, ext.identity.second, safeMatches, safeInitialize,
+						  safeGetCurrentWindow, safeGetCurrentTitle, safeGetCurrentPid, currentWindowManager);
 	};
 
 	lua["HPR"]["dbExecute" + suffix] = [this](std::string sql, sol::optional<std::vector<std::string>> params)
@@ -1384,8 +1407,9 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 	{ return dbManager->querySQL_Path(dbPath, sql, params.value_or(std::vector<std::string>{})); };
 
 	lua["HPR"]["dbQueryNumber" + suffix] =
-		[this, suffix](int days, std::string mode, std::string sql,
-			   sol::optional<std::vector<std::string>> params) -> std::vector<std::map<std::string, std::string>>
+		[this,
+		 suffix](int days, std::string mode, std::string sql,
+				 sol::optional<std::vector<std::string>> params) -> std::vector<std::map<std::string, std::string>>
 	{
 		auto p = params.value_or(std::vector<std::string>{});
 		auto fut = std::async(std::launch::async,
@@ -1401,8 +1425,9 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 	};
 
 	lua["HPR"]["dbQueryRange" + suffix] =
-		[this, suffix](std::string dateFrom, std::string dateTo, std::string mode, std::string sql,
-			   sol::optional<std::vector<std::string>> params) -> std::vector<std::map<std::string, std::string>>
+		[this,
+		 suffix](std::string dateFrom, std::string dateTo, std::string mode, std::string sql,
+				 sol::optional<std::vector<std::string>> params) -> std::vector<std::map<std::string, std::string>>
 	{
 		auto p = params.value_or(std::vector<std::string>{});
 		auto fut = std::async(std::launch::async, [this, dateFrom, dateTo, mode, sql, p]()
@@ -1429,7 +1454,8 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 
 	lua["HPR"]["parseDate_MMYY" + suffix] = [](std::string dateStr) { return parseDate_MMYY(dateStr); };
 
-	lua["HPR"]["extractMMYY_from_DDMMYY" + suffix] = [](std::string dateStr) { return extractMMYY_from_DDMMYY(dateStr); };
+	lua["HPR"]["extractMMYY_from_DDMMYY" + suffix] = [](std::string dateStr)
+	{ return extractMMYY_from_DDMMYY(dateStr); };
 
 	lua["HPR"]["getSystemConfig" + suffix] = [](std::string key) -> std::string
 	{ return AppState::configManager.getConfig(key, std::string("")); };
@@ -1697,8 +1723,8 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 	};
 
 	lua["HPR"]["readCsv" + suffix] = [this, &ext, &lua, trim, parseValue](std::string userPath,
-																   sol::optional<sol::object> keyOpt,
-																   sol::this_state ts) -> sol::variadic_results
+																		  sol::optional<sol::object> keyOpt,
+																		  sol::this_state ts) -> sol::variadic_results
 	{
 		sol::variadic_results vr;
 		std::string err;
@@ -1784,7 +1810,8 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		}
 	};
 
-	lua["HPR"]["writeCsv" + suffix] = [this, &ext, &lua](std::string userPath, sol::object key, sol::object value) -> bool
+	lua["HPR"]["writeCsv" + suffix] = [this, &ext, &lua](std::string userPath, sol::object key,
+														 sol::object value) -> bool
 	{
 		std::string err;
 		std::filesystem::path securedPath = resolveAndSecurePath(userPath, this->extensionPath, err);
@@ -1999,20 +2026,23 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 			interpreterApp->quit();
 	};
 
-	lua["HPR"]["showUiPopup" + suffix] = [this, &ext](std::string text, std::string leftText, std::string rightText, sol::function luaCallback)
+	lua["HPR"]["showUiPopup" + suffix] =
+		[this, &ext](std::string text, std::string leftText, std::string rightText, sol::function luaCallback)
 	{
-		this->showUiPopup(text, leftText, rightText, true, [luaCallback, &ext](int btn) {
-			std::lock_guard<std::recursive_mutex> lock(ext.luaMutex);
-			if (luaCallback.valid())
-			{
-				auto res = luaCallback(btn);
-				if (!res.valid())
-				{
-					sol::error err = res;
-					std::cerr << "showUiPopup callback failed: " << err.what() << "\n";
-				}
-			}
-		});
+		this->showUiPopup(text, leftText, rightText, true,
+						  [luaCallback, &ext](int btn)
+						  {
+							  std::lock_guard<std::recursive_mutex> lock(ext.luaMutex);
+							  if (luaCallback.valid())
+							  {
+								  auto res = luaCallback(btn);
+								  if (!res.valid())
+								  {
+									  sol::error err = res;
+									  std::cerr << "showUiPopup callback failed: " << err.what() << "\n";
+								  }
+							  }
+						  });
 	};
 
 	lua["HPR"]["showNotification" + suffix] = [](std::string title, std::string message)
@@ -2069,9 +2099,11 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		else
 		{
 			Logger::log("[HPR Extension Crash] HPR has been intentionally crashed "
-						"via HPR.crash" + suffix + "() by an extension!");
+						"via HPR.crash" +
+						suffix + "() by an extension!");
 			std::cerr << "[HPR Extension Crash] HPR has been intentionally crashed "
-						 "via HPR.crash" + suffix + "() by an extension!"
+						 "via HPR.crash" +
+							 suffix + "() by an extension!"
 					  << std::endl;
 		}
 #ifdef _WIN32
@@ -2172,6 +2204,8 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 	lua["HPR"]["unloadExtension" + suffix] = [this](std::string authorName, std::string extensionName)
 	{ unloadExtension(authorName, extensionName); };
 
+	lua["HPR"]["reloadMyself" + suffix] = [this, &ext]() { reloadMyself(ext); };
+
 	lua["HPR"]["reloadExtension" + suffix] = [this](std::string authorName, std::string extensionName)
 	{ reloadExtension(authorName, extensionName); };
 
@@ -2183,7 +2217,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		path = AppState::themeManager.getPathByName(themeName);
 
 		if (!path.empty())
-		{	
+		{
 			if (interpreterApp)
 			{
 				interpreterApp->reload(path);
@@ -2206,21 +2240,16 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 
 		sol::table listTable = lua.create_table();
 		int index = 1;
-		for (const auto& name : themeNames)
+		for (const auto &name : themeNames)
 			listTable[index++] = name;
 
 		return listTable;
 	};
 
 	lua["HPR"]["getCurrentThemeName" + suffix] = [this]() -> std::string
-	{
-		return AppState::themeManager.getCurrentThemeName();
-	};
+	{ return AppState::themeManager.getCurrentThemeName(); };
 
-	lua["HPR"]["amICompatible" + suffix] = [this, &ext]() -> bool
-	{
-		return ext.isCompatible;
-	};
+	lua["HPR"]["amICompatible" + suffix] = [this, &ext]() -> bool { return ext.isCompatible; };
 }
 
 void ExtensionManager::updateExtensionPath()
@@ -2336,7 +2365,8 @@ std::optional<CppValue> ExtensionManager::dispatchOverride(const std::string &ov
 	return std::nullopt;
 }
 
-void ExtensionManager::showUiPopup(const std::string &text, const std::string &leftBtnText, const std::string &rightBtnText, bool isLua, std::function<void(int)> callback)
+void ExtensionManager::showUiPopup(const std::string &text, const std::string &leftBtnText,
+								   const std::string &rightBtnText, bool isLua, std::function<void(int)> callback)
 {
 	std::lock_guard<std::mutex> lock(queueMutex);
 	uint64_t reqId = nextPopupId++;
@@ -2361,7 +2391,8 @@ void ExtensionManager::showNextPopup_Unlocked()
 	activePopupId = req.id;
 
 	slint::invoke_from_event_loop(
-		[weak_compiled = compiledUiWeak, weak_interpreted = interpretedUiWeak, text = req.text, left = req.leftBtnText, right = req.rightBtnText]()
+		[weak_compiled = compiledUiWeak, weak_interpreted = interpretedUiWeak, text = req.text, left = req.leftBtnText,
+		 right = req.rightBtnText]()
 		{
 			if (auto handle = weak_compiled.lock())
 			{
@@ -2373,66 +2404,73 @@ void ExtensionManager::showNextPopup_Unlocked()
 			else if (auto handle_int = weak_interpreted.lock())
 			{
 				(*handle_int)->set_property("uiPopupText_S", slint::interpreter::Value(slint::SharedString(text)));
-				(*handle_int)->set_property("uiPopupLeftBtnText_S", slint::interpreter::Value(slint::SharedString(left)));
-				(*handle_int)->set_property("uiPopupRightBtnText_S", slint::interpreter::Value(slint::SharedString(right)));
+				(*handle_int)
+					->set_property("uiPopupLeftBtnText_S", slint::interpreter::Value(slint::SharedString(left)));
+				(*handle_int)
+					->set_property("uiPopupRightBtnText_S", slint::interpreter::Value(slint::SharedString(right)));
 				(*handle_int)->set_property("showUiPopup_S", slint::interpreter::Value(true));
 			}
 		});
 
 	if (req.isLua)
 	{
-		std::thread([this, req_id = req.id]() {
-			int timeoutMs = AppState::configManager.getConfig<int>("extension-popup-timeout", 7500);
-			std::this_thread::sleep_for(std::chrono::milliseconds(timeoutMs));
-
-			std::lock_guard<std::mutex> lock(this->queueMutex);
-			if (this->isPopupActive && this->activePopupId == req_id)
+		std::thread(
+			[this, req_id = req.id]()
 			{
-				slint::invoke_from_event_loop([weak_compiled = this->compiledUiWeak, weak_interpreted = this->interpretedUiWeak, this]() {
-					if (auto handle = weak_compiled.lock())
-					{
-						(*handle)->set_showUiPopup_S(false);
+				int timeoutMs = AppState::configManager.getConfig<int>("extension-popup-timeout", 7500);
+				std::this_thread::sleep_for(std::chrono::milliseconds(timeoutMs));
 
-						if (this->currentPopupCallback)
+				std::lock_guard<std::mutex> lock(this->queueMutex);
+				if (this->isPopupActive && this->activePopupId == req_id)
+				{
+					slint::invoke_from_event_loop(
+						[weak_compiled = this->compiledUiWeak, weak_interpreted = this->interpretedUiWeak, this]()
 						{
-							auto cb = this->currentPopupCallback;
-							this->currentPopupCallback = nullptr;
-							cb(-1);
-						}
+							if (auto handle = weak_compiled.lock())
+							{
+								(*handle)->set_showUiPopup_S(false);
 
-						std::lock_guard<std::mutex> lock2(this->queueMutex);
-						if (!this->popupQueue.empty())
-						{
-							this->showNextPopup_Unlocked();
-						}
-						else
-						{
-							this->isPopupActive = false;
-						}
-					}
-					else if (auto handle_int = weak_interpreted.lock())
-					{
-						(*handle_int)->set_property("showUiPopup_S", slint::interpreter::Value(false));
+								if (this->currentPopupCallback)
+								{
+									auto cb = this->currentPopupCallback;
+									this->currentPopupCallback = nullptr;
+									cb(-1);
+								}
 
-						if (this->currentPopupCallback)
-						{
-							auto cb = this->currentPopupCallback;
-							this->currentPopupCallback = nullptr;
-							cb(-1);
-						}
+								std::lock_guard<std::mutex> lock2(this->queueMutex);
+								if (!this->popupQueue.empty())
+								{
+									this->showNextPopup_Unlocked();
+								}
+								else
+								{
+									this->isPopupActive = false;
+								}
+							}
+							else if (auto handle_int = weak_interpreted.lock())
+							{
+								(*handle_int)->set_property("showUiPopup_S", slint::interpreter::Value(false));
 
-						std::lock_guard<std::mutex> lock2(this->queueMutex);
-						if (!this->popupQueue.empty())
-						{
-							this->showNextPopup_Unlocked();
-						}
-						else
-						{
-							this->isPopupActive = false;
-						}
-					}
-				});
-			}
-		}).detach();
+								if (this->currentPopupCallback)
+								{
+									auto cb = this->currentPopupCallback;
+									this->currentPopupCallback = nullptr;
+									cb(-1);
+								}
+
+								std::lock_guard<std::mutex> lock2(this->queueMutex);
+								if (!this->popupQueue.empty())
+								{
+									this->showNextPopup_Unlocked();
+								}
+								else
+								{
+									this->isPopupActive = false;
+								}
+							}
+						});
+				}
+			})
+			.detach();
 	}
 }
