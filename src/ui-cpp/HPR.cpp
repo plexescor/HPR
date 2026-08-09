@@ -383,28 +383,18 @@ void HPR::run()
 	ui->window().on_close_requested(
 		[this]() -> slint::CloseRequestResponse
 		{
-#ifndef NDEBUG
-			this->quit();
-			return slint::CloseRequestResponse::HideWindow;
-#else
 			saveWindowGeometry();
 			ui->hide();
 			return slint::CloseRequestResponse::KeepWindowShown;
-#endif
 		});
 #else
 	// same as windows, X button just hides to tray
 	ui->window().on_close_requested(
 		[this]() -> slint::CloseRequestResponse
 		{
-#ifndef NDEBUG
-			this->quit();
-			return slint::CloseRequestResponse::HideWindow;
-#else
 			saveWindowGeometry();
 			ui->hide();
 			return slint::CloseRequestResponse::KeepWindowShown;
-#endif
 		});
 #endif
 
