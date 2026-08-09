@@ -330,7 +330,7 @@ Badges on each row show **remaining time live**. Limit rows have a red accent; g
 HPR supports automatic **Idle Detection & Tracking** to pause or separate active time logging when you step away from your keyboard and mouse.
 
 <p style="font-size: 1.15em;">
-  Idle tracking is powered by the official <strong><a href="https://github.com/plexescor/HPR-Idle-Detection-Extension">HPR-Idle-Detection-Extension</a></strong>, available for instant 1-click download and installation directly from <strong><a href="https://github.com/plexescor/HPR-Store">HPR-Store</a></strong>!
+  Idle tracking is powered by the official <strong><a href="https://github.com/plexescor/HPR-Idle-Detection-Extension">HPR-Idle-Detection-Extension</a></strong>, available for instant 1-click download and installation directly from <strong><a href="https://github.com/plexescor/HPR-Store">HPR-Store</a></strong> Extension!
 </p>
 
 ---
@@ -387,7 +387,7 @@ The **Themes View** in the sidebar shows all discovered themes with a horizontal
 ### 🛒 Discover & Install Themes via HPR-Store
 
 <p style="font-size: 1.15em;">
-  Looking for custom community themes? Easily browse, preview, and 1-click install custom themes directly from inside HPR using <strong><a href="https://github.com/plexescor/HPR-Store">HPR-Store</a></strong>!
+  Looking for custom community themes? Easily browse, preview, and 1-click install custom themes directly from inside HPR using <strong><a href="https://github.com/plexescor/HPR-Store">HPR-Store</a></strong> Extension!
 </p>
 
 > [!WARNING]
@@ -401,10 +401,10 @@ Full theme authoring guide at [hpr-cpp.netlify.app/themes.html](https://hpr-cpp.
 
 HPR ships with a built-in **Sandboxed Lua 5.4 Extension Engine**. Drop a `.lua` file into your extensions folder and HPR loads it automatically. No compilers, no package managers, no boilerplate.
 
-### 🛒 Discover & Install Extensions via HPR-Store
+### 🛒 Discover & Install Extensions via HPR-Store Extension
 
 <p style="font-size: 1.15em;">
-  Browse, install, and hot-update community extensions directly from inside the HPR application interface using <strong><a href="https://github.com/plexescor/HPR-Store">HPR-Store</a></strong> — the native extension & theme store manager for HPR!
+  Browse, install, and hot-update community extensions directly from inside the HPR application interface using <strong><a href="https://github.com/plexescor/HPR-Store">HPR-Store</a></strong> Extension — the native extension & theme store manager for HPR!
 </p>
 
 Each extension runs in its own isolated VM on a dedicated background thread, completely decoupled from the main tracking and rendering pipelines. A slow or misbehaving extension cannot block HPR's core loop or freeze the UI.
@@ -446,15 +446,6 @@ end
 | `init()` | Once on load. Return an integer to set tick interval in ms (default 1000). |
 | `onTick(delta)` | Periodically on the extension's thread. `delta` is actual elapsed ms since last tick. |
 | `onExit()` | Once on shutdown. Must complete within 200ms or HPR force-detaches the thread. |
-
-**New Lua APIs in v0.9.7:**
-
-| API | What it does |
-|---|---|
-| `HPR.dbQueryNumber_E` | Concurrent numeric query across live and historical databases |
-| `HPR.dbQueryRange_E` | Same but for ranges of values |
-| `HPR.getSystemConfig_E` | Read HPR config values from Lua |
-| `HPR.setUiImage_E` | Paint a raw RGBA pixel buffer directly onto a UI panel |
 
 **Documentation:**
 
