@@ -65,6 +65,7 @@ export component MainWindow inherits Window {
     callback themeSelected(string);
     callback themeApply(string);
     callback refreshThemes();
+    callback openHprStore();
 
     in-out property <bool> is-sending-feedback: false;
     in-out property <bool> showFeedbackResultPrompt: false;
@@ -465,6 +466,7 @@ export component MainWindow inherits Window {
                 disable-extension(author, name) => { root.disableExtension(author, name); }
                 reload-extension(author, name) => { root.reloadExtension(author, name); }
                 action-extension(author, name) => { root.actionExtension(author, name); }
+                open-hpr-store => { root.openHprStore(); }
             }
             if active-view == "MISC_IMAGE" : MiscImageView {
                 vertical-stretch: 1;
@@ -530,6 +532,7 @@ export component MainWindow inherits Window {
                 themeSelected(theme) => { root.themeSelected(theme); }
                 themeApply(theme) => { root.themeApply(theme); }
                 refresh-themes => { root.refreshThemes(); }
+                open-hpr-store => { root.openHprStore(); }
             }
             if active-view == "SETTINGS" : SettingsView {
                 themeMode_S: root.themeMode_S;

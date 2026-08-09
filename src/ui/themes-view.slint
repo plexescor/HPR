@@ -18,6 +18,7 @@ export component ThemesView {
     callback themeSelected(string);
     callback themeApply(string);
     callback refresh-themes();
+    callback open-hpr-store();
 
     // internal callback to bridge popup -> root (PopupWindow can't access outside props)
     callback theme-picked(string);
@@ -113,7 +114,62 @@ export component ThemesView {
             }
         }
 
-        if root.useThemesEnabled : Card {
+        if !root.themesAvailable || !root.useThemesEnabled : Card {
+            vertical-stretch: 1;
+            VerticalLayout {
+                padding: 24px * Palette.scale;
+                spacing: 14px * Palette.scale;
+                alignment: center;
+
+                Text {
+                    text: "NO CUSTOM THEMES INSTALLED";
+                    font-size: 11px * Palette.scale;
+                    font-weight: 700;
+                    letter-spacing: 2.5px * Palette.scale;
+                    color: Palette.text-muted;
+                    horizontal-alignment: center;
+                }
+
+                Text {
+                    text: "Personalize the appearance of HPR with community-crafted UI themes.";
+                    font-size: 12px * Palette.scale;
+                    color: Palette.text-secondary;
+                    horizontal-alignment: center;
+                }
+
+                HorizontalLayout {
+                    alignment: center;
+                    storeBtnTheme := Rectangle {
+                        width: storeBtnThemeText.preferred-width + 36px * Palette.scale;
+                        height: 38px * Palette.scale;
+                        border-radius: 8px * Palette.scale;
+                        border-width: 1px * Palette.scale;
+                        border-color: ta-store-theme.pressed ? #a855f7 : (ta-store-theme.has-hover ? #c084fc : #a855f780);
+                        background: ta-store-theme.pressed ? #a855f735 : (ta-store-theme.has-hover ? #a855f725 : #a855f715);
+                        animate background { duration: 100ms; }
+                        animate border-color { duration: 100ms; }
+
+                        ta-store-theme := TouchArea {
+                            mouse-cursor: pointer;
+                            clicked => { root.open-hpr-store(); }
+                        }
+
+                        storeBtnThemeText := Text {
+                            text: "GET HPR-STORE FOR THEMES";
+                            font-size: 11px * Palette.scale;
+                            font-weight: 700;
+                            letter-spacing: 1.5px * Palette.scale;
+                            color: ta-store-theme.pressed ? #e9d5ff : (ta-store-theme.has-hover ? #f3e8ff : #c084fc);
+                            horizontal-alignment: center;
+                            vertical-alignment: center;
+                            animate color { duration: 100ms; }
+                        }
+                    }
+                }
+            }
+        }
+
+        if root.useThemesEnabled && root.themesAvailable : Card {
             vertical-stretch: 0;
             VerticalLayout {
                 padding: 10px * Palette.scale;
@@ -127,14 +183,7 @@ export component ThemesView {
                     color: Palette.text-muted;
                 }
 
-                if !root.themesAvailable : Text {
-                    text: "No themes installed";
-                    font-size: 13px * Palette.scale;
-                    font-weight: 500;
-                    color: Palette.text-secondary;
-                }
-
-                if root.themesAvailable : VerticalLayout {
+                VerticalLayout {
                     spacing: 8px * Palette.scale;
 
                     HorizontalLayout {

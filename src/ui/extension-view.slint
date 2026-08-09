@@ -16,6 +16,7 @@ export component ExtensionsView {
     callback disable-extension(string, string);
     callback reload-extension(string, string);
     callback action-extension(string, string);
+    callback open-hpr-store();
 
     VerticalLayout {
         padding: 12px * Palette.scale;
@@ -85,17 +86,56 @@ export component ExtensionsView {
                 spacing: 8px * Palette.scale;
 
                 if loadedExtensions_S.length == 0 : Card {
-                    height: 64px * Palette.scale;
-                    HorizontalLayout {
-                        padding: 16px * Palette.scale;
+                    vertical-stretch: 1;
+                    VerticalLayout {
+                        padding: 30px * Palette.scale;
+                        spacing: 16px * Palette.scale;
                         alignment: center;
+
                         Text {
                             text: "NO EXTENSIONS LOADED";
-                            font-size: 9px * Palette.scale;
+                            font-size: 11px * Palette.scale;
                             font-weight: 700;
                             letter-spacing: 2.5px * Palette.scale;
                             color: Palette.text-muted;
-                            vertical-alignment: center;
+                            horizontal-alignment: center;
+                        }
+
+                        Text {
+                            text: "Discover and install community extensions to extend HPR's capabilities.";
+                            font-size: 12px * Palette.scale;
+                            color: Palette.text-secondary;
+                            horizontal-alignment: center;
+                        }
+
+                        HorizontalLayout {
+                            alignment: center;
+                            storeBtn := Rectangle {
+                                width: storeBtnText.preferred-width + 36px * Palette.scale;
+                                height: 38px * Palette.scale;
+                                border-radius: 8px * Palette.scale;
+                                border-width: 1px * Palette.scale;
+                                border-color: ta-store.pressed ? #a855f7 : (ta-store.has-hover ? #c084fc : #a855f780);
+                                background: ta-store.pressed ? #a855f735 : (ta-store.has-hover ? #a855f725 : #a855f715);
+                                animate background { duration: 100ms; }
+                                animate border-color { duration: 100ms; }
+
+                                ta-store := TouchArea {
+                                    mouse-cursor: pointer;
+                                    clicked => { root.open-hpr-store(); }
+                                }
+
+                                storeBtnText := Text {
+                                    text: "GET HPR-STORE FOR EXTENSIONS";
+                                    font-size: 11px * Palette.scale;
+                                    font-weight: 700;
+                                    letter-spacing: 1.5px * Palette.scale;
+                                    color: ta-store.pressed ? #e9d5ff : (ta-store.has-hover ? #f3e8ff : #c084fc);
+                                    horizontal-alignment: center;
+                                    vertical-alignment: center;
+                                    animate color { duration: 100ms; }
+                                }
+                            }
                         }
                     }
                 }

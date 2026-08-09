@@ -103,24 +103,26 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow> &ui, ExtensionMa
 	if (mgr)
 	{
 		mgr->compiledUiWeak = ui;
-		ui->on_uiPopupButtonClicked_S([mgr](int btn) {
-			if (mgr->currentPopupCallback)
+		ui->on_uiPopupButtonClicked_S(
+			[mgr](int btn)
 			{
-				auto cb = mgr->currentPopupCallback;
-				mgr->currentPopupCallback = nullptr;
-				cb(btn);
-			}
+				if (mgr->currentPopupCallback)
+				{
+					auto cb = mgr->currentPopupCallback;
+					mgr->currentPopupCallback = nullptr;
+					cb(btn);
+				}
 
-			std::lock_guard<std::mutex> lock(mgr->queueMutex);
-			if (!mgr->popupQueue.empty())
-			{
-				mgr->showNextPopup_Unlocked();
-			}
-			else
-			{
-				mgr->isPopupActive = false;
-			}
-		});
+				std::lock_guard<std::mutex> lock(mgr->queueMutex);
+				if (!mgr->popupQueue.empty())
+				{
+					mgr->showNextPopup_Unlocked();
+				}
+				else
+				{
+					mgr->isPopupActive = false;
+				}
+			});
 	}
 
 	// Connect to event hub
@@ -186,11 +188,8 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow> &ui, ExtensionMa
 							{ extManager->reloadExtension(auth, nm); })
 					.detach();
 			});
-		ui->on_actionExtension(
-			[this](slint::SharedString author, slint::SharedString name)
-			{
-				extManager->callActionFunction(std::string(author), std::string(name));
-			});
+		ui->on_actionExtension([this](slint::SharedString author, slint::SharedString name)
+							   { extManager->callActionFunction(std::string(author), std::string(name)); });
 	}
 
 	// no need to do shit in compiled mode
@@ -290,6 +289,32 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow> &ui, ExtensionMa
 #else
 			int lol = system("xdg-open https://github.com/plexescor/HPR/issues &");
 #endif
+		});
+	ui->on_openHprStore(
+		[this]()
+		{
+			std::string text =
+				"HPR-Store: Official Extension & Theme Store Manager for HPR\n"
+				"Browse, install, update, and manage extensions and custom UI themes directly inside HPR.\n"
+				"Requires HPR v0.9.7+ and 'Allow Extensions to Load Native Libraries' setting enabled.\n"
+				"Would you like to open the HPR-Store repository page to download and install it?";
+			auto mgr = extManager ? extManager : AppState::extManager;
+			if (mgr)
+			{
+				mgr->showUiPopup(text, "CANCEL", "OPEN STORE", false,
+								 [](int btn)
+								 {
+									 if (btn == 1)
+									 {
+#ifdef _WIN32
+										 ShellExecuteA(nullptr, "open", "https://github.com/plexescor/HPR-Store",
+													   nullptr, nullptr, SW_SHOWNORMAL);
+#else
+							int idc = system("xdg-open https://github.com/plexescor/HPR-Store &");
+#endif
+									 }
+								 });
+			}
 		});
 	ui->on_start_drag(
 		[]()
@@ -640,21 +665,21 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<slint::interpreter::Componen
 				return slint::interpreter::Value();
 			});
 
-		ui->set_callback(
-			"actionExtension",
-			[this](auto args) -> slint::interpreter::Value
-			{
-				if (args.size() > 1)
-				{
-					auto opt_author = args[0].to_string();
-					auto opt_name = args[1].to_string();
-					if (opt_author.has_value() && opt_name.has_value())
-					{
-						extManager->callActionFunction(std::string(opt_author.value()), std::string(opt_name.value()));
-					}
-				}
-				return slint::interpreter::Value();
-			});
+		ui->set_callback("actionExtension",
+						 [this](auto args) -> slint::interpreter::Value
+						 {
+							 if (args.size() > 1)
+							 {
+								 auto opt_author = args[0].to_string();
+								 auto opt_name = args[1].to_string();
+								 if (opt_author.has_value() && opt_name.has_value())
+								 {
+									 extManager->callActionFunction(std::string(opt_author.value()),
+																	std::string(opt_name.value()));
+								 }
+							 }
+							 return slint::interpreter::Value();
+						 });
 	}
 
 	ui->set_callback("setLimit",
@@ -918,6 +943,35 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<slint::interpreter::Componen
 						 }
 						 return slint::interpreter::Value();
 					 });
+
+	ui->set_callback(
+		"openHprStore",
+		[this](auto) -> slint::interpreter::Value
+		{
+			std::string text =
+				"HPR-Store: Official Extension & Theme Store Manager for HPR\n"
+				"Browse, install, update, and manage extensions and custom UI themes directly inside HPR.\n"
+				"Requires HPR v0.9.7+ and 'Allow Extensions to Load Native Libraries' setting enabled.\n"
+				"Would you like to open the HPR-Store repository page to download and install it?";
+			auto mgr = extManager ? extManager : AppState::extManager;
+			if (mgr)
+			{
+				mgr->showUiPopup(text, "CANCEL", "OPEN STORE", false,
+								 [](int btn)
+								 {
+									 if (btn == 1)
+									 {
+#ifdef _WIN32
+										 ShellExecuteA(nullptr, "open", "https://github.com/plexescor/HPR-Store",
+													   nullptr, nullptr, SW_SHOWNORMAL);
+#else
+									 int idc = system("xdg-open https://github.com/plexescor/HPR-Store &");
+#endif
+									 }
+								 });
+			}
+			return slint::interpreter::Value();
+		});
 
 	ui->set_callback(
 		"sendFeedback",

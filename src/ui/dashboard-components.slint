@@ -5,34 +5,28 @@ import { Card } from "./card.slint";
 export component DashboardButton inherits Rectangle {
     in property <string> label;
     in property <bool> primary: false;
+    in property <color> accent-color: #38bdf8;
     callback clicked;
-
-    property <color> primary-accent: #38bdf8;
 
     width: button-label.preferred-width + 22px * Palette.scale;
     height: 30px * Palette.scale;
     border-radius: 7px * Palette.scale;
     border-width: 1px * Palette.scale;
-    border-color: primary ? primary-accent.mix(#00000000, 0.30) : Palette.input-border;
-    background: primary
-        ? (button-area.pressed
-            ? primary-accent.mix(#00000000, 0.22)
-            : (button-area.has-hover
-                ? primary-accent.mix(#00000000, 0.16)
-                : primary-accent.mix(#00000000, 0.09)))
-        : (button-area.pressed ? Palette.input-bg-press : (button-area.has-hover ? Palette.input-bg-hover : Palette.input-bg));
+    border-color: button-area.pressed ? accent-color.mix(#00000000, 0.80) : (button-area.has-hover ? accent-color.mix(#00000000, 0.60) : accent-color.mix(#00000000, 0.35));
+    background: button-area.pressed ? accent-color.mix(#00000000, 0.28) : (button-area.has-hover ? accent-color.mix(#00000000, 0.20) : accent-color.mix(#00000000, 0.11));
 
     animate background { duration: 100ms; }
     animate border-color { duration: 100ms; }
 
     button-label := Text {
         text: root.label;
-        color: root.primary ? root.primary-accent : Palette.text-secondary;
+        color: button-area.pressed ? accent-color.mix(#ffffff, 0.35) : (button-area.has-hover ? accent-color.mix(#ffffff, 0.18) : accent-color);
         font-size: 10.5px * Palette.scale;
         font-weight: 700;
         letter-spacing: 1px * Palette.scale;
         horizontal-alignment: center;
         vertical-alignment: center;
+        animate color { duration: 100ms; }
     }
 
     button-area := TouchArea {
