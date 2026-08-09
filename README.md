@@ -90,6 +90,7 @@ https://github.com/user-attachments/assets/07659d3d-0f3b-4bbc-8823-8b5d11bfd32f
 - [Browser Tab Tracking](#browser-tab-tracking)
 - [Code Editor & IDE Project Tracking](#code-editor--ide-project-tracking)
 - [App Limits and Goals](#app-limits-and-goals)
+- [Idle Tracking](#idle-tracking)
 - [Day Construction Timeline](#day-construction-timeline)
 - [Advanced Pattern Analysis](#advanced-pattern-analysis)
 - [Theme Management](#theme-management)
@@ -324,6 +325,16 @@ Badges on each row show **remaining time live**. Limit rows have a red accent; g
 
 ---
 
+## Idle Tracking
+
+HPR supports automatic **Idle Detection & Tracking** to pause or separate active time logging when you step away from your keyboard and mouse.
+
+<p style="font-size: 1.15em;">
+  Idle tracking is powered by the official <strong><a href="https://github.com/plexescor/HPR-Idle-Detection-Extension">HPR-Idle-Detection-Extension</a></strong>, available for instant 1-click download and installation directly from <strong><a href="https://github.com/plexescor/HPR-Store">HPR-Store</a></strong>!
+</p>
+
+---
+
 ## Day Construction Timeline
 
 Rebuild your daily narrative with a visual, contiguous timeline of your system activity. Instead of just looking at raw accumulated numbers, the **Day Construction Timeline** maps your active window transitions chronologically onto a zoomable, scrollable canvas.
@@ -373,6 +384,12 @@ Each theme is a subfolder containing an `app-window.slint` (the layout), a requi
 
 The **Themes View** in the sidebar shows all discovered themes with a horizontal preview carousel, description, version info, and apply/refresh controls. Applying a theme reloads the Slint component live with no restart. Selecting **default** reverts to the built-in layout.
 
+### 🛒 Discover & Install Themes via HPR-Store
+
+<p style="font-size: 1.15em;">
+  Looking for custom community themes? Easily browse, preview, and 1-click install custom themes directly from inside HPR using <strong><a href="https://github.com/plexescor/HPR-Store">HPR-Store</a></strong>!
+</p>
+
 > [!WARNING]
 > Theme management requires `use-interpreter,true` in `config.csv`. Interpreter mode increases RAM usage by 20-50% due to Slint's runtime compiler and decoded preview image buffers.
 
@@ -383,6 +400,12 @@ Full theme authoring guide at [hpr-cpp.netlify.app/themes.html](https://hpr-cpp.
 ## Extensions
 
 HPR ships with a built-in **Sandboxed Lua 5.4 Extension Engine**. Drop a `.lua` file into your extensions folder and HPR loads it automatically. No compilers, no package managers, no boilerplate.
+
+### 🛒 Discover & Install Extensions via HPR-Store
+
+<p style="font-size: 1.15em;">
+  Browse, install, and hot-update community extensions directly from inside the HPR application interface using <strong><a href="https://github.com/plexescor/HPR-Store">HPR-Store</a></strong> — the native extension & theme store manager for HPR!
+</p>
 
 Each extension runs in its own isolated VM on a dedicated background thread, completely decoupled from the main tracking and rendering pipelines. A slow or misbehaving extension cannot block HPR's core loop or freeze the UI.
 
