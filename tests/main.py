@@ -32,13 +32,14 @@ TEST_SUITES: list[str] = [
     "time",
     "ui",
     "logger",
-    # "test_my_new_suite",
+    "dynamicconfig",
 ]
 
 # Suite-specific expected CSV key lists
 LIFECYCLEHOOKS_KEYS: list[str] = ["Init", "Tick", "Exit", "Action"]
 OTHEREXTENSIONS_KEYS: list[str] = ["GetLoadedExtensions", "UnloadExtension"]
 CSVIO_KEYS: list[str] = ["WriteCSV", "ReadCSV", "DeleteCSV", "GetExtensionDir", "GetExtensionPath"]
+DYNAMICCONFIG_KEYS: list[str] = ["GlobalAPI", "LegacySuffix", "VersionSupport"]
 TIME_KEYS: list[str] = [
     "FormatTime_HHMMSS",
     "ConvertToDate_DDMMYY", 
@@ -74,6 +75,7 @@ EXPECTED_CSV_KEYS: dict[str, list[str]] = {
     "time": TIME_KEYS,
     "ui": UI_KEYS,
     "logger": LOGGER_KEYS,
+    "dynamicconfig": DYNAMICCONFIG_KEYS,
 }
 
 

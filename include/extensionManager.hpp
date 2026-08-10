@@ -20,8 +20,8 @@
 #include <mutex>
 #include <optional>
 #include <queue>
-#include <slint.h>
 #include <slint-interpreter.h>
+#include <slint.h>
 
 #include "appEvents.hpp"
 #ifdef _WIN32
@@ -29,14 +29,14 @@
 #else
 #define HPR_API
 #endif
-extern "C" HPR_API void HPR_invokeOnSlintThread(void(*fn)(void*), void* userdata);
-
+extern "C" HPR_API void HPR_invokeOnSlintThread(void (*fn)(void *), void *userdata);
 
 // FORWARD DECLARE TO AVOID CIRCULAR DEPENDENCIES
 class HPR;
 class HPRInterpreter;
 class MainWindow;
-namespace slint::interpreter {
+namespace slint::interpreter
+{
 class ComponentInstance;
 }
 
@@ -70,6 +70,7 @@ struct LoadedExtension
 
 	bool useLegacyAPISuffix = false;
 	bool useHPRTablePrefix = true;
+	std::vector<std::string> registeredFunctionNames;
 
 	std::vector<std::string> versionSupport;
 	bool hasVersionSupport = false;
@@ -91,6 +92,7 @@ class ExtensionManager
 	void loadExtensions();
 
 	void reloadExtension(std::string authorName, std::string extensionName);
+	void checkCompatibility(LoadedExtension &ext);
 	void reloadMyself(LoadedExtension &ext);
 	void unloadExtension(std::string authorName, std::string extensionName);
 	void callActionFunction(std::string authorName, std::string extensionName);
@@ -123,7 +125,8 @@ class ExtensionManager
 	uint64_t nextPopupId = 1;
 	uint64_t activePopupId = 0;
 
-	void showUiPopup(const std::string &text, const std::string &leftBtnText, const std::string &rightBtnText, bool isLua, std::function<void(int)> callback);
+	void showUiPopup(const std::string &text, const std::string &leftBtnText, const std::string &rightBtnText,
+					 bool isLua, std::function<void(int)> callback);
 	void showNextPopup_Unlocked();
 
 	// some shit

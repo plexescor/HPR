@@ -22,6 +22,7 @@
 
 HPR.extensionName = "CSV I/O"
 HPR.authorName = "Plexescor"
+HPR.versionSupport = { "0.9.7", "0.9.8" }
 
 local expectedDir = "csvio"
 function init()

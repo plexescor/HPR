@@ -18,6 +18,7 @@
 
 HPR.extensionName = "UI"
 HPR.authorName = "Plexescor"
+HPR.versionSupport = { "0.9.7", "0.9.8" }
 
 function init()
     HPR.sleep(2000)

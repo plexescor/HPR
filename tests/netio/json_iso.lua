@@ -23,6 +23,7 @@
 
 HPR.extensionName = "Net I/O JSON & ISO"
 HPR.authorName = "Plexescor"
+HPR.versionSupport = { "0.9.7", "0.9.8" }
 
 function init()
     -- 1. Test HPR.parseISO8601

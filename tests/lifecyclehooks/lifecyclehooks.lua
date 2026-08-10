@@ -29,6 +29,7 @@
 
 HPR.extensionName = "LifecycleHooks"
 HPR.authorName = "Plexescor"
+HPR.versionSupport = { "0.9.7", "0.9.8" }
 
 local iteration = 0
 local expectedDelta = 500

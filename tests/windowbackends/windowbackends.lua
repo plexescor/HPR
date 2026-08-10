@@ -18,6 +18,7 @@
 
 HPR.extensionName = "WindowBackend"
 HPR.authorName = "Plexescor"
+HPR.versionSupport = { "0.9.7", "0.9.8" }
 
 function init()
     HPR.sleep(1000) -- wait till our friend starts up

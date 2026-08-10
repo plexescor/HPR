@@ -14,6 +14,7 @@
 
 HPR.extensionName = "Logger"
 HPR.authorName = "Plexescor"
+HPR.versionSupport = { "0.9.7", "0.9.8" }
 
 function init()
     HPR.log(HPR.extensionName, "test_log")

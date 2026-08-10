@@ -20,6 +20,7 @@
 
 HPR.extensionName = "Net I/O Client"
 HPR.authorName = "Plexescor"
+HPR.versionSupport = { "0.9.7", "0.9.8" }
 
 local testPort = 18888
 

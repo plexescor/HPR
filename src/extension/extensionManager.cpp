@@ -475,47 +475,7 @@ void ExtensionManager::runExtension(std::shared_ptr<LoadedExtension> ext_ptr)
 		ext.versionSupport = versionsVec;
 		ext.hasVersionSupport = hasVersionSupport;
 
-		std::string currentAppVer = AppState::APP_VERSION;
-		if (!currentAppVer.empty() && (currentAppVer[0] == 'v' || currentAppVer[0] == 'V'))
-		{
-			currentAppVer = currentAppVer.substr(1);
-		}
-
-		if (!hasVersionSupport)
-		{
-			ext.isCompatible = false;
-			ext.warningMessage = "Unknown version compatibility for HPR " + currentAppVer;
-		}
-		else
-		{
-			bool matchFound = false;
-			for (const auto &v : versionsVec)
-			{
-				if (v == currentAppVer)
-				{
-					matchFound = true;
-					break;
-				}
-			}
-			if (matchFound)
-			{
-				ext.isCompatible = true;
-				ext.warningMessage = "";
-			}
-			else
-			{
-				ext.isCompatible = false;
-				std::string supportedStr;
-				for (size_t i = 0; i < versionsVec.size(); ++i)
-				{
-					if (i > 0)
-						supportedStr += ", ";
-					supportedStr += versionsVec[i];
-				}
-				ext.warningMessage = "This extension is incompatible with HPR " + currentAppVer +
-									 ", the versions supported by the extension are: (" + supportedStr + ")";
-			}
-		}
+		checkCompatibility(ext);
 
 		AppState::ExtensionInfo info;
 		info.author = resolvedAuthor;
@@ -1072,13 +1032,57 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		lua["HPR"]["overrides"] = lua.create_table();
 	}
 
+	// Remove previously registered function keys from both global and HPR namespace tables to avoid orphan keys
+	for (const auto &funcName : ext.registeredFunctionNames)
+	{
+		lua[funcName] = sol::nil;
+		lua["HPR"][funcName] = sol::nil;
+	}
+	ext.registeredFunctionNames.clear();
+
 	auto registerFunction = [&](const std::string &name, auto &&callable) {
 		lua["HPR"][name] = callable;
+		ext.registeredFunctionNames.push_back(name);
 		if (!ext.useHPRTablePrefix)
 		{
 			lua[name] = callable;
 		}
 	};
+
+	registerFunction("setLegacyAPISuffix" + suffix, [&ext, this](bool value) {
+		if (ext.useLegacyAPISuffix != value)
+		{
+			ext.useLegacyAPISuffix = value;
+			registerFunctions(ext);
+		}
+	});
+
+	registerFunction("setUseHPRTablePrefix" + suffix, [&ext, this](bool value) {
+		if (ext.useHPRTablePrefix != value)
+		{
+			ext.useHPRTablePrefix = value;
+			registerFunctions(ext);
+		}
+	});
+
+	registerFunction("setVersionSupport" + suffix, [&ext, this](sol::table versions) {
+		ext.versionSupport.clear();
+		ext.hasVersionSupport = true;
+		for (auto &pair : versions)
+		{
+			sol::object val = pair.second;
+			if (val.is<std::string>())
+			{
+				std::string vStr = val.as<std::string>();
+				if (!vStr.empty() && (vStr[0] == 'v' || vStr[0] == 'V'))
+				{
+					vStr = vStr.substr(1);
+				}
+				ext.versionSupport.push_back(vStr);
+			}
+		}
+		checkCompatibility(ext);
+	});
 
 	registerFunction("startServer" + suffix, [&ext](int port, sol::function handler) -> bool
 	{ return NativeNet::startHttpServer(port, handler, ext); });
@@ -2515,5 +2519,50 @@ void ExtensionManager::showNextPopup_Unlocked()
 				}
 			})
 			.detach();
+	}
+}
+
+void ExtensionManager::checkCompatibility(LoadedExtension &ext)
+{
+	std::string currentAppVer = AppState::APP_VERSION;
+	if (!currentAppVer.empty() && (currentAppVer[0] == 'v' || currentAppVer[0] == 'V'))
+	{
+		currentAppVer = currentAppVer.substr(1);
+	}
+
+	if (!ext.hasVersionSupport)
+	{
+		ext.isCompatible = false;
+		ext.warningMessage = "Unknown version compatibility for HPR " + currentAppVer;
+	}
+	else
+	{
+		bool matchFound = false;
+		for (const auto &v : ext.versionSupport)
+		{
+			if (v == currentAppVer)
+			{
+				matchFound = true;
+				break;
+			}
+		}
+		if (matchFound)
+		{
+			ext.isCompatible = true;
+			ext.warningMessage = "";
+		}
+		else
+		{
+			ext.isCompatible = false;
+			std::string supportedStr;
+			for (size_t i = 0; i < ext.versionSupport.size(); ++i)
+			{
+				if (i > 0)
+					supportedStr += ", ";
+				supportedStr += ext.versionSupport[i];
+			}
+			ext.warningMessage = "This extension is incompatible with HPR " + currentAppVer +
+								 ", the versions supported by the extension are: (" + supportedStr + ")";
+		}
 	}
 }

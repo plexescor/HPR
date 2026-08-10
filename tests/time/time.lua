@@ -33,6 +33,7 @@
 
 HPR.extensionName = "Time"
 HPR.authorName = "Plexescor"
+HPR.versionSupport = { "0.9.7", "0.9.8" }
 
 function init()
     local testTime = 1718012345678 -- Mon Jun 10 2024
