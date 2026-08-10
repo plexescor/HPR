@@ -69,6 +69,7 @@ struct LoadedExtension
 	std::vector<std::pair<std::string, CppValue>> pendingEvents;
 
 	bool useLegacyAPISuffix = false;
+	bool useHPRTablePrefix = true;
 
 	std::vector<std::string> versionSupport;
 	bool hasVersionSupport = false;
