@@ -9,7 +9,6 @@
 #include "extensionManager.hpp"
 #include "limitsManager.hpp"
 #include "linuxUtilities.hpp"
-#include "nowPlayingManager.hpp"
 #include "singleInstance.hpp"
 #include "telemetryManager.hpp"
 #include "timelineManager.hpp"
@@ -79,7 +78,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 	tlm.run();
 
 	TelemetryManager::init();
-	NowPlayingManager::init();
 
 	ExtensionManager ext;
 	AppState::extManager = &ext;
@@ -222,7 +220,6 @@ int main()
 	tlm.run();
 
 	TelemetryManager::init();
-	NowPlayingManager::init();
 
 	ExtensionManager ext;
 	AppState::extManager = &ext;

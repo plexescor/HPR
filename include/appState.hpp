@@ -68,9 +68,6 @@ struct AppState
 	std::string currentTab;
 	std::string currentTitle;
 
-	std::string nowPlayingTitle;
-	std::string nowPlayingUrl;
-
 	// Apps
 	std::map<std::string, uint64_t> timeLog_PerApp;
 	std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> switchHistory;

@@ -142,9 +142,6 @@ export component MainWindow inherits Window {
     in property <string>          currentTheme_S;
     in property <string>          activeTheme_S;
 
-    in property <string>          nowPlayingTitle_S;
-    in property <string>          nowPlayingUrl_S;
-
     init => {
         StdPalette.color-scheme = isDarkMode ? ColorScheme.dark : ColorScheme.light;
     }
@@ -485,12 +482,9 @@ export component MainWindow inherits Window {
                 ram-usage: root.ramUsage;
                 loaded-extensions: root.loadedExtensions;
                 active-threads: root.activeThreads;
-                now-playing-title: root.nowPlayingTitle_S;
-                now-playing-url: root.nowPlayingUrl_S;
                 open-kofi => { root.openKofi(); } 
                 open-releases => { root.openReleases(); }
                 open-issues => { root.openIssues(); }
-                open-now-playing(url) => { root.openUrl(url); }
             }
             if active-view == "HISTORY_RANGE" : HistoryRangeView {
                 vertical-stretch: 1;

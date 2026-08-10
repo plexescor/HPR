@@ -805,7 +805,7 @@ export component SettingsView {
 
                     ToggleSetting {
                         label: "Allow Network Activity";
-                        description: "Enable or disable all outgoing HTTP requests (YouTube Now Playing & Telemetry & Extensions' network activities).";
+                        description: "Enable or disable all outgoing HTTP requests (Telemetry & Extensions' network activities).";
                         checked: root.allowNetworkActivity_S;
                         toggled(v) => { root.setConfig("allow-network-activity", v ? "true" : "false"); }
                     }

@@ -447,14 +447,6 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
 					trackProjectsVal = AppState::state.trackProject;
 				}
 
-				std::string nowPlayingTitleVal;
-				std::string nowPlayingUrlVal;
-				{
-					std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
-					nowPlayingTitleVal = AppState::state.nowPlayingTitle;
-					nowPlayingUrlVal = AppState::state.nowPlayingUrl;
-				}
-
 				if ((*handle)->get_themeMode_S() != slint::SharedString(theme))
 					(*handle)->set_themeMode_S(slint::SharedString(theme));
 				if ((*handle)->get_isDarkMode() != isDark)
@@ -544,11 +536,6 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
 					(*handle)->set_projectViewCardHeight_S(projectViewCardHeightVal);
 				if ((*handle)->get_tabViewCardHeight_S() != tabViewCardHeightVal)
 					(*handle)->set_tabViewCardHeight_S(tabViewCardHeightVal);
-
-				if ((*handle)->get_nowPlayingTitle_S() != slint::SharedString(nowPlayingTitleVal))
-					(*handle)->set_nowPlayingTitle_S(slint::SharedString(nowPlayingTitleVal));
-				if ((*handle)->get_nowPlayingUrl_S() != slint::SharedString(nowPlayingUrlVal))
-					(*handle)->set_nowPlayingUrl_S(slint::SharedString(nowPlayingUrlVal));
 
 				// Surgical update to prevent layout panics during
 				// resize/maximize
@@ -1072,14 +1059,6 @@ void UiModelManager::update_Interpreted(
 					trackProjectsVal = AppState::state.trackProject;
 				}
 
-				std::string nowPlayingTitleVal;
-				std::string nowPlayingUrlVal;
-				{
-					std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
-					nowPlayingTitleVal = AppState::state.nowPlayingTitle;
-					nowPlayingUrlVal = AppState::state.nowPlayingUrl;
-				}
-
 				auto getProp = [&](const char *name) { return (*handle)->get_property(name); };
 
 				auto setPropIfChanged = [&](const char *name, const slint::interpreter::Value &val)
@@ -1141,10 +1120,6 @@ void UiModelManager::update_Interpreted(
 				setPropIfChanged("dataViewCardHeight_S", slint::interpreter::Value(dataViewCardHeightVal));
 				setPropIfChanged("projectViewCardHeight_S", slint::interpreter::Value(projectViewCardHeightVal));
 				setPropIfChanged("tabViewCardHeight_S", slint::interpreter::Value(tabViewCardHeightVal));
-
-				setPropIfChanged("nowPlayingTitle_S",
-								 slint::interpreter::Value(slint::SharedString(nowPlayingTitleVal)));
-				setPropIfChanged("nowPlayingUrl_S", slint::interpreter::Value(slint::SharedString(nowPlayingUrlVal)));
 
 				auto syncModel = [](std::shared_ptr<slint::VectorModel<slint::interpreter::Value>> model,
 									const std::vector<slint::interpreter::Value> &vec)

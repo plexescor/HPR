@@ -499,13 +499,11 @@ No analytics (unless opted-in).
 100% offline core by default.
 ```
 
-Networking code (`WinHTTP` on Windows, `libcurl` on Linux) is compiled into the HPR binary to power the Lua extension engine, opt-in anonymous analytics, and the developer's YouTube Now Playing display sync. By default, HPR runs entirely offline and never phones home.
+Networking code (`WinHTTP` on Windows, `libcurl` on Linux) is compiled into the HPR binary to power the Lua extension engine, opt-in anonymous analytics. By default, HPR runs entirely offline and never phones home.
 
 **Network controls:**
 
 - **Allow Network Activity**: Disable all outgoing network calls globally under the **Settings** view. When disabled, HPR's HTTP client skips all outgoing GET/POST/PUT requests entirely.
-
-- **YouTube Now Playing**: When enabled on the developer's machine, HPR pushes the currently playing YouTube video title to a Firebase Realtime Database. Normal users' clients read this data to display a "Now Playing" badge on the About page. Normal clients do not upload their own YouTube activity. You can disable this retrieval by turning off network activity in Settings.
 
 - **Anonymous Telemetry (opt-in, off by default)**: If you enable it, HPR generates a random UUIDv4 and reports two anonymous numbers: a one-time registration ping and a weekly active ping (only sent if you used HPR 4 or more days in a single week). No window titles, URLs, project names, or personal logs ever leave your machine. Toggle it on or off at any time under the **Settings** view.
 

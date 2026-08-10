@@ -6,14 +6,11 @@ export component AboutView {
     callback open-kofi;
     callback open-releases;
     callback open-issues;
-    callback open-now-playing(string);
 
     in property <string> cpu-usage;
     in property <string> ram-usage;
     in property <string> loaded-extensions;
     in property <string> active-threads;
-    in property <string> now-playing-title;
-    in property <string> now-playing-url;
 
     Flickable {
         viewport-height: aboutContent.preferred-height;
@@ -259,53 +256,6 @@ export component AboutView {
                                         height: 100%;
                                         animate color { duration: 100ms; }
                                     }
-                                }
-                            }
-                        }
-                    }
-
-                    // ── Now Watching row (shown only when data is present) ──
-                    if root.now-playing-title != "" : HorizontalLayout {
-                        alignment: center;
-                        spacing: 12px * Palette.scale;
-
-                        Text {
-                            text: "Plexescor is watching: ";
-                            font-size: 11px * Palette.scale;
-                            font-weight: 700;
-                            color: Palette.text-secondary;
-                            vertical-alignment: center;
-                        }
-
-                        Rectangle {
-                            height: 34px * Palette.scale;
-                            width: now-watch-row.preferred-width;
-                            border-radius: 6px * Palette.scale;
-                            border-width: 1px * Palette.scale;
-                            border-color: ta-now.has-hover ? #38bdf880 : #38bdf840;
-                            background: ta-now.pressed ? #38bdf835 : (ta-now.has-hover ? #38bdf820 : #38bdf810);
-                            animate background   { duration: 100ms; }
-                            animate border-color { duration: 100ms; }
-
-                            ta-now := TouchArea {
-                                mouse-cursor: pointer;
-                                clicked => { root.open-now-playing(root.now-playing-url); }
-                            }
-
-                            now-watch-row := HorizontalLayout {
-                                alignment: center;
-                                padding-left: title-txt.preferred-width * 0.05;
-                                padding-right: title-txt.preferred-width * 0.05;
-
-                                title-txt := Text {
-                                    text: root.now-playing-title;
-                                    font-size: 11px * Palette.scale;
-                                    font-weight: 700;
-                                    letter-spacing: 0.5px * Palette.scale;
-                                    color: #38bdf8;
-                                    vertical-alignment: center;
-                                    overflow: elide;
-                                    max-width: 450px * Palette.scale;
                                 }
                             }
                         }
