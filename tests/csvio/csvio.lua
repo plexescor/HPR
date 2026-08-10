@@ -3,11 +3,11 @@
 -- =============================================================================
 -- Verifies HPR's CSV reading and writing extension APIs:
 --
---   writeCsv(path, key, value) Writes or updates a key-value row.
---   readCsv(path, key)         Reads a single key's value from a CSV.
---   deleteCsv(path, key)       Deletes a row from a CSV.
---   getExtensionDir()          Returns the extension's directory path.
---   getExtensionPath()         Returns the extension's full path.
+--   HPR.writeCsv(path, key, value) Writes or updates a key-value row.
+--   HPR.readCsv(path, key)         Reads a single key's value from a CSV.
+--   HPR.deleteCsv(path, key)       Deletes a row from a CSV.
+--   HPR.getExtensionDir()          Returns the extension's directory path.
+--   HPR.getExtensionPath()         Returns the extension's full path.
 --
 -- Expected output (written to output/csvio.csv):
 --   WriteCSV,PASSED
@@ -17,54 +17,53 @@
 --   GetExtensionPath,PASSED
 --
 -- How to run:
---   python tests/main.py  ->  select "csvio" suite, then close 
+--   python tests/main.py  ->  select "csvio" suite, then close HPR.
 -- =============================================================================
 
-extensionName = "CSV I/O"
-authorName = "Plexescor"
-HPR.useHPRTablePrefix = false
+HPR.extensionName = "CSV I/O"
+HPR.authorName = "Plexescor"
 
 local expectedDir = "csvio"
 function init()
 
-    local dir = getExtensionDir()
+    local dir = HPR.getExtensionDir()
 
     if dir ~= (expectedDir .. "/") and dir ~= (expectedDir .. "\\") then
-        log("CSV I/O", "getExtensionDir() returned unexpected value: " .. dir)
-        writeCsv(getExtensionDir() .. "output/csvio.csv", "GetExtensionDir", "FAILED")
+        HPR.log("CSV I/O", "getExtensionDir() returned unexpected value: " .. dir)
+        HPR.writeCsv(HPR.getExtensionDir() .. "output/csvio.csv", "GetExtensionDir", "FAILED")
     else
-        writeCsv(getExtensionDir() .. "output/csvio.csv", "GetExtensionDir", "PASSED")
+        HPR.writeCsv(HPR.getExtensionDir() .. "output/csvio.csv", "GetExtensionDir", "PASSED")
     end
 
-    local dir2 = getExtensionPath()
+    local dir2 = HPR.getExtensionPath()
 
     if dir2 ~= (expectedDir .. "/") and dir2 ~= (expectedDir .. "\\") then
-        log("CSV I/O", "getExtensionPath() returned unexpected value: " .. dir2)
-        writeCsv(getExtensionDir() .. "output/csvio.csv", "GetExtensionPath", "FAILED")
+        HPR.log("CSV I/O", "getExtensionPath() returned unexpected value: " .. dir2)
+        HPR.writeCsv(HPR.getExtensionDir() .. "output/csvio.csv", "GetExtensionPath", "FAILED")
     else
-        writeCsv(getExtensionDir() .. "output/csvio.csv", "GetExtensionPath", "PASSED")
+        HPR.writeCsv(HPR.getExtensionDir() .. "output/csvio.csv", "GetExtensionPath", "PASSED")
     end
 
-    writeCsv(getExtensionDir() .. "output/csvio.csv", "WriteCSV", "PASSED")
-    writeCsv(getExtensionDir() .. "output/csvio.csv", "ReadCSV", "PENDING")
+    HPR.writeCsv(HPR.getExtensionDir() .. "output/csvio.csv", "WriteCSV", "PASSED")
+    HPR.writeCsv(HPR.getExtensionDir() .. "output/csvio.csv", "ReadCSV", "PENDING")
 
-    writeCsv(getExtensionDir() .. "output/test.csv", "test", "yes")
+    HPR.writeCsv(HPR.getExtensionDir() .. "output/test.csv", "test", "yes")
     return 500
 end
 
 function onTick(delta)
-    local val = readCsv(getExtensionDir() .. "output/csvio.csv", "ReadCSV")
+    local val = HPR.readCsv(HPR.getExtensionDir() .. "output/csvio.csv", "ReadCSV")
     if val == "PENDING" then
-        writeCsv(getExtensionDir() .. "output/csvio.csv", "ReadCSV", "PASSED")
+        HPR.writeCsv(HPR.getExtensionDir() .. "output/csvio.csv", "ReadCSV", "PASSED")
     end
 end
 
 function onExit()
 
-    local result = deleteCsv(getExtensionDir() .. "output/test.csv")
+    local result = HPR.deleteCsv(HPR.getExtensionDir() .. "output/test.csv")
     if result then
-        writeCsv(getExtensionDir() .. "output/csvio.csv", "DeleteCSV", "PASSED")
+        HPR.writeCsv(HPR.getExtensionDir() .. "output/csvio.csv", "DeleteCSV", "PASSED")
     else
-        writeCsv(getExtensionDir() .. "output/csvio.csv", "DeleteCSV", "FAILED")
+        HPR.writeCsv(HPR.getExtensionDir() .. "output/csvio.csv", "DeleteCSV", "FAILED")
     end
 end
