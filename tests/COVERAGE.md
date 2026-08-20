@@ -21,8 +21,12 @@
 | `init()` / `onTick()` / `onExit()` / `onAction()`| Lifecycle hook | `lifecyclehooks` |
 | `HPR.getLoadedExtensions` | System | `otherextensions` |
 | `HPR.unloadExtension` | System | `otherextensions` |
-| `HPR.writeCsv` | File I/O | `csvio` |
-| `HPR.readCsv` | File I/O | `csvio` |
+| `HPR.writeCsv` (single-value) | File I/O | `csvio` |
+| `HPR.writeCsv` (multi-value `key,v1,v2,...`) | File I/O | `csvio` |
+| `HPR.readCsv` (key lookup — scalar) | File I/O | `csvio` |
+| `HPR.readCsv` (key lookup — array table) | File I/O | `csvio` |
+| `HPR.readCsv` (full-file form) | File I/O | `csvio` |
+| `HPR.readCsv` (key not found → `""`) | File I/O | `csvio` |
 | `HPR.deleteCsv` | File I/O | `csvio` |
 | `HPR.getExtensionDir` | Paths | `csvio` |
 | `HPR.getExtensionPath` | Paths | `csvio` |

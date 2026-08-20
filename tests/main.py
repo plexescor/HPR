@@ -38,7 +38,25 @@ TEST_SUITES: list[str] = [
 # Suite-specific expected CSV key lists
 LIFECYCLEHOOKS_KEYS: list[str] = ["Init", "Tick", "Exit", "Action"]
 OTHEREXTENSIONS_KEYS: list[str] = ["GetLoadedExtensions", "UnloadExtension"]
-CSVIO_KEYS: list[str] = ["WriteCSV", "ReadCSV", "DeleteCSV", "GetExtensionDir", "GetExtensionPath"]
+CSVIO_KEYS: list[str] = [
+    "WriteCSV",
+    "ReadCSV",
+    "DeleteCSV",
+    "GetExtensionDir",
+    "GetExtensionPath",
+    "WriteCSV_MultiValue",
+    "ReadCSV_MultiValue_Key",
+    "ReadCSV_SingleValue_BackwardCompat",
+    "ReadCSV_MultiValue_FullFile",
+    "WriteCSV_UpdateRow",
+    "ReadCSV_KeyNotFound",
+    "WriteCSV_NumericValue",
+    "ReadCSV_NumericValue",
+    "WriteCSV_BoolValue",
+    "ReadCSV_BoolValue",
+    "WriteCSV_MixedTypes",
+    "ReadCSV_MixedTypes",
+]
 DYNAMICCONFIG_KEYS: list[str] = ["GlobalAPI", "LegacySuffix", "VersionSupport"]
 TIME_KEYS: list[str] = [
     "FormatTime_HHMMSS",

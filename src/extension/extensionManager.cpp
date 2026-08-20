@@ -1789,7 +1789,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		}
 
 		std::vector<std::string> keys;
-		std::vector<std::string> values;
+		std::vector<std::vector<std::string>> allValues;
 		std::string line;
 		while (std::getline(file, line))
 		{
@@ -1803,16 +1803,41 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 			size_t commaPos = line.find(',');
 			if (commaPos == std::string::npos)
 			{
+				// Key only, no value columns
 				keys.push_back(line);
-				values.push_back("");
+				allValues.push_back({});
 			}
 			else
 			{
 				keys.push_back(line.substr(0, commaPos));
-				values.push_back(line.substr(commaPos + 1));
+				// Split all remaining columns on commas
+				std::vector<std::string> cols;
+				std::string rest = line.substr(commaPos + 1);
+				std::istringstream ss(rest);
+				std::string col;
+				while (std::getline(ss, col, ','))
+					cols.push_back(col);
+				allValues.push_back(std::move(cols));
 			}
 		}
 		file.close();
+
+		// Helper: turn a column list into the correct Lua object.
+		// - 0 columns  -> empty string  (backward-compat)
+		// - 1 column   -> scalar value  (backward-compat; same as the old single-value behaviour)
+		// - 2+ columns -> Lua array table {v1, v2, ...}
+		auto makeValueResult = [&](const std::vector<std::string> &cols) -> sol::object
+		{
+			if (cols.empty())
+				return sol::make_object(lua, std::string(""));
+			if (cols.size() == 1)
+				return parseValue(cols[0], lua);
+			// Multi-value row: return array table
+			sol::table t = lua.create_table();
+			for (size_t ci = 0; ci < cols.size(); ++ci)
+				t[static_cast<int>(ci + 1)] = parseValue(cols[ci], lua);
+			return t;
+		};
 
 		if (keyOpt.has_value() && !keyOpt.value().is<sol::nil_t>())
 		{
@@ -1833,7 +1858,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 			{
 				if (keys[i] == targetKey)
 				{
-					vr.push_back(parseValue(values[i], lua));
+					vr.push_back(makeValueResult(allValues[i]));
 					return vr;
 				}
 			}
@@ -1845,7 +1870,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 			sol::table resultTable = lua.create_table();
 			for (size_t i = 0; i < keys.size(); ++i)
 			{
-				resultTable[keys[i]] = parseValue(values[i], lua);
+				resultTable[keys[i]] = makeValueResult(allValues[i]);
 			}
 			vr.push_back(resultTable);
 			return vr;
@@ -1853,7 +1878,8 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 	});
 
 	registerFunction("writeCsv" + suffix, [this, &ext, &lua](std::string userPath, sol::object key,
-														 sol::object value) -> bool
+	                                                          sol::object firstValue,
+	                                                          sol::variadic_args extraValues) -> bool
 	{
 		std::string err;
 		std::filesystem::path securedPath = resolveAndSecurePath(userPath, this->extensionPath, err);
@@ -1878,19 +1904,28 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		else
 			return false;
 
-		std::string valStr;
-		if (value.is<std::string>())
-			valStr = value.as<std::string>();
-		else if (value.is<double>())
+		auto objToStr = [](const sol::object &obj) -> std::string
 		{
-			std::ostringstream oss;
-			oss << value.as<double>();
-			valStr = oss.str();
-		}
-		else if (value.is<bool>())
-			valStr = value.as<bool>() ? "true" : "false";
-		else
+			if (obj.is<std::string>())
+				return obj.as<std::string>();
+			if (obj.is<double>())
+			{
+				std::ostringstream oss;
+				oss << obj.as<double>();
+				return oss.str();
+			}
+			if (obj.is<bool>())
+				return obj.as<bool>() ? "true" : "false";
+			return "";
+		};
+
+		if (!firstValue.is<std::string>() && !firstValue.is<double>() && !firstValue.is<bool>())
 			return false;
+
+		std::vector<std::string> newValues;
+		newValues.push_back(objToStr(firstValue));
+		for (const auto &arg : extraValues)
+			newValues.push_back(objToStr(sol::object(arg)));
 
 		try
 		{
@@ -1906,7 +1941,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 			return false;
 		}
 
-		std::vector<std::pair<std::string, std::string>> entries;
+		std::vector<std::pair<std::string, std::vector<std::string>>> entries;
 		bool updated = false;
 
 		std::ifstream inFile(securedPath);
@@ -1925,11 +1960,17 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 				size_t commaPos = line.find(',');
 				if (commaPos == std::string::npos)
 				{
-					entries.push_back({line, ""});
+					entries.push_back({line, {}});
 				}
 				else
 				{
-					entries.push_back({line.substr(0, commaPos), line.substr(commaPos + 1)});
+					std::vector<std::string> cols;
+					std::string rest = line.substr(commaPos + 1);
+					std::istringstream ss(rest);
+					std::string col;
+					while (std::getline(ss, col, ','))
+						cols.push_back(col);
+					entries.push_back({line.substr(0, commaPos), std::move(cols)});
 				}
 			}
 			inFile.close();
@@ -1939,7 +1980,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		{
 			if (entry.first == keyStr)
 			{
-				entry.second = valStr;
+				entry.second = newValues;
 				updated = true;
 				break;
 			}
@@ -1947,7 +1988,7 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 
 		if (!updated)
 		{
-			entries.push_back({keyStr, valStr});
+			entries.push_back({keyStr, newValues});
 		}
 
 		std::ofstream outFile(securedPath, std::ios::trunc);
@@ -1960,7 +2001,10 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 
 		for (const auto &entry : entries)
 		{
-			outFile << entry.first << "," << entry.second << "\n";
+			outFile << entry.first;
+			for (const auto &col : entry.second)
+				outFile << "," << col;
+			outFile << "\n";
 		}
 		outFile.close();
 
