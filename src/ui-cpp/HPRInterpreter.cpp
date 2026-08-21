@@ -115,6 +115,7 @@ HPRInterpreter::~HPRInterpreter()
 {
 	running = false;
 
+
 	// Wake up the thread if it's trapped in a hidden pause cycle during
 	// shutdown
 	pauseCv.notify_all();
@@ -214,6 +215,7 @@ void HPRInterpreter::reload(std::string path)
 
 void HPRInterpreter::show()
 {
+	EventHub::emit(Event::UI_VISIBLE);
 	// tell to unpause
 	{
 		std::lock_guard<std::mutex> lock(pauseMutex);
@@ -279,6 +281,7 @@ void HPRInterpreter::quit()
 
 void HPRInterpreter::hide()
 {
+	EventHub::emit(Event::UI_HIDDEN);
 	// pause the thread
 	{
 		std::lock_guard<std::mutex> lock(pauseMutex);
@@ -525,19 +528,29 @@ void HPRInterpreter::run()
 		[this, weak_inst]() -> slint::CloseRequestResponse
 		{
 			saveWindowGeometry();
+#ifdef NDEBUG
 			if (auto locked = weak_inst.lock())
 			{
 				(*locked)->hide();
 			}
 			return slint::CloseRequestResponse::KeepWindowShown;
+#else
+			slint::quit_event_loop();
+			return slint::CloseRequestResponse::HideWindow;
+#endif
 		});
 #else
 	inst->window().on_close_requested(
 		[this]() -> slint::CloseRequestResponse
 		{
 			saveWindowGeometry();
+#ifdef NDEBUG
 			this->hide();
 			return slint::CloseRequestResponse::KeepWindowShown;
+#else
+			slint::quit_event_loop();
+			return slint::CloseRequestResponse::HideWindow;
+#endif
 		});
 #endif
 

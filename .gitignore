@@ -4,6 +4,8 @@ shippedWithBinary/ui
 build1
 .vscode
 Debug/
+cmake-build-debug
+cmake-build-release
 .cache/
 # Slint extracted folders
 external/Slint-cpp-*/

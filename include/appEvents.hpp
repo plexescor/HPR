@@ -98,8 +98,10 @@ enum class Event
 	MIDNIGHT_ROLLOVER,
 	WINDOW_CHANGED,
 	UI_READY,
-	LOAD_PATTERNS_DATA // Synchronous: DB manager loads per-day data into
+	LOAD_PATTERNS_DATA, // Synchronous: DB manager loads per-day data into
 					   // PatternAnalyzer
+	UI_HIDDEN,
+	UI_VISIBLE
 };
 
 using EventKey = std::variant<Event, std::string>;

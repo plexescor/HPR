@@ -134,6 +134,7 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 			lowerWindowName.contains("visual studio code") || isJetbrainsIDE(lowerWindowName))
 		{
 			project = getCurrentTitle();
+			// std::cout << "Jetbrain: " << project << std::endl;
 		}
 
 		// title
@@ -243,9 +244,11 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 						std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
 				}
 
-				else if (!project.empty() && (isJetbrainsIDE(lowerProjectName))) // because jetbrain dont put
-																				// ide name in title
+				if (!project.empty() && lowerProjectName.contains(" \xe2\x80\x93 ")) //em dash
 				{
+					// because jetbrain dont put
+					// ide name in title
+					// std::cout << "Detected: " << lowerProjectName << std::endl;
 					// fuck need to do this
 					AppState::state.timeLog_PerProject["jetbrains: " + project] +=
 						std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();

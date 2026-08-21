@@ -1651,6 +1651,10 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 			eventKey = Event::HISTORY_LOADED_NUMBER;
 		else if (eventName == "HISTORY_LOADED_RANGE")
 			eventKey = Event::HISTORY_LOADED_RANGE;
+		else if (eventName == "UI_HIDDEN")
+			eventKey = Event::UI_HIDDEN;
+		else if (eventName == "UI_VISIBLE")
+			eventKey = Event::UI_VISIBLE;
 		else
 			eventKey = eventName; // Custom signal
 
@@ -1689,6 +1693,10 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 			eventKey = Event::HISTORY_LOADED_NUMBER;
 		else if (eventName == "HISTORY_LOADED_RANGE")
 			eventKey = Event::HISTORY_LOADED_RANGE;
+		else if (eventName == "UI_HIDDEN")
+			eventKey = Event::UI_HIDDEN;
+		else if (eventName == "UI_VISIBLE")
+			eventKey = Event::UI_VISIBLE;
 
 		else
 			eventKey = eventName;
@@ -1721,6 +1729,10 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 			eventKey = Event::HISTORY_LOADED_NUMBER;
 		else if (eventName == "HISTORY_LOADED_RANGE")
 			eventKey = Event::HISTORY_LOADED_RANGE;
+		else if (eventName == "UI_HIDDEN")
+			eventKey = Event::UI_HIDDEN;
+		else if (eventName == "UI_VISIBLE")
+			eventKey = Event::UI_VISIBLE;
 		else
 			eventKey = eventName;
 

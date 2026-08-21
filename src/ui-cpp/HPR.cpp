@@ -91,6 +91,7 @@ HPR::~HPR()
 
 void HPR::show()
 {
+	EventHub::emit(Event::UI_VISIBLE);
 	// tell to unpause
 	{
 		std::lock_guard<std::mutex> lock(pauseMutex);
@@ -156,6 +157,7 @@ void HPR::quit()
 
 void HPR::hide()
 {
+	EventHub::emit(Event::UI_HIDDEN);
 	// pause the thread
 	{
 		std::lock_guard<std::mutex> lock(pauseMutex);
@@ -383,18 +385,34 @@ void HPR::run()
 	ui->window().on_close_requested(
 		[this]() -> slint::CloseRequestResponse
 		{
+			#ifdef NDEBUG
+			// release: hide to tray
 			saveWindowGeometry();
 			ui->hide();
 			return slint::CloseRequestResponse::KeepWindowShown;
+			#else
+			// debug: actually quit
+			saveWindowGeometry();
+			slint::quit_event_loop();
+			return slint::CloseRequestResponse::HideWindow;
+			#endif
 		});
 #else
 	// same as windows, X button just hides to tray
 	ui->window().on_close_requested(
 		[this]() -> slint::CloseRequestResponse
 		{
+			#ifdef NDEBUG
+			// release: hide to tray
 			saveWindowGeometry();
 			ui->hide();
 			return slint::CloseRequestResponse::KeepWindowShown;
+			#else
+			// debug: actually quit
+			saveWindowGeometry();
+			slint::quit_event_loop();
+			return slint::CloseRequestResponse::HideWindow;
+			#endif
 		});
 #endif
 

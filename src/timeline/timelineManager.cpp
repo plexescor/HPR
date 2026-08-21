@@ -2,18 +2,42 @@
 #include "aliasManager.hpp"
 #include "appState.hpp"
 #include "timeUtils.hpp"
+#include "appEvents.hpp"
 #include <algorithm>
 #include <chrono>
 #include <ctime>
 #include <iomanip>
 #include <iostream>
+#include <atomic>
+#include <condition_variable>
+#include <mutex>
 #include <sstream>
 
 std::mutex TimelineManager::managerMutex;
 
-TimelineManager::TimelineManager() {}
+TimelineManager::TimelineManager()
+{
+	uiHiddenId = EventHub::connect(Event::UI_HIDDEN, [this](EventData data)
+	{
+		std::lock_guard<std::mutex> lock(pauseMutex);
+		paused = true;
+	});
 
-TimelineManager::~TimelineManager() { stop(); }
+	uiVisibleId = EventHub::connect(Event::UI_HIDDEN, [this](EventData data)
+	{
+		std::lock_guard<std::mutex> lock(pauseMutex);
+		paused = false;
+		pauseCv.notify_one();
+	});
+}
+
+TimelineManager::~TimelineManager()
+{
+	pauseCv.notify_all();
+	EventHub::disconnect(Event::UI_HIDDEN, uiHiddenId);
+	EventHub::disconnect(Event::UI_VISIBLE, uiVisibleId);
+	stop();
+}
 
 void TimelineManager::run()
 {
@@ -53,7 +77,7 @@ static bool isInvalidApp(const std::string &appName)
 		return true;
 	std::string lower = appName;
 	std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
-	if (lower == "unknown" || lower == "unknow")
+	if (lower == "unknown" || lower == "unknown67")
 		return true;
 	return false;
 }
@@ -228,6 +252,10 @@ void TimelineManager::threadLoop()
 {
 	while (running)
 	{
+		{
+			std::unique_lock<std::mutex> lock(pauseMutex);
+			pauseCv.wait(lock, [this] { return !paused || !running; });
+		}
 		// Simple periodic update loop
 		// Standard presets are updated based on cached parameters, which we'll
 		// fetch from the active UI properties later. For now, we will perform a
