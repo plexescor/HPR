@@ -34,6 +34,7 @@ A huge thank you to our supporters keeping HPR active!
   <img src="https://img.shields.io/badge/DB-SQLite3_bundled-lightgrey?style=flat-square" />
   <img src="https://img.shields.io/badge/platforms-Windows_%7C_Linux-informational?style=flat-square" />
   <img src="https://img.shields.io/badge/telemetry-opt--in_only-yellow?style=flat-square" />
+  <a href="https://discord.gg/G534HmrW75"><img src="https://img.shields.io/badge/Discord-Join_Server-5865F2?style=flat-square&logo=discord&logoColor=white" alt="Discord" /></a>
 </p>
 
 <p align="center">
@@ -609,7 +610,7 @@ uiModelManager.cpp    ->  how C++ state becomes Slint models in both UI modes
 
 One rule for all new code: anything that touches shared state goes through `AppState::stateMutex`. Lock, copy, release, work on the copy.
 
-No formal process. Open an issue or submit a pull request.
+No formal process. Open an issue, submit a pull request, or join our [Discord server](https://discord.gg/G534HmrW75) to chat.
 
 If HPR has been useful to you, a Ko-fi helps keep development going: [ko-fi.com/plexescor](https://ko-fi.com/plexescor)
 
