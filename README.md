@@ -30,7 +30,7 @@ A huge thank you to our supporters keeping HPR active!
   <img src="https://img.shields.io/badge/status-active_development-brightgreen?style=flat-square" />
   <img src="https://img.shields.io/badge/version-v0.9.8-blue?style=flat-square" />
   <img src="https://img.shields.io/badge/language-C%2B%2B23-orange?style=flat-square" />
-  <img src="https://img.shields.io/badge/UI-Slint_1.16.1-purple?style=flat-square" />
+  <img src="https://img.shields.io/badge/UI-Slint_1.17.1-purple?style=flat-square" />
   <img src="https://img.shields.io/badge/DB-SQLite3_bundled-lightgrey?style=flat-square" />
   <img src="https://img.shields.io/badge/platforms-Windows_%7C_Linux-informational?style=flat-square" />
   <img src="https://img.shields.io/badge/telemetry-opt--in_only-yellow?style=flat-square" />
@@ -620,6 +620,6 @@ If HPR has been useful to you, a Ko-fi helps keep development going: [ko-fi.com/
   <sub>
     Active development &nbsp;|&nbsp; v0.9.8 &nbsp;|&nbsp;
     Hyprland · GNOME · KDE Plasma · Cinnamon · niri · Windows 10/11 &nbsp;|&nbsp;
-    C++23 · Slint 1.16.1 · SQLite3 amalgamation · sqlite_modern_cpp · Lua 5.4 · sol2
+    C++23 · Slint 1.17.1 · SQLite3 amalgamation · sqlite_modern_cpp · Lua 5.4 · sol2
   </sub>
 </p>

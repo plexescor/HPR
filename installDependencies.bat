@@ -3,7 +3,7 @@ setlocal EnableDelayedExpansion
 
 :: =============================================================================
 :: installDependencies.bat
-:: Downloads Slint v1.16.1 Windows artifacts into .\external\, extracts them,
+:: Downloads Slint v1.17.1 Windows artifacts into .\external\, extracts them,
 :: runs the C++ SDK installer, and copies:
 ::   slint-lsp    -> C:\Program Files\slint-lsp\
 ::   slint-viewer -> C:\Program Files\slint-viewer\
@@ -11,7 +11,7 @@ setlocal EnableDelayedExpansion
 :: Must be run as Administrator.
 :: =============================================================================
 
-set SLINT_VERSION=1.16.1
+set SLINT_VERSION=1.17.1
 set SCRIPT_DIR=%~dp0
 set EXTERNAL_DIR=%SCRIPT_DIR%external
 set LSP_INSTALL_DIR=C:\Program Files\slint-lsp

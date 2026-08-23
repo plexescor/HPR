@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-SLINT_VERSION="1.16.1"
+SLINT_VERSION="1.17.1"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 EXTERNAL_DIR="${SCRIPT_DIR}/external"
 
