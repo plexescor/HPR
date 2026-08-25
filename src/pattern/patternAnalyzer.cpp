@@ -1,6 +1,7 @@
 #include "patternAnalyzer.hpp"
 #include "aliasManager.hpp"
 #include "appState.hpp"
+#include "logger.hpp"
 #include "timeUtils.hpp"
 
 #include <algorithm>
@@ -11,9 +12,166 @@
 #include <iostream>
 #include <map>
 #include <mutex>
+#include <filesystem>
 #include <string>
+#include <fstream>
+#include <sstream>
 #include <vector>
 
+PatternAnalyzer::PatternAnalyzer()
+{
+	initialiseCategoryFilePath();
+	initialiseCategories();
+}
+
+void PatternAnalyzer::initialiseCategoryFilePath()
+{
+	std::filesystem::path tempPath;
+#ifdef _WIN32
+	tempPath = std::getenv("APPDATA");
+	tempPath /= std::filesystem::path("HPR/HPR_Config/");
+#else
+	const char *home = std::getenv("HOME");
+	if (!home)
+		throw std::runtime_error("HOME env var not set");
+	tempPath = home;
+	tempPath /= std::filesystem::path(".config/HPR/");
+#endif
+
+	std::filesystem::create_directories(tempPath);
+	filePath = tempPath / fileName;
+
+	std::ifstream file(filePath);
+
+	if (!file.is_open())
+	{
+		std::cerr << "Error opening file "
+		          << filePath.string()
+				  << ": Creating a new file with default content..."
+				  << std::endl;
+
+		Logger::log("Error opening file "
+					+ filePath.string()
+					+ ": Creating a new file with default content..."
+					+ "\n");
+
+		std::ofstream fileStream(filePath);
+		if (fileStream.is_open())
+		{
+			fileStream << R"CSV(
+# ============================================================================
+# HPR Categories Configuration File
+#
+# HOW TO ADD NEW APPS:
+# 1. The format is exactly: raw name,CATEGORY (raw name must be fully lowercase
+#    and must be contained in whatever you see in the ui)
+# 2. HPR uses "substring matching"! If you add `code,Visual Studio`, it will
+#    automatically catch `code`, `vscode`, `code.exe`, `code-oss`, etc.
+# 3. Do NOT put spaces around the comma unless you specifically want them!
+# 4. Lines starting with # (like this one) or blank lines are safely ignored.
+# VALID CATEGORIES:
+# WORK
+# SOCIAL
+# DISTRACTION
+# BROWSER
+# SYSTEM
+# UNKNOWN
+# ============================================================================
+
+chrome,BROWSER
+google,BROWSER
+chromium,BROWSER
+msedge,BROWSER
+edge,BROWSER
+firefox,BROWSER
+brave,BROWSER
+zen,BROWSER
+
+code,WORK
+vscodium,WORK
+devenv,WORK
+obsidian,WORK
+postman,WORK
+notion,WORK
+notepad,WORK
+antigravity,WORK
+slack,WORK
+teams,WORK
+zoom,WORK
+texteditor,WORK
+text-editor,WORK
+terminal,WORK
+cmd,WORK
+powershell,WORK
+pwsh,WORK
+ptyxis,WORK
+konsole,WORK
+tilix,WORK
+alacritty,WORK
+kitty,WORK
+hyper,WORK
+terminator,WORK
+guake,WORK
+tilda,WORK
+wezterm,WORK
+clion,WORK
+dataspell,WORK
+webstorm,WORK
+phpstorm,WORK
+pycharm,WORK
+
+explorer,SYSTEM
+dolphin,SYSTEM
+nautilus,SYSTEM
+thunar,SYSTEM
+nemo,SYSTEM
+btop,SYSTEM
+taskmgr,SYSTEM
+systemmonitor,SYSTEM
+
+obs,SOCIAL
+spotify,SOCIAL
+discord,SOCIAL
+
+steam,DISTRACTION
+vlc,DISTRACTION
+mpv,DISTRACTION
+)CSV";
+			fileStream.close();
+			std::cerr << "Categories file not found. Created default categories.csv at " << filePath.string() << "\n";
+			Logger::log("Categories file not found. Created default categories.csv at " + filePath.string());
+		}
+		else
+		{
+			std::cerr << "Error: Could not create default Categories file at " << filePath.string() << "\n";
+			Logger::log("Error: Could not create default Categories file at " + filePath.string());
+			return;
+		}
+	}
+}
+
+void PatternAnalyzer::initialiseCategories()
+{
+	std::ifstream file(filePath);
+	std::string line;
+
+	// One line at a time
+	while (std::getline(file, line))
+	{
+		// if empty or starts with #, continue, write comments with #
+		if (line.empty() || line.starts_with("#"))
+			continue;
+
+		// find comma pos
+		size_t commaPos = line.find(',');
+
+		// If it has a comma then do this
+		if (commaPos != std::string::npos)
+		{
+			categoryData[line.substr(0, commaPos)] = line.substr(commaPos + 1);
+		}
+	}
+}
 void PatternAnalyzer::generateInsights()
 {
 	// Make a copy of appstate's map into this
@@ -282,20 +440,19 @@ AppCategory PatternAnalyzer::getCategory(const std::string appName)
 	std::string lower = appName;
 	std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
 
-	if (lower.contains("discord") || lower.contains("telegram") || lower.contains("whatsapp"))
-		return AppCategory::SOCIAL;
+	std::string categoryString = "";
+	try
+	{
+		categoryString = categoryData.at(lower);
+	}
+	catch(const std::out_of_range &e) {/* Not even worth*/ }
 
-	if (lower.contains("youtube") || lower.contains("netflix") || lower.contains("reddit") ||
-		lower.contains("instagram"))
-		return AppCategory::DISTRACTION;
-
-	if (lower.contains("code") || lower.contains("rider") || lower.contains("clion") || lower.contains("rider"))
-		return AppCategory::WORK;
-
-	if (lower.contains("chrome") || lower.contains("firefox") || lower.contains("brave") || lower.contains("edge"))
-		return AppCategory::BROWSER;
-
-	return AppCategory::UNKNOWN;
+	if (categoryString.contains("WORK")) return AppCategory::WORK;
+	else if (categoryString.contains("SOCIAL")) return AppCategory::SOCIAL;
+	else if (categoryString.contains("DISTRACTION")) return AppCategory::DISTRACTION;
+	else if (categoryString.contains("BROWSER")) return AppCategory::BROWSER;
+	else if (categoryString.contains("SYSTEM")) return AppCategory::SYSTEM;
+	else return AppCategory::UNKNOWN;
 }
 
 namespace
@@ -551,7 +708,7 @@ void PatternAnalyzer::generateAdvancedInsights()
 
 		for (const auto &day : multiDayData_)
 		{
-			// Build a flat sorted event list: {ts, from, to}
+			// Build a flat sorted event list: {ts /* this shit lol*/ , from, to}
 			struct Sw
 			{
 				uint64_t ts;
@@ -574,7 +731,7 @@ void PatternAnalyzer::generateAdvancedInsights()
 				if (fromWork && toBrowser)
 				{
 					++escapes;
-					// Look at the very next switch — did it go back to work?
+					// Look at the very next switch did it go back to work?
 					if (i + 1 < events.size())
 					{
 						bool nextFromBrowser =

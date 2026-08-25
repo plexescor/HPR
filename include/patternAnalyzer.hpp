@@ -1,8 +1,10 @@
 #pragma once
 
 #include <cstdint>
+#include <filesystem>
 #include <map>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 enum class AppCategory
@@ -35,7 +37,7 @@ struct DayData
 class PatternAnalyzer
 {
   public:
-	// PatternAnalyzer();
+	PatternAnalyzer();
 	// ~PatternAnalyzer();
 
 	void generateInsights();
@@ -64,6 +66,16 @@ class PatternAnalyzer
 
 	// Called by DatabaseManager when LOAD_PATTERNS_DATA fires
 	void setMultiDayData(std::vector<DayData> data);
+
+  private:
+	void initialiseCategoryFilePath();
+	void initialiseCategories();
+
+  private:
+	std::string fileName = "categories.csv";
+	std::filesystem::path filePath;
+	std::unordered_map<std::string, std::string> categoryData;
+
 
   private: // Local vars to hold mutex for little time
 	std::map<std::string, uint64_t> timeLog_PerApp;
