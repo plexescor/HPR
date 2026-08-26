@@ -45,6 +45,7 @@ class PatternAnalyzer
 	AppCategory getCategory(const std::string appName);
 
 	// Basic insight getters
+	std::string getProductivityScore();
 	std::string getMostUsed();
 	std::string getTotalTrackedTime();
 	std::string getSwitchCount();
@@ -70,7 +71,7 @@ class PatternAnalyzer
   private:
 	void initialiseCategoryFilePath();
 	void initialiseCategories();
-	std::vector<int> getProductivityScore(bool todayOnly = false, bool forceRecalculation = false);
+	std::vector<int> calculateProductivityScore(bool todayOnly = false, bool forceRecalculation = false);
 
   private:
 	std::string fileName = "categories.csv";
@@ -88,6 +89,7 @@ class PatternAnalyzer
 
   private: // The actual insights output as a string
 	//_O is "Output"
+	std::string productivityScore_O;
 	std::string mostUsed_O;
 	std::string totalTrackedTime_O;
 	std::string switchCount_O;

@@ -211,7 +211,7 @@ mpv,DISTRACTION
 	}
 }
 
-std::vector<int> PatternAnalyzer::getProductivityScore(bool todayOnly, bool forceRecalculation)
+std::vector<int> PatternAnalyzer::calculateProductivityScore(bool todayOnly, bool forceRecalculation)
 {
     /* States:
         737:   Not Computed, 
@@ -348,6 +348,163 @@ void PatternAnalyzer::generateInsights()
 			timeLog_PerApp = AppState::historicalData_Full_State.timeLog_PerApp;
 			switchHistory = AppState::historicalData_Full_State.switchHistory;
 		}
+	}
+
+	//PATTERN 0: Productivty Score of today
+	if (!timeLog_PerApp.empty())
+	{
+		auto scores = calculateProductivityScore(true, false);
+		int score = scores.empty() ? 0 : scores[0];
+
+		// auto pick = [](int n) { return static_cast<int>(std::rand() % n); };
+
+		static std::string cachedMsg;
+		static std::time_t lastPicked = 0;
+		static int lastScore = -1;
+
+		if (std::time(nullptr) - lastPicked >= 30 || score != lastScore)
+		{
+			auto pick = [](int n) { return static_cast<int>(std::rand() % n); };
+			char buf[192];
+			if (score == 100)
+			{
+				switch (pick(6))
+				{
+				case 0: std::snprintf(buf, sizeof(buf), "Impossible. how. what."); break;
+				case 1: std::snprintf(buf, sizeof(buf), "The algorithm says 100. the algorithm has never been wrong. today it might be."); break;
+				case 2: std::snprintf(buf, sizeof(buf), "Either you had the most focused day of your life or something is broken"); break;
+				case 3: std::snprintf(buf, sizeof(buf), "100/100. go outside. you've earned it."); break;
+				case 4: std::snprintf(buf, sizeof(buf), "Maybe something broke in HPR...."); break;
+				default: std::snprintf(buf, sizeof(buf), "You achieved perfection. this message will never appear again."); break;
+				}
+			}
+			else if (score >= 90)
+			{
+				switch (pick(5))
+				{
+				case 0: std::snprintf(buf, sizeof(buf), "Elite behavior. who are you and what did you do with Plexescor"); break;
+				case 1: std::snprintf(buf, sizeof(buf), "This is genuinely rare, don't waste it"); break;
+				case 2: std::snprintf(buf, sizeof(buf), "You were locked in like the deadline was yesterday"); break;
+				case 3: std::snprintf(buf, sizeof(buf), "Close to perfect. annoyingly close."); break;
+				default: std::snprintf(buf, sizeof(buf), "HPR has never been more proud"); break;
+				}
+			}
+			else if (score >= 80)
+			{
+				switch (pick(5))
+				{
+				case 0: std::snprintf(buf, sizeof(buf), "Actually impressive, what got into you"); break;
+				case 1: std::snprintf(buf, sizeof(buf), "This is top 20%% territory"); break;
+				case 2: std::snprintf(buf, sizeof(buf), "You barely touched Discord today didn't you"); break;
+				case 3: std::snprintf(buf, sizeof(buf), "The sessions were long, the switches were few"); break;
+				default: std::snprintf(buf, sizeof(buf), "Save this screenshot for when you need motivation"); break;
+				}
+			}
+			else if (score >= 70)
+			{
+				switch (pick(5))
+				{
+				case 0: std::snprintf(buf, sizeof(buf), "Legitimately good day"); break;
+				case 1: std::snprintf(buf, sizeof(buf), "You were in the zone for a real chunk of this"); break;
+				case 2: std::snprintf(buf, sizeof(buf), "This is what a productive day looks like"); break;
+				case 3: std::snprintf(buf, sizeof(buf), "Focus was strong, distractions were managed"); break;
+				default: std::snprintf(buf, sizeof(buf), "HPR approves of this day"); break;
+				}
+			}
+			else if (score >= 60)
+			{
+				switch (pick(5))
+				{
+				case 0: std::snprintf(buf, sizeof(buf), "Just above the productive threshold, barely counts"); break;
+				case 1: std::snprintf(buf, sizeof(buf), "A genuinely decent day ngl"); break;
+				case 2: std::snprintf(buf, sizeof(buf), "You locked in more than you slacked off"); break;
+				case 3: std::snprintf(buf, sizeof(buf), "Not a highlight reel day but solid"); break;
+				default: std::snprintf(buf, sizeof(buf), "63 is the cutoff and you cleared it. respect."); break;
+				}
+			}
+			else if (score >= 50)
+			{
+				switch (pick(5))
+				{
+				case 0: std::snprintf(buf, sizeof(buf), "Dead average. perfectly mediocre."); break;
+				case 1: std::snprintf(buf, sizeof(buf), "Half your day was real, other half was a blur"); break;
+				case 2: std::snprintf(buf, sizeof(buf), "You did okay. okay is fine. okay is not great."); break;
+				case 3: std::snprintf(buf, sizeof(buf), "The balance between work and chaos was 50/50 today"); break;
+				default: std::snprintf(buf, sizeof(buf), "Median human behavior. congrats."); break;
+				}
+			}
+			else if (score >= 40)
+			{
+				switch (pick(5))
+				{
+				case 0: std::snprintf(buf, sizeof(buf), "Almost at the halfway mark, almost"); break;
+				case 1: std::snprintf(buf, sizeof(buf), "You're flirting with productivity but not committing"); break;
+				case 2: std::snprintf(buf, sizeof(buf), "Solid attempt, questionable execution"); break;
+				case 3: std::snprintf(buf, sizeof(buf), "The focus was there in bursts"); break;
+				default: std::snprintf(buf, sizeof(buf), "Not bad, not good, aggressively mid"); break;
+				}
+			}
+			else if (score >= 30)
+			{
+				switch (pick(5))
+				{
+				case 0: std::snprintf(buf, sizeof(buf), "Below average but not embarrassing"); break;
+				case 1: std::snprintf(buf, sizeof(buf), "You had a real session in there somewhere"); break;
+				case 2: std::snprintf(buf, sizeof(buf), "More than yesterday probably. maybe."); break;
+				case 3: std::snprintf(buf, sizeof(buf), "The grind is present but very inconsistent"); break;
+				default: std::snprintf(buf, sizeof(buf), "One good hour hiding in a bad day"); break;
+				}
+			}
+			else if (score >= 20)
+			{
+				switch (pick(5))
+				{
+				case 0: std::snprintf(buf, sizeof(buf), "You did some things. a few things."); break;
+				case 1: std::snprintf(buf, sizeof(buf), "Getting there. very slowly. but getting there"); break;
+				case 2: std::snprintf(buf, sizeof(buf), "Yea bro you need to work hard this isn't getting you anywhere"); break;
+				case 3: std::snprintf(buf, sizeof(buf), "You had moments today. brief ones."); break;
+				default: std::snprintf(buf, sizeof(buf), "A quarter productive at best"); break;
+				}
+			}
+			else if (score >= 10)
+			{
+				switch (pick(5))
+				{
+				case 0: std::snprintf(buf, sizeof(buf), "Rough day or just warming up"); break;
+				case 1: std::snprintf(buf, sizeof(buf), "You opened the right apps at least"); break;
+				case 2: std::snprintf(buf, sizeof(buf), "Something happened today. not much, but something"); break;
+				case 3: std::snprintf(buf, sizeof(buf), "The intention was there, execution not so much"); break;
+				default: std::snprintf(buf, sizeof(buf), "Low score but respect for even tracking this"); break;
+				}
+			}
+			else if (score >= 5)
+			{
+				switch (pick(5))
+				{
+				case 0: std::snprintf(buf, sizeof(buf), "You showed up. barely, but you showed up"); break;
+				case 1: std::snprintf(buf, sizeof(buf), "The vibes were there, the work wasn't"); break;
+				case 2: std::snprintf(buf, sizeof(buf), "Technically not zero. that's all we can say"); break;
+				case 3: std::snprintf(buf, sizeof(buf), "Your chair got more use than your brain today"); break;
+				default: std::snprintf(buf, sizeof(buf), "A heroic effort to do almost nothing"); break;
+				}
+			}
+			else
+			{
+				switch (pick(5))
+				{
+				case 0: std::snprintf(buf, sizeof(buf), "Bro did you even turn the monitor on"); break;
+				case 1: std::snprintf(buf, sizeof(buf), "This is basically a screen saver score"); break;
+				case 2: std::snprintf(buf, sizeof(buf), "Your laptop worked harder than you today"); break;
+				case 3: std::snprintf(buf, sizeof(buf), "Are you sure HPR is tracking the right person"); break;
+				default: std::snprintf(buf, sizeof(buf), "0 is right there and you still missed it"); break;
+				}
+			}
+			cachedMsg  = buf;
+			lastPicked = std::time(nullptr);
+			lastScore  = score;
+		}
+
+		productivityScore_O = std::to_string(score) + " — " + cachedMsg;
 	}
 
 	// PATTERN 1: MOST USED APP
@@ -1034,7 +1191,7 @@ void PatternAnalyzer::generateAdvancedInsights()
 		int productivityThreshold = AppState::configManager.getConfig<int>("productivity-score-threshold", 63);
 
 		int productive = 0;
-		std::vector<int> scores = getProductivityScore(false, false);
+		std::vector<int> scores = calculateProductivityScore(false, false);
 
 		for (auto const xxx : scores)
 		{
@@ -1492,7 +1649,7 @@ void PatternAnalyzer::generateAdvancedInsights()
 		}
 	}
 }
-
+std::string PatternAnalyzer::getProductivityScore() { return productivityScore_O; }
 std::string PatternAnalyzer::getMostUsed() { return mostUsed_O; }
 
 std::string PatternAnalyzer::getTotalTrackedTime() { return totalTrackedTime_O; }

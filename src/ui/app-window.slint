@@ -151,6 +151,7 @@ export component MainWindow inherits Window {
     }
 
     //Stuff for insights view: 
+    in property <string>          productivityScore_S;
     in property <string>          mostUsedApp_S;
     in property <string>          totalTrackedTime_S;
     in property <string>          totalSwitches_S;
@@ -416,6 +417,7 @@ export component MainWindow inherits Window {
             
             if active-view == "INSIGHTS" : InsightsView {
                 vertical-stretch: 1;
+                productivityScore_S: root.productivityScore_S;
                 mostUsedApp_S: root.mostUsedApp_S;
                 totalTrackedTime_S: root.totalTrackedTime_S;
                 totalSwitches_S: root.totalSwitches_S;

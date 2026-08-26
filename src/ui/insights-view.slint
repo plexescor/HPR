@@ -3,6 +3,7 @@ import { SectionHeader } from "./section-header.slint";
 import { Palette } from "./palette.slint";
 
 export component InsightsView {
+    in property <string> productivityScore_S;
     in property <string> mostUsedApp_S;
     in property <string> totalTrackedTime_S;
     in property <string> totalSwitches_S;
@@ -87,7 +88,6 @@ export component InsightsView {
                 width: 100%;
                 spacing: 8px * Palette.scale;
 
-                // â”€â”€ TODAY â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 Text {
                     text: "TODAY";
                     font-size: 8px * Palette.scale;
@@ -95,6 +95,29 @@ export component InsightsView {
                     letter-spacing: 3px * Palette.scale;
                     color: Palette.text-label;
                     x: 4px * Palette.scale;
+                }
+
+                Card {
+                    height: 64px * Palette.scale;
+                    HorizontalLayout {
+                        padding: 16px * Palette.scale;
+                        alignment: space-between;
+                        Text {
+                            text: "PRODUCTIVITY SCORE";
+                            font-size: 9px * Palette.scale;
+                            font-weight: 700;
+                            letter-spacing: 2.5px * Palette.scale;
+                            color: Palette.text-muted;
+                            vertical-alignment: center;
+                        }
+                        Text {
+                            text: productivityScore_S;
+                            font-size: 15px * Palette.scale;
+                            font-weight: 600;
+                            color: #a3e635;
+                            vertical-alignment: center;
+                        }
+                    }
                 }
 
                 Card {

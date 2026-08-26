@@ -30,7 +30,8 @@ class UiModelManager
 							uint64_t &totalTrackedTime_Tab, uint64_t &totalTrackedTime_Project,
 							AliasManager &aliasManager);
 
-	void showInsights(const std::string mostUsed, const std::string totalTrackedTime, const std::string switchCount,
+	void showInsights(const std::string score,
+					  const std::string mostUsed, const std::string totalTrackedTime, const std::string switchCount,
 					  const std::string mostSwitchedFrom, const std::string mostSwitchedTo,
 					  const std::string mostFocusedSession, const std::string mostProductiveHour,
 					  const std::string escapePattern, const std::string returnRate, const std::string avgFocusSession,
@@ -38,7 +39,8 @@ class UiModelManager
 					  const std::string screenTimeVsAvg, const std::string focusDipHour,
 					  const std::string deepWorkBeforeNoon, const std::string weekendVsWeekday);
 
-	void showInsights_Interpreted(const std::string mostUsed, const std::string totalTrackedTime,
+	void showInsights_Interpreted(const std::string score,
+								  const std::string mostUsed, const std::string totalTrackedTime,
 								  const std::string switchCount, const std::string mostSwitchedFrom,
 								  const std::string mostSwitchedTo, const std::string mostFocusedSession,
 								  const std::string mostProductiveHour, const std::string escapePattern,

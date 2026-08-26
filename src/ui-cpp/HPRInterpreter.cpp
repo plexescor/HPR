@@ -443,7 +443,7 @@ void HPRInterpreter::trackingLoop()
 				{
 					std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
 
-					modelManager.value().showInsights_Interpreted(
+					modelManager.value().showInsights_Interpreted( AppState::patternAnalyzer.getProductivityScore(),
 						AppState::patternAnalyzer.getMostUsed(), AppState::patternAnalyzer.getTotalTrackedTime(),
 						AppState::patternAnalyzer.getSwitchCount(), AppState::patternAnalyzer.getMostSwitchedFrom(),
 						AppState::patternAnalyzer.getMostSwitchedTo(),

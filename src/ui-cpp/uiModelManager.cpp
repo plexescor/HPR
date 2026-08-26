@@ -1353,7 +1353,8 @@ void UiModelManager::update_Interpreted(
 
 void UiModelManager::setSelectedTheme(const std::string &themeName) { currentSelectedTheme = themeName; }
 
-void UiModelManager::showInsights(const std::string mostUsed, const std::string totalTrackedTime,
+void UiModelManager::showInsights(const std::string score,
+								  const std::string mostUsed, const std::string totalTrackedTime,
 								  const std::string switchCount, const std::string mostSwitchedFrom,
 								  const std::string mostSwitchedTo, const std::string mostFocusedSession,
 								  const std::string mostProductiveHour, const std::string escapePattern,
@@ -1368,12 +1369,14 @@ void UiModelManager::showInsights(const std::string mostUsed, const std::string 
 	}
 	slint::ComponentWeakHandle<MainWindow> weak(ui.value());
 	slint::invoke_from_event_loop(
-		[weak, mostUsed, totalTrackedTime, switchCount, mostSwitchedFrom, mostSwitchedTo, mostFocusedSession,
+		[weak, score, mostUsed, totalTrackedTime, switchCount, mostSwitchedFrom, mostSwitchedTo, mostFocusedSession,
 		 mostProductiveHour, escapePattern, returnRate, avgFocusSession, mostDistractedDay, productiveDays,
 		 screenTimeVsAvg, focusDipHour, deepWorkBeforeNoon, weekendVsWeekday, this]()
 		{
 			if (auto handle = weak.lock())
 			{
+				if ((*handle) -> get_productivityScore_S() != slint::SharedString(score))
+					(*handle) -> set_productivityScore_S(slint::SharedString(score));
 				if ((*handle)->get_mostUsedApp_S() != slint::SharedString(mostUsed))
 					(*handle)->set_mostUsedApp_S(slint::SharedString(mostUsed));
 				if ((*handle)->get_totalTrackedTime_S() != slint::SharedString(totalTrackedTime))
@@ -1410,7 +1413,8 @@ void UiModelManager::showInsights(const std::string mostUsed, const std::string 
 		});
 }
 
-void UiModelManager::showInsights_Interpreted(const std::string mostUsed, const std::string totalTrackedTime,
+void UiModelManager::showInsights_Interpreted(const std::string score,
+											  const std::string mostUsed, const std::string totalTrackedTime,
 											  const std::string switchCount, const std::string mostSwitchedFrom,
 											  const std::string mostSwitchedTo, const std::string mostFocusedSession,
 											  const std::string mostProductiveHour, const std::string escapePattern,
@@ -1421,7 +1425,7 @@ void UiModelManager::showInsights_Interpreted(const std::string mostUsed, const 
 {
 	slint::ComponentWeakHandle<slint::interpreter::ComponentInstance> weak(ui_interp.value());
 	slint::invoke_from_event_loop(
-		[weak, mostUsed, totalTrackedTime, switchCount, mostSwitchedFrom, mostSwitchedTo, mostFocusedSession,
+		[weak, score, mostUsed, totalTrackedTime, switchCount, mostSwitchedFrom, mostSwitchedTo, mostFocusedSession,
 		 mostProductiveHour, escapePattern, returnRate, avgFocusSession, mostDistractedDay, productiveDays,
 		 screenTimeVsAvg, focusDipHour, deepWorkBeforeNoon, weekendVsWeekday, this]()
 		{
@@ -1441,6 +1445,7 @@ void UiModelManager::showInsights_Interpreted(const std::string mostUsed, const 
 					(*handle)->set_property(name, val);
 				};
 
+				setPropIfChanged("productivityScore_S", slint::interpreter::Value(slint::SharedString(score)));
 				setPropIfChanged("mostUsedApp_S", slint::interpreter::Value(slint::SharedString(mostUsed)));
 				setPropIfChanged("totalTrackedTime_S",
 								 slint::interpreter::Value(slint::SharedString(totalTrackedTime)));

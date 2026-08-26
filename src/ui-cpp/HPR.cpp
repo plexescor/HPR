@@ -309,7 +309,7 @@ void HPR::trackingLoop()
 			{
 				std::lock_guard<std::mutex> lock(AppState::patternAnalyzerMutex);
 
-				modelManager.showInsights(
+				modelManager.showInsights( AppState::patternAnalyzer.getProductivityScore(),
 					AppState::patternAnalyzer.getMostUsed(), AppState::patternAnalyzer.getTotalTrackedTime(),
 					AppState::patternAnalyzer.getSwitchCount(), AppState::patternAnalyzer.getMostSwitchedFrom(),
 					AppState::patternAnalyzer.getMostSwitchedTo(), AppState::patternAnalyzer.getMostFocusedSession(),
