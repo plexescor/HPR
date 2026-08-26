@@ -573,7 +573,7 @@ void PatternAnalyzer::generateAdvancedInsights()
 		productiveDaysThisWeek_O = "Not enough data";
 		screenTimeVsAverage_O = "Not enough data";
 		focusDipHour_O = "Not enough data";
-		deepWorkBeforeNoon_O = "Not enough data";
+		deepWorkRelativeNoon_O = "Not enough data";
 		weekendVsWeekday_O = "Not enough data";
 		return;
 	}
@@ -1205,8 +1205,10 @@ void PatternAnalyzer::generateAdvancedInsights()
 	// Deep work before noon: % of days where longest session
 	//             starts before 12:00 local time
 	{
+		std::string finalData;
 		int daysChecked = 0;
 		int daysBeforeNoon = 0;
+		int daysAfterNoon = 0;
 
 		for (const auto &day : multiDayData_)
 		{
@@ -1221,42 +1223,84 @@ void PatternAnalyzer::generateAdvancedInsights()
 			++daysChecked;
 			if (localHour(best->startTs) < 12)
 				++daysBeforeNoon;
+			if (localHour(best->startTs) > 12)
+				++daysAfterNoon;
 		}
 
 		if (daysChecked == 0)
 		{
-			deepWorkBeforeNoon_O = "Not enough session data";
+			deepWorkRelativeNoon_O = "Not enough session data";
 		}
 		else
 		{
-			int pct = static_cast<int>(100.0 * daysBeforeNoon / daysChecked);
 			char buf[160];
 			std::srand(static_cast<unsigned>(std::time(nullptr)) ^ 0x8B);
-			switch (pick(5))
+			bool morningDominant = daysBeforeNoon >= daysAfterNoon;
+			int pct = morningDominant
+				? static_cast<int>(100.0 * daysBeforeNoon / daysChecked)
+				: static_cast<int>(100.0 * daysAfterNoon / daysChecked);
+			//Wether pick Before or After noon
+			switch (pick(2))
 			{
-			case 0:
-				std::snprintf(buf, sizeof(buf), "%d%% of your longest focus sessions happen before noon", pct);
-				break;
-			case 1:
-				std::snprintf(buf, sizeof(buf), "Before noon is where %d%% of your best deep work lives", pct);
-				break;
-			case 2:
-				std::snprintf(buf, sizeof(buf),
-							  "Your peak sessions start before 12PM about %d%% "
-							  "of the time",
-							  pct);
-				break;
-			case 3:
-				std::snprintf(buf, sizeof(buf),
-							  "%d%% of the time your longest streak kicks off "
-							  "in the morning",
-							  pct);
-				break;
-			default:
-				std::snprintf(buf, sizeof(buf), "You do your deepest work before noon %d%% of days", pct);
-				break;
+				
+				//Before noon
+				case 0:
+					pct = static_cast<int>(100.0 * daysBeforeNoon / daysChecked);
+					switch (pick(5))
+					{
+					case 0:
+						std::snprintf(buf, sizeof(buf), "%d%% of your longest focus sessions happen before noon", pct);
+						break;
+					case 1:
+						std::snprintf(buf, sizeof(buf), "Before noon is where %d%% of your best deep work lives", pct);
+						break;
+					case 2:
+						std::snprintf(buf, sizeof(buf),
+									"Your peak sessions start before 12PM about %d%% "
+									"of the time",
+									pct);
+						break;
+					case 3:
+						std::snprintf(buf, sizeof(buf),
+									"%d%% of the time your longest streak kicks off "
+									"in the morning",
+									pct);
+						break;
+					default:
+						std::snprintf(buf, sizeof(buf), "You do your deepest work before noon %d%% of days", pct);
+						break;
+					}
+
+				//After Noon
+				default:
+					pct = static_cast<int>(100.0 * daysAfterNoon / daysChecked);
+					switch (pick(5))
+					{
+					case 0:
+						std::snprintf(buf, sizeof(buf), "%d%% of your longest focus sessions happen after noon", pct);
+						break;
+					case 1:
+						std::snprintf(buf, sizeof(buf), "After noon is where %d%% of your best deep work lives", pct);
+						break;
+					case 2:
+						std::snprintf(buf, sizeof(buf),
+									"Your peak sessions start After 12PM about %d%% "
+									"of the time",
+									pct);
+						break;
+					case 3:
+						std::snprintf(buf, sizeof(buf),
+									"%d%% of the time your longest streak kicks off "
+									"in the evening",
+									pct);
+						break;
+					default:
+						std::snprintf(buf, sizeof(buf), "You do your deepest work after noon %d%% of days", pct);
+						break;
+					}	
 			}
-			deepWorkBeforeNoon_O = buf;
+			
+			deepWorkRelativeNoon_O = buf;
 		}
 	}
 
@@ -1401,5 +1445,5 @@ std::string PatternAnalyzer::getMostDistractedDay() { return mostDistractedDay_O
 std::string PatternAnalyzer::getProductiveDaysThisWeek() { return productiveDaysThisWeek_O; }
 std::string PatternAnalyzer::getScreenTimeVsAverage() { return screenTimeVsAverage_O; }
 std::string PatternAnalyzer::getFocusDipHour() { return focusDipHour_O; }
-std::string PatternAnalyzer::getDeepWorkBeforeNoon() { return deepWorkBeforeNoon_O; }
+std::string PatternAnalyzer::getDeepWorkBeforeNoon() { return deepWorkRelativeNoon_O; }
 std::string PatternAnalyzer::getWeekendVsWeekday() { return weekendVsWeekday_O; }

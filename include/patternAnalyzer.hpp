@@ -99,7 +99,7 @@ class PatternAnalyzer
 	std::string productiveDaysThisWeek_O;
 	std::string screenTimeVsAverage_O;
 	std::string focusDipHour_O;
-	std::string deepWorkBeforeNoon_O;
+	std::string deepWorkRelativeNoon_O;
 	std::string weekendVsWeekday_O;
 
   private: // Multi-day data loaded by DB manager
