@@ -78,7 +78,7 @@ class PatternAnalyzer
 	std::filesystem::path filePath;
 	std::unordered_map<std::string, std::string> categoryData;
 
-	int productivityScore = 737; //default for detecting caching and shit
+	int productivityScore = 737; //default for detecting caching and shit // 737 Because my favourite youtuber is SB737 - https://www.youtube.com/@SB737
 	std::vector<int> productivityScoreCache;
 	int productivityFunctionCalls = 0; //i know its bad
 

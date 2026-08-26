@@ -225,6 +225,8 @@ std::vector<int> PatternAnalyzer::calculateProductivityScore(bool todayOnly, boo
         !737: Cached
     */
 
+	// 737 Because my favourite youtuber is SB737 - https://www.youtube.com/@SB737
+	
     // I know its inefficient and shit
     // but i will refactor it later: 04:42 PM, 26 August 2026 ~Plexescor
     if (productivityFunctionCalls > 8)
