@@ -1,3 +1,24 @@
+/**************************************************************************
+ * Human Pattern Recorder -HPR
+ * Copyright © 2026 Plexescor
+ * SPDX-License-Identifier: GPL-3.0-only
+ *
+ * A compiled, offline, zero-account activity tracker.
+ * Watches your active window. Builds your history. Never phones home.
+ *
+ * This [https://github.com/plexescor/HPR-Deprecated] 
+ * Started as SDL3 + ImGui with a comment that said
+ * "//Sorry!" in the middle of code.
+ * It runs Doom now. I don't fully understand how I got here.
+ *
+ * Built solo. If it's been useful, a ko-fi helps:
+ * https://ko-fi.com/plexescor
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License v3.
+ * See <https://www.gnu.org/licenses/>
+ *
+ **************************************************************************/
 #include "HPR.hpp"
 #include "HPRInterpreter.hpp"
 #include "app-window.h"

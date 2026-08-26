@@ -39,12 +39,18 @@ LimitsManager::~LimitsManager()
 	}
 }
 
+/*
+	Runs the limit checker thread
+*/
 void LimitsManager::run()
 {
 	running = true;
 	checkerThread = std::thread(&LimitsManager::checkLoop, this);
 }
 
+/*
+	Either kills an app whose limit is reached or runs a lua override
+*/
 void LimitsManager::limitReached(const std::string &appName)
 {
 	// hook
@@ -84,6 +90,9 @@ void LimitsManager::limitReached(const std::string &appName)
 	runSystemCommand_UNSAFE(cmd);
 }
 
+/*
+	Programatically sets the usage limit of an app
+*/
 void LimitsManager::setLimit(const std::string &appName, int minutes)
 {
 	{
@@ -110,6 +119,9 @@ void LimitsManager::setLimit(const std::string &appName, int minutes)
 	Logger::log("[LimitsManager] Set limit for " + appName + " to " + std::to_string(minutes) + " minutes");
 }
 
+/*
+	Programitically sets the goal aim of an app
+*/
 void LimitsManager::setGoal(const std::string &appName, int minutes)
 {
 	{
@@ -134,6 +146,9 @@ void LimitsManager::setGoal(const std::string &appName, int minutes)
 	Logger::log("[LimitsManager] Set goal for " + appName + " to " + std::to_string(minutes) + " minutes");
 }
 
+/*
+	Checks if any app has reached its limit/goal or not
+*/
 void LimitsManager::checkLoop()
 {
 	while (running)
@@ -321,6 +336,9 @@ void LimitsManager::checkLoop()
 	}
 }
 
+/*
+	Get the time remaining for an app whose limit is set 
+*/
 std::string LimitsManager::getLimitRemaining(const std::string &appName, uint64_t currentDurationMs, int limitMins)
 {
 	if (limitMins <= 0)
@@ -341,6 +359,9 @@ std::string LimitsManager::getLimitRemaining(const std::string &appName, uint64_
 	return formatTime_HHMMSS(remaining);
 }
 
+/*
+	Get the time remaining for an app whose goal is set 
+*/
 std::string LimitsManager::getGoalRemaining(const std::string &appName, uint64_t currentDurationMs, int goalMins)
 {
 	if (goalMins <= 0)

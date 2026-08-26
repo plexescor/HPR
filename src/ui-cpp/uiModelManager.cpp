@@ -110,6 +110,9 @@ UiModelManager::UiModelManager(slint::ComponentHandle<slint::interpreter::Compon
 
 UiModelManager::~UiModelManager() {}
 
+/*
+	Updates the compiled Ui's core data
+*/
 void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
 							const std::map<std::string, uint64_t> &rawTimeLog_Tab,
 							const std::map<std::string, uint64_t> &rawTimeLog_Project,
@@ -686,6 +689,9 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
 		});
 }
 
+/*
+	Updates the interpreted Ui's core data
+*/
 void UiModelManager::update_Interpreted(
 	const std::map<std::string, uint64_t> &rawTimeLog, const std::map<std::string, uint64_t> &rawTimeLog_Tab,
 	const std::map<std::string, uint64_t> &rawTimeLog_Project,
@@ -1351,8 +1357,14 @@ void UiModelManager::update_Interpreted(
 		});
 }
 
+/*
+	Sets the currently selected theme to a std::string passed as a param by the caller
+*/
 void UiModelManager::setSelectedTheme(const std::string &themeName) { currentSelectedTheme = themeName; }
 
+/*
+	Updates the compiled Ui's Insights data
+*/
 void UiModelManager::showInsights(const std::string score,
 								  const std::string mostUsed, const std::string totalTrackedTime,
 								  const std::string switchCount, const std::string mostSwitchedFrom,
@@ -1413,6 +1425,9 @@ void UiModelManager::showInsights(const std::string score,
 		});
 }
 
+/*
+	Updates the interpreted Ui's Insights data
+*/
 void UiModelManager::showInsights_Interpreted(const std::string score,
 											  const std::string mostUsed, const std::string totalTrackedTime,
 											  const std::string switchCount, const std::string mostSwitchedFrom,
@@ -1471,6 +1486,9 @@ void UiModelManager::showInsights_Interpreted(const std::string score,
 		});
 }
 
+/*
+	Updates the compiled Ui's extensions data
+*/
 void UiModelManager::showExtensions(const std::map<std::pair<std::string, std::string>, AppState::ExtensionInfo> &extensionsMap)
 {
 	if (extensionsMap == lastKnownExtensionsMap)
@@ -1499,6 +1517,9 @@ void UiModelManager::showExtensions(const std::map<std::pair<std::string, std::s
 		});
 }
 
+/*
+	Updates the interpreted Ui's extensions data
+*/
 void UiModelManager::showExtensions_Interpreted(const std::map<std::pair<std::string, std::string>, AppState::ExtensionInfo> &extensionsMap)
 {
 	if (extensionsMap == lastKnownExtensionsMap)
@@ -1529,6 +1550,9 @@ void UiModelManager::showExtensions_Interpreted(const std::map<std::pair<std::st
 		});
 }
 
+/*
+	Updates the compiled Ui's Fun Stats such as (CPU Usage, RAM Usage etc) by HPR
+*/
 void UiModelManager::showFunStats(const std::string &cpu, const std::string &ram, const std::string &ext,
 								  const std::string &threads)
 {
@@ -1552,6 +1576,9 @@ void UiModelManager::showFunStats(const std::string &cpu, const std::string &ram
 		});
 }
 
+/*
+	Updates the interpreteds Ui's Fun Stats such as (CPU Usage, RAM Usage etc) by HPR
+*/
 void UiModelManager::showFunStats_Interpreted(const std::string &cpu, const std::string &ram, const std::string &ext,
 											  const std::string &threads)
 {

@@ -27,6 +27,9 @@ CurrentWindowManager::~CurrentWindowManager()
 	}
 }
 
+/*
+	Runs the window polling loop on a seperate thread
+*/
 void CurrentWindowManager::run()
 {
 	if (windowPollingThread.joinable())
@@ -38,6 +41,9 @@ void CurrentWindowManager::run()
 	windowPollingThread = std::thread(&CurrentWindowManager::getCurrentWindow_Loop, this);
 }
 
+/*
+	Returns if the current window name qualifies as a Jetbrains IDE or not
+*/
 bool CurrentWindowManager::isJetbrainsIDE(std::string &windowName)
 {
 	std::string lowerWindowName = windowName;
@@ -59,6 +65,9 @@ bool CurrentWindowManager::isJetbrainsIDE(std::string &windowName)
 	return false;
 }
 
+/*
+	Temporarily stops the HPR window tracking loop and sets the state to AFK
+*/
 void CurrentWindowManager::stopTracking()
 {
 	if (running)
@@ -75,6 +84,9 @@ void CurrentWindowManager::stopTracking()
 	}
 }
 
+/*
+	(Re)Starts the HPR window tracking loop
+*/
 void CurrentWindowManager::startTracking()
 {
 	if (windowPollingThread.joinable())
@@ -83,8 +95,9 @@ void CurrentWindowManager::startTracking()
 		run();
 }
 
-// Responsible for calling getCurrentWindow() and setting the result to AppState
-// (state) struct so shit can access that
+/*
+	The loop which gets the active window/title/pid and updates all the maps in AppState::state
+*/
 void CurrentWindowManager::getCurrentWindow_Loop()
 {
 	auto lastTimestamp = std::chrono::steady_clock::now(); // Get the tick's time
@@ -266,7 +279,7 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 	}
 }
 
-// A singular function to return currently active window. Does platform specific
+// A singular function to return name of currently active window. Does platform specific
 // calling and validating automatically
 std::string CurrentWindowManager::getCurrentWindow()
 {
@@ -278,6 +291,7 @@ std::string CurrentWindowManager::getCurrentWindow()
 	return validateAndUpdateWindow_Cross(curr);
 }
 
+// A singular function to return PID of currently active window.
 std::string CurrentWindowManager::getCurrentPid()
 {
 
@@ -288,6 +302,8 @@ std::string CurrentWindowManager::getCurrentPid()
 	return curr;
 }
 
+// A singular function to return title of currently active window. Does platform specific
+// calling and validating automatically
 std::string CurrentWindowManager::getCurrentTitle()
 {
 	if (!activeBackend)
@@ -297,6 +313,9 @@ std::string CurrentWindowManager::getCurrentTitle()
 	return validateAndUpdateWindow_Cross(curr);
 }
 
+/*
+	Sets the active window tracking backend by doing a series of checks
+*/
 void CurrentWindowManager::detectAndSetBackend()
 {
 	activeBackend = nullptr;

@@ -6,9 +6,14 @@
 
 std::vector<WindowBackend> registeredBackends;
 
-// WindowBackend is a struct
+/*
+	Registers a new backend for core window detection done by HPR
+*/
 void registerBackend(const WindowBackend &backend) { registeredBackends.push_back(backend); }
 
+/*
+	Returns a backend by referencing its name via a string
+*/
 WindowBackend *getBackendByName(const std::string &name)
 {
 	for (auto &backend : registeredBackends)
@@ -20,6 +25,9 @@ WindowBackend *getBackendByName(const std::string &name)
 	return nullptr;
 }
 
+/*
+	Unregisters all the backends registered by lua extensions
+*/
 void unregisterNonNativeBackends()
 {
 	registeredBackends.erase(
@@ -28,6 +36,9 @@ void unregisterNonNativeBackends()
 		registeredBackends.end());
 }
 
+/*
+	Unregisters only the backend registered by a specific lua extension
+*/
 void unregisterBackendByOwner(const std::string &authorName, const std::string &extensionName)
 {
 	registeredBackends.erase(

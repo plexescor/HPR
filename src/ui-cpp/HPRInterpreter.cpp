@@ -69,6 +69,9 @@ HPRInterpreter::HPRInterpreter(ExtensionManager *extMgr)
 #endif
 }
 
+/*
+	Saves the position and size of the HPR main window to config
+*/
 void HPRInterpreter::saveWindowGeometry()
 {
 	if (!instance.has_value())
@@ -126,6 +129,9 @@ HPRInterpreter::~HPRInterpreter()
 	EventHub::disconnect(Event::APP_ERROR, errorId);
 }
 
+/*
+	Hot-Reloads the HPR Ui in interpreter mode
+*/
 void HPRInterpreter::reload(std::string path)
 {
 	slint::invoke_from_event_loop(
@@ -213,6 +219,9 @@ void HPRInterpreter::reload(std::string path)
 		});
 }
 
+/*
+	Brings HPR window forward
+*/
 void HPRInterpreter::show()
 {
 	EventHub::emit(Event::UI_VISIBLE);
@@ -273,12 +282,18 @@ void HPRInterpreter::show()
 	}
 }
 
+/*
+	Quits HPR
+*/
 void HPRInterpreter::quit()
 {
 	saveWindowGeometry();
 	slint::invoke_from_event_loop([]() { slint::quit_event_loop(); });
 }
 
+/*
+	Hides the HPR Window to tray	
+*/
 void HPRInterpreter::hide()
 {
 	EventHub::emit(Event::UI_HIDDEN);
@@ -304,6 +319,9 @@ void HPRInterpreter::hide()
 	}
 }
 
+/*
+	Starts the HPR loop to update the Ui	
+*/
 void HPRInterpreter::trackingLoop()
 {
 
@@ -493,6 +511,9 @@ void HPRInterpreter::trackingLoop()
 	}
 }
 
+/*
+	Starts the window and the Ui Pushing Thread (tracker thread)	
+*/
 void HPRInterpreter::run()
 {
 
@@ -528,29 +549,19 @@ void HPRInterpreter::run()
 		[this, weak_inst]() -> slint::CloseRequestResponse
 		{
 			saveWindowGeometry();
-#ifdef NDEBUG
 			if (auto locked = weak_inst.lock())
 			{
 				(*locked)->hide();
 			}
 			return slint::CloseRequestResponse::KeepWindowShown;
-#else
-			slint::quit_event_loop();
-			return slint::CloseRequestResponse::HideWindow;
-#endif
 		});
 #else
 	inst->window().on_close_requested(
 		[this]() -> slint::CloseRequestResponse
 		{
 			saveWindowGeometry();
-#ifdef NDEBUG
 			this->hide();
 			return slint::CloseRequestResponse::KeepWindowShown;
-#else
-			slint::quit_event_loop();
-			return slint::CloseRequestResponse::HideWindow;
-#endif
 		});
 #endif
 
@@ -599,6 +610,9 @@ void HPRInterpreter::run()
 	running = false; // safety net
 }
 
+/*
+	Initialises the default path for the slint Ui in interpreted mode
+*/
 bool HPRInterpreter::initialiseSlintUiPath()
 {
 	std::filesystem::path tempPath;
@@ -627,6 +641,9 @@ bool HPRInterpreter::initialiseSlintUiPath()
 	return true;
 }
 
+/*
+	Displays custom RGBA buffer to the HPR's miscellaneous image panel
+*/
 void HPRInterpreter::setUiImage(const std::string &propertyName,
 								const slint::SharedPixelBuffer<slint::Rgba8Pixel> &pixelBuffer)
 {

@@ -44,6 +44,9 @@ std::string validateAndUpdateWindow_Cross(std::string &windowName)
 	return unModifiedWindowName; // Return unmodified name with proper Case
 }
 
+/*
+	Strips trailing junk from a string, Free function
+*/
 void stripTrailing(std::string &str)
 {
 	while (!str.empty() && (str.back() == '\n' || str.back() == '\r'))

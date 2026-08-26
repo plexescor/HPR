@@ -291,6 +291,9 @@ const std::vector<std::string> blockedCommands = {
 	"xxd\t",
 };
 
+/*
+	Checks if a supplied command is blocked or not
+*/
 bool isCommandBlocked(const std::string &command)
 {
 	// Lowercase the command for case-insensitive matching
@@ -309,6 +312,9 @@ bool isCommandBlocked(const std::string &command)
 }
 
 #ifdef _WIN32
+/*
+	Runs a system command through piping, Windows
+*/
 std::string runSystemCommandWindows(const std::string &command, int &exitCode)
 {
 	HANDLE hChildStd_OUT_Rd = NULL;
@@ -387,15 +393,18 @@ std::string runSystemCommandWindows(const std::string &command, int &exitCode)
 #endif
 } // namespace
 
+/*
+	(Crossplatform) Runs a system command through piping while adhering to blocked commands
+*/
 std::string runSystemCommand(std::string &command)
 {
 
 	if (isCommandBlocked(command))
 	{
-		std::println("Haha motherfucker what did you expect 🤣🤣🤣");
+		std::println("Haha my guy what did you expect 🤣🤣🤣");
 		std::cerr << "[HPR] Blocked dangerous command: " << command << std::endl;
 		Logger::log("[HPR] Blocked dangerous command: " + command);
-		return "Haha motherfucker what did you expect 🤣🤣🤣";
+		return "Haha my guy what did you expect 🤣🤣🤣";
 	}
 
 #ifdef __linux__
@@ -450,6 +459,9 @@ std::string runSystemCommand(std::string &command)
 	return "";
 }
 
+/*
+	(Crossplatform) Runs a system command through piping, DOES NOT ADHERE TO BLOCKED CHECKS
+*/
 std::string runSystemCommand_UNSAFE(std::string &command)
 {
 
@@ -515,6 +527,9 @@ class DummyWinToastHandler : public WinToastLib::IWinToastHandler
 };
 #endif
 
+/*
+	(Crossplatform) Shows a native OS notification to the user
+*/
 void showNotification(const std::string &title, const std::string &msg)
 {
 
@@ -622,6 +637,9 @@ void showNotification(const std::string &title, const std::string &msg)
 #include <sys/sysctl.h>
 #endif
 
+/*
+	(Crossplatform) Returns the current CPU usage of HPR
+*/
 std::string getCpuUsage()
 {
 #ifdef __linux__
@@ -768,6 +786,9 @@ std::string getCpuUsage()
 #endif
 }
 
+/*
+	(Crossplatform) Returns the current RAM usage (RSS Anonymous) of HPR
+*/
 std::string getRamUsage()
 {
 #ifdef __linux__
@@ -815,6 +836,9 @@ std::string getRamUsage()
 #endif
 }
 
+/*
+	(Crossplatform) Returns the threads used by HPR
+*/
 std::string getThreadCount()
 {
 #ifdef __linux__

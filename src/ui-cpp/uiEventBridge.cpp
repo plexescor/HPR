@@ -24,6 +24,7 @@ namespace
 {
 const std::string FIREBASE_HOST = "humanpatternrecorder-default-rtdb.firebaseio.com";
 
+
 std::string jsonEscape(const std::string &input)
 {
 	std::string output = "";
@@ -57,6 +58,9 @@ std::string jsonEscape(const std::string &input)
 	return output;
 }
 
+/*
+	Converts slint's keycodes to normalized keycodes
+*/
 std::string normalizeKey(const std::string &key)
 {
 	if (key == "\u0011" || key == "up")
@@ -89,7 +93,7 @@ std::string normalizeKey(const std::string &key)
 }
 } // namespace
 
-// CONSTRUCTOR FOR **COMPILED** UI
+// CONSTRUCTOR FOR *COMPILED* UI
 UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow> &ui, ExtensionManager *extMgr,
 							 HPRInterpreter *interpreter)
 {
@@ -449,7 +453,7 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow> &ui, ExtensionMa
 		});
 }
 
-// CONSTRUCTOR FOR **INTERPRETED** UI
+// CONSTRUCTOR FOR *INTERPRETED* UI
 UiEventBridge::UiEventBridge(slint::ComponentHandle<slint::interpreter::ComponentInstance> &ui,
 							 ExtensionManager *extMgr, HPRInterpreter *interpreter)
 {
@@ -1052,6 +1056,9 @@ UiEventBridge::~UiEventBridge()
 	EventHub::disconnect(Event::HISTORY_LOADED_RANGE, loadDbRangeId);
 }
 
+/*
+	Initialiases the UiEventBridge and connects to various EventHub events
+*/
 void UiEventBridge::init()
 {
 	// -----------------------Connecting to the Event Hub
@@ -1066,6 +1073,9 @@ void UiEventBridge::init()
 		EventHub::connect(Event::HISTORY_LOADED_RANGE, [this](EventData data) { this->showHistoricalDataRange(); });
 }
 
+/*
+	Shows the already loaded single-day's historical data
+*/
 void UiEventBridge::showHistoricalDataSingular()
 {
 	// Make the current app state historical
@@ -1073,6 +1083,9 @@ void UiEventBridge::showHistoricalDataSingular()
 	AppState::state.currentView = AppState::CurrentView::HISTORICAL_SINGULAR;
 }
 
+/*
+	Shows the already loaded N-Number of days' historical data
+*/
 void UiEventBridge::showHistoricalDataNumber()
 {
 	// Make the current app state historical
@@ -1080,6 +1093,9 @@ void UiEventBridge::showHistoricalDataNumber()
 	AppState::state.currentView = AppState::CurrentView::HISTORICAL_NUMBER;
 }
 
+/*
+	Shows the already loaded range of days' historical data
+*/
 void UiEventBridge::showHistoricalDataRange()
 {
 	// Make the current app state historical
@@ -1087,6 +1103,9 @@ void UiEventBridge::showHistoricalDataRange()
 	AppState::state.currentView = AppState::CurrentView::HISTORICAL_RANGE;
 }
 
+/*
+	Shows the live (present) data
+*/
 void UiEventBridge::showLiveData()
 {
 	EventHub::emit(Event::LOAD_LIVE_DATA); // Tell everyone we need live data, so they can
@@ -1096,6 +1115,9 @@ void UiEventBridge::showLiveData()
 	AppState::state.currentView = AppState::CurrentView::LIVE;
 }
 
+/*
+	Switch to detailed Tab-View in the browser usage breakdown panel in the Ui
+*/
 void UiEventBridge::tabViewClicked()
 {
 	// Make the current app state live
@@ -1103,6 +1125,9 @@ void UiEventBridge::tabViewClicked()
 	AppState::state.useTabView = true;
 }
 
+/*
+	Switch to aliased and categorized Site-View in the browser usage breakdown panel in the Ui
+*/
 void UiEventBridge::siteViewClicked()
 {
 	// Make the current app state live
@@ -1110,30 +1135,45 @@ void UiEventBridge::siteViewClicked()
 	AppState::state.useTabView = false;
 }
 
+/*
+	Switch to aliased and parsed filtered-View in the project usage breakdown panel in the Ui
+*/
 void UiEventBridge::filterViewClicked()
 {
 	std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
 	AppState::state.isRawProjectView = false;
 }
 
+/*
+	Switch to raw, unaliased Raw-View in the project usage breakdown panel in the Ui
+*/
 void UiEventBridge::rawViewClicked()
 {
 	std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
 	AppState::state.isRawProjectView = true;
 }
 
+/*
+	Toggles the tracking of Apps
+*/
 void UiEventBridge::appTrackingToggled(bool enabled)
 {
 	std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
 	AppState::state.trackApp = enabled;
 }
 
+/*
+	Toggles the tracking of Browser Tabs
+*/
 void UiEventBridge::browserTrackingToggled(bool enabled)
 {
 	std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
 	AppState::state.trackTab = enabled;
 }
 
+/*
+	Toggles the tracking of Projects
+*/
 void UiEventBridge::projectTrackingToggled(bool enabled)
 {
 	std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);

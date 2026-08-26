@@ -22,6 +22,9 @@
 
 namespace NiceKDE
 {
+/*
+	Generated the randomized marker for KDE script
+*/
 std::string generateMarker()
 {
 	std::mt19937 rng(std::chrono::steady_clock::now().time_since_epoch().count());
@@ -29,6 +32,9 @@ std::string generateMarker()
 	return "kdotool_cpp_" + std::to_string(dist(rng));
 }
 
+/*
+	Writes the actual KDE script using dbus
+*/
 std::string buildScript(const std::string &dbusAddr, const std::string &action)
 {
 	return R"(
@@ -54,6 +60,9 @@ std::string buildScript(const std::string &dbusAddr, const std::string &action)
             )";
 }
 
+/*
+	Get the extracted/parsed result of the generated KDE Script 
+*/
 std::string kwinScriptGetResult(const std::string &marker, const std::string &action)
 {
 	DBusError err;
@@ -204,18 +213,27 @@ std::string kwinScriptGetResult(const std::string &marker, const std::string &ac
 	return result;
 }
 
+/*
+	Returns the class of currently active window in KDE
+*/
 std::string kdeGetActiveWindowClass()
 {
 	std::string marker = generateMarker();
 	return kwinScriptGetResult(marker, "output_result(w.resourceClass);");
 }
 
+/*
+	Returns the name/title of the currently active window in KDE
+*/
 std::string kdeGetActiveWindowName()
 {
 	std::string marker = generateMarker();
 	return kwinScriptGetResult(marker, "output_result(w.caption);");
 }
 
+/*
+	Returns the PID of the currently active window in KDE
+*/
 std::string kdeGetActiveWindowPid()
 {
 	std::string marker = generateMarker();
@@ -225,6 +243,9 @@ std::string kdeGetActiveWindowPid()
 
 #endif
 
+/*
+	Registers the built-in window backends of core HPR
+*/
 void registerBuiltinBackends()
 {
 	registerBackend(

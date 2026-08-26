@@ -36,6 +36,9 @@ HPR::HPR(ExtensionManager *extMgr) : ui(MainWindow::create()), modelManager(ui)
 #endif
 }
 
+/*
+	Saves the position and size of the HPR main window to config
+*/
 void HPR::saveWindowGeometry()
 {
 	auto weak = slint::ComponentWeakHandle<MainWindow>(ui);
@@ -89,6 +92,9 @@ HPR::~HPR()
 	EventHub::disconnect(Event::APP_ERROR, errorId);
 }
 
+/*
+	Brings HPR window forward
+*/
 void HPR::show()
 {
 	EventHub::emit(Event::UI_VISIBLE);
@@ -149,12 +155,18 @@ void HPR::show()
 	}
 }
 
+/*
+	Quits HPR
+*/
 void HPR::quit()
 {
 	saveWindowGeometry();
 	slint::invoke_from_event_loop([]() { slint::quit_event_loop(); });
 }
 
+/*
+	Hides the HPR Window to tray	
+*/
 void HPR::hide()
 {
 	EventHub::emit(Event::UI_HIDDEN);
@@ -177,6 +189,9 @@ void HPR::hide()
 		});
 }
 
+/*
+	Starts the HPR loop to update the Ui	
+*/
 void HPR::trackingLoop()
 {
 
@@ -355,6 +370,9 @@ void HPR::trackingLoop()
 	}
 }
 
+/*
+	Starts the window and the Ui Pushing Thread (tracker thread)	
+*/
 void HPR::run()
 {
 	UiEventBridge uiEventBridge(ui, extManager);
@@ -385,34 +403,20 @@ void HPR::run()
 	ui->window().on_close_requested(
 		[this]() -> slint::CloseRequestResponse
 		{
-			#ifdef NDEBUG
 			// release: hide to tray
 			saveWindowGeometry();
 			ui->hide();
 			return slint::CloseRequestResponse::KeepWindowShown;
-			#else
-			// debug: actually quit
-			saveWindowGeometry();
-			slint::quit_event_loop();
-			return slint::CloseRequestResponse::HideWindow;
-			#endif
 		});
 #else
 	// same as windows, X button just hides to tray
 	ui->window().on_close_requested(
 		[this]() -> slint::CloseRequestResponse
 		{
-			#ifdef NDEBUG
 			// release: hide to tray
 			saveWindowGeometry();
 			ui->hide();
 			return slint::CloseRequestResponse::KeepWindowShown;
-			#else
-			// debug: actually quit
-			saveWindowGeometry();
-			slint::quit_event_loop();
-			return slint::CloseRequestResponse::HideWindow;
-			#endif
 		});
 #endif
 
@@ -461,6 +465,9 @@ void HPR::run()
 	running = false; // safety net
 }
 
+/*
+	Displays custom RGBA buffer to the HPR's miscellaneous image panel
+*/
 void HPR::setUiImage(const std::string &propertyName, const slint::SharedPixelBuffer<slint::Rgba8Pixel> &pixelBuffer)
 {
 	auto weak = slint::ComponentWeakHandle<MainWindow>(ui);

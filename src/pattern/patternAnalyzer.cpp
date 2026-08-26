@@ -18,13 +18,14 @@
 #include <sstream>
 #include <vector>
 
-// Given a day's switchHistory, reconstruct all focus sessions longer than
-// minMs. Returns a vector of {duration_ms, start_ts_ms} pairs.
 struct Session
 {
 	uint64_t duration;
 	uint64_t startTs;
 };
+
+// Given a day's switchHistory, reconstruct all focus sessions longer than
+// minMs. Returns a vector of {duration_ms, start_ts_ms} pairs.
 std::vector<Session> buildSessions(const std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> &sh,
 								   uint64_t minMs = 30000ULL)
 {
@@ -85,6 +86,9 @@ PatternAnalyzer::PatternAnalyzer()
 	initialiseCategories();
 }
 
+/*
+	Initialises the path for the categories.csv file
+*/
 void PatternAnalyzer::initialiseCategoryFilePath()
 {
 	std::filesystem::path tempPath;
@@ -211,6 +215,9 @@ mpv,DISTRACTION
 	}
 }
 
+/*
+	Returns a vector of productivty scores of either today or last ~14 days
+*/
 std::vector<int> PatternAnalyzer::calculateProductivityScore(bool todayOnly, bool forceRecalculation)
 {
     /* States:
@@ -303,6 +310,9 @@ std::vector<int> PatternAnalyzer::calculateProductivityScore(bool todayOnly, boo
     return productivityScoreCache;
 }
 
+/*
+	Parse all the values of categories.csv into an unordered map
+*/
 void PatternAnalyzer::initialiseCategories()
 {
 	std::ifstream file(filePath);
@@ -325,6 +335,10 @@ void PatternAnalyzer::initialiseCategories()
 		}
 	}
 }
+
+/*
+	Populates the string members of the class by generating fresh insights
+*/
 void PatternAnalyzer::generateInsights()
 {
 	// Make a copy of appstate's map into this
@@ -745,6 +759,9 @@ void PatternAnalyzer::generateInsights()
 	}
 }
 
+/*
+	Returns the category of a give appName as defined in categories.csv
+*/
 AppCategory PatternAnalyzer::getCategory(const std::string appName)
 {
 	std::string lower = appName;
@@ -794,7 +811,9 @@ static const char *dowName(int dow)
 }
 
 
-
+/*
+	Moves the data from the caller to the PatternAnalyzer class
+*/
 void PatternAnalyzer::setMultiDayData(std::vector<DayData> data) { multiDayData_ = std::move(data); }
 
 /* AIM
@@ -809,6 +828,9 @@ void PatternAnalyzer::setMultiDayData(std::vector<DayData> data) { multiDayData_
 	"Weekends you barely use VSCode"
 */
 
+/*
+	Populates the class;s member strings by calculating advanced insights
+*/
 void PatternAnalyzer::generateAdvancedInsights()
 {
 	if (multiDayData_.empty())
@@ -1649,6 +1671,7 @@ void PatternAnalyzer::generateAdvancedInsights()
 		}
 	}
 }
+
 std::string PatternAnalyzer::getProductivityScore() { return productivityScore_O; }
 std::string PatternAnalyzer::getMostUsed() { return mostUsed_O; }
 
