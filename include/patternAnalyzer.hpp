@@ -70,11 +70,16 @@ class PatternAnalyzer
   private:
 	void initialiseCategoryFilePath();
 	void initialiseCategories();
+	std::vector<int> getProductivityScore(bool todayOnly = false, bool forceRecalculation = false);
 
   private:
 	std::string fileName = "categories.csv";
 	std::filesystem::path filePath;
 	std::unordered_map<std::string, std::string> categoryData;
+
+	int productivityScore = 737; //default for detecting caching and shit
+	std::vector<int> productivityScoreCache;
+	int productivityFunctionCalls = 0; //i know its bad
 
 
   private: // Local vars to hold mutex for little time

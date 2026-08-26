@@ -18,6 +18,67 @@
 #include <sstream>
 #include <vector>
 
+// Given a day's switchHistory, reconstruct all focus sessions longer than
+// minMs. Returns a vector of {duration_ms, start_ts_ms} pairs.
+struct Session
+{
+	uint64_t duration;
+	uint64_t startTs;
+};
+std::vector<Session> buildSessions(const std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> &sh,
+								   uint64_t minMs = 30000ULL)
+{
+	struct Ev
+	{
+		uint64_t ts;
+		std::string app;
+		bool arrival;
+	};
+	std::vector<Ev> events;
+
+	auto isSelf = [](const std::string &n) { return n == "HPR" || n == "Unknown" || n.empty(); };
+
+	for (const auto &[apps, vec] : sh)
+	{
+		for (uint64_t ts : vec)
+		{
+			if (!isSelf(apps.first))
+				events.push_back({ts, apps.first, false});
+			if (!isSelf(apps.second))
+				events.push_back({ts, apps.second, true});
+		}
+	}
+
+	std::sort(events.begin(), events.end(),
+			  [](const Ev &a, const Ev &b) { return a.ts != b.ts ? a.ts < b.ts : (int)a.arrival < (int)b.arrival; });
+
+	std::map<std::string, uint64_t> active; // app → arrival ts
+	std::vector<Session> sessions;
+
+	for (const auto &e : events)
+	{
+		if (e.arrival)
+		{
+			if (active.count(e.app))
+			{
+				active.erase(e.app); // Discard old arrival that had no departure
+			}
+			active[e.app] = e.ts;
+		}
+		else
+		{
+			if (active.count(e.app))
+			{
+				uint64_t dur = (e.ts >= active[e.app]) ? (e.ts - active[e.app]) : 0;
+				if (dur >= minMs && dur < 8ULL * 3600 * 1000)
+					sessions.push_back({dur, active[e.app]});
+				active.erase(e.app);
+			}
+		}
+	}
+	return sessions;
+}
+
 PatternAnalyzer::PatternAnalyzer()
 {
 	initialiseCategoryFilePath();
@@ -148,6 +209,98 @@ mpv,DISTRACTION
 			return;
 		}
 	}
+}
+
+std::vector<int> PatternAnalyzer::getProductivityScore(bool todayOnly, bool forceRecalculation)
+{
+    /* States:
+        737:   Not Computed, 
+        !737: Cached
+    */
+
+    // I know its inefficient and shit
+    // but i will refactor it later: 04:42 PM, 26 August 2026 ~Plexescor
+    if (productivityFunctionCalls > 8)
+    {
+        productivityFunctionCalls = 0;
+        productivityScore = 737;
+    }
+
+    if (productivityScore != 737 && !forceRecalculation)
+    {
+        productivityFunctionCalls++;
+        return productivityScoreCache;
+    }
+
+    if (multiDayData_.empty())
+    {
+        productivityScore = 0;
+        productivityScoreCache = {};
+        return productivityScoreCache;
+    }
+
+    uint64_t minSessionMs = static_cast<uint64_t>(
+        AppState::configManager.getConfig("pattern-focus-min-session-ms", 60000));
+    double focusCap    = AppState::configManager.getConfig("pattern-focus-cap-mins", 90.0);
+    double switchFloor = AppState::configManager.getConfig("pattern-switch-rate-floor", 40.0);
+
+    size_t startIdx = 0;
+    size_t endIdx   = todayOnly ? 1 : multiDayData_.size();
+
+    std::vector<int> scores;
+
+    for (size_t i = startIdx; i < endIdx; ++i)
+    {
+        const auto &day = multiDayData_[i];
+
+        uint64_t totalTime = 0;
+        uint64_t workTime  = 0;
+        for (const auto &[app, dur] : day.timePerApp)
+        {
+            totalTime += dur;
+            if (getCategory(app) == AppCategory::WORK)
+                workTime += dur;
+        }
+
+        if (totalTime == 0) { scores.push_back(0); continue; }
+
+        auto sessions = buildSessions(day.switchHistory, minSessionMs);
+        double avgSessionMins = 0.0;
+        if (!sessions.empty())
+        {
+            uint64_t totalDur = 0;
+            for (const auto &s : sessions)
+                totalDur += s.duration;
+            avgSessionMins = static_cast<double>(totalDur) / sessions.size() / 60000.0;
+        }
+
+        uint64_t earliest = UINT64_MAX, latest = 0;
+        int totalSwitches = 0;
+        for (const auto &[apps, vec] : day.switchHistory)
+        {
+            totalSwitches += static_cast<int>(vec.size());
+            for (uint64_t ts : vec)
+            {
+                if (ts < earliest) earliest = ts;
+                if (ts > latest)   latest   = ts;
+            }
+        }
+
+        double activeHours = (earliest == UINT64_MAX || latest <= earliest)
+            ? 0.1
+            : std::max((latest - earliest) / 3600000.0, 0.1);
+
+        double workScore   = std::min((static_cast<double>(workTime) / totalTime) / 0.70, 1.0) * 100.0;
+        double focusScore  = std::min(avgSessionMins / focusCap, 1.0) * 100.0;
+        double switchScore = std::max(0.0, 1.0 - (totalSwitches / activeHours / switchFloor)) * 100.0;
+
+        double raw = (workScore * 0.50) + (focusScore * 0.25) + (switchScore * 0.25);
+        scores.push_back(static_cast<int>(std::round(std::min(raw, 100.0))));
+    }
+
+    productivityScore      = scores.empty() ? 0 : scores.back();
+    productivityScoreCache = scores;
+    return productivityScoreCache;
 }
 
 void PatternAnalyzer::initialiseCategories()
@@ -455,8 +608,6 @@ AppCategory PatternAnalyzer::getCategory(const std::string appName)
 	else return AppCategory::UNKNOWN;
 }
 
-namespace
-{
 
 // Returns a stable-seeded random index 0..n-1 for variant picking.
 // Re-seeded each call so successive insights in the same run can differ.
@@ -485,68 +636,7 @@ static const char *dowName(int dow)
 	return (dow >= 0 && dow <= 6) ? names[dow] : "Unknown";
 }
 
-// Given a day's switchHistory, reconstruct all focus sessions longer than
-// minMs. Returns a vector of {duration_ms, start_ts_ms} pairs.
-struct Session
-{
-	uint64_t duration;
-	uint64_t startTs;
-};
-std::vector<Session> buildSessions(const std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> &sh,
-								   uint64_t minMs = 30000ULL)
-{
-	struct Ev
-	{
-		uint64_t ts;
-		std::string app;
-		bool arrival;
-	};
-	std::vector<Ev> events;
 
-	auto isSelf = [](const std::string &n) { return n == "HPR" || n == "Unknown" || n.empty(); };
-
-	for (const auto &[apps, vec] : sh)
-	{
-		for (uint64_t ts : vec)
-		{
-			if (!isSelf(apps.first))
-				events.push_back({ts, apps.first, false});
-			if (!isSelf(apps.second))
-				events.push_back({ts, apps.second, true});
-		}
-	}
-
-	std::sort(events.begin(), events.end(),
-			  [](const Ev &a, const Ev &b) { return a.ts != b.ts ? a.ts < b.ts : (int)a.arrival < (int)b.arrival; });
-
-	std::map<std::string, uint64_t> active; // app → arrival ts
-	std::vector<Session> sessions;
-
-	for (const auto &e : events)
-	{
-		if (e.arrival)
-		{
-			if (active.count(e.app))
-			{
-				active.erase(e.app); // Discard old arrival that had no departure
-			}
-			active[e.app] = e.ts;
-		}
-		else
-		{
-			if (active.count(e.app))
-			{
-				uint64_t dur = (e.ts >= active[e.app]) ? (e.ts - active[e.app]) : 0;
-				if (dur >= minMs && dur < 8ULL * 3600 * 1000)
-					sessions.push_back({dur, active[e.app]});
-				active.erase(e.app);
-			}
-		}
-	}
-	return sessions;
-}
-
-} // anonymous namespace
 
 void PatternAnalyzer::setMultiDayData(std::vector<DayData> data) { multiDayData_ = std::move(data); }
 
@@ -941,38 +1031,17 @@ void PatternAnalyzer::generateAdvancedInsights()
 
 	// Number of productive days (low switch rate)
 	{
+		int productivityThreshold = AppState::configManager.getConfig<int>("productivity-score-threshold", 63);
+
 		int productive = 0;
+		std::vector<int> scores = getProductivityScore(false, false);
 
-		for (const auto &day : multiDayData_)
+		for (auto const xxx : scores)
 		{
-			// Total switches
-			int totalSwitches = 0;
-			for (const auto &[apps, vec] : day.switchHistory)
-				totalSwitches += static_cast<int>(vec.size());
-
-			// Active hours: span from first to last switch event
-			uint64_t earliest = UINT64_MAX, latest = 0;
-			for (const auto &[apps, vec] : day.switchHistory)
+			if (xxx > productivityThreshold)
 			{
-				for (uint64_t ts : vec)
-				{
-					if (ts < earliest)
-						earliest = ts;
-					if (ts > latest)
-						latest = ts;
-				}
+				productive++;
 			}
-
-			if (earliest == UINT64_MAX || latest <= earliest)
-				continue;
-
-			double activeHours = (latest - earliest) / 3600000.0;
-			if (activeHours < 0.1)
-				continue;
-
-			double rate = totalSwitches / activeHours;
-			if (rate <= static_cast<double>(switchThreshold))
-				++productive;
 		}
 
 		const char *pl2 = productive == 1 ? "" : "s";
