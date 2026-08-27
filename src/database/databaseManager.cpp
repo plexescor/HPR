@@ -1848,17 +1848,50 @@ void DatabaseManager::updateFilePath()
 	std::filesystem::path tempPath;
 #ifdef _WIN32
 	tempPath = std::getenv("APPDATA");
-	tempPath /= std::filesystem::path("HPR/HPR_DB") / convertToDate_MMYY(t) / "";
+	tempPath /= std::filesystem::path("HPR/HPR_DB");
 #else
 	const char *home = std::getenv("HOME");
 	if (!home)
 		throw std::runtime_error("HOME env var not set");
 	tempPath = home;
-	tempPath /= std::filesystem::path(".local/share/HPR/HPR_DB") / convertToDate_MMYY(t);
+	tempPath /= std::filesystem::path(".local/share/HPR/HPR_DB");
 #endif
 
 	filePath = tempPath;
 
+	// check if config.csv defines a db path
+	// if yes then switch to it, else
+	std::filesystem::path customPath = std::filesystem::path(
+			AppState::configManager.getConfig<std::string>("database-root-folder-path", filePath.string())
+		);
+
+	// We dont want to deal with ~
+	if (customPath.is_absolute())
+	{
+		try
+		{
+			std::filesystem::create_directories(customPath);
+			customPath = std::filesystem::canonical(customPath);
+			filePath = customPath;
+		}
+		catch (const std::filesystem::filesystem_error& e)
+		{
+			std::cerr << "[Databse Manager] Failed to resolve custom database path: " << e.what() << std::endl;
+			Logger::log(std::string("[Databse Manager] Failed to resolve custom database path: ") + e.what() + "\n");
+		}
+	}
+	else
+	{
+		std::cerr << "[Databse Manager] The custom provided database path is not absolute: " << customPath.string() << std::endl;
+		Logger::log(std::string("[Databse Manager] The custom provided database path is not absolute: ") + customPath.string() + "\n");
+		std::filesystem::create_directories(filePath);
+	}
+
+	#ifdef _WIN32
+		filePath /= "" / convertToDate_MMYY(t) / "";
+	#else
+		filePath /= convertToDate_MMYY(t);
+	#endif
 	std::filesystem::create_directories(filePath);
 }
 
