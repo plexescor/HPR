@@ -1520,6 +1520,7 @@ void PatternAnalyzer::generateAdvancedInsights()
 						std::snprintf(buf, sizeof(buf), "You do your deepest work before noon %d%% of days", pct);
 						break;
 					}
+				    break;
 
 				//After Noon
 				default:
