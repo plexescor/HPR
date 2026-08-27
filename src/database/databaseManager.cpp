@@ -1887,11 +1887,8 @@ void DatabaseManager::updateFilePath()
 		std::filesystem::create_directories(filePath);
 	}
 
-	#ifdef _WIN32
-		filePath /= "" / convertToDate_MMYY(t) / "";
-	#else
-		filePath /= convertToDate_MMYY(t);
-	#endif
+	filePath /= convertToDate_MMYY(t);
+	
 	std::filesystem::create_directories(filePath);
 }
 
