@@ -109,30 +109,33 @@ LinuxInitialiser::LinuxInitialiser()
 
 	if (shouldWrite)
 	{
-		std::ofstream desktop(desktopFile);
-		if (desktop.is_open())
-		{
-			desktop << "[Desktop Entry]\n"
-					<< "Version=1.0\n"
-					<< "Type=Application\n"
-					<< "Name=HPR\n"
-					<< "Comment=Offline zero-account activity tracker\n"
-					<< expectedExec << "\n"
-					<< "Icon=" << themeIconPath.string() << "\n"
-					<< "Terminal=false\n"
-					<< "Categories=Utility;\n"
-					<< "StartupNotify=true\n"
-					<< "StartupWMClass=HPR\n";
-			desktop.close();
+		//Only create the desktop entry if its not debug
+		#ifdef NDEBUG
+			std::ofstream desktop(desktopFile);
+			if (desktop.is_open())
+			{
+				desktop << "[Desktop Entry]\n"
+						<< "Version=1.0\n"
+						<< "Type=Application\n"
+						<< "Name=HPR\n"
+						<< "Comment=Offline zero-account activity tracker\n"
+						<< expectedExec << "\n"
+						<< "Icon=" << themeIconPath.string() << "\n"
+						<< "Terminal=false\n"
+						<< "Categories=Utility;\n"
+						<< "StartupNotify=true\n"
+						<< "StartupWMClass=HPR\n";
+				desktop.close();
 
-			// Desktop files must be executable to be respected by the DE
-			chmod(desktopFile.c_str(), S_IRWXU | S_IRGRP | S_IROTH);
-		}
-		else
-		{
-			std::cerr << "Warning: could not write .desktop file to " << desktopFile.string() << "\n";
-			Logger::log("Warning: could not write .desktop file to " + desktopFile.string());
-		}
+				// Desktop files must be executable to be respected by the DE
+				chmod(desktopFile.c_str(), S_IRWXU | S_IRGRP | S_IROTH);
+			}
+			else
+			{
+				std::cerr << "Warning: could not write .desktop file to " << desktopFile.string() << "\n";
+				Logger::log("Warning: could not write .desktop file to " + desktopFile.string());
+			}
+		#endif
 	}
 #endif
 }
