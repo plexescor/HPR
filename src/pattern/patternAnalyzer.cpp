@@ -762,7 +762,7 @@ void PatternAnalyzer::generateInsights()
 }
 
 /*
-	Returns the category of a give appName as defined in categories.csv
+	Returns the category of a given appName as defined in categories.csv
 */
 AppCategory PatternAnalyzer::getCategory(const std::string appName)
 {
@@ -1210,7 +1210,7 @@ void PatternAnalyzer::generateAdvancedInsights()
 		}
 	}
 
-	// Number of productive days (low switch rate)
+	// Number of productive days (productivity score each day)
 	{
 		int productivityThreshold = AppState::configManager.getConfig<int>("productivity-score-threshold", 63);
 

@@ -5,6 +5,7 @@ build1
 .vscode
 Debug/
 cmake-build-debug
+build-debug
 cmake-build-release
 cmake-build-relwithdebinfo
 .cache/
