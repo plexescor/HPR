@@ -55,6 +55,9 @@ int main()
 	bool isAutostart = AutostartManager::isEnabled();
 	AppState::configManager.setConfig("autostart", isAutostart);
 
+	ExtensionManager ext;
+	AppState::extManager = &ext;
+
 	DatabaseManager dbm;
 	dbm.run();
 
@@ -77,9 +80,6 @@ int main()
 	if (trueHeadless)
 	{
 		TelemetryManager::init();
-
-		ExtensionManager ext;
-		AppState::extManager = &ext;
 
 		CurrentWindowManager cwm;
 
@@ -108,8 +108,8 @@ int main()
 
 	TelemetryManager::init();
 
-	ExtensionManager ext;
-	AppState::extManager = &ext;
+	// ExtensionManager ext;
+	// AppState::extManager = &ext;
 
 	// Check for hardware-acceleration flag
 	if (!AppState::configManager.getConfig("hardware-acceleration", true))

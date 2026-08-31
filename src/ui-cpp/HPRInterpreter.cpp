@@ -25,6 +25,32 @@
 #include <sstream>
 #include <thread>
 
+#include <print>
+
+#ifndef _WIN32
+#include <signal.h>
+#include <unistd.h>
+
+// Global weak handle required for the POSIX signal handler signature to interact with Slint
+static slint::ComponentWeakHandle<slint::interpreter::ComponentInstance> globalUiWeakHandle;
+
+// Handles terminal graceful exit signals (SIGTERM / SIGINT)
+void posixSignalHandler(int signum)
+{
+	if (signum == SIGTERM || signum == SIGINT)
+	{
+		// Safely inject the quit event into the Slint interpreter loop from the OS signal thread
+		slint::invoke_from_event_loop(
+			[]()
+			{
+				std::println("Signal received. Terminating Slint interpreter loop gracefully...");
+				slint::quit_event_loop();
+			});
+	}
+}
+#endif
+
+
 #ifdef _WIN32
 #include "Windows.h"
 #endif
@@ -516,7 +542,6 @@ void HPRInterpreter::trackingLoop()
 */
 void HPRInterpreter::run()
 {
-
 	// For saving my time
 	auto &inst = instance.value();
 
@@ -603,13 +628,33 @@ void HPRInterpreter::run()
 		});
 #endif
 
+#ifndef _WIN32
+	// Register the Linux signal callbacks immediately prior to execution block launch
+	globalUiWeakHandle = slint::ComponentWeakHandle<slint::interpreter::ComponentInstance>(inst);
+	struct sigaction action;
+	action.sa_handler = posixSignalHandler;
+	sigemptyset(&action.sa_mask);
+	action.sa_flags = 0;
+
+	sigaction(SIGTERM, &action, NULL); // Process standard close signal from terminal/Hyprland
+	sigaction(SIGINT, &action, NULL);  // Process keyboard abort (Ctrl+C)
+#endif
+
 	tracker = std::thread(&HPRInterpreter::trackingLoop, this);
 
+	// Execution hangs context cleanly right here until terminal signals code break execution
 	slint::run_event_loop(slint::EventLoopMode::RunUntilQuit);
+	
+	// Exit pipeline cleanup operations run smoothly after breaking the event loop
+	std::println("Exited Slint event loop.");
 	saveWindowGeometry();
 	running = false; // safety net
-}
 
+	if (tracker.joinable())
+	{
+		tracker.join();
+	}
+}
 /*
 	Initialises the default path for the slint Ui in interpreted mode
 */

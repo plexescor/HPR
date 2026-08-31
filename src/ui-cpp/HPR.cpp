@@ -26,6 +26,30 @@
 #include <print>
 #include <thread>
 #include <vector>
+#include <print>
+
+#ifndef _WIN32
+#include <signal.h>
+#include <unistd.h>
+
+// Global weak handle required for the POSIX signal handler signature
+static slint::ComponentWeakHandle<MainWindow> globalUiWeakHandle;
+
+// Handles terminal graceful exit signals (SIGTERM / SIGINT)
+void posixSignalHandler_ShutUpCompiler(int signum)
+{
+	if (signum == SIGTERM || signum == SIGINT)
+	{
+		// Safely inject the quit event into the Slint event loop from the signal thread
+		slint::invoke_from_event_loop(
+			[]()
+			{
+				std::println("Signal received. Terminating Slint event loop gracefully...");
+				slint::quit_event_loop();
+			});
+	}
+}
+#endif
 
 HPR::HPR(ExtensionManager *extMgr) : ui(MainWindow::create()), modelManager(ui)
 {
@@ -448,7 +472,7 @@ void HPR::run()
 
 #ifdef _WIN32
 	// post to event loop so it runs AFTER the window is actually visible
-	// cz when app is launched frshly, theres no icon
+	// cz when app is launched freshly, theres no icon
 	slint::invoke_from_event_loop(
 		[]()
 		{
@@ -467,11 +491,34 @@ void HPR::run()
 		});
 #endif
 
+#ifndef _WIN32
+	// Initialize and register POSIX signals for clean background termination
+	globalUiWeakHandle = slint::ComponentWeakHandle<MainWindow>(ui);
+	struct sigaction action;
+	action.sa_handler = posixSignalHandler_ShutUpCompiler;
+	sigemptyset(&action.sa_mask);
+	action.sa_flags = 0;
+
+	sigaction(SIGTERM, &action, NULL); // Catch kill -15
+	sigaction(SIGINT, &action, NULL);  // Catch Ctrl+C
+#endif
+
 	tracker = std::thread(&HPR::trackingLoop, this);
+	
+	// Blocks execution until window closes or slint::quit_event_loop() triggers
 	slint::run_event_loop(slint::EventLoopMode::RunUntilQuit);
+	
+	// Post-exit cleanup routine execution sequence
+	std::println("Exited event loop");
 	saveWindowGeometry();
-	running = false; // safety net
+	running = false; // Safety net flag change
+
+	if (tracker.joinable())
+	{
+		tracker.join();
+	}
 }
+
 
 /*
 	Displays custom RGBA buffer to the HPR's miscellaneous image panel
