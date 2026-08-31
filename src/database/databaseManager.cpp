@@ -27,56 +27,56 @@
 
 DatabaseManager::DatabaseManager()
 {
+	#ifdef NDEBUG
+		initDatabase();
 
-	initDatabase();
+		// Try to create a lock file
+		std::filesystem::path lockPath = filePath / "hpr.lock";
 
-	// Try to create a lock file
-	std::filesystem::path lockPath = filePath / "hpr.lock";
-
-#ifdef _WIN32
-	lockHandle = CreateFileA(lockPath.string().c_str(), GENERIC_WRITE,
-							 0, // 0 = exclusive access
-							 NULL,
-							 OPEN_ALWAYS, // Create if missing, open if exist, crucial if HPR crashed
-							 FILE_ATTRIBUTE_NORMAL | FILE_FLAG_DELETE_ON_CLOSE, NULL);
-	if (lockHandle == INVALID_HANDLE_VALUE)
-	{
-		DWORD err = GetLastError();
-		if (err == ERROR_SHARING_VIOLATION)
+	#ifdef _WIN32
+		lockHandle = CreateFileA(lockPath.string().c_str(), GENERIC_WRITE,
+								0, // 0 = exclusive access
+								NULL,
+								OPEN_ALWAYS, // Create if missing, open if exist, crucial if HPR crashed
+								FILE_ATTRIBUTE_NORMAL | FILE_FLAG_DELETE_ON_CLOSE, NULL);
+		if (lockHandle == INVALID_HANDLE_VALUE)
+		{
+			DWORD err = GetLastError();
+			if (err == ERROR_SHARING_VIOLATION)
+			{
+				std::cerr << "[HPR] Already running. Exiting.\n";
+				Logger::log("[HPR] Already running. Exiting.");
+			}
+			else
+			{
+				std::cerr << "[HPR] Could not acquire lock (Error " << err << ").\n";
+				Logger::log("[HPR] Could not acquire lock (Error " + std::to_string(err) + ").");
+			}
+			exit(1);
+		}
+	#else
+		int fd = open(lockPath.c_str(), O_RDWR | O_CREAT, 0644);
+		if (fd == -1)
+		{
+			std::cerr << "[HPR] Failed to open lock file.\n";
+			Logger::log("[HPR] Failed to open lock file.");
+			exit(1);
+		}
+		if (flock(fd, LOCK_EX | LOCK_NB) == -1)
 		{
 			std::cerr << "[HPR] Already running. Exiting.\n";
 			Logger::log("[HPR] Already running. Exiting.");
+			close(fd);
+			exit(1);
 		}
-		else
+		lockFd = fd;
+	#endif
+		if (!loadStateFromDB())
 		{
-			std::cerr << "[HPR] Could not acquire lock (Error " << err << ").\n";
-			Logger::log("[HPR] Could not acquire lock (Error " + std::to_string(err) + ").");
+			std::cerr << "Failed to load data from db!\n";
+			Logger::log("Failed to load data from db!");
 		}
-		exit(1);
-	}
-#else
-	int fd = open(lockPath.c_str(), O_RDWR | O_CREAT, 0644);
-	if (fd == -1)
-	{
-		std::cerr << "[HPR] Failed to open lock file.\n";
-		Logger::log("[HPR] Failed to open lock file.");
-		exit(1);
-	}
-	if (flock(fd, LOCK_EX | LOCK_NB) == -1)
-	{
-		std::cerr << "[HPR] Already running. Exiting.\n";
-		Logger::log("[HPR] Already running. Exiting.");
-		close(fd);
-		exit(1);
-	}
-	lockFd = fd;
-#endif
-	if (!loadStateFromDB())
-	{
-		std::cerr << "Failed to load data from db!\n";
-		Logger::log("Failed to load data from db!");
-	}
-
+	#endif 
 	// Connect to the event manager and get an id
 	// Listen for load singular db file signal
 	singular_DbLoadEventId = EventHub::connect(Event::LOAD_DATABASE_SINGULAR,
@@ -97,7 +97,7 @@ DatabaseManager::DatabaseManager()
 												 if (std::holds_alternative<DatabaseDate_Number>(data))
 												 {
 													 auto arg = std::get<DatabaseDate_Number>(data);
-													 this->loadDb_Number(arg.days, arg.mode);
+													 this->loadDb_Number(arg.days, arg.mode, true);
 												 }
 											 });
 
@@ -107,7 +107,7 @@ DatabaseManager::DatabaseManager()
 												if (std::holds_alternative<DatabaseDate_Range>(data))
 												{
 													auto arg = std::get<DatabaseDate_Range>(data);
-													this->loadDb_Range(arg.dateFrom, arg.dateTo, arg.mode);
+													this->loadDb_Range(arg.dateFrom, arg.dateTo, arg.mode, true);
 												}
 											});
 
@@ -124,21 +124,23 @@ DatabaseManager::DatabaseManager()
 
 DatabaseManager::~DatabaseManager()
 {
-	running = false;
-	if (writer.joinable())
-		writer.join();
+	#ifdef NDEBUG
+		running = false;
+		if (writer.joinable())
+			writer.join();
 
-#ifdef _WIN32
-	if (lockHandle != INVALID_HANDLE_VALUE)
-	{
-		CloseHandle(lockHandle); // windows autodelete lock file
-	}
-#else
-	if (lockFd != -1)
-	{
-		close(lockFd); // kernal will delete the lock file auto
-	}
-#endif
+	#ifdef _WIN32
+		if (lockHandle != INVALID_HANDLE_VALUE)
+		{
+			CloseHandle(lockHandle); // windows autodelete lock file
+		}
+	#else
+		if (lockFd != -1)
+		{
+			close(lockFd); // kernal will delete the lock file auto
+		}
+	#endif
+	#endif
 
 	EventHub::disconnect(Event::LOAD_DATABASE_SINGULAR, singular_DbLoadEventId);
 	EventHub::disconnect(Event::LOAD_DATABASE_NUMBER, number_DbLoadEventId);
@@ -213,7 +215,12 @@ void DatabaseManager::initDatabase(bool copyData)
 		   ");";
 }
 
-void DatabaseManager::run() { writer = std::thread(&DatabaseManager::writeLoop, this); }
+void DatabaseManager::run() 
+{ 
+	#ifdef NDEBUG
+		writer = std::thread(&DatabaseManager::writeLoop, this); 
+	#endif
+}
 
 bool DatabaseManager::loadStateFromDB()
 {
@@ -458,7 +465,7 @@ std::string DatabaseManager::getLoadedHistDbPath() const
 	return loadedHistDbPath.string();
 }
 
-void DatabaseManager::loadDb_Singular(std::string requestedDate)
+void DatabaseManager::loadDb_Singular(std::string requestedDate, bool showToUi)
 {
 	// Reset the ready flag BEFORE launching async so waiters block correctly
 	{
@@ -469,10 +476,12 @@ void DatabaseManager::loadDb_Singular(std::string requestedDate)
 	// Create async task to load the singular db file
 	historyLoadTask_Singular =
 		std::async(std::launch::async,
-				   [this, requestedDate]()
+				   [this, requestedDate, showToUi]()
 				   {
 					   try
 					   {
+						   // this comment is outdated but i will keep it to show
+						   // how evil i was
 
 						   // Get the filepath for desired files
 						   // DEVELOPER NOTES:
@@ -534,7 +543,8 @@ void DatabaseManager::loadDb_Singular(std::string requestedDate)
 						   // Wake up any thread blocked inside dbQueryHistorical_E
 						   AppState::historyLoadedCV.notify_all();
 
-						   EventHub::emit(Event::HISTORY_LOADED_SINGULAR);
+						   if (showToUi)
+						       EventHub::emit(Event::HISTORY_LOADED_SINGULAR);
 					   }
 					   catch (const std::exception &e)
 					   {
@@ -544,7 +554,7 @@ void DatabaseManager::loadDb_Singular(std::string requestedDate)
 				   });
 }
 
-void DatabaseManager::loadDb_Number(int days, std::string mode)
+void DatabaseManager::loadDb_Number(int days, std::string mode, bool showToUi)
 {
 	// Reset the ready flag BEFORE launching async so waiters block correctly
 	{
@@ -554,7 +564,7 @@ void DatabaseManager::loadDb_Number(int days, std::string mode)
 
 	historyLoadTask_Number = std::async(
 		std::launch::async,
-		[this, days, mode]()
+		[this, days, mode, showToUi]()
 		{
 			// total mode
 			// get todays time stamp
@@ -696,7 +706,6 @@ void DatabaseManager::loadDb_Number(int days, std::string mode)
 						w.join();
 				}
 
-				EventHub::emit(Event::HISTORY_LOADED_NUMBER);
 			}
 
 			if (mode == "average")
@@ -859,12 +868,13 @@ void DatabaseManager::loadDb_Number(int days, std::string mode)
 					AppState::historicalData_Full_State.isLoaded = true;
 				}
 
-				EventHub::emit(Event::HISTORY_LOADED_NUMBER);
 			}
+			if (showToUi)
+				EventHub::emit(Event::HISTORY_LOADED_NUMBER);
 		});
 }
 
-void DatabaseManager::loadDb_Range(std::string dateFrom, std::string dateTo, std::string mode)
+void DatabaseManager::loadDb_Range(std::string dateFrom, std::string dateTo, std::string mode, bool showToUi)
 {
 	// Reset the ready flag BEFORE launching async so waiters block correctly
 	{
@@ -874,7 +884,7 @@ void DatabaseManager::loadDb_Range(std::string dateFrom, std::string dateTo, std
 
 	historyLoadTask_Range = std::async(
 		std::launch::async,
-		[this, dateFrom, dateTo, mode]()
+		[this, dateFrom, dateTo, mode, showToUi]()
 		{
 			int days = 0;
 			// get time stamp of current date
@@ -1033,7 +1043,6 @@ void DatabaseManager::loadDb_Range(std::string dateFrom, std::string dateTo, std
 					if (w.joinable())
 						w.join();
 				}
-				EventHub::emit(Event::HISTORY_LOADED_RANGE);
 			}
 
 			if (mode == "average")
@@ -1196,8 +1205,9 @@ void DatabaseManager::loadDb_Range(std::string dateFrom, std::string dateTo, std
 					AppState::historicalData_Full_State.isLoaded = true;
 				}
 
-				EventHub::emit(Event::HISTORY_LOADED_RANGE);
 			}
+			if (showToUi)
+				EventHub::emit(Event::HISTORY_LOADED_RANGE);
 		});
 }
 

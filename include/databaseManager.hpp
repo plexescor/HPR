@@ -46,9 +46,9 @@ class DatabaseManager
 	void updateFilePath();
 	void updateFileName();
 
-	void loadDb_Singular(std::string date);
-	void loadDb_Number(int days, std::string mode);
-	void loadDb_Range(std::string dateFrom, std::string dateTo, std::string mode);
+	void loadDb_Singular(std::string date, bool showToUi = true);
+	void loadDb_Number(int days, std::string mode, bool showToUi = true);
+	void loadDb_Range(std::string dateFrom, std::string dateTo, std::string mode, bool showToUi = true);
 	void loadPatternsData(int days);
 
 	std::vector<std::map<std::string, std::string>>

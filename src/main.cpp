@@ -55,11 +55,8 @@ int main()
 	bool isAutostart = AutostartManager::isEnabled();
 	AppState::configManager.setConfig("autostart", isAutostart);
 
-	// If we are in debug, dont create a DB file
-	#ifdef NDEBUG
-		DatabaseManager dbm;
-		dbm.run();
-	#endif
+	DatabaseManager dbm;
+	dbm.run();
 
 	#ifdef __linux__
 		LinuxInitialiser linuxInit;
@@ -86,10 +83,7 @@ int main()
 
 		CurrentWindowManager cwm;
 
-		// GIVE EXTENSION MANAGER FULL ACCESS TO EVERY OBJECT PRESENT
-		#ifdef NDEBUG
-			ext.dbManager = &dbm;
-		#endif
+		ext.dbManager = &dbm;
 		ext.trayManager = nullptr;
 		ext.currentWindowManager = &cwm;
 		ext.app = nullptr;
@@ -146,9 +140,7 @@ int main()
 		SingleInstance::getInstance().onShow([&]() { app.show(); });
 
 		// GIVE EXTENSION MANAGER FULL ACCESS TO EVERY OBJECT PRESENT
-		#ifdef NDEBUG
-			ext.dbManager = &dbm;
-		#endif
+		ext.dbManager = &dbm;
 		ext.trayManager = &tray;
 		ext.currentWindowManager = &cwm;
 		ext.app = &app;
