@@ -185,33 +185,56 @@ download_and_extract() {
     fi
 }
 
+needs_sudo() {
+    local target="$1"
+    while [ ! -e "$target" ] && [ "$target" != "/" ]; do
+        target=$(dirname "$target")
+    done
+    [ ! -w "$target" ] || [ ! -w "$(dirname "$target")" ]
+}
+
 write_metadata_file() {
     local target_path="$1"
     echo ">> Saving installation path for future updates and removal..."
     
-    # Attempt to write to primary system path
-    if sudo mkdir -p "$(dirname "$METADATA_FILE")" >/dev/null 2>&1; then
-        if echo "$target_path" | sudo tee "$METADATA_FILE" >/dev/null; then
-            echo "   Saved path to primary location: $METADATA_FILE"
-            return 0
+    # Write to primary system metadata if installing to a system path requiring sudo
+    if needs_sudo "$target_path"; then
+        if sudo mkdir -p "$(dirname "$METADATA_FILE")" >/dev/null 2>&1; then
+            if echo "$target_path" | sudo tee "$METADATA_FILE" >/dev/null; then
+                echo "   Saved path to primary location: $METADATA_FILE"
+                return 0
+            fi
         fi
     fi
     
-    # Fallback path if sudo is unavailable or fails
+    # Fallback or user-space path
     mkdir -p "$(dirname "$FALLBACK_METADATA_FILE")"
     echo "$target_path" > "$FALLBACK_METADATA_FILE"
-    echo "   Saved path to fallback location: $FALLBACK_METADATA_FILE"
+    echo "   Saved path to location: $FALLBACK_METADATA_FILE"
 }
 
 remove_metadata_files() {
+    local target_path="$1"
     echo ">> Removing metadata files..."
     if [ -f "$METADATA_FILE" ]; then
-        sudo rm -f "$METADATA_FILE"
-        echo "   Removed primary metadata file: $METADATA_FILE"
+        local meta_val
+        meta_val=$(cat "$METADATA_FILE" 2>/dev/null || true)
+        if [ -z "$target_path" ] || [ "$meta_val" = "$target_path" ]; then
+            local SUDO=""
+            if needs_sudo "$METADATA_FILE"; then
+                SUDO="sudo"
+            fi
+            $SUDO rm -f "$METADATA_FILE"
+            echo "   Removed primary metadata file: $METADATA_FILE"
+        fi
     fi
     if [ -f "$FALLBACK_METADATA_FILE" ]; then
-        rm -f "$FALLBACK_METADATA_FILE"
-        echo "   Removed fallback metadata file: $FALLBACK_METADATA_FILE"
+        local meta_val
+        meta_val=$(cat "$FALLBACK_METADATA_FILE" 2>/dev/null || true)
+        if [ -z "$target_path" ] || [ "$meta_val" = "$target_path" ]; then
+            rm -f "$FALLBACK_METADATA_FILE"
+            echo "   Removed fallback metadata file: $FALLBACK_METADATA_FILE"
+        fi
     fi
 }
 
@@ -219,12 +242,15 @@ check_if_already_installed() {
     local PATH_FOUND=""
     if [ -f "$METADATA_FILE" ]; then
         PATH_FOUND=$(cat "$METADATA_FILE" 2>/dev/null || true)
+        if [ -n "$PATH_FOUND" ] && [ -f "$PATH_FOUND" ]; then
+            return 0
+        fi
     fi
-    if [ -z "$PATH_FOUND" ] && [ -f "$FALLBACK_METADATA_FILE" ]; then
+    if [ -f "$FALLBACK_METADATA_FILE" ]; then
         PATH_FOUND=$(cat "$FALLBACK_METADATA_FILE" 2>/dev/null || true)
-    fi
-    if [ -n "$PATH_FOUND" ] && [ -f "$PATH_FOUND" ]; then
-        return 0
+        if [ -n "$PATH_FOUND" ] && [ -f "$PATH_FOUND" ]; then
+            return 0
+        fi
     fi
     return 1
 }
@@ -235,18 +261,21 @@ get_hpr_path() {
     # 1. Check primary metadata file
     if [ -f "$METADATA_FILE" ]; then
         PATH_FOUND=$(cat "$METADATA_FILE" 2>/dev/null || true)
+        if [ -n "$PATH_FOUND" ] && [ -f "$PATH_FOUND" ]; then
+            echo "$PATH_FOUND"
+            return 0
+        fi
     fi
     
-    # 2. Check fallback metadata file if primary not found
-    if [ -z "$PATH_FOUND" ] && [ -f "$FALLBACK_METADATA_FILE" ]; then
+    # 2. Check fallback metadata file if primary not found or invalid
+    if [ -f "$FALLBACK_METADATA_FILE" ]; then
         PATH_FOUND=$(cat "$FALLBACK_METADATA_FILE" 2>/dev/null || true)
+        if [ -n "$PATH_FOUND" ] && [ -f "$PATH_FOUND" ]; then
+            echo "$PATH_FOUND"
+            return 0
+        fi
     fi
-    
-    # Verify the path actually exists
-    if [ -n "$PATH_FOUND" ] && [ -f "$PATH_FOUND" ]; then
-        echo "$PATH_FOUND"
-        return 0
-    fi
+
     
     # If not found, ask user
     echo -e "${YELLOW}>> HPR installation was not detected automatically.${NC}" >&2
@@ -579,16 +608,22 @@ install_hpr() {
     
     local INSTALL_DIR
     INSTALL_DIR=$(dirname "$INSTALL_PATH")
+
+    local SUDO=""
+    if needs_sudo "$INSTALL_DIR" || needs_sudo "$INSTALL_PATH"; then
+        SUDO="sudo"
+    fi
+
     if [ ! -d "$INSTALL_DIR" ]; then
         echo ">> Creating target directory: $INSTALL_DIR..."
-        sudo mkdir -p "$INSTALL_DIR"
+        $SUDO mkdir -p "$INSTALL_DIR"
     fi
     
     echo ">> Installing HPR binary to $INSTALL_PATH..."
     if [ -f "$INSTALL_PATH" ]; then
-        sudo rm -f "$INSTALL_PATH"
+        $SUDO rm -f "$INSTALL_PATH"
     fi
-    sudo install -m 755 "$SRC_DIR/HPR" "$INSTALL_PATH"
+    $SUDO install -m 755 "$SRC_DIR/HPR" "$INSTALL_PATH"
     echo "   Binary installed successfully."
     
     # Install any dynamic libraries (*.so)
@@ -597,9 +632,9 @@ install_hpr() {
         if [ -e "$so_file" ] || [ -L "$so_file" ]; then
             local target_so="$INSTALL_DIR/$(basename "$so_file")"
             if [ -e "$target_so" ] || [ -L "$target_so" ]; then
-                sudo rm -f "$target_so"
+                $SUDO rm -f "$target_so"
             fi
-            sudo cp -d "$so_file" "$target_so"
+            $SUDO cp -d "$so_file" "$target_so"
             echo "   Copied $(basename "$so_file") to $INSTALL_DIR"
         fi
     done
@@ -646,14 +681,19 @@ update_hpr() {
     local INSTALL_PATH="$current_bin_path"
     local INSTALL_DIR
     INSTALL_DIR=$(dirname "$INSTALL_PATH")
+
+    local SUDO=""
+    if needs_sudo "$INSTALL_DIR" || needs_sudo "$INSTALL_PATH"; then
+        SUDO="sudo"
+    fi
     
     echo ">> Preparing update: replacing old HPR files in '$INSTALL_DIR'..."
     # safety check for critical system directory
     if [[ "$INSTALL_DIR" == "/usr/local/bin" || "$INSTALL_DIR" == "/usr/bin" || "$INSTALL_DIR" == "/bin" || "$INSTALL_DIR" == "/usr/local" || "$INSTALL_DIR" == "$HOME" || "$INSTALL_DIR" == "/" ]]; then
         echo "   Note: '$INSTALL_DIR' is a protected system path — only the HPR binary and its libraries will be replaced, not the whole directory."
         echo "   Removing old HPR binary and shared library (libslint_cpp.so)..."
-        sudo rm -f "$INSTALL_PATH"
-        sudo rm -f "$INSTALL_DIR"/libslint_cpp.so*
+        $SUDO rm -f "$INSTALL_PATH"
+        $SUDO rm -f "$INSTALL_DIR"/libslint_cpp.so*
     else
         echo -e "${RED}WARNING: '$INSTALL_DIR' is a custom install directory and ALL files inside it will be permanently deleted.${NC}"
         echo -e "${RED}   This includes HPR and anything else you may have placed in that folder.${NC}"
@@ -661,7 +701,7 @@ update_hpr() {
         read -p "$(echo -e "${RED}Confirm deletion of all files inside '$INSTALL_DIR'? (y/N): ${NC}")" confirm_wipe < /dev/tty
         if [[ "$confirm_wipe" =~ ^[Yy] ]]; then
             echo "   Wiping directory: $INSTALL_DIR..."
-            sudo rm -rf "$INSTALL_DIR"/*
+            $SUDO rm -rf "$INSTALL_DIR"/*
         else
             echo "   Cancelled. No files were deleted. Returning to the main menu."
             echo ""
@@ -671,16 +711,16 @@ update_hpr() {
     fi
     
     echo ">> Installing HPR binary to $INSTALL_PATH..."
-    sudo install -m 755 "$SRC_DIR/HPR" "$INSTALL_PATH"
+    $SUDO install -m 755 "$SRC_DIR/HPR" "$INSTALL_PATH"
     
     echo ">> Installing dynamic libraries to $INSTALL_DIR..."
     find "$SRC_DIR" -name "*.so*" | while read -r so_file; do
         if [ -e "$so_file" ] || [ -L "$so_file" ]; then
             local target_so="$INSTALL_DIR/$(basename "$so_file")"
             if [ -e "$target_so" ] || [ -L "$target_so" ]; then
-                sudo rm -f "$target_so"
+                $SUDO rm -f "$target_so"
             fi
-            sudo cp -d "$so_file" "$target_so"
+            $SUDO cp -d "$so_file" "$target_so"
             echo "   Copied $(basename "$so_file") to $INSTALL_DIR"
         fi
     done
@@ -711,20 +751,25 @@ remove_hpr() {
     local INSTALL_PATH="$current_bin_path"
     local INSTALL_DIR
     INSTALL_DIR=$(dirname "$INSTALL_PATH")
+
+    local SUDO=""
+    if needs_sudo "$INSTALL_DIR" || needs_sudo "$INSTALL_PATH"; then
+        SUDO="sudo"
+    fi
     
     echo ">> Removing HPR binary and associated library files from '$INSTALL_DIR'..."
     if [[ "$INSTALL_DIR" == "/usr/local/bin" || "$INSTALL_DIR" == "/usr/bin" || "$INSTALL_DIR" == "/bin" || "$INSTALL_DIR" == "/usr/local" || "$INSTALL_DIR" == "$HOME" || "$INSTALL_DIR" == "/" ]]; then
         echo "   Note: '$INSTALL_DIR' is a protected system path — only the HPR binary and its libraries will be removed, not the whole directory."
         echo "   Removing HPR binary and shared library (libslint_cpp.so)..."
-        sudo rm -f "$INSTALL_PATH"
-        sudo rm -f "$INSTALL_DIR"/libslint_cpp.so*
+        $SUDO rm -f "$INSTALL_PATH"
+        $SUDO rm -f "$INSTALL_DIR"/libslint_cpp.so*
     else
         echo -e "${RED}WARNING: '$INSTALL_DIR' is a custom install directory and ALL files inside it will be permanently deleted.${NC}"
         echo -e "${RED}   This includes HPR and anything else you may have placed in that folder.${NC}"
         read -p "$(echo -e "${RED}Confirm deletion of all files inside '$INSTALL_DIR'? (y/N): ${NC}")" confirm_wipe < /dev/tty
         if [[ "$confirm_wipe" =~ ^[Yy] ]]; then
             echo "   Wiping and removing directory: $INSTALL_DIR..."
-            sudo rm -rf "$INSTALL_DIR"
+            $SUDO rm -rf "$INSTALL_DIR"
         else
             echo "   Cancelled. No files were deleted. Returning to the main menu."
             echo ""
@@ -736,7 +781,7 @@ remove_hpr() {
     remove_desktop_launcher
     
     # Remove metadata
-    remove_metadata_files
+    remove_metadata_files "$INSTALL_PATH"
     
     echo -e "${BOLD}=================================================${NC}"
     echo -e "${BOLD}HPR Removal Complete!${NC}"
