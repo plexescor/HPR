@@ -190,6 +190,18 @@ needs_sudo() {
     while [ ! -e "$target" ] && [ "$target" != "/" ]; do
         target=$(dirname "$target")
     done
+    if [ -d "$target" ]; then
+        [ ! -w "$target" ]
+    else
+        [ ! -w "$target" ] || [ ! -w "$(dirname "$target")" ]
+    fi
+}
+
+needs_sudo_for_removal() {
+    local target="$1"
+    while [ ! -e "$target" ] && [ "$target" != "/" ]; do
+        target=$(dirname "$target")
+    done
     [ ! -w "$target" ] || [ ! -w "$(dirname "$target")" ]
 }
 
@@ -752,18 +764,21 @@ remove_hpr() {
     local INSTALL_DIR
     INSTALL_DIR=$(dirname "$INSTALL_PATH")
 
-    local SUDO=""
-    if needs_sudo "$INSTALL_DIR" || needs_sudo "$INSTALL_PATH"; then
-        SUDO="sudo"
-    fi
-    
     echo ">> Removing HPR binary and associated library files from '$INSTALL_DIR'..."
     if [[ "$INSTALL_DIR" == "/usr/local/bin" || "$INSTALL_DIR" == "/usr/bin" || "$INSTALL_DIR" == "/bin" || "$INSTALL_DIR" == "/usr/local" || "$INSTALL_DIR" == "$HOME" || "$INSTALL_DIR" == "/" ]]; then
+        local SUDO=""
+        if needs_sudo "$INSTALL_DIR" || needs_sudo "$INSTALL_PATH"; then
+            SUDO="sudo"
+        fi
         echo "   Note: '$INSTALL_DIR' is a protected system path — only the HPR binary and its libraries will be removed, not the whole directory."
         echo "   Removing HPR binary and shared library (libslint_cpp.so)..."
         $SUDO rm -f "$INSTALL_PATH"
         $SUDO rm -f "$INSTALL_DIR"/libslint_cpp.so*
     else
+        local SUDO=""
+        if needs_sudo_for_removal "$INSTALL_DIR" || needs_sudo "$INSTALL_PATH"; then
+            SUDO="sudo"
+        fi
         echo -e "${RED}WARNING: '$INSTALL_DIR' is a custom install directory and ALL files inside it will be permanently deleted.${NC}"
         echo -e "${RED}   This includes HPR and anything else you may have placed in that folder.${NC}"
         read -p "$(echo -e "${RED}Confirm deletion of all files inside '$INSTALL_DIR'? (y/N): ${NC}")" confirm_wipe < /dev/tty
