@@ -205,6 +205,30 @@ needs_sudo_for_removal() {
     [ ! -w "$target" ] || [ ! -w "$(dirname "$target")" ]
 }
 
+is_protected_dir() {
+    local dir="$1"
+    while [[ "$dir" == */ && "$dir" != "/" ]]; do
+        dir="${dir%/}"
+    done
+    case "$dir" in
+        "/"|"/bin"|"/usr"|"/usr/bin"|"/usr/local"|"/usr/local/bin"|"/sbin"|"/usr/sbin"|"/etc"|"/opt"|"/var"|"/home")
+            return 0
+            ;;
+        "$HOME"|"$HOME/Applications"|"$HOME/.local"|"$HOME/.local/bin"|"$HOME/bin"|"$HOME/Desktop"|"$HOME/Downloads"|"$HOME/Documents"|"$HOME/.config")
+            return 0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+has_non_hpr_files() {
+    local dir="$1"
+    [ -d "$dir" ] || return 1
+    find "$dir" -mindepth 1 -maxdepth 1 ! -name "HPR" ! -name "hpr" ! -name "libslint_cpp.so*" 2>/dev/null | grep -q .
+}
+
 write_metadata_file() {
     local target_path="$1"
     echo ">> Saving installation path for future updates and removal..."
@@ -607,13 +631,27 @@ install_hpr() {
             cleaned_path="${cleaned_path%/}"
         done
         
+        local parent_dir
+        parent_dir=$(dirname "$cleaned_path")
         local base_name
         base_name=$(basename "$cleaned_path")
-        # If the entered path is a directory or has a basename other than HPR/hpr, append /HPR
-        if [[ "$input_path" == */ ]] || [ -d "$cleaned_path" ] || [[ "$base_name" != "HPR" && "$base_name" != "hpr" ]]; then
+
+        # Standard bin directory (e.g. /usr/local/bin or ~/.local/bin)
+        if [[ "$cleaned_path" == */bin ]]; then
             INSTALL_PATH="$cleaned_path/HPR"
-        else
+        elif [[ "$parent_dir" == */bin && ("$base_name" == "HPR" || "$base_name" == "hpr") ]]; then
             INSTALL_PATH="$cleaned_path"
+        else
+            # For custom application directories, install into a dedicated HPR subfolder
+            if [[ "$base_name" == "HPR" || "$base_name" == "hpr" ]]; then
+                if [[ "$(basename "$parent_dir")" == "HPR" || "$(basename "$parent_dir")" == "hpr" ]]; then
+                    INSTALL_PATH="$cleaned_path"
+                else
+                    INSTALL_PATH="$cleaned_path/HPR"
+                fi
+            else
+                INSTALL_PATH="$cleaned_path/HPR/HPR"
+            fi
         fi
         break
     done
@@ -700,27 +738,9 @@ update_hpr() {
     fi
     
     echo ">> Preparing update: replacing old HPR files in '$INSTALL_DIR'..."
-    # safety check for critical system directory
-    if [[ "$INSTALL_DIR" == "/usr/local/bin" || "$INSTALL_DIR" == "/usr/bin" || "$INSTALL_DIR" == "/bin" || "$INSTALL_DIR" == "/usr/local" || "$INSTALL_DIR" == "$HOME" || "$INSTALL_DIR" == "/" ]]; then
-        echo "   Note: '$INSTALL_DIR' is a protected system path — only the HPR binary and its libraries will be replaced, not the whole directory."
-        echo "   Removing old HPR binary and shared library (libslint_cpp.so)..."
-        $SUDO rm -f "$INSTALL_PATH"
-        $SUDO rm -f "$INSTALL_DIR"/libslint_cpp.so*
-    else
-        echo -e "${RED}WARNING: '$INSTALL_DIR' is a custom install directory and ALL files inside it will be permanently deleted.${NC}"
-        echo -e "${RED}   This includes HPR and anything else you may have placed in that folder.${NC}"
-        echo -e "${RED}   If you only want to replace the HPR binary, answer N — the update will abort safely.${NC}"
-        read -p "$(echo -e "${RED}Confirm deletion of all files inside '$INSTALL_DIR'? (y/N): ${NC}")" confirm_wipe < /dev/tty
-        if [[ "$confirm_wipe" =~ ^[Yy] ]]; then
-            echo "   Wiping directory: $INSTALL_DIR..."
-            $SUDO rm -rf "$INSTALL_DIR"/*
-        else
-            echo "   Cancelled. No files were deleted. Returning to the main menu."
-            echo ""
-            cleanup_temp
-            return 0
-        fi
-    fi
+    echo "   Removing old HPR binary and shared library (libslint_cpp.so)..."
+    $SUDO rm -f "$INSTALL_PATH"
+    $SUDO rm -f "$INSTALL_DIR"/libslint_cpp.so*
     
     echo ">> Installing HPR binary to $INSTALL_PATH..."
     $SUDO install -m 755 "$SRC_DIR/HPR" "$INSTALL_PATH"
@@ -763,14 +783,14 @@ remove_hpr() {
     local INSTALL_PATH="$current_bin_path"
     local INSTALL_DIR
     INSTALL_DIR=$(dirname "$INSTALL_PATH")
-
-    echo ">> Removing HPR binary and associated library files from '$INSTALL_DIR'..."
-    if [[ "$INSTALL_DIR" == "/usr/local/bin" || "$INSTALL_DIR" == "/usr/bin" || "$INSTALL_DIR" == "/bin" || "$INSTALL_DIR" == "/usr/local" || "$INSTALL_DIR" == "$HOME" || "$INSTALL_DIR" == "/" ]]; then
+    local install_base
+    install_base=$(basename "$INSTALL_DIR")
+    if is_protected_dir "$INSTALL_DIR" || has_non_hpr_files "$INSTALL_DIR" || [[ "$install_base" != "HPR" && "$install_base" != "hpr" ]]; then
         local SUDO=""
         if needs_sudo "$INSTALL_DIR" || needs_sudo "$INSTALL_PATH"; then
             SUDO="sudo"
         fi
-        echo "   Note: '$INSTALL_DIR' is a protected system path — only the HPR binary and its libraries will be removed, not the whole directory."
+        echo "   Note: '$INSTALL_DIR' is a protected or shared path — only the HPR binary and its libraries will be removed, not the whole directory."
         echo "   Removing HPR binary and shared library (libslint_cpp.so)..."
         $SUDO rm -f "$INSTALL_PATH"
         $SUDO rm -f "$INSTALL_DIR"/libslint_cpp.so*
@@ -779,11 +799,10 @@ remove_hpr() {
         if needs_sudo_for_removal "$INSTALL_DIR" || needs_sudo "$INSTALL_PATH"; then
             SUDO="sudo"
         fi
-        echo -e "${RED}WARNING: '$INSTALL_DIR' is a custom install directory and ALL files inside it will be permanently deleted.${NC}"
-        echo -e "${RED}   This includes HPR and anything else you may have placed in that folder.${NC}"
-        read -p "$(echo -e "${RED}Confirm deletion of all files inside '$INSTALL_DIR'? (y/N): ${NC}")" confirm_wipe < /dev/tty
+        echo -e "${RED}WARNING: '$INSTALL_DIR' is a dedicated HPR directory and will be removed.${NC}"
+        read -p "$(echo -e "${RED}Confirm deletion of directory '$INSTALL_DIR'? (y/N): ${NC}")" confirm_wipe < /dev/tty
         if [[ "$confirm_wipe" =~ ^[Yy] ]]; then
-            echo "   Wiping and removing directory: $INSTALL_DIR..."
+            echo "   Removing directory: $INSTALL_DIR..."
             $SUDO rm -rf "$INSTALL_DIR"
         else
             echo "   Cancelled. No files were deleted. Returning to the main menu."
