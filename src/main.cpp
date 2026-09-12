@@ -43,6 +43,7 @@
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
 #else
 int main()
+#endif
 {
 	//In debug mode, dont care about multiple instances
 	#ifdef NDEBUG
@@ -87,7 +88,9 @@ int main()
 		ext.trayManager = nullptr;
 		ext.currentWindowManager = &cwm;
 		ext.app = nullptr;
-		ext.linuxInit = &linuxInit;
+		#ifdef __linux__
+			ext.linuxInit = &linuxInit;
+		#endif
 
 		cwm.detectAndSetBackend();
 		ext.run();
@@ -144,7 +147,9 @@ int main()
 		ext.trayManager = &tray;
 		ext.currentWindowManager = &cwm;
 		ext.app = &app;
-		ext.linuxInit = &linuxInit;
+		#ifdef __linux__
+			ext.linuxInit = &linuxInit;
+		#endif
 
 		cwm.detectAndSetBackend();
 		ext.run();
@@ -183,5 +188,3 @@ int main()
 	#endif
 	return 0;
 }
-
-#endif
