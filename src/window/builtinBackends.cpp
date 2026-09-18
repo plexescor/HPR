@@ -138,6 +138,8 @@ std::string kwinScriptGetResult(const std::string &marker, const std::string &ac
 	int scriptId = -1;
 	dbus_message_get_args(reply, &err, DBUS_TYPE_INT32, &scriptId, DBUS_TYPE_INVALID);
 	dbus_message_unref(reply);
+	dbus_error_free(&err);
+	dbus_error_init(&err);  
 
 	if (scriptId < 0)
 	{
@@ -157,6 +159,8 @@ std::string kwinScriptGetResult(const std::string &marker, const std::string &ac
 	dbus_message_unref(msg);
 	if (reply)
 		dbus_message_unref(reply);
+	dbus_error_free(&err);
+	dbus_error_init(&err); 
 
 	// stop() via kwin_conn
 	msg = dbus_message_new_method_call("org.kde.KWin", scriptPath.c_str(), "org.kde.kwin.Script", "stop");
@@ -164,6 +168,8 @@ std::string kwinScriptGetResult(const std::string &marker, const std::string &ac
 	dbus_message_unref(msg);
 	if (reply)
 		dbus_message_unref(reply);
+	dbus_error_free(&err);
+	dbus_error_init(&err);  
 
 	// Poll for result on self_conn
 	std::string result;
@@ -198,13 +204,15 @@ std::string kwinScriptGetResult(const std::string &marker, const std::string &ac
 	// unloadScript via kwin_conn
 	std::string unloadName = marker;
 	const char *unloadNameCStr = unloadName.c_str();
+	dbus_error_free(&err);      // ← ADD THIS LINE
+	dbus_error_init(&err);    
 	msg = dbus_message_new_method_call("org.kde.KWin", "/Scripting", "org.kde.kwin.Scripting", "unloadScript");
 	dbus_message_append_args(msg, DBUS_TYPE_STRING, &unloadNameCStr, DBUS_TYPE_INVALID);
 	reply = dbus_connection_send_with_reply_and_block(kwin_conn, msg, 5000, &err);
 	dbus_message_unref(msg);
 	if (reply)
 		dbus_message_unref(reply);
-
+	dbus_error_free(&err);
 	std::remove(tmpPath.c_str());
 	dbus_connection_close(self_conn);
 	dbus_connection_unref(self_conn);

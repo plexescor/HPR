@@ -38,6 +38,10 @@
 #include <condition_variable>
 #include <mutex>
 
+#ifdef __linux__
+#include <dbus/dbus.h>
+#endif
+
 #ifdef _WIN32
 #include <windows.h>
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nShowCmd)
@@ -45,6 +49,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 int main()
 #endif
 {
+	#ifdef __linux__
+	dbus_threads_init_default();
+	#endif
 	//In debug mode, dont care about multiple instances
 	#ifdef NDEBUG
 		if (!SingleInstance::getInstance().checkAndNotify())

@@ -548,9 +548,15 @@ void showNotification(const std::string &title, const std::string &msg)
 		}
 	}
 #ifdef __linux__
-	DBusConnection *conn = dbus_bus_get(DBUS_BUS_SESSION, nullptr);
-	if (!conn)
+	DBusError notifErr;
+	dbus_error_init(&notifErr);
+	DBusConnection *conn = dbus_bus_get_private(DBUS_BUS_SESSION, &notifErr);
+	if (!conn || dbus_error_is_set(&notifErr))
+	{
+		dbus_error_free(&notifErr);
 		return;
+	}
+	dbus_error_free(&notifErr);
 
 	DBusMessage *message = dbus_message_new_method_call(
 		"org.freedesktop.Notifications", "/org/freedesktop/Notifications", "org.freedesktop.Notifications", "Notify");
@@ -586,6 +592,7 @@ void showNotification(const std::string &title, const std::string &msg)
 	dbus_connection_send(conn, message, nullptr);
 	dbus_connection_flush(conn);
 	dbus_message_unref(message);
+	dbus_connection_close(conn);	
 	dbus_connection_unref(conn);
 
 #elif defined(_WIN32)

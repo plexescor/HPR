@@ -464,6 +464,8 @@ void TrayManager::trayManager_LoopLinux()
 		{
 			const char *propName = nullptr;
 			const char *ifaceName = nullptr;
+			dbus_error_free(&err);
+			dbus_error_init(&err);
 			dbus_message_get_args(msg, &err, DBUS_TYPE_STRING, &ifaceName, DBUS_TYPE_STRING, &propName,
 								  DBUS_TYPE_INVALID);
 
@@ -694,6 +696,8 @@ void TrayManager::trayManager_LoopLinux()
 		else if (isGnome && dbus_message_is_method_call(msg, "org.kde.StatusNotifierItem", "ProvideXdgActivationToken"))
 		{
 			const char *token = nullptr;
+			dbus_error_free(&err);
+			dbus_error_init(&err);
 			dbus_message_get_args(msg, &err, DBUS_TYPE_STRING, &token, DBUS_TYPE_INVALID);
 			if (token && token[0] != '\0')
 				setenv("XDG_ACTIVATION_TOKEN", token, 1);
@@ -750,9 +754,12 @@ void TrayManager::trayManager_LoopLinux()
 			const char *name = nullptr;
 			const char *oldOwner = nullptr;
 			const char *newOwner = nullptr;
-			dbus_message_get_args(msg, &err, DBUS_TYPE_STRING, &name, DBUS_TYPE_STRING, &oldOwner, DBUS_TYPE_STRING,
-								  &newOwner, DBUS_TYPE_INVALID);
 			dbus_error_free(&err);
+			dbus_error_init(&err);
+			dbus_message_get_args(msg, &err, DBUS_TYPE_STRING, &name, DBUS_TYPE_STRING, &oldOwner, DBUS_TYPE_STRING,
+								&newOwner, DBUS_TYPE_INVALID);
+			dbus_error_free(&err);
+			dbus_error_init(&err);
 
 			if (name && std::string(name) == "org.kde.StatusNotifierWatcher" && newOwner && newOwner[0] != '\0')
 			{
