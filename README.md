@@ -4,7 +4,7 @@
   </a>
 </p>
 
-> HPR is built solo by a 16-year-old developer in India. If I were an adult I would not have made HPR free at all because I would've needed money to survive, but I am a teen and I live under my Dad so I could "afford" HPR to be fully free and open source. If donations are enough to show this is worth continuing, I can justify spending time on HPR and try my hand at other things. If HPR has been useful to you, a Ko-fi donation genuinely helps.
+> HPR is free and open source... forever. If HPR has been useful to you, consider supporting it on ko-fi.
 
 ---
 
