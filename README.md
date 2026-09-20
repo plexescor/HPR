@@ -4,7 +4,7 @@
   </a>
 </p>
 
-> HPR is built solo by a 16-year-old developer in India. My Dad is pushing me to focus on JEE - India's national engineering entrance exam, one of the most brutally competitive exams in the world - so HPR development happens in whatever time I can steal from that. If I were an adult I would not have made HPR free at all because I would've needed money to survive, but I am a teen and I live under my Dad so I could "afford" HPR to be fully free and open source. If donations are enough to show this is worth continuing, I can justify spending time on HPR and try my hand at other things instead of just grinding JEE prep. If HPR has been useful to you, a Ko-fi donation genuinely helps.
+> HPR is free and open source... forever. If HPR has been useful to you, consider supporting it on ko-fi.
 
 ---
 
