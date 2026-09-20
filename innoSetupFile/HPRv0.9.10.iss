@@ -50,8 +50,8 @@ Source: "C:\HPR\v0.9.10\assets\*"; DestDir: "{userappdata}\HPR\HPR_Config\assets
 ; -- ui-REFERENCEONLY: always silently overwrite --
 Source: "C:\HPR\v0.9.10\ui\*"; DestDir: "{userappdata}\HPR\HPR_Config\ui-REFERENCEONLY"; Flags: ignoreversion recursesubdirs createallsubdirs
 
-; -- ui: BeforeInstall deletes folder if user confirmed, onlyifdoesntexist skips if user said no --
-Source: "C:\HPR\v0.9.10\ui\*"; DestDir: "{userappdata}\HPR\HPR_Config\ui"; Flags: ignoreversion recursesubdirs createallsubdirs onlyifdoesntexist; BeforeInstall: DeleteUIIfConfirmed
+; -- ui: always silently overwrite
+Source: "C:\HPR\v0.9.10\ui\*"; DestDir: "{userappdata}\HPR\HPR_Config\ui"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Dirs]
 Name: "{userappdata}\HPR\HPR_Config"
@@ -74,18 +74,6 @@ var
   TabAliasOverwriteConfirmed: Boolean;
   ProjectAliasOverwriteConfirmed: Boolean;
   ConfigOverwriteConfirmed: Boolean;
-  UIOverwriteConfirmed: Boolean;
-  DeleteUIIfConfirmedDone: Boolean;
-
-procedure DeleteUIIfConfirmed();
-begin
-  if not DeleteUIIfConfirmedDone then
-  begin
-    DeleteUIIfConfirmedDone := True;
-    if UIOverwriteConfirmed then
-      DelTree(ExpandConstant('{userappdata}\HPR\HPR_Config\ui'), True, True, True);
-  end;
-end;
 
 function ShouldCopyAliases(): Boolean;
 begin
@@ -164,19 +152,6 @@ begin
         mbConfirmation, MB_YESNO
       );
       ConfigOverwriteConfirmed := (Res = IDYES);
-    end;
-
-    // ui/ folder
-    if DirExists(ConfigDir + '\ui') then
-    begin
-      Res := MsgBox(
-        'ui/ folder already exists.' + #13#10 +
-        'Overwrite it? Your custom UI will be replaced with defaults.' + #13#10#13#10 +
-        'The latest defaults will always be available at:' + #13#10 +
-        ConfigDir + '\ui-REFERENCEONLY\',
-        mbConfirmation, MB_YESNO
-      );
-      UIOverwriteConfirmed := (Res = IDYES);
     end;
   end;
 end;

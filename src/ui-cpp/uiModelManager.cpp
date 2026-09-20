@@ -6,6 +6,7 @@
 #include "timeUtils.hpp"
 #include "timelineManager.hpp"
 
+#include <algorithm>
 #include <cstdint>
 #include <map>
 #include <mutex>
@@ -1497,6 +1498,22 @@ void UiModelManager::showExtensions(const std::map<std::pair<std::string, std::s
 
 	if (!ui.has_value())
 		return;
+
+	// Detect HPR Store: author == "plexescor" && name == "hpr store" (case-insensitive)
+	auto toLower = [](std::string s) {
+		std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return std::tolower(c); });
+		return s;
+	};
+	bool hprStoreInstalled = false;
+	for (const auto &[key, info] : extensionsMap)
+	{
+		if (toLower(info.author) == "plexescor" && toLower(info.name) == "hpr store")
+		{
+			hprStoreInstalled = true;
+			break;
+		}
+	}
+
 	std::vector<LoadedExtension_S> vec;
 	for (const auto &[key, info] : extensionsMap)
 	{
@@ -1506,13 +1523,14 @@ void UiModelManager::showExtensions(const std::map<std::pair<std::string, std::s
 
 	slint::ComponentWeakHandle<MainWindow> weak(ui.value());
 	slint::invoke_from_event_loop(
-		[weak, vec, this]()
+		[weak, vec, hprStoreInstalled, this]()
 		{
 			if (auto handle = weak.lock())
 			{
 				extensionsModel->clear();
 				for (const auto &e : vec)
 					extensionsModel->push_back(e);
+				(*handle)->set_hprStoreInstalled_S(hprStoreInstalled);
 			}
 		});
 }
@@ -1525,6 +1543,21 @@ void UiModelManager::showExtensions_Interpreted(const std::map<std::pair<std::st
 	if (extensionsMap == lastKnownExtensionsMap)
 		return;
 	lastKnownExtensionsMap = extensionsMap;
+
+	// Detect HPR Store: author == "plexescor" && name == "hpr store" (case-insensitive)
+	auto toLower = [](std::string s) {
+		std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) { return std::tolower(c); });
+		return s;
+	};
+	bool hprStoreInstalled = false;
+	for (const auto &[key, info] : extensionsMap)
+	{
+		if (toLower(info.author) == "plexescor" && toLower(info.name) == "hpr store")
+		{
+			hprStoreInstalled = true;
+			break;
+		}
+	}
 
 	std::vector<slint::interpreter::Value> vec;
 	for (const auto &[key, info] : extensionsMap)
@@ -1539,13 +1572,15 @@ void UiModelManager::showExtensions_Interpreted(const std::map<std::pair<std::st
 
 	slint::ComponentWeakHandle<slint::interpreter::ComponentInstance> weak(ui_interp.value());
 	slint::invoke_from_event_loop(
-		[weak, vec, this]()
+		[weak, vec, hprStoreInstalled, this]()
 		{
 			if (auto handle = weak.lock())
 			{
 				extensionsModel_interp->clear();
 				for (const auto &e : vec)
 					extensionsModel_interp->push_back(e);
+				if ((*handle)->get_property("hprStoreInstalled_S").has_value())
+					(*handle)->set_property("hprStoreInstalled_S", slint::interpreter::Value(hprStoreInstalled));
 			}
 		});
 }

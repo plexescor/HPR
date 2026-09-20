@@ -93,22 +93,12 @@ echo ">> ui-REFERENCEONLY/ updated to latest defaults silently."
 
 echo ""
 
-# ui/ — only copy if doesnt exist, ask if it does
+# ui/ — ALWAYS overwrite silently
 if [[ -d "$CONFIG_DIR/ui" ]]; then
-    read -p ">> ui/ folder already exists. Overwrite? (y/N): " confirm_ui
-    if [[ "$confirm_ui" == "y" || "$confirm_ui" == "Y" ]]; then
-        rm -rf "$CONFIG_DIR/ui"
-        cp -r "$SCRIPT_DIR/ui" "$CONFIG_DIR/ui"
-        echo "   ui/ overwritten. Your custom UI has been replaced with defaults."
-    else
-        echo "   ui/ skipped. Your custom UI is safe."
-        echo "   Reference the latest default UI at:"
-        echo "   $CONFIG_DIR/ui-REFERENCEONLY/"
-    fi
-else
-    cp -r "$SCRIPT_DIR/ui" "$CONFIG_DIR/ui"
-    echo ">> ui/ folder copied successfully."
+    rm -rf "$CONFIG_DIR/ui"
 fi
+cp -r "$SCRIPT_DIR/ui" "$CONFIG_DIR/ui"
+echo ">> ui/ updated to latest defaults silently."
 
 echo ""
 

@@ -19,6 +19,7 @@ import { FeedbackView } from "./feedback-view.slint";
 import { ThemesView } from "./themes-view.slint";
 import { MiscImageView } from "./misc-image-view.slint";
 import { SidebarButtons } from "./sidebar-buttons.slint";
+import { BackButton } from "./back-button.slint";
 
 
 
@@ -141,6 +142,7 @@ export component MainWindow inherits Window {
     in property <bool>            useThemesEnabled_S;
     in property <string>          currentTheme_S;
     in property <string>          activeTheme_S;
+    in property <bool>            hprStoreInstalled_S;
 
     init => {
         StdPalette.color-scheme = isDarkMode ? ColorScheme.dark : ColorScheme.light;
@@ -319,8 +321,13 @@ export component MainWindow inherits Window {
                     }
 
                     HorizontalLayout {
-                        spacing: 0px;
+                        spacing: 8px * Palette.scale;
                         alignment: end;
+
+                        if root.active-view != "DASHBOARD" : BackButton {
+                            y: (parent.height - self.height) / 2;
+                            clicked => { root.active-view = "DASHBOARD"; }
+                        }
 
                         // Active-window pill — shown only in native title-bar mode
                         Rectangle {
@@ -524,6 +531,7 @@ export component MainWindow inherits Window {
                 themeVersion: root.themeVersion_S;
                 themeAuthor: root.themeAuthor_S;
                 useThemesEnabled: root.useThemesEnabled_S;
+                hprStoreInstalled: root.hprStoreInstalled_S;
 
                 themeSelected(theme) => { root.themeSelected(theme); }
                 themeApply(theme) => { root.themeApply(theme); }

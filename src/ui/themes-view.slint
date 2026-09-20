@@ -14,6 +14,7 @@ export component ThemesView {
     in property <bool> useThemesEnabled;
     in-out property <string> currentTheme;
     in property <string> activeTheme;
+    in property <bool> hprStoreInstalled;
 
     callback themeSelected(string);
     callback themeApply(string);
@@ -137,7 +138,7 @@ export component ThemesView {
                     horizontal-alignment: center;
                 }
 
-                HorizontalLayout {
+                if !root.hprStoreInstalled : HorizontalLayout {
                     alignment: center;
                     storeBtnTheme := Rectangle {
                         width: storeBtnThemeText.preferred-width + 36px * Palette.scale;

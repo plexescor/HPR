@@ -1,0 +1,45 @@
+import { Palette } from "./palette.slint";
+
+// ── Back to Dashboard Button ──────────────────────────────────────────────────
+export component BackButton inherits Rectangle {
+    callback clicked();
+
+    width: backText.preferred-width + 28px * Palette.scale;
+    height: 30px * Palette.scale;
+    border-radius: 6px * Palette.scale;
+    border-width: 1px * Palette.scale;
+
+    animate background { duration: 100ms; }
+    animate border-color { duration: 100ms; }
+
+    ta := TouchArea {
+        mouse-cursor: pointer;
+        clicked => { root.clicked(); }
+    }
+
+    states [
+        pressed when ta.pressed: {
+            background: #60a5fa35;
+            border-color: #60a5fa80;
+        }
+        hovered when ta.has-hover: {
+            background: #60a5fa25;
+            border-color: #60a5fa60;
+        }
+        normal when !ta.has-hover: {
+            background: #60a5fa12;
+            border-color: #60a5fa35;
+        }
+    ]
+
+    backText := Text {
+        text: "< DASHBOARD";
+        font-size: 8px * Palette.scale;
+        font-weight: 700;
+        letter-spacing: 2px * Palette.scale;
+        color: ta.pressed ? #bfdbfe : ta.has-hover ? #93c5fd : #60a5fa;
+        horizontal-alignment: center;
+        vertical-alignment: center;
+        animate color { duration: 100ms; }
+    }
+}

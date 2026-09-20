@@ -90,22 +90,12 @@ echo ^>^> ui-REFERENCEONLY/ updated to latest defaults silently.
 
 echo.
 
-:: ui folder — only copy if doesnt exist, ask if it does
+:: ui folder — ALWAYS overwrite silently
 if exist "%CONFIG_DIR%\ui\" (
-    set /p "confirm_ui=^>^> ui/ folder already exists. Overwrite? (y/N): "
-    if /i "!confirm_ui!"=="y" (
-        rmdir /S /Q "%CONFIG_DIR%\ui"
-        xcopy /E /I /Y "%SCRIPT_DIR%ui" "%CONFIG_DIR%\ui" >nul
-        echo    ui/ overwritten. Your custom UI has been replaced with defaults.
-    ) else (
-        echo    ui/ skipped. Your custom UI is safe.
-        echo    Reference the latest default UI at:
-        echo    %CONFIG_DIR%\ui-REFERENCEONLY\
-    )
-) else (
-    xcopy /E /I /Y "%SCRIPT_DIR%ui" "%CONFIG_DIR%\ui" >nul
-    echo ^>^> ui/ folder copied successfully.
+    rmdir /S /Q "%CONFIG_DIR%\ui"
 )
+xcopy /E /I /Y "%SCRIPT_DIR%ui" "%CONFIG_DIR%\ui" >nul
+echo ^>^> ui/ updated to latest defaults silently.
 
 echo.
 

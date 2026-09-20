@@ -400,16 +400,6 @@ setup_configs() {
         ASSETS_SRC="$SRC_DIR/shippedWithBinary/assets"
     fi
     
-    # Check if active UI was modified by the user before changing REFERENCEONLY
-    local UPDATE_ACTIVE_UI=false
-    if [ ! -d "$CONFIG_DIR/ui" ]; then
-        UPDATE_ACTIVE_UI=true
-    elif [ -d "$CONFIG_DIR/ui-REFERENCEONLY" ]; then
-        if diff -r "$CONFIG_DIR/ui" "$CONFIG_DIR/ui-REFERENCEONLY" >/dev/null 2>&1; then
-            UPDATE_ACTIVE_UI=true
-        fi
-    fi
-    
     # Always update reference
     if [ -n "$UI_SRC" ]; then
         if [ ! -d "$CONFIG_DIR/ui-REFERENCEONLY" ] || ! diff -r "$UI_SRC" "$CONFIG_DIR/ui-REFERENCEONLY" >/dev/null 2>&1; then
@@ -418,16 +408,12 @@ setup_configs() {
             cp -r "$UI_SRC" "$CONFIG_DIR/ui-REFERENCEONLY"
         fi
     fi
-    
-    # Update active UI if appropriate
+
+    # Always overwrite active ui/ folder
     if [ -n "$UI_SRC" ]; then
-        if [ "$UPDATE_ACTIVE_UI" = true ]; then
-            echo ">> Updating active UI folder to latest..."
-            rm -rf "$CONFIG_DIR/ui"
-            cp -r "$UI_SRC" "$CONFIG_DIR/ui"
-        else
-            echo "   Preserved customized ui/ folder. Reference updated at $CONFIG_DIR/ui-REFERENCEONLY/"
-        fi
+        echo ">> Updating active UI folder to latest..."
+        rm -rf "$CONFIG_DIR/ui"
+        cp -r "$UI_SRC" "$CONFIG_DIR/ui"
     fi
     
     # Update assets
