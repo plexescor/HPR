@@ -173,11 +173,6 @@ A comparison between HPR and other popular automatic time trackers:
 
 ## Installation
 
-**Arch Linux (AUR)**
-```bash
-yay -S hpr
-```
-
 **Linux (Universal)**
 
 You can install or update HPR on Linux automatically with a single command:
@@ -203,9 +198,6 @@ curl -fsSL https://raw.githubusercontent.com/plexescor/HPR/main/install.sh | bas
 
 <!-- -->
 ---
-
-> [!NOTE]
-> If you installed via the AUR, the system-wide desktop entry is already managed by the package. HPR detects this and skips the local entry entirely.
 
 **Windows**
 
