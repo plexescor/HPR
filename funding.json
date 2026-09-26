@@ -51,7 +51,7 @@
                 "guid": "hpr-round-1-2026",
                 "status": "active",
                 "name": "HPR Round 1 Infrastructure and Ecosystem",
-                "description": "Infrastructure and ecosystem grant. Budget: monitor Rs 12000, keyboard Rs 2200, mouse Rs 1000, code signing cert Rs 6500, VPS 1yr Rs 5000, domain Rs 2000, GST buffer Rs 1300, maintainer stipend Rs 10000. Total Rs 40000. Milestones: domain migration, blog post, Windows code signing, 5+ HPR Store extensions, 3 new first-party extensions. All within 7 weeks.",
+                "description": "Infra and ecosystem grant. Budget: monitor Rs 12000, keyboard Rs 2200, mouse Rs 1000, code signing Rs 6500, VPS Rs 5000, domain Rs 2000, buffer Rs 1300, stipend Rs 10000. Total Rs 40000. Milestones: domain migration 2wk, blog post 2wk, code signing 4wk, HPR Store 5+ extensions 6wk, 3 new extensions 7wk.",
                 "amount": 40000,
                 "currency": "INR",
                 "frequency": "one-time",
