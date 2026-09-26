@@ -51,7 +51,7 @@
                 "guid": "hpr-round-1-2026",
                 "status": "active",
                 "name": "HPR Round 1 Infrastructure and Ecosystem",
-                "description": "Funds HPR infrastructure migration and ecosystem growth. Budget: monitor for dual screen compilation workflow Rs 12000, keyboard Rs 2200, mouse Rs 1000, Windows code signing certificate Rs 6500, Hostinger VPS 1 year Rs 5000, hpr-cpp.dev domain Rs 2000, buffer for GST and bank transfer fees Rs 1300, maintainer compensation for active development and community support during grant period Rs 10000. Total Rs 40000. Milestones: migrate HPR website and docs to hpr-cpp.dev in 2 weeks, publish HPR architecture blog post on FOSS United forum in 2 weeks, Windows code signing integrated and SmartScreen warning eliminated in 4 weeks, HPR Store grown to 5 plus extensions with contribution guidelines in 6 weeks, 3 new first-party extensions shipped in 7 weeks.",
+                "description": "Infrastructure and ecosystem grant. Budget: monitor Rs 12000, keyboard Rs 2200, mouse Rs 1000, code signing cert Rs 6500, VPS 1yr Rs 5000, domain Rs 2000, GST buffer Rs 1300, maintainer stipend Rs 10000. Total Rs 40000. Milestones: domain migration, blog post, Windows code signing, 5+ HPR Store extensions, 3 new first-party extensions. All within 7 weeks.",
                 "amount": 40000,
                 "currency": "INR",
                 "frequency": "one-time",
