@@ -1,0 +1,63 @@
+{
+    "$schema": "https://fundingjson.org/schema/v1.1.0.json",
+    "version": "v1.1.0",
+    "entity": {
+        "type": "individual",
+        "role": "maintainer",
+        "name": "Abhijot Singh (Plexescor)",
+        "email": "saraswal2010@gmail.com",
+        "description": "16-year-old self-taught systems developer from Hanumangarh, Rajasthan, India. Writing software since age 13, focused on native C++, Linux internals, and compiler design. Solo maintainer of HPR and the HPR extension ecosystem. Also building Tantrums, a compiled language with an LLVM backend.",
+        "webpageUrl": {
+            "url": "https://hpr-cpp.netlify.app"
+        }
+    },
+    "projects": [
+        {
+            "guid": "hpr-human-pattern-recorder",
+            "name": "HPR Human Pattern Recorder",
+            "description": "A compiled, offline, zero-account activity tracker for Linux (Wayland/X11) and Windows. Built in C++23 with an 8-27MB RAM footprint, sandboxed Lua 5.4 extension engine with function overriding API, native browser and IDE project tracking without extensions, cross-day pattern analysis across 9 metrics, and a community extension registry called HPR Store. 450+ organic downloads across Linux and Windows in under 4 months. No telemetry by default, no cloud, no account required.",
+            "webpageUrl": {
+                "url": "https://hpr-cpp.netlify.app"
+            },
+            "repositoryUrl": {
+                "url": "https://github.com/plexescor/HPR"
+            },
+            "licenses": ["spdx:GPL-3.0-only"],
+            "tags": [
+                "activity-tracker",
+                "privacy",
+                "wayland",
+                "windows",
+                "linux",
+                "cpp",
+                "cross-platform",
+                "lua",
+                "extensions",
+                "offline"
+            ]
+        }
+    ],
+    "funding": {
+        "channels": [
+            {
+                "guid": "kofi",
+                "type": "payment-provider",
+                "address": "https://ko-fi.com/plexescor",
+                "description": "Ko-fi donations for HPR development"
+            }
+        ],
+        "plans": [
+            {
+                "guid": "hpr-round-1-2026",
+                "status": "active",
+                "name": "HPR Round 1 Infrastructure and Ecosystem",
+                "description": "Funds HPR infrastructure migration and ecosystem growth. Budget: monitor for dual screen compilation workflow Rs 12000, keyboard Rs 2200, mouse Rs 1000, Windows code signing certificate Rs 6500, Hostinger VPS 1 year Rs 5000, hpr-cpp.dev domain Rs 2000, buffer for GST and bank transfer fees Rs 1300, maintainer compensation for active development and community support during grant period Rs 10000. Total Rs 40000. Milestones: migrate HPR website and docs to hpr-cpp.dev in 2 weeks, publish HPR architecture blog post on FOSS United forum in 2 weeks, Windows code signing integrated and SmartScreen warning eliminated in 4 weeks, HPR Store grown to 5 plus extensions with contribution guidelines in 6 weeks, 3 new first-party extensions shipped in 7 weeks.",
+                "amount": 40000,
+                "currency": "INR",
+                "frequency": "one-time",
+                "channels": ["kofi"]
+            }
+        ],
+        "history": []
+    }
+}
