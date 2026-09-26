@@ -4,6 +4,7 @@
 #include <iostream>
 #include <mutex>
 #include <string>
+#include <print>
 #include <thread>
 
 #ifdef _WIN32
@@ -13,6 +14,7 @@
 
 #ifdef __linux__
 #include "linuxUtilities.hpp"
+#include "extensionManager.hpp"
 #include "windowUtilities.hpp"
 #include <dbus/dbus.h>
 #include <unistd.h> // getpid()
@@ -55,6 +57,15 @@ TrayManager::~TrayManager()
 
 void TrayManager::run()
 {
+	if (AppState::extManager)
+	{
+		auto res = AppState::extManager->dispatchOverride("run_TrayManager",{});
+														  
+		if (res.has_value())
+		{
+			return;
+		}
+	}
 #ifdef _WIN32
 	trayThread = std::thread(&TrayManager::trayManager_LoopWindows, this);
 #endif

@@ -68,6 +68,7 @@ int main()
 
 	DatabaseManager dbm;
 	dbm.run();
+	ext.run();
 
 	#ifdef __linux__
 		LinuxInitialiser linuxInit;
@@ -159,7 +160,7 @@ int main()
 		#endif
 
 		cwm.detectAndSetBackend();
-		ext.run();
+		
 		cwm.run();
 
 		app.run(); // blocking call, run on main
@@ -184,7 +185,6 @@ int main()
 		ext.interpreterApp = &app;
 
 		cwm.detectAndSetBackend();
-		ext.run();
 		cwm.run();
 
 		app.run(); // blocking call, run on main

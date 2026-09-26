@@ -144,3 +144,8 @@ The following functions in HPR are currently overridable by Lua extensions via t
     - Description: Intercepts outgoing HTTP DELETE requests. Allows logging, blocking, or returning a mock response.
     - C++ Call Site: src/extension/netUtilities.cpp
     - Lua Override Key: HPR.overrides.httpDelete
+
+30. TrayManager::run
+    - Description: Intercepts the request to start up the tray. Allows custom tray behaviour or entirely new trays
+    - C++ Call Site: src/tray/trayManager.cpp
+    - Lua Override Key: HPR.overrides.run_TrayManager
