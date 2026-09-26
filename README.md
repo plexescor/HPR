@@ -76,6 +76,7 @@ A huge thank you to our supporters keeping HPR active!
 
 <p align="center">
 
+[Screencast_20260926_160957.webm](https://github.com/user-attachments/assets/ec43f28e-96de-458a-bc56-178cac6d1fd6)
 
 
 </p>
