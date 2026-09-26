@@ -46,7 +46,7 @@ A huge thank you to our supporters keeping HPR active!
 
 <p align="center">
   <em>"HPR is an excellent tool for time management on Linux! It far outweighs any other option available and is developing very quickly! I highly recommend it!"</em><br/>
-  <sub>-- <a href="https://github.com/dotsupershow">@dotsupershow</a>, Niri user</sub>
+  <sub>-- <a href="https://github.com/PsychoRhythmist">@PsychoRhythmist</a>, Niri user</sub>
 </p>
 
 ---
@@ -58,13 +58,13 @@ A huge thank you to our supporters keeping HPR active!
 ---
 
 <p align="center">
-  <img src="./assetsgithub/main.png" alt="HPR Home Screen" width="800"/>
+  <img src="./assetsgithub/main2.png" alt="HPR Home Screen" width="800"/>
 </p>
 
 ---
 
 <p align="center">
-  <img src="./assetsgithub/insights.png" alt="HPR Insights Screen" width="800"/>
+  <img src="./assetsgithub/insights2.png" alt="HPR Insights Screen" width="800"/>
 </p>
 
 ---
@@ -76,7 +76,7 @@ A huge thank you to our supporters keeping HPR active!
 
 <p align="center">
 
-https://github.com/user-attachments/assets/07659d3d-0f3b-4bbc-8823-8b5d11bfd32f
+
 
 </p>
 
@@ -318,7 +318,7 @@ Set a daily time **limit** or daily usage **goal** on any tracked application di
 Badges on each row show **remaining time live**. Limit rows have a red accent; goal rows have green.
 
 <p align="center">
-  <img src="./assetsgithub/limits.png" alt="HPR App Limits and Goals" width="800"/>
+  <img src="./assetsgithub/limits2.png" alt="HPR App Limits and Goals" width="800"/>
 </p>
 
 > [!NOTE]
@@ -421,7 +421,7 @@ Each extension runs in its own isolated VM on a dedicated background thread, com
 - AND yes, you can run [Budget Doom](https://github.com/plexescor/HPR-Extensions) (software rendering only)
 
 <p align="center">
-  <img src="./assetsgithub/extensions.png" alt="HPR Extensions" width="800"/>
+  <img src="./assetsgithub/extensions2.png" alt="HPR Extensions" width="800"/>
 </p>
 
 **Where to put your extensions:**
