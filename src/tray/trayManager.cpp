@@ -1,5 +1,6 @@
 #include "trayManager.hpp"
 #include "appState.hpp"
+#include "extensionManager.hpp"
 #include "logger.hpp"
 #include <iostream>
 #include <mutex>
