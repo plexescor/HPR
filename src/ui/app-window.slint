@@ -67,12 +67,15 @@ export component MainWindow inherits Window {
     callback themeApply(string);
     callback refreshThemes();
     callback openHprStore();
+    callback submitContinentPrompt(string);
+    callback dismissContinentPrompt();
 
     in-out property <bool> is-sending-feedback: false;
     in-out property <bool> showFeedbackResultPrompt: false;
     in-out property <bool> feedbackSuccess: false;
     in-out property <string> feedbackErrorMsg: "";
     in-out property <string> feedbackEmail: "";
+    in-out property <bool> showContinentPrompt_S: false;
     in-out property <string> feedbackMessage: "";
 
     in property <float>           trackedTime_S;
@@ -922,6 +925,266 @@ export component MainWindow inherits Window {
                                 color: #ffffff;
                                 horizontal-alignment: center;
                                 vertical-alignment: center;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // ── Continent Demographic Prompt ────────────────────────────────────
+        if showContinentPrompt_S : Rectangle {
+            background: #000000cc;
+            z: 101;
+            width: 100%;
+            height: 100%;
+
+            TouchArea {
+                // block click through
+            }
+
+            VerticalLayout {
+                alignment: center;
+                padding: 24px * Palette.scale;
+                HorizontalLayout {
+                    alignment: center;
+                    Card {
+                        width: 660px * Palette.scale;
+
+                        VerticalLayout {
+                            padding: 32px * Palette.scale;
+                            spacing: 24px * Palette.scale;
+
+                            // Header
+                            VerticalLayout {
+                                spacing: 4px * Palette.scale;
+                                Text {
+                                    text: "A QUICK QUESTION";
+                                    font-size: 8px * Palette.scale;
+                                    font-weight: 800;
+                                    letter-spacing: 2.5px * Palette.scale;
+                                    color: #38bdf8;
+                                    horizontal-alignment: left;
+                                }
+                                Text {
+                                    text: "Where in the world are you?";
+                                    font-size: 17px * Palette.scale;
+                                    font-weight: 700;
+                                    color: Palette.text-primary;
+                                    horizontal-alignment: left;
+                                }
+                            }
+
+                            // Body text - broken into paragraphs for readability
+                            VerticalLayout {
+                                spacing: 12px * Palette.scale;
+
+                                Text {
+                                    text: "HPR is applying for a grant from NLnet Foundation, a Dutch non-profit that has been funding privacy-respecting open source software since 1997. One of their requirements is that we show HPR has users in Europe, because their funding comes from the European Commission.";
+                                    font-size: 12px * Palette.scale;
+                                    font-weight: 400;
+                                    color: Palette.text-primary;
+                                    wrap: word-wrap;
+                                    horizontal-alignment: left;
+                                }
+                                Text {
+                                    text: "We genuinely do not know where our users are. We have no location data, no IP logging, nothing. Which is how it should be. But it also means we cannot prove to NLnet that European users exist and benefit from HPR, even if they do.";
+                                    font-size: 12px * Palette.scale;
+                                    font-weight: 400;
+                                    color: Palette.text-primary;
+                                    wrap: word-wrap;
+                                    horizontal-alignment: left;
+                                }
+                                Text {
+                                    text: "So we are asking directly. Which continent do you live in? That is all we need. Not your country, not your city, just your continent. It is sent directly to our secure database as a single, isolated data point - sent just once, and never asked again. Because this is a direct, one-time community survey for the grant, submitting this will go through even if you have regular telemetry toggled off (as long as network activity is allowed).";
+                                    font-size: 12px * Palette.scale;
+                                    font-weight: 400;
+                                    color: Palette.text-primary;
+                                    wrap: word-wrap;
+                                    horizontal-alignment: left;
+                                }
+                                Text {
+                                    text: "This data will only be used for the NLnet grant application and to understand where the HPR community is based. Nothing else. Ever.";
+                                    font-size: 12px * Palette.scale;
+                                    font-weight: 400;
+                                    color: Palette.text-primary;
+                                    wrap: word-wrap;
+                                    horizontal-alignment: left;
+                                }
+                                Text {
+                                    text: "If HPR gets this grant, it funds the macOS port, accessibility improvements, and keeps the project alive with dedicated development time. If you want to know more about NLnet, their website is nlnet.nl.";
+                                    font-size: 12px * Palette.scale;
+                                    font-weight: 400;
+                                    color: Palette.text-secondary;
+                                    wrap: word-wrap;
+                                    horizontal-alignment: left;
+                                }
+                                Text {
+                                    text: "You can also just close this. No hard feelings, seriously.";
+                                    font-size: 12px * Palette.scale;
+                                    font-weight: 400;
+                                    color: Palette.text-secondary;
+                                    wrap: word-wrap;
+                                    horizontal-alignment: left;
+                                }
+                            }
+
+                            // Dropdown + buttons row
+                            HorizontalLayout {
+                                spacing: 12px * Palette.scale;
+                                alignment: space-between;
+
+                                // Continent dropdown
+                                continent-dropdown := Rectangle {
+                                    property <string> selected-continent: "";
+                                    property <string> display-text: selected-continent == "" ? "Select your continent..." : selected-continent;
+
+                                    width: 280px * Palette.scale;
+                                    height: 36px * Palette.scale;
+                                    border-radius: 6px * Palette.scale;
+                                    border-width: 1px * Palette.scale;
+                                    background: ta-cont-drop.has-hover ? Palette.input-bg-hover : Palette.input-bg;
+                                    border-color: ta-cont-drop.has-hover ? Palette.input-border-hover : Palette.input-border;
+                                    animate background { duration: 100ms; }
+                                    animate border-color { duration: 100ms; }
+
+                                    continent-popup := PopupWindow {
+                                        x: 0px;
+                                        y: 36px * Palette.scale + 2px * Palette.scale;
+                                        width: 280px * Palette.scale;
+                                        height: 7 * (30px * Palette.scale);
+                                        close-policy: close-on-click-outside;
+
+                                        Rectangle {
+                                            width: 100%;
+                                            height: 100%;
+                                            background: Palette.card-background;
+                                            border-radius: 6px * Palette.scale;
+                                            border-width: 1px * Palette.scale;
+                                            border-color: Palette.card-border;
+                                            clip: true;
+
+                                            VerticalLayout {
+                                                alignment: start;
+
+                                                for c-name in ["Africa", "Antarctica", "Asia", "Europe", "North America", "Oceania", "South America"] : Rectangle {
+                                                    height: 30px * Palette.scale;
+                                                    background: ta-cont-item.has-hover ? Palette.input-bg-hover : transparent;
+                                                    animate background { duration: 80ms; }
+
+                                                    ta-cont-item := TouchArea {
+                                                        mouse-cursor: pointer;
+                                                        clicked => {
+                                                            continent-dropdown.selected-continent = c-name;
+                                                            continent-popup.close();
+                                                        }
+                                                    }
+
+                                                    Text {
+                                                        text: c-name;
+                                                        font-size: 12px * Palette.scale;
+                                                        font-weight: 400;
+                                                        color: Palette.text-primary;
+                                                        vertical-alignment: center;
+                                                        x: 12px * Palette.scale;
+                                                        width: parent.width - 12px * Palette.scale;
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+
+                                    ta-cont-drop := TouchArea {
+                                        mouse-cursor: pointer;
+                                        clicked => { continent-popup.show(); }
+                                    }
+
+                                    HorizontalLayout {
+                                        padding-left: 12px * Palette.scale;
+                                        padding-right: 10px * Palette.scale;
+                                        alignment: space-between;
+
+                                        Text {
+                                            text: continent-dropdown.display-text;
+                                            font-size: 12px * Palette.scale;
+                                            font-weight: 400;
+                                            color: continent-dropdown.selected-continent == "" ? Palette.text-secondary : Palette.text-primary;
+                                            vertical-alignment: center;
+                                            overflow: elide;
+                                        }
+                                        Text {
+                                            text: "▾";
+                                            font-size: 10px * Palette.scale;
+                                            color: Palette.text-secondary;
+                                            vertical-alignment: center;
+                                        }
+                                    }
+                                }
+
+                                // Action buttons
+                                HorizontalLayout {
+                                    spacing: 10px * Palette.scale;
+                                    alignment: end;
+
+                                    // No thanks
+                                    Rectangle {
+                                        width: 110px * Palette.scale;
+                                        height: 36px * Palette.scale;
+                                        border-radius: 6px * Palette.scale;
+                                        border-width: 1px * Palette.scale;
+                                        border-color: Palette.card-border;
+                                        background: ta-dismiss.pressed ? Palette.input-bg-press :
+                                                    ta-dismiss.has-hover ? Palette.input-bg-hover :
+                                                    Palette.input-bg;
+                                        animate background { duration: 100ms; }
+
+                                        ta-dismiss := TouchArea {
+                                            mouse-cursor: pointer;
+                                            clicked => {
+                                                root.showContinentPrompt_S = false;
+                                                root.dismissContinentPrompt();
+                                            }
+                                        }
+                                        Text {
+                                            text: "No thanks";
+                                            font-size: 11px * Palette.scale;
+                                            font-weight: 500;
+                                            color: Palette.text-primary;
+                                            horizontal-alignment: center;
+                                            vertical-alignment: center;
+                                        }
+                                    }
+
+                                    // Submit
+                                    Rectangle {
+                                        width: 110px * Palette.scale;
+                                        height: 36px * Palette.scale;
+                                        border-radius: 6px * Palette.scale;
+                                        opacity: continent-dropdown.selected-continent == "" ? 0.4 : 1.0;
+                                        animate opacity { duration: 120ms; }
+                                        background: ta-submit.pressed ? @linear-gradient(135deg, #0284c7 0%, #0369a1 100%) :
+                                                    ta-submit.has-hover && continent-dropdown.selected-continent != "" ? @linear-gradient(135deg, #7dd3fc 0%, #38bdf8 100%) :
+                                                    @linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+
+                                        ta-submit := TouchArea {
+                                            mouse-cursor: continent-dropdown.selected-continent == "" ? default : pointer;
+                                            clicked => {
+                                                if (continent-dropdown.selected-continent != "") {
+                                                    root.showContinentPrompt_S = false;
+                                                    root.submitContinentPrompt(continent-dropdown.selected-continent);
+                                                }
+                                            }
+                                        }
+                                        Text {
+                                            text: "Submit";
+                                            font-size: 11px * Palette.scale;
+                                            font-weight: 600;
+                                            color: #ffffff;
+                                            horizontal-alignment: center;
+                                            vertical-alignment: center;
+                                        }
+                                    }
+                                }
                             }
                         }
                     }

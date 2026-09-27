@@ -253,6 +253,24 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow> &ui, ExtensionMa
 			}
 		});
 
+	ui->on_dismissContinentPrompt(
+		[]()
+		{
+			AppState::configManager.setConfig("continent-prompt-answered", std::string("true"));
+			AppState::configManager.markContinentPromptAnswered();
+			Logger::log("[Demographics] User dismissed continent prompt.");
+		});
+
+	ui->on_submitContinentPrompt(
+		[](slint::SharedString continent)
+		{
+			AppState::configManager.setConfig("continent-prompt-answered", std::string("true"));
+			AppState::configManager.markContinentPromptAnswered();
+			std::string continentStr = std::string(continent);
+			Logger::log("[Demographics] User submitted continent: " + continentStr);
+			std::thread([continentStr]() { TelemetryManager::sendDemographicContinent(continentStr); }).detach();
+		});
+
 	ui->on_loadInsights(
 		[this]()
 		{
@@ -750,6 +768,35 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<slint::interpreter::Componen
 						 }
 						 return slint::interpreter::Value();
 					 });
+
+	ui->set_callback(
+		"dismissContinentPrompt",
+		[](auto args) -> slint::interpreter::Value
+		{
+			AppState::configManager.setConfig("continent-prompt-answered", std::string("true"));
+			AppState::configManager.markContinentPromptAnswered();
+			Logger::log("[Demographics] User dismissed continent prompt.");
+			return slint::interpreter::Value();
+		});
+
+	ui->set_callback(
+		"submitContinentPrompt",
+		[](auto args) -> slint::interpreter::Value
+		{
+			if (args.size() > 0)
+			{
+				auto opt_continent = args[0].to_string();
+				if (opt_continent.has_value())
+				{
+					std::string continentStr = std::string(opt_continent.value());
+					AppState::configManager.setConfig("continent-prompt-answered", std::string("true"));
+					AppState::configManager.markContinentPromptAnswered();
+					Logger::log("[Demographics] User submitted continent: " + continentStr);
+					std::thread([continentStr]() { TelemetryManager::sendDemographicContinent(continentStr); }).detach();
+				}
+			}
+			return slint::interpreter::Value();
+		});
 
 	ui->set_callback(
 		"loadInsights",

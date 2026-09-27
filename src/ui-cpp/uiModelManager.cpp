@@ -412,6 +412,7 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
 				bool allowNetworkVal = AppState::configManager.getConfig<bool>("allow-network-activity", true);
 				bool allowNativeLibrariesVal = AppState::configManager.getConfig<bool>("allow-native-libraries", false);
 				bool fullBrightnessBarsVal = AppState::configManager.getConfig<bool>("full-brightness-bars", false);
+				bool showContinentPromptVal = allowNetworkVal && !AppState::configManager.isContinentPromptAnswered();
 
 				bool allowSidebarCustomizationVal =
 					AppState::configManager.getConfig<bool>("allow-sidebar-customization", false);
@@ -489,6 +490,8 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
 					(*handle)->set_allowCustomBackends_S(allowCustomVal);
 				if ((*handle)->get_allowNetworkActivity_S() != allowNetworkVal)
 					(*handle)->set_allowNetworkActivity_S(allowNetworkVal);
+					if ((*handle)->get_showContinentPrompt_S() != showContinentPromptVal)
+					(*handle)->set_showContinentPrompt_S(showContinentPromptVal);
 				if ((*handle)->get_allowNativeLibraries_S() != allowNativeLibrariesVal)
 					(*handle)->set_allowNativeLibraries_S(allowNativeLibrariesVal);
 				if ((*handle)->get_fullBrightnessBars_S() != fullBrightnessBarsVal)
@@ -1027,6 +1030,7 @@ void UiModelManager::update_Interpreted(
 				bool allowNetworkVal = AppState::configManager.getConfig<bool>("allow-network-activity", true);
 				bool allowNativeLibrariesVal = AppState::configManager.getConfig<bool>("allow-native-libraries", false);
 				bool fullBrightnessBarsVal = AppState::configManager.getConfig<bool>("full-brightness-bars", false);
+				bool showContinentPromptVal = allowNetworkVal && !AppState::configManager.isContinentPromptAnswered();
 
 				bool allowSidebarCustomizationVal =
 					AppState::configManager.getConfig<bool>("allow-sidebar-customization", false);
@@ -1098,6 +1102,7 @@ void UiModelManager::update_Interpreted(
 				setPropIfChanged("hardwareAccel_S", slint::interpreter::Value(hwAccelVal));
 				setPropIfChanged("allowCustomBackends_S", slint::interpreter::Value(allowCustomVal));
 				setPropIfChanged("allowNetworkActivity_S", slint::interpreter::Value(allowNetworkVal));
+					setPropIfChanged("showContinentPrompt_S", slint::interpreter::Value(showContinentPromptVal));
 				setPropIfChanged("allowNativeLibraries_S", slint::interpreter::Value(allowNativeLibrariesVal));
 				setPropIfChanged("fullBrightnessBars_S", slint::interpreter::Value(fullBrightnessBarsVal));
 

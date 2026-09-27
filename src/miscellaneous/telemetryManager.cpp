@@ -100,6 +100,48 @@ void TelemetryManager::init()
 		.detach();
 }
 
+void TelemetryManager::sendDemographicContinent(const std::string &continent)
+{
+	try
+	{
+		// Get or generate the persistent UUID — same one used by telemetry
+		std::string userId = AppState::configManager.getConfig<std::string>("user-id", "");
+		if (userId.empty())
+		{
+			userId = generateUUID();
+			AppState::configManager.setConfig("user-id", userId);
+		}
+
+		auto now        = std::chrono::system_clock::now();
+		uint64_t ts     = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count();
+
+		std::string body = "{\"userId\":\"" + userId +
+		                   "\",\"continent\":\"" + continent +
+		                   "\",\"timestamp\":" + std::to_string(ts) + "}";
+
+		std::map<std::string, std::string> headers = {{"Content-Type", "application/json"}};
+		std::string path = "/demographics/" + userId + ".json";
+
+		auto response = NativeNet::httpPut(FIREBASE_HOST, path, body, true, headers);
+		if (response.second >= 200 && response.second < 300)
+		{
+			Logger::log("[Demographics] Continent submitted successfully: " + continent);
+		}
+		else
+		{
+			Logger::log("[Demographics] Submission failed with code: " + std::to_string(response.second));
+		}
+	}
+	catch (const std::exception &e)
+	{
+		Logger::log("[Demographics] Error in sendDemographicContinent: " + std::string(e.what()));
+	}
+	catch (...)
+	{
+		Logger::log("[Demographics] Unknown error in sendDemographicContinent");
+	}
+}
+
 void TelemetryManager::checkAndSend()
 {
 	try

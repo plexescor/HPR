@@ -9,7 +9,7 @@ AliasManager AppState::aliasManager;
 ConfigManager AppState::configManager;
 ThemeManager AppState::themeManager;
 
-const std::string AppState::APP_VERSION = "0.9.11";
+const std::string AppState::APP_VERSION = "0.9.12";
 PatternAnalyzer AppState::patternAnalyzer;
 
 ExtensionManager *AppState::extManager = nullptr;

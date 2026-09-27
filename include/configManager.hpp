@@ -17,6 +17,8 @@ class ConfigManager
 	bool isFirstLaunch() const { return firstLaunch; }
 	bool isTelemetryPromptAnswered() const { return telemetryPromptAnswered; }
 	void markTelemetryPromptAnswered() { telemetryPromptAnswered = true; }
+	bool isContinentPromptAnswered() const { return continentPromptAnswered; }
+	void markContinentPromptAnswered() { continentPromptAnswered = true; }
 
   private:
 	void loadConfig();
@@ -28,4 +30,5 @@ class ConfigManager
 	std::filesystem::path filePath;
 	bool firstLaunch = false;
 	bool telemetryPromptAnswered = false;
+	bool continentPromptAnswered = false;
 };

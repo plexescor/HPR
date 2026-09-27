@@ -306,6 +306,23 @@ void HPRInterpreter::show()
 			});
 		}
 	}
+
+	// Continent demographic prompt — shown once when network is allowed and user hasn't answered yet
+	{
+		bool networkAllowed = AppState::configManager.getConfig<bool>("allow-network-activity", true);
+		if (networkAllowed && !AppState::configManager.isContinentPromptAnswered())
+		{
+			if (instance.has_value())
+			{
+				slint::ComponentWeakHandle<slint::interpreter::ComponentInstance> weak(instance.value());
+				slint::invoke_from_event_loop([weak]()
+				{
+					if (auto handle = weak.lock())
+						(*handle)->set_property("showContinentPrompt_S", slint::interpreter::Value(true));
+				});
+			}
+		}
+	}
 }
 
 /*

@@ -97,6 +97,13 @@ void ConfigManager::loadConfig()
 			config.push_back({line.substr(0, commaPos), line.substr(commaPos + 1)});
 		}
 	}
+
+	// Hydrate in-memory prompt flags from loaded config
+	for (const auto &[param, value] : config)
+	{
+		if (param == "continent-prompt-answered" && value == "true")
+			continentPromptAnswered = true;
+	}
 }
 
 void ConfigManager::saveConfig()
