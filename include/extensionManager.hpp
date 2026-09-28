@@ -131,7 +131,6 @@ class ExtensionManager
 
 	// some shit
 	DatabaseManager *dbManager = nullptr;
-	TrayManager *trayManager = nullptr;
 	CurrentWindowManager *currentWindowManager = nullptr;
 	HPR *app = nullptr;
 	HPRInterpreter *interpreterApp = nullptr;

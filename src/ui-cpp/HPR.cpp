@@ -536,6 +536,14 @@ void HPR::run()
 		}
 	});
 
+	myTray->on_iconClicked([uiWeak, this]
+	{
+		if (auto w = uiWeak.lock())
+		{
+			show();
+		}
+	});
+
 	// Blocks execution until window closes or slint::quit_event_loop() triggers
 	slint::run_event_loop(slint::EventLoopMode::RunUntilQuit);
 	

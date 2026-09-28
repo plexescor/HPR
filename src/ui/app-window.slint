@@ -30,6 +30,10 @@ export component MyTray inherits SystemTrayIcon {
     callback showHPR();
     callback quitHPR();
 
+    callback iconClicked();
+
+    clicked => { iconClicked(); }
+
     Menu {
         MenuItem {
             title: "Show HPR";

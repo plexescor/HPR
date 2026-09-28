@@ -93,7 +93,6 @@ int main()
 		CurrentWindowManager cwm;
 
 		ext.dbManager = &dbm;
-		ext.trayManager = nullptr;
 		ext.currentWindowManager = &cwm;
 		ext.app = nullptr;
 		#ifdef __linux__
@@ -130,10 +129,6 @@ int main()
 		#endif
 	}
 
-	// This call is non blocking, it just starts a new BG thread
-	// TrayManager tray;
-	// tray.run();
-
 	CurrentWindowManager cwm;
 
 	// If not to use interpreter, use inbuilt ui
@@ -145,7 +140,6 @@ int main()
 
 		// GIVE EXTENSION MANAGER FULL ACCESS TO EVERY OBJECT PRESENT
 		ext.dbManager = &dbm;
-		// ext.trayManager = &tray;
 		ext.currentWindowManager = &cwm;
 		ext.app = &app;
 		#ifdef __linux__
