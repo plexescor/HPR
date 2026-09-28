@@ -133,8 +133,8 @@ int main()
 	}
 
 	// This call is non blocking, it just starts a new BG thread
-	TrayManager tray;
-	tray.run();
+	// TrayManager tray;
+	// tray.run();
 
 	CurrentWindowManager cwm;
 
@@ -143,16 +143,16 @@ int main()
 	{
 		HPR app(&ext);
 
-		tray.onQuit = [&]() { app.quit(); };
+		// tray.onQuit = [&]() { app.quit(); };
 
-		tray.onShow = [&]() { app.show(); };
-		tray.onHide = [&]() { app.hide(); };
+		// tray.onShow = [&]() { app.show(); };
+		// tray.onHide = [&]() { app.hide(); };
 
 		SingleInstance::getInstance().onShow([&]() { app.show(); });
 
 		// GIVE EXTENSION MANAGER FULL ACCESS TO EVERY OBJECT PRESENT
 		ext.dbManager = &dbm;
-		ext.trayManager = &tray;
+		// ext.trayManager = &tray;
 		ext.currentWindowManager = &cwm;
 		ext.app = &app;
 		#ifdef __linux__
@@ -169,10 +169,10 @@ int main()
 	else
 	{
 		HPRInterpreter app(&ext);
-		tray.onQuit = [&]() { app.quit(); };
+		// tray.onQuit = [&]() { app.quit(); };
 
-		tray.onShow = [&]() { app.show(); };
-		tray.onHide = [&]() { app.hide(); };
+		// tray.onShow = [&]() { app.show(); };
+		// tray.onHide = [&]() { app.hide(); };
 
 		SingleInstance::getInstance().onShow([&]() { app.show(); });
 
@@ -180,7 +180,7 @@ int main()
 		#ifdef NDEBUG
 			ext.dbManager = &dbm;
 		#endif
-		ext.trayManager = &tray;
+		// ext.trayManager = &tray;
 		ext.currentWindowManager = &cwm;
 		ext.interpreterApp = &app;
 

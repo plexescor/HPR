@@ -36,6 +36,7 @@ class HPR
 	ExtensionManager *extManager;
 
 	slint::ComponentHandle<MainWindow> ui;
+	slint::ComponentHandle<MyTray> myTray;
 	std::atomic<bool> running{true};
 	std::atomic<bool> paused{false};
 	std::mutex pauseMutex;

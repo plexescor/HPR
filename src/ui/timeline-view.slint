@@ -265,11 +265,11 @@ export component TimelineView {
                 alignment: center;
 
                 Flickable {
-                    viewport-width: parent.width * root.timelineZoomFactor;
+                    content-width: parent.width * root.timelineZoomFactor;
                     height: 64px * Palette.scale;
 
                     VerticalLayout {
-                        width: parent.viewport-width;
+                        width: parent.content-width;
                         height: 100%;
                         spacing: 12px * Palette.scale;
 
