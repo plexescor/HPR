@@ -33,7 +33,7 @@
 #include "singleInstance.hpp"
 #include "telemetryManager.hpp"
 #include "timelineManager.hpp"
-#include "trayManager.hpp"
+
 #include "windowUtilities.hpp"
 #include <condition_variable>
 #include <mutex>
@@ -119,8 +119,6 @@ int main()
 
 	TelemetryManager::init();
 
-	// ExtensionManager ext;
-	// AppState::extManager = &ext;
 
 	// Check for hardware-acceleration flag
 	if (!AppState::configManager.getConfig("hardware-acceleration", true))
@@ -143,11 +141,6 @@ int main()
 	{
 		HPR app(&ext);
 
-		// tray.onQuit = [&]() { app.quit(); };
-
-		// tray.onShow = [&]() { app.show(); };
-		// tray.onHide = [&]() { app.hide(); };
-
 		SingleInstance::getInstance().onShow([&]() { app.show(); });
 
 		// GIVE EXTENSION MANAGER FULL ACCESS TO EVERY OBJECT PRESENT
@@ -169,10 +162,6 @@ int main()
 	else
 	{
 		HPRInterpreter app(&ext);
-		// tray.onQuit = [&]() { app.quit(); };
-
-		// tray.onShow = [&]() { app.show(); };
-		// tray.onHide = [&]() { app.hide(); };
 
 		SingleInstance::getInstance().onShow([&]() { app.show(); });
 
@@ -180,7 +169,6 @@ int main()
 		#ifdef NDEBUG
 			ext.dbManager = &dbm;
 		#endif
-		// ext.trayManager = &tray;
 		ext.currentWindowManager = &cwm;
 		ext.interpreterApp = &app;
 

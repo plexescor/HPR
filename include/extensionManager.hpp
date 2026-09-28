@@ -3,7 +3,7 @@
 #include "databaseManager.hpp"
 #include "linuxUtilities.hpp"
 #include "sol.hpp"
-#include "trayManager.hpp"
+
 #include <atomic>
 #include <filesystem>
 #include <memory>
