@@ -24,6 +24,7 @@
 #include <optional>
 #include <sstream>
 #include <thread>
+#include <slint.h>
 
 #include <print>
 
@@ -90,6 +91,8 @@ HPRInterpreter::HPRInterpreter(ExtensionManager *extMgr)
 	UiRegistry::registerInstance(weak_instance.value());
 
 	modelManager.emplace(instance.value());
+
+	createTray();
 #ifdef __linux__
 	slint::set_xdg_app_id("HPR"); // So it has a class in hyprland
 #endif
@@ -360,6 +363,21 @@ void HPRInterpreter::hide()
 				}
 			});
 	}
+}
+
+void HPRInterpreter::createTray()
+{
+	if (AppState::extManager)
+	{
+		Logger::log("Ext is there");
+		auto res = AppState::extManager->dispatchOverride("createTray", {});
+		if (res.has_value())
+		{
+			Logger::log("RES is there");
+			return;
+		}
+	}
+	myTray = MyTray::create();
 }
 
 /*
@@ -659,11 +677,38 @@ void HPRInterpreter::run()
 
 	tracker = std::thread(&HPRInterpreter::trackingLoop, this);
 
+	if (myTray.has_value())
+	{
+		(myTray.value())->on_showHPR([weak_inst, this]
+		{
+			if (auto w = weak_inst.lock())
+			{
+				show();
+			}
+		});
+
+		(myTray.value())->on_quitHPR([weak_inst, this]
+		{
+			if (auto w = weak_inst.lock())
+			{
+				quit();
+			}
+		});
+
+		(myTray.value())->on_iconClicked([weak_inst, this]
+		{
+			if (auto w = weak_inst.lock())
+			{
+				show();
+			}
+		});
+	}
+
 	// Execution hangs context cleanly right here until terminal signals code break execution
 	slint::run_event_loop(slint::EventLoopMode::RunUntilQuit);
 	
 	// Exit pipeline cleanup operations run smoothly after breaking the event loop
-	std::println("Exited Slint event loop.");
+	
 	saveWindowGeometry();
 	running = false; // safety net
 

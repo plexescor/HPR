@@ -147,5 +147,5 @@ The following functions in HPR are currently overridable by Lua extensions via t
 
 30. createTray
     - Description: Intercepts the request to start up the tray. Allows custom tray behaviour or entirely new trays
-    - C++ Call Site: src/ui-cpp/HPR.cpp
+    - C++ Call Site: src/ui-cpp/HPR.cpp OR src/ui-cpp/HPRInterpreter.cpp
     - Lua Override Key: HPR.overrides.createTray

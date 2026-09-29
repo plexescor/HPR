@@ -14,6 +14,7 @@
 #include <mutex>
 #include <optional>
 #include <slint-interpreter.h>
+#include <slint.h>
 #include <thread>
 
 class HPRInterpreter
@@ -34,6 +35,7 @@ class HPRInterpreter
 						 // continously (correct spelling?)
 	bool initialiseSlintUiPath();
 	void saveWindowGeometry();
+	void createTray();
 
   private:
 	ExtensionManager *extManager;
@@ -63,4 +65,7 @@ class HPRInterpreter
 	size_t errorId;
 	std::string activeGuiError = "";
 	std::chrono::steady_clock::time_point errorTimestamp;
+
+	// Our interpreter mode will use the tray of the compiled mode
+	std::optional<slint::ComponentHandle<MyTray>> myTray;
 };
