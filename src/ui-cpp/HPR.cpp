@@ -51,7 +51,7 @@ void posixSignalHandler_ShutUpCompiler(int signum)
 }
 #endif
 
-HPR::HPR(ExtensionManager *extMgr) : ui(MainWindow::create()), modelManager(ui)
+HPR::HPR(ExtensionManager *extMgr) : ui(MainWindow::create()), myTray(MyTray::create()), modelManager(ui)
 {
 	if (extMgr)
 		this->extManager = extMgr;
@@ -519,6 +519,31 @@ void HPR::run()
 
 	tracker = std::thread(&HPR::trackingLoop, this);
 	
+	auto uiWeak = slint::ComponentWeakHandle(ui);
+	myTray->on_showHPR([uiWeak, this]
+	{
+		if (auto w = uiWeak.lock())
+		{
+			show();
+		}
+	});
+
+	myTray->on_quitHPR([uiWeak, this]
+	{
+		if (auto w = uiWeak.lock())
+		{
+			quit();
+		}
+	});
+
+	myTray->on_iconClicked([uiWeak, this]
+	{
+		if (auto w = uiWeak.lock())
+		{
+			show();
+		}
+	});
+
 	// Blocks execution until window closes or slint::quit_event_loop() triggers
 	slint::run_event_loop(slint::EventLoopMode::RunUntilQuit);
 	

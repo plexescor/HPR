@@ -4,7 +4,6 @@ This markdown file contains every file/block which is written by AI
 Written by AI doesn't mean that I didn't even bother checking it. Keep in mind that
 
 ## What files the AI touched and what was AI generated inside it:
-- trayManager.cpp (Basically everything)
 - windowUtilities.cpp (The notification system)
 - timelineManager.cpp (updateTimeline function)
 - Various parts of the UI (.slint files)

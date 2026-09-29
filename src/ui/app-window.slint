@@ -21,10 +21,30 @@ import { MiscImageView } from "./misc-image-view.slint";
 import { SidebarButtons } from "./sidebar-buttons.slint";
 import { BackButton } from "./back-button.slint";
 
-
-
 import { TimeLog, SwitchHistory, TimeLog_Tab, TimeLog_Project, AppGoalData, TimelineBlock, TimelineMarker } from "./types.slint";
 
+export component MyTray inherits SystemTrayIcon {
+    icon: @image-url("./images/logo_256png.png");
+    tooltip: "HPR - Human Pattern Recorder";
+
+    callback showHPR();
+    callback quitHPR();
+
+    callback iconClicked();
+
+    clicked => { iconClicked(); }
+
+    Menu {
+        MenuItem {
+            title: "Show HPR";
+            activated => { showHPR(); }
+        }
+        MenuItem {
+            title: "Quit HPR";
+            activated => { quitHPR(); }
+        }
+    }
+}
 
 // ── Main Window ──────────────────────────────────────────────────────────────
 export component MainWindow inherits Window {
