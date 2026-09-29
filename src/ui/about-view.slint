@@ -13,7 +13,7 @@ export component AboutView {
     in property <string> active-threads;
 
     Flickable {
-        viewport-height: aboutContent.preferred-height;
+        content-height: aboutContent.preferred-height;
 
         aboutContent := VerticalLayout {
             padding: 12px * Palette.scale;

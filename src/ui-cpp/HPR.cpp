@@ -6,6 +6,7 @@
 #include "appState.hpp"
 #include "currentWindowManager.hpp"
 #include "patternAnalyzer.hpp"
+#include "extensionManager.hpp"
 #include "timeUtils.hpp"
 #include "uiEventBridge.hpp"
 #include "windowUtilities.hpp"
@@ -51,13 +52,28 @@ void posixSignalHandler_ShutUpCompiler(int signum)
 }
 #endif
 
-HPR::HPR(ExtensionManager *extMgr) : ui(MainWindow::create()), myTray(MyTray::create()), modelManager(ui)
+HPR::HPR(ExtensionManager *extMgr) : ui(MainWindow::create()), modelManager(ui)
 {
+	createTray();
 	if (extMgr)
 		this->extManager = extMgr;
 #ifdef __linux__
 	slint::set_xdg_app_id("HPR"); // So it has a class in hyprland
 #endif
+}
+
+
+void HPR::createTray()
+{
+	if (AppState::extManager)
+	{
+		auto res = AppState::extManager->dispatchOverride("createTray", {});
+		if (res.has_value())
+		{
+			return;
+		}
+	}
+	myTray = MyTray::create();
 }
 
 /*
@@ -101,6 +117,7 @@ void HPR::saveWindowGeometry()
 			}
 		});
 }
+
 
 HPR::~HPR()
 {
@@ -520,29 +537,34 @@ void HPR::run()
 	tracker = std::thread(&HPR::trackingLoop, this);
 	
 	auto uiWeak = slint::ComponentWeakHandle(ui);
-	myTray->on_showHPR([uiWeak, this]
-	{
-		if (auto w = uiWeak.lock())
-		{
-			show();
-		}
-	});
 
-	myTray->on_quitHPR([uiWeak, this]
+	if (myTray.has_value())
 	{
-		if (auto w = uiWeak.lock())
+		(myTray.value())->on_showHPR([uiWeak, this]
 		{
-			quit();
-		}
-	});
+			if (auto w = uiWeak.lock())
+			{
+				show();
+			}
+		});
 
-	myTray->on_iconClicked([uiWeak, this]
-	{
-		if (auto w = uiWeak.lock())
+		(myTray.value())->on_quitHPR([uiWeak, this]
 		{
-			show();
-		}
-	});
+			if (auto w = uiWeak.lock())
+			{
+				quit();
+			}
+		});
+
+		(myTray.value())->on_iconClicked([uiWeak, this]
+		{
+			if (auto w = uiWeak.lock())
+			{
+				show();
+			}
+		});
+	}
+	
 
 	// Blocks execution until window closes or slint::quit_event_loop() triggers
 	slint::run_event_loop(slint::EventLoopMode::RunUntilQuit);
