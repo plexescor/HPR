@@ -8,7 +8,25 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_BUILD_PARALLEL_LEVEL 8)
 
-find_package(Slint QUIET)
+set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+
+include(FetchContent)
+FetchContent_Declare(
+    Slint
+    GIT_REPOSITORY https://github.com/slint-ui/slint.git
+    GIT_TAG v1.18.1
+    SOURCE_SUBDIR api/cpp
+)
+
+set(SLINT_FEATURE_RENDERER_FEMTOVG OFF CACHE INTERNAL "Disable default hardware vector graphics")
+set(SLINT_FEATURE_BACKEND_QT OFF CACHE INTERNAL "Disable Qt backend")
+set(SLINT_FEATURE_BACKEND_LINUXKMS OFF CACHE INTERNAL "Disable Linux KMS backend")
+
+set(SLINT_FEATURE_RENDERER_SKIA ON CACHE INTERNAL "Enable Skia library framework")
+
+set(SLINT_FEATURE_RENDERER_SKIA_SOFTWARE ON CACHE INTERNAL "Enable dedicated Skia software renderer")
+
+FetchContent_MakeAvailable(Slint)
 
 # Find libdbus-1 on Linu
 if(LINUX)
@@ -79,7 +97,7 @@ target_include_directories(HPR PRIVATE external/sol2/)
 target_link_libraries(HPR PRIVATE Slint::Slint)
 
 if(WIN32)
-    target_link_libraries(HPR PRIVATE winhttp ws2_32)
+    target_link_libraries(HPR PRIVATE winhttp ws2_32 Imm32 UxTheme)
     target_include_directories(HPR PRIVATE external/wintoast/)
 elseif(LINUX)
     find_package(CURL REQUIRED)
@@ -103,11 +121,6 @@ target_include_directories(HPR
     external/sqlite_modern_cpp/sqlite_modern_cpp/lists
     external/sqlite_modern_cpp/sqlite_modern_cpp/utility
 )
-
-# On Windows, copy the Slint DLL next to the application binary so that it's found.
-if (WIN32)
-    add_custom_command(TARGET HPR POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_RUNTIME_DLLS:HPR> $<TARGET_FILE_DIR:HPR> COMMAND_EXPAND_LISTS)
-endif()
 
 # Copy some aliases.csv to binary path
 add_custom_command(TARGET HPR POST_BUILD
@@ -180,26 +193,5 @@ if(UNIX)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         ${CMAKE_SOURCE_DIR}/shippedWithBinary/installWindowCallsExtension.sh
         $<TARGET_FILE_DIR:HPR>/installWindowCallsExtension.sh
-    )
-
-    find_library(SLINT_SO
-        NAMES slint_cpp
-        HINTS "${Slint_DIR}/../.."
-              "${Slint_DIR}/../../.."
-    )
-
-    if(SLINT_SO)
-        add_custom_command(TARGET HPR POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${SLINT_SO}"
-                $<TARGET_FILE_DIR:HPR>
-        )
-    else()
-        message(WARNING "[HPR] Could not find libslint_cpp.so — you may need to copy it manually next to the binary")
-    endif()
-
-    set_target_properties(HPR PROPERTIES
-        BUILD_RPATH "$ORIGIN"
-        INSTALL_RPATH "$ORIGIN"
     )
 endif()

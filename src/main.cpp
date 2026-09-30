@@ -49,6 +49,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 int main()
 #endif
 {
+	#ifdef _WIN32
+    _putenv_s("SLINT_BACKEND", "winit-skia-software");
+    #else
+    setenv("SLINT_BACKEND", "winit-skia-software", 1);
+    #endif
+	
 	#ifdef __linux__
 	dbus_threads_init_default();
 	#endif
