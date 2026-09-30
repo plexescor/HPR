@@ -8,7 +8,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 set(CMAKE_BUILD_PARALLEL_LEVEL 8)
 
-set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE)
 
 include(FetchContent)
 FetchContent_Declare(
@@ -99,6 +99,14 @@ target_link_libraries(HPR PRIVATE Slint::Slint)
 if(WIN32)
     target_link_libraries(HPR PRIVATE winhttp ws2_32 Imm32 UxTheme)
     target_include_directories(HPR PRIVATE external/wintoast/)
+
+    # Automatically copy all linked runtime DLLs (including Slint) next to HPR.exe
+    add_custom_command(TARGET HPR POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            $<TARGET_RUNTIME_DLLS:HPR>
+            $<TARGET_FILE_DIR:HPR>
+        COMMAND_EXPAND_LISTS
+    )
 elseif(LINUX)
     find_package(CURL REQUIRED)
     target_link_libraries(HPR PRIVATE ${DBUS_LIBRARIES} CURL::libcurl)
@@ -193,5 +201,26 @@ if(UNIX)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         ${CMAKE_SOURCE_DIR}/shippedWithBinary/installWindowCallsExtension.sh
         $<TARGET_FILE_DIR:HPR>/installWindowCallsExtension.sh
+    )
+
+    find_library(SLINT_SO
+        NAMES slint_cpp
+        HINTS "${Slint_DIR}/../.."
+              "${Slint_DIR}/../../.."
+    )
+
+    if(SLINT_SO)
+        add_custom_command(TARGET HPR POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${SLINT_SO}"
+                $<TARGET_FILE_DIR:HPR>
+        )
+    else()
+        message(WARNING "[HPR] Could not find libslint_cpp.so — you may need to copy it manually next to the binary")
+    endif()
+
+    set_target_properties(HPR PROPERTIES
+        BUILD_RPATH "$ORIGIN"
+        INSTALL_RPATH "$ORIGIN"
     )
 endif()
