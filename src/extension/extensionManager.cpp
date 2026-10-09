@@ -2100,6 +2100,61 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 		return AppState::patternAnalyzer.getMostProductiveHour();
 	});
 
+	// New functinos some
+	registerFunction("getEscapePattern" + suffix, []() -> std::string
+	{
+		std::lock_guard<std::mutex> lock(AppState::patternAnalyzerMutex);
+		return AppState::patternAnalyzer.getEscapePattern();
+	});
+
+	registerFunction("getReturnRate" + suffix, []() -> std::string
+	{
+		std::lock_guard<std::mutex> lock(AppState::patternAnalyzerMutex);
+		return AppState::patternAnalyzer.getReturnRate();
+	});
+
+	registerFunction("getAvgFocusSession" + suffix, []() -> std::string
+	{
+		std::lock_guard<std::mutex> lock(AppState::patternAnalyzerMutex);
+		return AppState::patternAnalyzer.getAvgFocusSession();
+	});
+
+	registerFunction("getMostDistractedDay" + suffix, []() -> std::string
+	{
+		std::lock_guard<std::mutex> lock(AppState::patternAnalyzerMutex);
+		return AppState::patternAnalyzer.getMostDistractedDay();
+	});
+
+	registerFunction("getProductiveDaysThisWeek" + suffix, []() -> std::string
+	{
+		std::lock_guard<std::mutex> lock(AppState::patternAnalyzerMutex);
+		return AppState::patternAnalyzer.getProductiveDaysThisWeek();
+	});
+
+	registerFunction("getScreenTimeVsAverage" + suffix, []() -> std::string
+	{
+		std::lock_guard<std::mutex> lock(AppState::patternAnalyzerMutex);
+		return AppState::patternAnalyzer.getScreenTimeVsAverage();
+	});
+
+	registerFunction("getFocusDipHour" + suffix, []() -> std::string
+	{
+		std::lock_guard<std::mutex> lock(AppState::patternAnalyzerMutex);
+		return AppState::patternAnalyzer.getFocusDipHour();
+	});
+
+	registerFunction("getDeepWorkRelativeNoon_Random" + suffix, []() -> std::string
+	{
+		std::lock_guard<std::mutex> lock(AppState::patternAnalyzerMutex);
+		return AppState::patternAnalyzer.getDeepWorkBeforeNoon();
+	});
+
+	registerFunction("getWeekendVsWeekday" + suffix, []() -> std::string
+	{
+		std::lock_guard<std::mutex> lock(AppState::patternAnalyzerMutex);
+		return AppState::patternAnalyzer.getWeekendVsWeekday();
+	});
+
 	registerFunction("showUi" + suffix, [this]()
 	{
 		if (app)
