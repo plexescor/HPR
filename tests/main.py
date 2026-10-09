@@ -25,6 +25,7 @@ from pathlib import Path
 
 TEST_SUITES: list[str] = [
     "lifecyclehooks",
+    "livedata",
     "otherextensions",
     "csvio",
     "windowbackends",
@@ -69,7 +70,13 @@ TIME_KEYS: list[str] = [
     "Sleep",
     "GetTime_MS"
 ]
-WINDOWBACKENDS_KEYS: list[str] = ["GetCurrentWindow", "GetCurrentTitle", "RegisterBackend"]
+WINDOWBACKENDS_KEYS: list[str] = [
+    "GetCurrentWindow", 
+    "GetCurrentTitle", 
+    "RegisterBackend",
+    "StopTracking",
+    "StartTracking"
+]
 NETIO_KEYS: list[str] = [
     "StartServer",
     "HTTPGet",
@@ -80,12 +87,20 @@ NETIO_KEYS: list[str] = [
     "ParseJSON",
     "ToJSON",
 ]
+
+LIVEDATA_KEYS: list[str] = [
+    "GetLiveTimeLogApp",
+    "GetLiveTimeLogTab",
+    "GetLiveTimeLogProject"
+]
+
 UI_KEYS: list[str] = ["ShowUIPopup"]
 LOGGER_KEYS: list[str] = ["LogTest"]
 
 # Master dictionary mapping suite names to their sublists of expected keys
 EXPECTED_CSV_KEYS: dict[str, list[str]] = {
     "lifecyclehooks": LIFECYCLEHOOKS_KEYS,
+    "livedata": LIVEDATA_KEYS,
     "otherextensions": OTHEREXTENSIONS_KEYS,
     "csvio": CSVIO_KEYS,
     "windowbackends": WINDOWBACKENDS_KEYS,

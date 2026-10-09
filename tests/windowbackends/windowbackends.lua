@@ -6,11 +6,15 @@
 --   HPR.getCurrentWindow()   Returns active window process name.
 --   HPR.getCurrentTitle()    Returns active window title bar text.
 --   HPR.registerBackend(...) Registers a custom Lua window backend.
+--   HPR.stopTracking()       Stops HPR window tracking backend
+--   HPR.startTracking()      Resumes HPR window tracking backend
 --
 -- Expected output (written to output/windowbackends.csv):
 --   GetCurrentWindow,PASSED
 --   GetCurrentTitle,PASSED
 --   RegisterBackend,PASSED
+--   StopTracking,PASSED
+--   StartTracking,PASSED
 --
 -- How to run:
 --   python tests/main.py  ->  select "windowbackends" suite, then close HPR.
@@ -21,10 +25,8 @@ HPR.authorName = "Plexescor"
 HPR.versionSupport = { "0.9.7", "0.9.8" }
 
 function init()
-    HPR.sleep(1000) -- wait till our friend starts up
-end --1second tick
+    HPR.sleep(3000) -- wait till our friend starts up
 
-function onTick(delta)
     local name = HPR.getCurrentWindow()
     local title = HPR.getCurrentTitle()
 
@@ -41,8 +43,34 @@ function onTick(delta)
         HPR.writeCsv(HPR.getExtensionDir() .. "output/windowbackends.csv", "GetCurrentWindow", "FAILED")
         HPR.writeCsv(HPR.getExtensionDir() .. "output/windowbackends.csv", "GetCurrentTitle", "FAILED")
     end
+
+
+    HPR.stopTracking()
+    name = HPR.getCurrentWindow()
+
+    if (name == "AFK") then
+        HPR.writeCsv(HPR.getExtensionDir() .. "output/windowbackends.csv", "StopTracking", "PASSED")
+    else
+        HPR.writeCsv(HPR.getExtensionDir() .. "output/windowbackends.csv", "StopTracking", "FAILED")
+    end
+
+    HPR.startTracking()
+
+    HPR.sleep(1000)
+    name = HPR.getCurrentWindow()
+
+    if (name ~= "AFK") then
+        HPR.writeCsv(HPR.getExtensionDir() .. "output/windowbackends.csv", "StartTracking", "PASSED")
+    else
+        HPR.writeCsv(HPR.getExtensionDir() .. "output/windowbackends.csv", "StartTracking", "FAILED")
+    end
+end --1second tick
+
+function onTick(delta)
+    
+
 end
 
 function onExit()
-
+    
 end

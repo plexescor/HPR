@@ -8,9 +8,9 @@
 | Metric | Count |
 |---|---|
 | **Total API surface** | 88 |
-| **Covered** | 31 |
-| **Uncovered** | 57 |
-| **Coverage** | 35.23% |
+| **Covered** | 36 |
+| **Uncovered** | 52 |
+| **Coverage** | 40.91% |
 
 ---
 
@@ -33,6 +33,8 @@
 | `HPR.getCurrentWindow` | Window | `windowbackends` |
 | `HPR.getCurrentTitle` | Window | `windowbackends` |
 | `HPR.registerBackend` | Window | `windowbackends` |
+| `HPR.stopTracking` | Window | `windowbackends` |
+| `HPR.startTracking` | Window | `windowbackends` |
 | `HPR.startServer` | Networking | `netio` |
 | `HPR.httpGet` | Networking | `netio` |
 | `HPR.httpPost` | Networking | `netio` |
@@ -51,6 +53,9 @@
 | `HPR.extractMMYY_from_DDMMYY` | Time | `time` |
 | `HPR.showUiPopup` | UI | `ui` |
 | `HPR.log` | Logger | `logger` |
+| `HPR.getLiveTimeLogPerApp` | Live Data | `livedata` |
+| `HPR.getLiveTimeLogPerTab` | Live Data | `livedata` |
+| `HPR.getLiveTimeLogPerProject` | Live Data | `livedata` |
 
 > **Note:** `getExtensionDir` and `getExtensionPath` share the same implementation, covering one implicitly covers the other.
 
@@ -62,11 +67,6 @@
 |---|---|---|
 | `HPR.getExtensionAbsoluteDir` | Paths | Absolute filesystem directory path of the extension |
 | `HPR.getTime_MS` | Time | Current wall-clock time in milliseconds (Unix epoch) |
-| `HPR.stopTracking` | Window | Pause window focus tracking |
-| `HPR.startTracking` | Window | Resume window focus tracking |
-| `HPR.getLiveTimeLogPerApp` | Live Data | Map of app name → ms tracked today (live, current session) |
-| `HPR.getLiveTimeLogPerTab` | Live Data | Map of browser tab title → ms tracked today |
-| `HPR.getLiveTimeLogPerProject` | Live Data | Map of project name → ms tracked today |
 | `HPR.getPid` | Process | PID string for a given raw app name |
 | `HPR.killPid` | Process | Force-kill a process by PID string |
 | `HPR.runSystemCommand` | Process | Run a shell command and return its stdout |
