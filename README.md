@@ -559,8 +559,8 @@ For the complete UI contract and required bindings, refer to [hpr-cpp.netlify.ap
 - CMake 3.21+
 - GCC 13+, Clang 16+, or MSVC 2022+ with C++23 support
 - Rust toolchain (`cargo` / `rustc`) — Slint is compiled directly from source during CMake configuration
-- Linux only: `jq`, `gdbus`, `libdbus-1-dev`, `libcurl4-openssl-dev` (or distro equivalents)
-- Windows only: bundled `WinToast` compiles out-of-the-box
+- Ninja (Make does weird things with env vars)
+- Linux only: `gdbus`, `libdbus-1-dev`, `libcurl4-openssl-dev` (or distro equivalents)
 
 ```bash
 git clone https://github.com/plexescor/HPR
@@ -575,13 +575,16 @@ cd HPR
 
 **Windows:** run `installDependencies.bat`.
 
+> [!NOTE]
+> On Linux, Always use Ninja, dont use Make as it causes compilation errors by injecting weird env vars during compilation of slint
+
 **Build:**
 ```bash
-cmake -B build
+cmake -G Ninja -B build
 cmake --build build --parallel 8
 ```
 
-HPR uses slightly patched versions of `sol2`, `lua`, and `sqlite3` in `external/` to avoid compile errors under C++23 strict mode. Use the bundled ones for a clean build. CMake automatically downloads and compiles Slint from source via `FetchContent` using Cargo, static-linking it for maximum runtime performance and lowest memory footprint. It also copies `aliases.csv`, `config.csv`, `ui/`, `assets/`, and install scripts next to the output binary automatically - a fresh build is immediately runnable from the build directory.
+> HPR uses slightly patched versions of `sol2`, `lua`, and `sqlite3` in `external/` to avoid compile errors under C++23 strict mode. Use the bundled ones for a clean build. CMake automatically downloads and compiles Slint from source via `FetchContent` using Cargo, static-linking it for maximum runtime performance and lowest memory footprint. It also copies `aliases.csv`, `config.csv`, `ui/`, `assets/`, and install scripts next to the output binary automatically - a fresh build is immediately runnable from the build directory.
 
 
 

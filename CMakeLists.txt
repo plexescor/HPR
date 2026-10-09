@@ -203,21 +203,11 @@ if(UNIX)
         $<TARGET_FILE_DIR:HPR>/installWindowCallsExtension.sh
     )
 
-    find_library(SLINT_SO
-        NAMES slint_cpp
-        HINTS "${Slint_DIR}/../.."
-              "${Slint_DIR}/../../.."
+    add_custom_command(TARGET HPR POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${slint_BINARY_DIR}/libslint_cpp.so"
+            $<TARGET_FILE_DIR:HPR>
     )
-
-    if(SLINT_SO)
-        add_custom_command(TARGET HPR POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${SLINT_SO}"
-                $<TARGET_FILE_DIR:HPR>
-        )
-    else()
-        message(WARNING "[HPR] Could not find libslint_cpp.so — you may need to copy it manually next to the binary")
-    endif()
 
     set_target_properties(HPR PROPERTIES
         BUILD_RPATH "$ORIGIN"
