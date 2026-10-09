@@ -242,15 +242,6 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow> &ui, ExtensionMa
 				browserTrackingToggled(val == "true");
 			else if (param == "track-projects")
 				projectTrackingToggled(val == "true");
-
-			if (param == "anonymous-telemetry")
-			{
-				AppState::configManager.markTelemetryPromptAnswered();
-				if (val == "true")
-				{
-					std::thread([]() { TelemetryManager::checkAndSend(); }).detach();
-				}
-			}
 		});
 
 	ui->on_dismissContinentPrompt(
@@ -756,14 +747,7 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<slint::interpreter::Componen
 								 std::string param = std::string(opt_name.value());
 								 std::string val = std::string(opt_val.value());
 								 AppState::configManager.setConfig(param, val);
-								 if (param == "anonymous-telemetry")
-								 {
-									 AppState::configManager.markTelemetryPromptAnswered();
-									 if (val == "true")
-									 {
-										 std::thread([]() { TelemetryManager::checkAndSend(); }).detach();
-									 }
-								 }
+								 
 							 }
 						 }
 						 return slint::interpreter::Value();

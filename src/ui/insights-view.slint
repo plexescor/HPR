@@ -82,6 +82,7 @@ export component InsightsView {
         Flickable {
             vertical-stretch: 1;
             interactive: true;
+            min-height: 0;
             content-height: insightContent.preferred-height;
 
             insightContent := VerticalLayout {

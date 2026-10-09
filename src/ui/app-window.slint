@@ -510,7 +510,8 @@ export component MainWindow inherits Window {
                 set-limit(name, mins) => { root.setLimit(name, mins); }
                 set-goal(name, mins) => { root.setGoal(name, mins); }
             }
-            if active-view == "ABOUT" : AboutView { 
+            if active-view == "ABOUT" : AboutView {
+                vertical-stretch: 1;
                 cpu-usage: root.cpuUsage;
                 ram-usage: root.ramUsage;
                 loaded-extensions: root.loadedExtensions;
@@ -563,6 +564,7 @@ export component MainWindow inherits Window {
                 open-hpr-store => { root.openHprStore(); }
             }
             if active-view == "SETTINGS" : SettingsView {
+                vertical-stretch: 1;
                 themeMode_S: root.themeMode_S;
                 autostart_S: root.autostart_S;
                 headless_S: root.headless_S;

@@ -13,6 +13,7 @@ export component AboutView {
     in property <string> active-threads;
 
     Flickable {
+        height: 100%;
         content-height: aboutContent.preferred-height;
 
         aboutContent := VerticalLayout {
@@ -201,7 +202,7 @@ export component AboutView {
                                     ]
 
                                     version-lbl := Text {
-                                        text: "v0.9.12";
+                                        text: "v0.9.13";
                                         font-size: 9px * Palette.scale;
                                         font-weight: 700;
                                         letter-spacing: 2px * Palette.scale;

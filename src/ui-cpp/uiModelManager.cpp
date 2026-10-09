@@ -411,7 +411,7 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
 				bool allowCustomVal = AppState::configManager.getConfig<bool>("allow-custom-backends", false);
 				bool allowNetworkVal = AppState::configManager.getConfig<bool>("allow-network-activity", true);
 				bool allowNativeLibrariesVal = AppState::configManager.getConfig<bool>("allow-native-libraries", false);
-				bool fullBrightnessBarsVal = AppState::configManager.getConfig<bool>("full-brightness-bars", false);
+				bool fullBrightnessBarsVal = AppState::configManager.getConfig<bool>("full-brightness-bars", true);
 				bool showContinentPromptVal = allowNetworkVal && !AppState::configManager.isContinentPromptAnswered();
 
 				bool allowSidebarCustomizationVal =
@@ -1029,7 +1029,7 @@ void UiModelManager::update_Interpreted(
 				bool allowCustomVal = AppState::configManager.getConfig<bool>("allow-custom-backends", false);
 				bool allowNetworkVal = AppState::configManager.getConfig<bool>("allow-network-activity", true);
 				bool allowNativeLibrariesVal = AppState::configManager.getConfig<bool>("allow-native-libraries", false);
-				bool fullBrightnessBarsVal = AppState::configManager.getConfig<bool>("full-brightness-bars", false);
+				bool fullBrightnessBarsVal = AppState::configManager.getConfig<bool>("full-brightness-bars", true);
 				bool showContinentPromptVal = allowNetworkVal && !AppState::configManager.isContinentPromptAnswered();
 
 				bool allowSidebarCustomizationVal =

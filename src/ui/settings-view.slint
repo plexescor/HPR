@@ -124,6 +124,8 @@ export component SettingsView {
     property <string> selected-category: "ALL";
 
     Flickable {
+        vertical-stretch: 1;
+        min-height: 0;
         content-height: settingsContent.preferred-height;
 
         settingsContent := VerticalLayout {
@@ -766,28 +768,7 @@ export component SettingsView {
                 }
             }
 
-            // ── PRIVACY & ANALYTICS ───────────────────────────────────────
-            if root.selected-category == "ALL" || root.selected-category == "SYSTEM" : Card {
-                VerticalLayout {
-                    padding: 24px * Palette.scale;
-                    spacing: 16px * Palette.scale;
-
-                    Text {
-                        text: "PRIVACY & ANALYTICS";
-                        font-size: 8px * Palette.scale;
-                        font-weight: 700;
-                        letter-spacing: 2.5px * Palette.scale;
-                        color: Palette.text-muted;
-                    }
-
-                    ToggleSetting {
-                        label: "Anonymous Analytics";
-                        description: "Send anonymous telemetry to help improve HPR (only reports total users and weekly active counts)";
-                        checked: root.telemetry_S;
-                        toggled(v) => { root.setConfig("anonymous-telemetry", v ? "true" : "false"); }
-                    }
-                }
-            }
+            
 
             // ── NETWORK ───────────────────────────────────────────────────
             if root.selected-category == "ALL" || root.selected-category == "SYSTEM" : Card {
@@ -809,6 +790,21 @@ export component SettingsView {
                         checked: root.allowNetworkActivity_S;
                         toggled(v) => { root.setConfig("allow-network-activity", v ? "true" : "false"); }
                     }
+                }
+            }
+
+            // Bottom spacer — I added this text to force the last card to render fully
+            Rectangle {
+                height: 32px * Palette.scale;
+                Text {
+                    text: "I added this text to force the last card to render fully";
+                    font-size: 8px * Palette.scale;
+                    font-weight: 600;
+                    letter-spacing: 0.5px * Palette.scale;
+                    color: Palette.text-muted;
+                    opacity: 0.35;
+                    horizontal-alignment: center;
+                    vertical-alignment: center;
                 }
             }
         }

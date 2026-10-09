@@ -174,28 +174,7 @@ void HPR::show()
 			}
 		});
 
-	if (AppState::configManager.isFirstLaunch() && !AppState::configManager.isTelemetryPromptAnswered())
-	{
-		if (extManager)
-		{
-			std::string promptText = "Help Improve HPR? HPR is local-first. We would like to collect two anonymous numbers: total unique installations and the frequency of regular weekly users. No window titles, websites, or personal data ever leave your machine.";
-			extManager->showUiPopup(promptText, "NO THANKS", "I AGREE", false, [](int btn) {
-				if (btn == 1) // YES / OK
-				{
-					AppState::configManager.setConfig("anonymous-telemetry", std::string("true"));
-					AppState::configManager.markTelemetryPromptAnswered();
-					std::thread([]() { TelemetryManager::checkAndSend(); }).detach();
-				}
-				else // NO / CANCEL
-				{
-					AppState::configManager.setConfig("anonymous-telemetry", std::string("false"));
-					AppState::configManager.markTelemetryPromptAnswered();
-				}
-			});
-		}
-	}
-
-	// Continent demographic prompt — shown once when network is allowed and user hasn't answered yet
+	// Continent demographic prompt only shown once when network is allowed and user hasn't answered yet
 	{
 		bool networkAllowed = AppState::configManager.getConfig<bool>("allow-network-activity", true);
 		if (networkAllowed && !AppState::configManager.isContinentPromptAnswered())
