@@ -534,6 +534,7 @@ void DatabaseManager::loadDb_Singular(std::string requestedDate, bool showToUi)
 						   // YOU: see appstate for this
 						   {
 							   std::lock_guard<std::mutex> lock(AppState::historyStateMutex);
+							   AppState::historicalData_State.date = requestedDate;
 							   AppState::historicalData_State.timeLog_PerApp = results;
 							   AppState::historicalData_State.timeLog_PerTab = results_Tab;
 							   AppState::historicalData_State.timeLog_PerProject = results_Project;

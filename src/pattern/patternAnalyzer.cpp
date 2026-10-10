@@ -37,7 +37,7 @@ std::vector<Session> buildSessions(const std::map<std::pair<std::string, std::st
 	};
 	std::vector<Ev> events;
 
-	auto isSelf = [](const std::string &n) { return n == "HPR" || n == "Unknown" || n.empty(); };
+	auto isSelf = [](const std::string &n) { return n == "HPR" || n == "Unknown" || n == "Unknown67" || n.empty(); };
 
 	for (const auto &[apps, vec] : sh)
 	{
@@ -233,6 +233,7 @@ std::vector<int> PatternAnalyzer::calculateProductivityScore(bool todayOnly, boo
     {
         productivityFunctionCalls = 0;
         productivityScore = 737;
+        productivityScoreCache_Hourly.clear();
     }
 
     if (productivityScore != 737 && !forceRecalculation)
@@ -299,7 +300,8 @@ std::vector<int> PatternAnalyzer::calculateProductivityScore(bool todayOnly, boo
             ? 0.1
             : std::max((latest - earliest) / 3600000.0, 0.1);
 
-        double workScore   = std::min((static_cast<double>(workTime) / totalTime) / 0.70, 1.0) * 100.0;
+		// For a perfect work score, atleast 30% must be work time
+        double workScore   = std::min((static_cast<double>(workTime) / totalTime) / 0.30, 1.0) * 100.0;
         double focusScore  = std::min(avgSessionMins / focusCap, 1.0) * 100.0;
         double switchScore = std::max(0.0, 1.0 - (totalSwitches / activeHours / switchFloor)) * 100.0;
 
@@ -310,6 +312,163 @@ std::vector<int> PatternAnalyzer::calculateProductivityScore(bool todayOnly, boo
     productivityScore      = scores.empty() ? 0 : scores.back();
     productivityScoreCache = scores;
     return productivityScoreCache;
+}
+
+/*
+	Returns a vector of productivity scores of each hour, 0 = midnight
+*/
+std::vector<int> PatternAnalyzer::calculateProductivityScore_Hourly(bool today, bool forceRecalculation)
+{
+	if (!productivityScoreCache_Hourly.empty() && !forceRecalculation)
+	{
+		return productivityScoreCache_Hourly;
+	}
+
+	uint64_t minSessionMs = static_cast<uint64_t>(
+		AppState::configManager.getConfig("pattern-focus-min-session-ms", 60000));
+	double focusCap    = AppState::configManager.getConfig("pattern-focus-cap-mins", 90.0);
+	double switchFloor = AppState::configManager.getConfig("pattern-switch-rate-floor", 10.0);
+
+	std::vector<int> hourlyScores(24, 0);
+
+	std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> switchHistory_;
+
+	{
+		std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+		if (AppState::state.currentView == AppState::CurrentView::HISTORICAL_SINGULAR)
+		{
+			std::lock_guard<std::mutex> histLock(AppState::historyStateMutex);
+			switchHistory_ = AppState::historicalData_State.switchHistory;
+		}
+		else
+		{
+			switchHistory_ = AppState::state.switchHistory;
+		}
+	}
+
+	if (switchHistory_.empty())
+	{
+		productivityScoreCache_Hourly = hourlyScores;
+		return productivityScoreCache_Hourly;
+	}
+
+	struct HourBucket
+	{
+		uint64_t              totalTime = 0; 
+		uint64_t              workTime  = 0; 
+		int                   switches  = 0; 
+		std::vector<uint64_t> sessionDurations;
+	};
+
+	std::array<HourBucket, 24> buckets{};
+
+	for (const auto& [apps, vec] : switchHistory_)
+	{
+		for (uint64_t ts : vec)
+		{
+			int h = toHour(ts);
+			if (h >= 0 && h < 24)
+				buckets[h].switches++;
+		}
+	}
+
+	{
+		struct Ev
+		{
+			uint64_t    ts;
+			std::string app;
+			bool        arrival;
+		};
+		std::vector<Ev> events;
+
+		auto isSelf = [](const std::string& n)
+		{
+			return n == "HPR" || n == "Unknown" || n == "Unknown67" || n.empty();
+		};
+
+		for (const auto& [apps, vec] : switchHistory_)
+		{
+			for (uint64_t ts : vec)
+			{
+				if (!isSelf(apps.first))
+					events.push_back({ts, apps.first, false});
+				if (!isSelf(apps.second))
+					events.push_back({ts, apps.second, true});
+			}
+		}
+
+		std::sort(events.begin(), events.end(),
+			[](const Ev& a, const Ev& b)
+			{
+				return a.ts != b.ts ? a.ts < b.ts : (int)a.arrival < (int)b.arrival;
+			});
+
+		std::map<std::string, uint64_t> active; // app to arrival ts
+
+		for (const auto& e : events)
+		{
+			if (e.arrival)
+			{
+				active.erase(e.app); // discard dangling open session
+				active[e.app] = e.ts;
+			}
+			else
+			{
+				if (active.count(e.app))
+				{
+					uint64_t dur = (e.ts >= active[e.app]) ? (e.ts - active[e.app]) : 0;
+					if (dur >= minSessionMs && dur < 8ULL * 3600 * 1000)
+					{
+						int h = toHour(active[e.app]);
+						if (h >= 0 && h < 24)
+						{
+							buckets[h].totalTime += dur;
+							buckets[h].sessionDurations.push_back(dur);
+							if (getCategory(e.app) == AppCategory::WORK)
+								buckets[h].workTime += dur;
+						}
+					}
+					active.erase(e.app);
+				}
+			}
+		}
+	}
+
+	for (int h = 0; h < 24; ++h)
+	{
+		const auto& b = buckets[h];
+
+		if (b.totalTime == 0 && b.switches == 0)
+		{
+			hourlyScores[h] = 0;
+			continue;
+		}
+
+		// Work-ratio score (>=30 % work = full marks, same threshold as daily)
+		double workScore = 0.0;
+		if (b.totalTime > 0)
+			workScore = std::min((static_cast<double>(b.workTime) / b.totalTime) / 0.30, 1.0) * 100.0;
+
+		// Focus score (average session length vs the cap)
+		double focusScore = 0.0;
+		if (!b.sessionDurations.empty())
+		{
+			double totalDur = 0.0;
+			for (uint64_t d : b.sessionDurations)
+				totalDur += static_cast<double>(d);
+			double avgMins = (totalDur / static_cast<double>(b.sessionDurations.size())) / 60000.0;
+			focusScore = std::min(avgMins / focusCap, 1.0) * 100.0;
+		}
+
+		// Switch-rate score: switches per hour bucket, fewer = better
+		double switchScore = std::max(0.0, 1.0 - (static_cast<double>(b.switches) / switchFloor)) * 100.0;
+
+		double raw = (workScore * 0.50) + (focusScore * 0.25) + (switchScore * 0.25);
+		hourlyScores[h] = static_cast<int>(std::round(std::min(raw, 100.0)));
+	}
+
+	productivityScoreCache_Hourly = hourlyScores;
+	return productivityScoreCache_Hourly;
 }
 
 /*
@@ -681,83 +840,39 @@ void PatternAnalyzer::generateInsights()
 	// Pattern 7: Peak Productive Hour
 	if (!switchHistory.empty())
 	{
-		std::vector<uint64_t> timestamps;
+		std::vector<int> scorePerHour = calculateProductivityScore_Hourly();
 
-		// flatten all timestamps into one vector
-		for (const auto &[key, vec] : switchHistory)
-		{
-			timestamps.insert(timestamps.end(), vec.begin(), vec.end());
-		}
-
-		std::sort(timestamps.begin(), timestamps.end());
-
-		// window must be between 60 and 90 mins c epochs are milliseconds
-		const uint64_t minWindow_ms = 60ULL * 60 * 1000;
-		const uint64_t maxWindow_ms = 90ULL * 60 * 1000;
-
-		uint64_t bestStart = 0;
-		uint64_t bestEnd = 0;
-
-		size_t left = 0;
-		size_t bestCount = SIZE_MAX;
-		bool foundValid = false;
-
-		// sliding window , fewer switches in window = more focused
-		for (size_t right = 0; right < timestamps.size(); ++right)
-		{
-			// shrink window from left if it exceeds 90 mins
-			while (timestamps[right] - timestamps[left] > maxWindow_ms)
-			{
-				++left;
-			}
-
-			uint64_t windowSpan = timestamps[right] - timestamps[left];
-
-			// only consider windows that are at least 60 mins wide
-			if (windowSpan < minWindow_ms)
-				continue;
-
-			size_t count = right - left + 1;
-
-			// fewer switches = more focused/ productive
-			if (count < bestCount)
-			{
-				bestCount = count;
-				bestStart = timestamps[left];
-				bestEnd = timestamps[right];
-				foundValid = true;
-			}
-		}
-
-		if (!foundValid)
+		if (scorePerHour.size() < 24)
 		{
 			mostProductiveHour_O = "Not enough data";
 		}
 		else
 		{
-			std::string start = convertToTime_HHMMSS_12(bestStart);
-			std::string end = convertToTime_HHMMSS_12(bestEnd);
-
-			// trying this inline shit for first time
-			auto formatTime = [](std::string t)
+			size_t mostProductiveHour_Index = 0;
+			int lastMaxScore = 0;
+			for (size_t index = 0; index < 24; index++)
 			{
-				std::replace(t.begin(), t.end(), '-', ':');
-
-				// remove seconds part
-				size_t secondColon = t.find(':', t.find(':') + 1);
-				if (secondColon != std::string::npos)
+				if (scorePerHour[index] > lastMaxScore)
 				{
-					size_t spacePos = t.find(' ', secondColon);
-
-					t.erase(secondColon, spacePos - secondColon);
-					t.erase(std::remove(t.begin(), t.end(), ' '), t.end());
+					lastMaxScore = scorePerHour[index];
+					mostProductiveHour_Index = index;
 				}
+			}
 
-				return t;
-			};
-
-			mostProductiveHour_O = formatTime(start) + " — " + formatTime(end);
+			if (lastMaxScore == 0)
+			{
+				mostProductiveHour_O = "Not enough data";
+			}
+			else
+			{
+				int startHour = static_cast<int>(mostProductiveHour_Index);
+				int endHour = (startHour + 1) % 24;
+				char buf[64];
+				std::snprintf(buf, sizeof(buf), "%02d:00 — %02d:00 (Score: %d)", startHour, endHour, lastMaxScore);
+				mostProductiveHour_O = buf; 
+			}
 		}
+		
 	}
 }
 

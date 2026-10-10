@@ -96,6 +96,7 @@ struct AppState
 // Intended to hold data for max 1 whole day
 struct HistoricalData_Singular
 {
+	std::string date;
 	std::map<std::string, uint64_t> timeLog_PerApp;
 	std::map<std::string, uint64_t> timeLog_PerTab;
 	std::map<std::string, uint64_t> timeLog_PerProject;

@@ -25,7 +25,7 @@ struct switchHistory
 	uint64_t timestamp;
 };
 
-// Holds one day of raw tracking data — used exclusively by
+// Holds one day of raw tracking data used exclusively by
 // generateAdvancedInsights()
 struct DayData
 {
@@ -72,6 +72,7 @@ class PatternAnalyzer
 	void initialiseCategoryFilePath();
 	void initialiseCategories();
 	std::vector<int> calculateProductivityScore(bool todayOnly = false, bool forceRecalculation = false);
+	std::vector<int> calculateProductivityScore_Hourly(bool today = true, bool forceRecalculation = false);
 
   private:
 	std::string fileName = "categories.csv";
@@ -80,6 +81,7 @@ class PatternAnalyzer
 
 	int productivityScore = 737; //default for detecting caching and shit // 737 Because my favourite youtuber is SB737 - https://www.youtube.com/@SB737
 	std::vector<int> productivityScoreCache;
+	std::vector<int> productivityScoreCache_Hourly;
 	int productivityFunctionCalls = 0; //i know its bad
 
 

@@ -193,3 +193,9 @@ std::string extractMMYY_from_DDMMYY(const std::string &dateStr)
 		return "";
 	}
 }
+int toHour(uint64_t epochMs)
+{
+	std::time_t tt = static_cast<std::time_t>(epochMs / 1000);
+	std::tm     tm = safe_localtime(tt);
+	return tm.tm_hour;
+}

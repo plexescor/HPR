@@ -12,3 +12,4 @@ std::string formatTime_HHMMSS(uint64_t ms);
 uint64_t parseDate_DDMMYY(const std::string &dateStr);
 uint64_t parseDate_MMYY(const std::string &dateStr);
 std::string extractMMYY_from_DDMMYY(const std::string &dateStr);
+int toHour(uint64_t epochMs);
