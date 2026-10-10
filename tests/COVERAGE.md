@@ -7,10 +7,12 @@
 
 | Metric | Count |
 |---|---|
-| **Total API surface** | 88 |
+| **Total API surface** | 98 |
 | **Covered** | 36 |
-| **Uncovered** | 52 |
-| **Coverage** | 40.91% |
+| **Uncovered** | 62 |
+| **Coverage** | 36.73% |
+
+> **Note:** Lifecycle hooks (`init` / `onTick` / `onExit` / `onAction`) are invoked by the runtime directly and are not part of the 98 registered API functions, but are covered by the `lifecyclehooks` suite.
 
 ---
 
@@ -18,7 +20,7 @@
 
 | API | Category | Covered by Suite |
 |---|---|---|
-| `init()` / `onTick()` / `onExit()` / `onAction()`| Lifecycle hook | `lifecyclehooks` |
+| `init()` / `onTick()` / `onExit()` / `onAction()` | Lifecycle hook (runtime) | `lifecyclehooks` |
 | `HPR.getLoadedExtensions` | System | `otherextensions` |
 | `HPR.unloadExtension` | System | `otherextensions` |
 | `HPR.writeCsv` (single-value) | File I/O | `csvio` |
@@ -56,8 +58,11 @@
 | `HPR.getLiveTimeLogPerApp` | Live Data | `livedata` |
 | `HPR.getLiveTimeLogPerTab` | Live Data | `livedata` |
 | `HPR.getLiveTimeLogPerProject` | Live Data | `livedata` |
+| `HPR.runSystemCommand` | Process | `process` |
+| `HPR.getPid` | Process | `process` |
+| `HPR.killPid` | Process | `process` |
 
-> **Note:** `getExtensionDir` and `getExtensionPath` share the same implementation, covering one implicitly covers the other.
+> **Note:** `getExtensionDir` and `getExtensionPath` share the same implementation; covering one implicitly covers the other.
 
 ---
 
@@ -67,9 +72,6 @@
 |---|---|---|
 | `HPR.getExtensionAbsoluteDir` | Paths | Absolute filesystem directory path of the extension |
 | `HPR.getTime_MS` | Time | Current wall-clock time in milliseconds (Unix epoch) |
-| `HPR.getPid` | Process | PID string for a given raw app name |
-| `HPR.killPid` | Process | Force-kill a process by PID string |
-| `HPR.runSystemCommand` | Process | Run a shell command and return its stdout |
 | `HPR.dbExecute` | Database | Execute a write SQL statement on today's tracking DB |
 | `HPR.dbQuery` | Database | Run a SELECT on today's tracking DB → rows as table |
 | `HPR.dbQueryHistorical` | Database | Run a SELECT on the historical DB (waits for async load) |
@@ -103,6 +105,15 @@
 | `HPR.getMostSwitchedTo` | Analytics | App switched to most often |
 | `HPR.getMostFocusedSession` | Analytics | Longest focused session string |
 | `HPR.getMostProductiveHour` | Analytics | Most productive hour-of-day string |
+| `HPR.getEscapePattern` | Analytics | Pattern of context-switching away from an app |
+| `HPR.getReturnRate` | Analytics | Rate at which users return to an app after leaving |
+| `HPR.getAvgFocusSession` | Analytics | Average focused session duration string |
+| `HPR.getMostDistractedDay` | Analytics | Day of the week with the most app switches |
+| `HPR.getProductiveDaysThisWeek` | Analytics | Count of productive days in the current week |
+| `HPR.getScreenTimeVsAverage` | Analytics | Current screen time compared to daily average |
+| `HPR.getFocusDipHour` | Analytics | Hour of day where focus is typically lowest |
+| `HPR.getDeepWorkRelativeNoon_Random` | Analytics | Deep work completed before noon (random selection) |
+| `HPR.getWeekendVsWeekday` | Analytics | Weekend vs weekday usage comparison string |
 | `HPR.setLimit` | Limits | Set minute time limit for app, tab, or project |
 | `HPR.getLimit` | Limits | Get configured minute time limit for app, tab, or project |
 | `HPR.setGoal` | Goals | Set minute daily target goal for app, tab, or project |
@@ -110,10 +121,14 @@
 | `HPR.getOsName` | System | Returns `"Windows"`, `"Linux"`, or `"Apple"` |
 | `HPR.getEnvironmentName` | System | Returns `$XDG_CURRENT_DESKTOP` on Linux; empty on Windows |
 | `HPR.reloadExtension` | System | Reload another extension by author + name |
+| `HPR.reloadMyself` | System | Reload the calling extension itself |
 | `HPR.refreshExtensions` | System | Hot-load any new `.lua` files dropped into the extensions dir |
 | `HPR.applyTheme` | System | Apply a UI theme by name (interpreter mode only) |
 | `HPR.getThemeNames` | System | Returns array of all available UI theme names |
 | `HPR.getCurrentThemeName` | System | Returns the name of the currently active UI theme |
+| `HPR.getHPRVersion` | System | Returns the current HPR version string |
 | `HPR.amICompatible` | System | Returns whether extension is marked compatible with current HPR version |
+| `HPR.setVersionSupport` | System | Declare which HPR versions the extension supports (runtime call) |
+| `HPR.setLegacyAPISuffix` | System | Enable/disable legacy `_E` API suffix at runtime |
+| `HPR.setUseHPRTablePrefix` | System | Enable/disable requiring `HPR.` prefix for all functions |
 | `HPR.crash` | Debug | Intentionally crash HPR with an optional message |
-| `HPR.overrides` | Override table | Register override functions (`HPR.overrides.stopTracking`, etc.) |

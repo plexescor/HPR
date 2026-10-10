@@ -28,6 +28,7 @@ TEST_SUITES: list[str] = [
     "livedata",
     "otherextensions",
     "csvio",
+    "process",
     "windowbackends",
     "netio",
     "time",
@@ -39,6 +40,13 @@ TEST_SUITES: list[str] = [
 # Suite-specific expected CSV key lists
 LIFECYCLEHOOKS_KEYS: list[str] = ["Init", "Tick", "Exit", "Action"]
 OTHEREXTENSIONS_KEYS: list[str] = ["GetLoadedExtensions", "UnloadExtension"]
+
+PROCESS_KEYS: list[str] = [
+    "RunSystemCommand",
+    "GetPID",
+    "KillPID"
+]
+
 CSVIO_KEYS: list[str] = [
     "WriteCSV",
     "ReadCSV",
@@ -103,6 +111,7 @@ EXPECTED_CSV_KEYS: dict[str, list[str]] = {
     "livedata": LIVEDATA_KEYS,
     "otherextensions": OTHEREXTENSIONS_KEYS,
     "csvio": CSVIO_KEYS,
+    "process": PROCESS_KEYS,
     "windowbackends": WINDOWBACKENDS_KEYS,
     "netio": NETIO_KEYS,
     "time": TIME_KEYS,
