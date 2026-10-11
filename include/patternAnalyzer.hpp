@@ -68,11 +68,13 @@ class PatternAnalyzer
 	// Called by DatabaseManager when LOAD_PATTERNS_DATA fires
 	void setMultiDayData(std::vector<DayData> data);
 
+	
+	std::vector<int> calculateProductivityScore(bool todayOnly = false, bool forceRecalculation = false);
+	std::vector<int> calculateProductivityScore_Hourly(bool today = true, bool forceRecalculation = false);
   private:
 	void initialiseCategoryFilePath();
 	void initialiseCategories();
-	std::vector<int> calculateProductivityScore(bool todayOnly = false, bool forceRecalculation = false);
-	std::vector<int> calculateProductivityScore_Hourly(bool today = true, bool forceRecalculation = false);
+	
 
   private:
 	std::string fileName = "categories.csv";

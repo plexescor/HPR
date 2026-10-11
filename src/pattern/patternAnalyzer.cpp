@@ -1,3 +1,4 @@
+// #define NOMINMAX
 #include "patternAnalyzer.hpp"
 #include "aliasManager.hpp"
 #include "appState.hpp"
@@ -10,6 +11,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
+#include <array>
 #include <map>
 #include <mutex>
 #include <filesystem>
@@ -24,17 +26,27 @@ struct Session
 	uint64_t startTs;
 };
 
+struct HourBucket
+{
+	uint64_t              totalTime = 0; 
+	uint64_t              workTime  = 0; 
+	int                   switches  = 0; 
+	std::vector<uint64_t> sessionDurations;
+};
+
+struct Ev
+{
+	uint64_t ts;
+	std::string app;
+	bool arrival;
+};
+
 // Given a day's switchHistory, reconstruct all focus sessions longer than
 // minMs. Returns a vector of {duration_ms, start_ts_ms} pairs.
 std::vector<Session> buildSessions(const std::map<std::pair<std::string, std::string>, std::vector<uint64_t>> &sh,
 								   uint64_t minMs = 30000ULL)
 {
-	struct Ev
-	{
-		uint64_t ts;
-		std::string app;
-		bool arrival;
-	};
+	
 	std::vector<Ev> events;
 
 	auto isSelf = [](const std::string &n) { return n == "HPR" || n == "Unknown" || n == "Unknown67" || n.empty(); };
@@ -352,14 +364,7 @@ std::vector<int> PatternAnalyzer::calculateProductivityScore_Hourly(bool today, 
 		return productivityScoreCache_Hourly;
 	}
 
-	struct HourBucket
-	{
-		uint64_t              totalTime = 0; 
-		uint64_t              workTime  = 0; 
-		int                   switches  = 0; 
-		std::vector<uint64_t> sessionDurations;
-	};
-
+	
 	std::array<HourBucket, 24> buckets{};
 
 	for (const auto& [apps, vec] : switchHistory_)
@@ -373,12 +378,7 @@ std::vector<int> PatternAnalyzer::calculateProductivityScore_Hourly(bool today, 
 	}
 
 	{
-		struct Ev
-		{
-			uint64_t    ts;
-			std::string app;
-			bool        arrival;
-		};
+		
 		std::vector<Ev> events;
 
 		auto isSelf = [](const std::string& n)
