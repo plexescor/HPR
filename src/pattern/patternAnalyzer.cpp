@@ -300,12 +300,17 @@ std::vector<int> PatternAnalyzer::calculateProductivityScore(bool todayOnly, boo
         int totalSwitches = 0;
         for (const auto &[apps, vec] : day.switchHistory)
         {
-            totalSwitches += static_cast<int>(vec.size());
-            for (uint64_t ts : vec)
-            {
-                if (ts < earliest) earliest = ts;
-                if (ts > latest)   latest   = ts;
-            }
+			// If swicthes happen between two work apps, they are not distracting, ie
+			// they dont hurt productivity
+			if (getCategory(apps.first) == AppCategory::WORK && getCategory(apps.second) == AppCategory::WORK)
+				continue;
+			totalSwitches += static_cast<int>(vec.size());
+			for (uint64_t ts : vec)
+			{
+				if (ts < earliest) earliest = ts;
+				if (ts > latest)   latest   = ts;
+			}
+			
         }
 
         double activeHours = (earliest == UINT64_MAX || latest <= earliest)
@@ -369,6 +374,10 @@ std::vector<int> PatternAnalyzer::calculateProductivityScore_Hourly(bool today, 
 
 	for (const auto& [apps, vec] : switchHistory_)
 	{
+		// If swicthes happen between two work apps, they are not distracting, ie
+		// they dont hurt productivity
+		if (getCategory(apps.first) == AppCategory::WORK && getCategory(apps.second) == AppCategory::WORK)
+			continue;
 		for (uint64_t ts : vec)
 		{
 			int h = toHour(ts);
@@ -388,6 +397,11 @@ std::vector<int> PatternAnalyzer::calculateProductivityScore_Hourly(bool today, 
 
 		for (const auto& [apps, vec] : switchHistory_)
 		{
+			// If swicthes happen between two work apps, they are not distracting, ie
+			// they dont hurt productivity
+			if (getCategory(apps.first) == AppCategory::WORK && getCategory(apps.second) == AppCategory::WORK)
+				continue;
+
 			for (uint64_t ts : vec)
 			{
 				if (!isSelf(apps.first))
