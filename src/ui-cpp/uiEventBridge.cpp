@@ -7,6 +7,7 @@
 #include "logger.hpp"
 #include "netUtilities.hpp"
 #include "telemetryManager.hpp"
+#include "updateManager.hpp"
 #include <chrono>
 #include <iomanip>
 #include <sstream>
@@ -329,6 +330,16 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow> &ui, ExtensionMa
 								 });
 			}
 		});
+
+	ui->on_updateHprClicked(
+		[]()
+		{
+			if (AppState::updateManager)
+			{
+				AppState::updateManager->promptUserForUpdate();
+			}
+		});
+
 	ui->on_start_drag(
 		[]()
 		{
@@ -1004,6 +1015,17 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<slint::interpreter::Componen
 #endif
 									 }
 								 });
+			}
+			return slint::interpreter::Value();
+		});
+
+	ui->set_callback(
+		"updateHprClicked",
+		[](auto) -> slint::interpreter::Value
+		{
+			if (AppState::updateManager)
+			{
+				AppState::updateManager->promptUserForUpdate();
 			}
 			return slint::interpreter::Value();
 		});

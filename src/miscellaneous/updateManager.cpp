@@ -222,8 +222,29 @@ void UpdateManager::startUpdatePipeline()
         return;
     }
 
+    {
+        std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+        AppState::state.isUpdating = true;
+        AppState::state.updateStatusText = "PREPARING UPDATE...";
+    }
+
     std::thread([this]() {
         Logger::log("[UpdateManager] Starting update staging pipeline...");
+
+        auto failUpdate = [this](const std::string &msg) {
+            Logger::log("[UpdateManager] " + msg);
+            {
+                std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+                AppState::state.updateStatusText = "UPDATE FAILED";
+            }
+            std::this_thread::sleep_for(std::chrono::seconds(4));
+            {
+                std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+                AppState::state.isUpdating = false;
+                AppState::state.updateStatusText = "Update HPR";
+            }
+            isUpdating = false;
+        };
 
         std::string versionStr;
         std::string downloadUrl;
@@ -233,10 +254,19 @@ void UpdateManager::startUpdatePipeline()
             downloadUrl = AppState::state.updateDownloadUrl;
         }
 
-        std::filesystem::path tempBase = std::filesystem::temp_directory_path() / "HPR-Update-Staging";
-        std::filesystem::create_directories(tempBase);
+        std::filesystem::path tempBase = std::filesystem::temp_directory_path() / "hpr-update";
+        try
+        {
+            std::filesystem::create_directories(tempBase);
+        }
+        catch (const std::exception &e)
+        {
+            failUpdate("Failed to create temp staging directory: " + std::string(e.what()));
+            return;
+        }
+
         std::filesystem::path zipFile = tempBase / "update.zip";
-        std::filesystem::path extractDir = tempBase / ("HPR-Update-" + versionStr);
+        std::filesystem::path extractDir = tempBase / "extracted";
 
         bool hasZip = false;
 
@@ -254,48 +284,72 @@ void UpdateManager::startUpdatePipeline()
         {
             if (downloadUrl.empty())
             {
-                Logger::log("[UpdateManager] Error: No download URL found.");
-                isUpdating = false;
+                failUpdate("No download URL found.");
                 return;
+            }
+
+            {
+                std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+                AppState::state.updateStatusText = "DOWNLOADING UPDATE...";
             }
 
             std::string dlErr;
             Logger::log("[UpdateManager] Streaming archive to: " + zipFile.string());
             if (!downloadArchiveToFile(downloadUrl, zipFile, dlErr))
             {
-                Logger::log("[UpdateManager] Archive download failed: " + dlErr);
-                isUpdating = false;
+                failUpdate("Archive download failed: " + dlErr);
                 return;
             }
+        }
+
+        {
+            std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+            AppState::state.updateStatusText = "EXTRACTING UPDATE...";
         }
 
         std::string extErr;
         Logger::log("[UpdateManager] Extracting archive via miniz into: " + extractDir.string());
         if (!extractZipArchive(zipFile, extractDir, extErr))
         {
-            Logger::log("[UpdateManager] Extraction failed: " + extErr);
-            isUpdating = false;
+            failUpdate("Extraction failed: " + extErr);
             return;
+        }
+
+        // Find root folder containing the application binary
+#ifdef _WIN32
+        const std::string binTarget = "HPR.exe";
+#else
+        const std::string binTarget = "HPR";
+#endif
+        std::filesystem::path sourceDir = extractDir;
+        if (!std::filesystem::exists(sourceDir / binTarget))
+        {
+            for (const auto &entry : std::filesystem::recursive_directory_iterator(extractDir))
+            {
+                if (entry.is_regular_file() && entry.path().filename().string() == binTarget)
+                {
+                    sourceDir = entry.path().parent_path();
+                    break;
+                }
+            }
         }
 
         std::filesystem::path appDir = getAppDirectory();
         Logger::log("[UpdateManager] App installation folder: " + appDir.string());
+        Logger::log("[UpdateManager] Extracted binary folder: " + sourceDir.string());
 
-        // Find updater binary
+        // Strictly check next to the application binary (no pwd fallback)
 #ifdef _WIN32
-        std::filesystem::path updaterExe = appDir / "updater.exe";
-        if (!std::filesystem::exists(updaterExe))
-        {
-            // Fallback to build or temp directory if during development
-            updaterExe = std::filesystem::current_path() / "updater.exe";
-        }
+        std::filesystem::path updaterExe = appDir / "HPRUpdater.exe";
 #else
-        std::filesystem::path updaterExe = appDir / "updater";
+        std::filesystem::path updaterExe = appDir / "HPRUpdater";
+#endif
+
         if (!std::filesystem::exists(updaterExe))
         {
-            updaterExe = std::filesystem::current_path() / "updater";
+            failUpdate("Updater executable not found next to binary at: " + updaterExe.string());
+            return;
         }
-#endif
 
         uint32_t currentPid = 0;
 #ifdef _WIN32
@@ -306,7 +360,12 @@ void UpdateManager::startUpdatePipeline()
 
         std::string args = "--pid " + std::to_string(currentPid) +
                            " --target-dir \"" + appDir.string() + "\"" +
-                           " --source-dir \"" + extractDir.string() + "\"";
+                           " --source-dir \"" + sourceDir.string() + "\"";
+
+        {
+            std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+            AppState::state.updateStatusText = "LAUNCHING UPDATER...";
+        }
 
         Logger::log("[UpdateManager] Spawning updater: " + updaterExe.string() + " " + args);
 
@@ -325,17 +384,26 @@ void UpdateManager::startUpdatePipeline()
 
         if (!ShellExecuteExW(&sei))
         {
-            Logger::log("[UpdateManager] Failed to launch updater.exe with elevation.");
-            isUpdating = false;
+            failUpdate("Failed to launch updater.exe with elevation.");
             return;
         }
 #else
-        std::string shellCmd = "$SHELL -c '";
+        std::string shellCmd;
         if (access(appDir.c_str(), W_OK) != 0)
         {
-            shellCmd += "sudo ";
+            if (system("which pkexec >/dev/null 2>&1") == 0)
+            {
+                shellCmd = "pkexec \"" + updaterExe.string() + "\" " + args + " &";
+            }
+            else
+            {
+                shellCmd = "x-terminal-emulator -e sudo \"" + updaterExe.string() + "\" " + args + " &";
+            }
         }
-        shellCmd += "\"" + updaterExe.string() + "\" " + args + "' &";
+        else
+        {
+            shellCmd = "x-terminal-emulator -e \"" + updaterExe.string() + "\" " + args + " &";
+        }
         system(shellCmd.c_str());
 #endif
 
@@ -346,9 +414,14 @@ void UpdateManager::startUpdatePipeline()
             slint::quit_event_loop();
         });
 
-        // Small wait before forced exit if event loop has already finished
-        std::this_thread::sleep_for(std::chrono::milliseconds(500));
-        exit(0);
+        // Give the main thread time to exit gracefully through main()
+        // If still alive after 2 seconds, terminate at the OS level without running thread-unsafe destructors
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+#ifdef _WIN32
+        ExitProcess(0);
+#else
+        _Exit(0);
+#endif
 
     }).detach();
 }
@@ -364,11 +437,21 @@ bool UpdateManager::extractZipArchive(const std::filesystem::path &zipPath, cons
         return false;
     }
 
-    std::filesystem::create_directories(destDir);
+    std::error_code ec;
+    // Cleanly wipe any pre-existing extracted files in temp directory to guarantee fresh overwrite
+    std::filesystem::remove_all(destDir, ec);
+    std::filesystem::create_directories(destDir, ec);
     mz_uint numFiles = mz_zip_reader_get_num_files(&zipArchive);
 
     for (mz_uint i = 0; i < numFiles; i++)
     {
+        if (numFiles > 0 && i % 3 == 0)
+        {
+            int pct = static_cast<int>((static_cast<double>(i) / numFiles) * 100.0);
+            std::lock_guard<std::recursive_mutex> stateLock(AppState::stateMutex);
+            AppState::state.updateStatusText = "EXTRACTING (" + std::to_string(pct) + "%)...";
+        }
+
         mz_zip_archive_file_stat fileStat;
         if (!mz_zip_reader_file_stat(&zipArchive, i, &fileStat))
         {
@@ -379,11 +462,16 @@ bool UpdateManager::extractZipArchive(const std::filesystem::path &zipPath, cons
 
         if (mz_zip_reader_is_file_a_directory(&zipArchive, i))
         {
-            std::filesystem::create_directories(outPath);
+            std::filesystem::create_directories(outPath, ec);
         }
         else
         {
-            std::filesystem::create_directories(outPath.parent_path());
+            std::filesystem::create_directories(outPath.parent_path(), ec);
+            if (std::filesystem::exists(outPath, ec))
+            {
+                std::filesystem::remove(outPath, ec);
+            }
+
             if (!mz_zip_reader_extract_to_file(&zipArchive, i, outPath.string().c_str(), 0))
             {
                 err = "Failed to extract " + std::string(fileStat.m_filename);
@@ -470,6 +558,12 @@ bool UpdateManager::downloadArchiveToFile(const std::string &url, const std::fil
         return false;
     }
 
+    DWORD dwContentLength = 0;
+    DWORD dwLenSize = sizeof(dwContentLength);
+    WinHttpQueryHeaders(hRequest, WINHTTP_QUERY_CONTENT_LENGTH | WINHTTP_QUERY_FLAG_NUMBER,
+                        WINHTTP_HEADER_NAME_BY_INDEX, &dwContentLength, &dwLenSize, WINHTTP_NO_HEADER_INDEX);
+
+    DWORD totalDownloaded = 0;
     DWORD dwSize = 0;
     std::vector<char> buffer(64 * 1024);
     while (WinHttpQueryDataAvailable(hRequest, &dwSize) && dwSize > 0)
@@ -479,6 +573,13 @@ bool UpdateManager::downloadArchiveToFile(const std::string &url, const std::fil
         if (WinHttpReadData(hRequest, buffer.data(), toRead, &dwDownloaded) && dwDownloaded > 0)
         {
             outFile.write(buffer.data(), dwDownloaded);
+            totalDownloaded += dwDownloaded;
+            if (dwContentLength > 0)
+            {
+                int pct = static_cast<int>((static_cast<double>(totalDownloaded) / dwContentLength) * 100.0);
+                std::lock_guard<std::recursive_mutex> stateLock(AppState::stateMutex);
+                AppState::state.updateStatusText = "DOWNLOADING (" + std::to_string(pct) + "%)...";
+            }
         }
         else
         {

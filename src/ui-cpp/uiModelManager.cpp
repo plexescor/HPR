@@ -410,6 +410,18 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
 				bool hwAccelVal = AppState::configManager.getConfig<bool>("hardware-acceleration", true);
 				bool allowCustomVal = AppState::configManager.getConfig<bool>("allow-custom-backends", false);
 				bool allowNetworkVal = AppState::configManager.getConfig<bool>("allow-network-activity", true);
+				bool allowUpdateCheckingVal = AppState::configManager.getConfig<bool>("allow-update-checking", true);
+				bool updateAvailableVal = false;
+				bool isUpdatingVal = false;
+				float updateProgressVal = 0.0f;
+				std::string updateStatusTextVal = "Update HPR";
+				{
+					std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+					updateAvailableVal = AppState::state.updateAvailable;
+					isUpdatingVal = AppState::state.isUpdating;
+					updateProgressVal = AppState::state.updateProgress;
+					updateStatusTextVal = AppState::state.updateStatusText;
+				}
 				bool allowNativeLibrariesVal = AppState::configManager.getConfig<bool>("allow-native-libraries", false);
 				bool fullBrightnessBarsVal = AppState::configManager.getConfig<bool>("full-brightness-bars", true);
 				bool showContinentPromptVal = allowNetworkVal && !AppState::configManager.isContinentPromptAnswered();
@@ -490,6 +502,16 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
 					(*handle)->set_allowCustomBackends_S(allowCustomVal);
 				if ((*handle)->get_allowNetworkActivity_S() != allowNetworkVal)
 					(*handle)->set_allowNetworkActivity_S(allowNetworkVal);
+				if ((*handle)->get_allowUpdateChecking_S() != allowUpdateCheckingVal)
+					(*handle)->set_allowUpdateChecking_S(allowUpdateCheckingVal);
+				if ((*handle)->get_updateAvailable_S() != updateAvailableVal)
+					(*handle)->set_updateAvailable_S(updateAvailableVal);
+				if ((*handle)->get_isUpdating_S() != isUpdatingVal)
+					(*handle)->set_isUpdating_S(isUpdatingVal);
+				if ((*handle)->get_updateProgress_S() != updateProgressVal)
+					(*handle)->set_updateProgress_S(updateProgressVal);
+				if ((*handle)->get_updateStatusText_S() != slint::SharedString(updateStatusTextVal))
+					(*handle)->set_updateStatusText_S(slint::SharedString(updateStatusTextVal));
 					if ((*handle)->get_showContinentPrompt_S() != showContinentPromptVal)
 					(*handle)->set_showContinentPrompt_S(showContinentPromptVal);
 				if ((*handle)->get_allowNativeLibraries_S() != allowNativeLibrariesVal)
@@ -1028,6 +1050,18 @@ void UiModelManager::update_Interpreted(
 				bool hwAccelVal = AppState::configManager.getConfig<bool>("hardware-acceleration", true);
 				bool allowCustomVal = AppState::configManager.getConfig<bool>("allow-custom-backends", false);
 				bool allowNetworkVal = AppState::configManager.getConfig<bool>("allow-network-activity", true);
+				bool allowUpdateCheckingVal = AppState::configManager.getConfig<bool>("allow-update-checking", true);
+				bool updateAvailableVal = false;
+				bool isUpdatingVal = false;
+				float updateProgressVal = 0.0f;
+				std::string updateStatusTextVal = "Update HPR";
+				{
+					std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+					updateAvailableVal = AppState::state.updateAvailable;
+					isUpdatingVal = AppState::state.isUpdating;
+					updateProgressVal = AppState::state.updateProgress;
+					updateStatusTextVal = AppState::state.updateStatusText;
+				}
 				bool allowNativeLibrariesVal = AppState::configManager.getConfig<bool>("allow-native-libraries", false);
 				bool fullBrightnessBarsVal = AppState::configManager.getConfig<bool>("full-brightness-bars", true);
 				bool showContinentPromptVal = allowNetworkVal && !AppState::configManager.isContinentPromptAnswered();
@@ -1102,6 +1136,11 @@ void UiModelManager::update_Interpreted(
 				setPropIfChanged("hardwareAccel_S", slint::interpreter::Value(hwAccelVal));
 				setPropIfChanged("allowCustomBackends_S", slint::interpreter::Value(allowCustomVal));
 				setPropIfChanged("allowNetworkActivity_S", slint::interpreter::Value(allowNetworkVal));
+				setPropIfChanged("allowUpdateChecking_S", slint::interpreter::Value(allowUpdateCheckingVal));
+				setPropIfChanged("updateAvailable_S", slint::interpreter::Value(updateAvailableVal));
+				setPropIfChanged("isUpdating_S", slint::interpreter::Value(isUpdatingVal));
+				setPropIfChanged("updateProgress_S", slint::interpreter::Value((double)updateProgressVal));
+				setPropIfChanged("updateStatusText_S", slint::interpreter::Value(slint::SharedString(updateStatusTextVal)));
 					setPropIfChanged("showContinentPrompt_S", slint::interpreter::Value(showContinentPromptVal));
 				setPropIfChanged("allowNativeLibraries_S", slint::interpreter::Value(allowNativeLibrariesVal));
 				setPropIfChanged("fullBrightnessBars_S", slint::interpreter::Value(fullBrightnessBarsVal));

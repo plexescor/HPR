@@ -14,7 +14,6 @@ class UpdateManager
 
     void run();
     void stop();
-    void checkForUpdates();
     void promptUserForUpdate();
     void startUpdatePipeline();
 
@@ -24,6 +23,7 @@ class UpdateManager
 
   private:
     void workerLoop();
+    void checkForUpdates();
 
   private:
     std::atomic<bool> running{false};

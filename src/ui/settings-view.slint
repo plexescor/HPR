@@ -93,6 +93,7 @@ export component SettingsView {
     in property <bool> hardwareAccel_S;
     in property <bool> allowCustomBackends_S;
     in property <bool> allowNetworkActivity_S;
+    in property <bool> allowUpdateChecking_S;
     in property <bool> showMiscImagePanel_S;
     in property <bool> trueHeadless_S;
     in property <bool> allowNativeLibraries_S;
@@ -789,6 +790,15 @@ export component SettingsView {
                         description: "Enable or disable all outgoing HTTP requests (Telemetry & Extensions' network activities).";
                         checked: root.allowNetworkActivity_S;
                         toggled(v) => { root.setConfig("allow-network-activity", v ? "true" : "false"); }
+                    }
+
+                    Divider {}
+
+                    ToggleSetting {
+                        label: "Check for Updates";
+                        description: "Automatically check for new HPR releases on startup and periodically";
+                        checked: root.allowUpdateChecking_S;
+                        toggled(v) => { root.setConfig("allow-update-checking", v ? "true" : "false"); }
                     }
                 }
             }

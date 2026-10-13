@@ -217,3 +217,16 @@ if(UNIX)
         INSTALL_RPATH "$ORIGIN"
     )
 endif()
+
+# Standalone updater executable
+add_executable(HPRUpdater src/updater/main.cpp)
+set_target_properties(HPRUpdater PROPERTIES
+    CXX_STANDARD 23
+    CXX_STANDARD_REQUIRED ON
+)
+if(WIN32)
+    set_target_properties(HPRUpdater PROPERTIES WIN32_EXECUTABLE FALSE)
+    target_link_libraries(HPRUpdater PRIVATE shell32)
+endif()
+
+add_dependencies(HPR HPRUpdater)

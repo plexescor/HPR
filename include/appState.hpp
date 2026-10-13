@@ -97,6 +97,9 @@ struct AppState
 	bool updateAvailable = false;
 	std::string latestVersion = "";
 	std::string updateDownloadUrl = "";
+	bool isUpdating = false;
+	float updateProgress = 0.0f;
+	std::string updateStatusText = "Update HPR";
 };
 
 // Intended to hold data for max 1 whole day

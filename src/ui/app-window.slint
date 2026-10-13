@@ -89,7 +89,13 @@ export component MainWindow inherits Window {
     callback openHprStore();
     callback submitContinentPrompt(string);
     callback dismissContinentPrompt();
+    callback updateHprClicked();
 
+    in-out property <bool> updateAvailable_S: false;
+    in property <bool> allowUpdateChecking_S: true;
+    in-out property <bool> isUpdating_S: false;
+    in-out property <float> updateProgress_S: 0.0;
+    in-out property <string> updateStatusText_S: "Update HPR";
     in-out property <bool> is-sending-feedback: false;
     in-out property <bool> showFeedbackResultPrompt: false;
     in-out property <bool> feedbackSuccess: false;
@@ -297,6 +303,52 @@ export component MainWindow inherits Window {
                             font-weight: 700;
                             letter-spacing: 4px * Palette.scale;
                             vertical-alignment: center;
+                        }
+
+                        if root.isUpdating_S : HorizontalLayout {
+                            spacing: 8px * Palette.scale;
+                            alignment: start;
+
+                            Rectangle {
+                                width: 12px * Palette.scale;
+                                height: 12px * Palette.scale;
+                                border-radius: 6px * Palette.scale;
+                                border-width: 2px * Palette.scale;
+                                border-color: #38bdf8;
+                                y: (parent.height - self.height) / 2;
+                            }
+
+                            Text {
+                                text: root.updateStatusText_S;
+                                color: #38bdf8;
+                                font-size: 10px * Palette.scale;
+                                font-weight: 700;
+                                letter-spacing: 1px * Palette.scale;
+                                vertical-alignment: center;
+                            }
+                        }
+
+                        if root.updateAvailable_S && !root.isUpdating_S : Rectangle {
+                            width: 110px * Palette.scale;
+                            height: 22px * Palette.scale;
+                            border-radius: 5px * Palette.scale;
+                            background: #f59e0b;
+                            y: (parent.height - self.height) / 2;
+
+                            ta-self-upg := TouchArea {
+                                mouse-cursor: pointer;
+                                clicked => { root.updateHprClicked(); }
+                            }
+
+                            Text {
+                                text: "Update HPR";
+                                color: #000000;
+                                font-size: 11px * Palette.scale;
+                                font-weight: 600;
+                                horizontal-alignment: center;
+                                vertical-alignment: center;
+                                opacity: ta-self-upg.has-hover ? 0.8 : 1.0;
+                            }
                         }
 
                         Rectangle {
@@ -577,6 +629,7 @@ export component MainWindow inherits Window {
                 hardwareAccel_S: root.hardwareAccel_S;
                 allowCustomBackends_S: root.allowCustomBackends_S;
                 allowNetworkActivity_S: root.allowNetworkActivity_S;
+                allowUpdateChecking_S: root.allowUpdateChecking_S;
                 allowNativeLibraries_S: root.allowNativeLibraries_S;
                 fullBrightnessBars_S: root.fullBrightnessBars_S;
                 useInterpreter_S: root.useThemesEnabled_S;

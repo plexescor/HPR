@@ -33,6 +33,7 @@
 #include "singleInstance.hpp"
 #include "telemetryManager.hpp"
 #include "timelineManager.hpp"
+#include "updateManager.hpp"
 
 #include "windowUtilities.hpp"
 #include <condition_variable>
@@ -90,6 +91,10 @@ int main()
 	LimitsManager lim;
 	lim.run();
 	AppState::limitsManager = &lim;
+
+	UpdateManager upd;
+	upd.run();
+	AppState::updateManager = &upd;
 
 	bool trueHeadless = AppState::configManager.getConfig("true-headless-mode", false);
 	if (trueHeadless)
