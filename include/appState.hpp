@@ -14,6 +14,7 @@
 #include <vector>
 
 class ExtensionManager;
+class UpdateManager;
 
 namespace AppState
 {
@@ -91,6 +92,11 @@ struct AppState
 	// misc stuff
 	std::map<std::string, std::string> appNamePid;
 	std::map<std::string, std::string> pidAppName;
+
+	// Update State
+	bool updateAvailable = false;
+	std::string latestVersion = "";
+	std::string updateDownloadUrl = "";
 };
 
 // Intended to hold data for max 1 whole day
@@ -136,6 +142,7 @@ extern ThemeManager themeManager;
 
 extern ExtensionManager *extManager;
 extern LimitsManager *limitsManager;
+extern UpdateManager *updateManager;
 
 extern std::mutex patternAnalyzerMutex;
 

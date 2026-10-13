@@ -45,6 +45,7 @@ file(GLOB_RECURSE PATTERN src/pattern/*.cpp)
 file(GLOB_RECURSE UI src/ui-cpp/*.cpp)
 file(GLOB_RECURSE WINDOW src/window/*.cpp)
 file(GLOB_RECURSE TIMELINE src/timeline/*.cpp)
+file(GLOB_RECURSE MINIZ external/miniz/*.c)
 
 set(SOURCES
     src/main.cpp
@@ -57,6 +58,7 @@ set(SOURCES
     ${UI}
     ${WINDOW}
     ${TIMELINE}
+    ${MINIZ}
     external/sqLite/sqlite3.c
 )
 
@@ -128,6 +130,7 @@ target_include_directories(HPR
     external/sqlite_modern_cpp/sqlite_modern_cpp
     external/sqlite_modern_cpp/sqlite_modern_cpp/lists
     external/sqlite_modern_cpp/sqlite_modern_cpp/utility
+    external/miniz/
 )
 
 # Copy some aliases.csv to binary path

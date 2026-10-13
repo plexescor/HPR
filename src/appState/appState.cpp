@@ -14,6 +14,7 @@ PatternAnalyzer AppState::patternAnalyzer;
 
 ExtensionManager *AppState::extManager = nullptr;
 LimitsManager *AppState::limitsManager = nullptr;
+UpdateManager *AppState::updateManager = nullptr;
 
 std::mutex AppState::patternAnalyzerMutex;
 
