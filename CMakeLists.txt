@@ -14,7 +14,7 @@ include(FetchContent)
 FetchContent_Declare(
     Slint
     GIT_REPOSITORY https://github.com/slint-ui/slint.git
-    GIT_TAG v1.18.1
+    GIT_TAG 774a97a
     SOURCE_SUBDIR api/cpp
 )
 

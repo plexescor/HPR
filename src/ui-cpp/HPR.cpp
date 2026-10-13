@@ -17,6 +17,8 @@
 
 #ifdef _WIN32
 #include <windows.h>
+#include <commctrl.h>
+#pragma comment(lib, "comctl32.lib")
 #endif
 
 #include <algorithm>
@@ -479,6 +481,19 @@ void HPR::run()
 					(*handle)->hide();
 			});
 	}
+
+	static slint::Timer minimizePoller;
+	minimizePoller.start(
+		slint::TimerMode::Repeated,
+		std::chrono::milliseconds(200),
+		[this]()
+		{
+			if (ui->window().is_minimized())
+			{
+				this->hide();
+			}
+		}
+	);
 
 #ifdef _WIN32
 	// post to event loop so it runs AFTER the window is actually visible
