@@ -7,12 +7,12 @@
 
 | Metric | Count |
 |---|---|
-| **Total API surface** | 98 |
-| **Covered** | 36 |
+| **Total API surface** | 100 |
+| **Covered** | 38 |
 | **Uncovered** | 62 |
-| **Coverage** | 36.73% |
+| **Coverage** | 38% |
 
-> **Note:** Lifecycle hooks (`init` / `onTick` / `onExit` / `onAction`) are invoked by the runtime directly and are not part of the 98 registered API functions, but are covered by the `lifecyclehooks` suite.
+> **Note:** Lifecycle hooks (`init` / `onTick` / `onExit` / `onAction`) are invoked by the runtime directly and are not part of the 100 registered API functions, but are covered by the `lifecyclehooks` suite.
 
 ---
 
@@ -58,6 +58,8 @@
 | `HPR.getLiveTimeLogPerApp` | Live Data | `livedata` |
 | `HPR.getLiveTimeLogPerTab` | Live Data | `livedata` |
 | `HPR.getLiveTimeLogPerProject` | Live Data | `livedata` |
+| `HPR.getProductivityScores`    | Live Data | `livedata` |
+| `HPR.getProductivityScores_Hourly`    | Live Data | `livedata` |
 | `HPR.runSystemCommand` | Process | `process` |
 | `HPR.getPid` | Process | `process` |
 | `HPR.killPid` | Process | `process` |

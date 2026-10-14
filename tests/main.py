@@ -99,7 +99,9 @@ NETIO_KEYS: list[str] = [
 LIVEDATA_KEYS: list[str] = [
     "GetLiveTimeLogApp",
     "GetLiveTimeLogTab",
-    "GetLiveTimeLogProject"
+    "GetLiveTimeLogProject",
+    "GetProductivityScores",
+    "GetProductivityScores_Hourly"
 ]
 
 UI_KEYS: list[str] = ["ShowUIPopup"]

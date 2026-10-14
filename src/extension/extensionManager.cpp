@@ -2408,6 +2408,28 @@ void ExtensionManager::registerFunctions(LoadedExtension &ext)
 	{
 		return AppState::APP_VERSION;
 	});
+
+	registerFunction("getProductivityScores" + suffix, [this, &lua](bool todayOnly, bool forceRecalculation) -> sol::table
+	{
+		std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+		std::vector<int> scores = AppState::patternAnalyzer.calculateProductivityScore(todayOnly, forceRecalculation);
+
+		sol::table t = lua.create_table();
+		for (size_t i = 0; i < scores.size(); ++i)
+			t[i + 1] = scores[i];
+		return t;
+	});
+
+	registerFunction("getProductivityScores_Hourly" + suffix, [this, &lua](bool today, bool forceRecalculation) -> sol::table
+	{
+		std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+		std::vector<int> scores = AppState::patternAnalyzer.calculateProductivityScore_Hourly(today, forceRecalculation);
+
+		sol::table t = lua.create_table();
+		for (size_t i = 0; i < scores.size(); ++i)
+			t[i + 1] = scores[i];
+		return t;
+	});
 }
 
 void ExtensionManager::updateExtensionPath()
