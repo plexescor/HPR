@@ -113,6 +113,8 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 	}
 	while (running)
 	{
+		project = "";
+    	tab = "";
 		int pollInterval = AppState::configManager.getConfig("poll-interval", 50);
 		window = getCurrentWindow();
 
@@ -250,8 +252,8 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 
 				
 
-				if (!project.empty() && (lowerProjectName.contains("visual studio code") ||
-										lowerProjectName.contains("vscode") || lowerProjectName.contains("code")))
+				if (!project.empty() && (lowerProjectName.contains(" - visual studio code") ||
+										lowerProjectName.contains(" - vscodium")))
 				{
 					AppState::state.timeLog_PerProject[project] +=
 						std::chrono::duration_cast<std::chrono::milliseconds>(elapsed).count();
