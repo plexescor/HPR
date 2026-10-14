@@ -257,13 +257,7 @@ void HPRInterpreter::reload(std::string path)
 */
 void HPRInterpreter::show()
 {
-	EventHub::emit(Event::UI_VISIBLE);
-	// tell to unpause
-	{
-		std::lock_guard<std::mutex> lock(pauseMutex);
-		paused = false;
-	}
-	pauseCv.notify_one();
+	
 
 	auto weak = slint::ComponentWeakHandle<slint::interpreter::ComponentInstance>(instance.value());
 
@@ -691,6 +685,13 @@ void HPRInterpreter::run()
 		{
 			if (auto w = weak_inst.lock())
 			{
+				EventHub::emit(Event::UI_VISIBLE);
+				// tell to unpause
+				{
+					std::lock_guard<std::mutex> lock(pauseMutex);
+					paused = false;
+				}
+				pauseCv.notify_one();
 				show();
 			}
 		});
@@ -699,6 +700,13 @@ void HPRInterpreter::run()
 		{
 			if (auto w = weak_inst.lock())
 			{
+				EventHub::emit(Event::UI_VISIBLE);
+				// tell to unpause
+				{
+					std::lock_guard<std::mutex> lock(pauseMutex);
+					paused = false;
+				}
+				pauseCv.notify_one();
 				quit();
 			}
 		});

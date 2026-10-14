@@ -141,13 +141,7 @@ HPR::~HPR()
 */
 void HPR::show()
 {
-	EventHub::emit(Event::UI_VISIBLE);
-	// tell to unpause
-	{
-		std::lock_guard<std::mutex> lock(pauseMutex);
-		paused = false;
-	}
-	pauseCv.notify_one();
+	
 
 	auto weak = slint::ComponentWeakHandle<MainWindow>(ui);
 
@@ -551,6 +545,13 @@ void HPR::run()
 		{
 			if (auto w = uiWeak.lock())
 			{
+				EventHub::emit(Event::UI_VISIBLE);
+				// tell to unpause
+				{
+					std::lock_guard<std::mutex> lock(pauseMutex);
+					paused = false;
+				}
+				pauseCv.notify_one();
 				show();
 			}
 		});
@@ -567,6 +568,13 @@ void HPR::run()
 		{
 			if (auto w = uiWeak.lock())
 			{
+				EventHub::emit(Event::UI_VISIBLE);
+				// tell to unpause
+				{
+					std::lock_guard<std::mutex> lock(pauseMutex);
+					paused = false;
+				}
+				pauseCv.notify_one();
 				show();
 			}
 		});
