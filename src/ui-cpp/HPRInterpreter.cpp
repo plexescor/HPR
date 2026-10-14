@@ -317,6 +317,18 @@ void HPRInterpreter::show()
 void HPRInterpreter::quit()
 {
 	saveWindowGeometry();
+	// Kill the app after it doesnt shutdown within 1.5 seconds
+	// TODO: increase this if the database isnt merged cleanly > 8% of the time
+	std::thread([this]()
+	{
+		std::this_thread::sleep_for(std::chrono::milliseconds(1500));
+		Logger::log("HPR failed to shutdown gracefully, forcing termination");
+		#ifdef _WIN32
+			TerminateProcess(GetCurrentProcess(), 0); 
+		#else
+			_exit(0); 
+		#endif
+	}).detach();
 	slint::invoke_from_event_loop([]() { slint::quit_event_loop(); });
 }
 
