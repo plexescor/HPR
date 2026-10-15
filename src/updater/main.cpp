@@ -17,6 +17,7 @@
 #include <signal.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 #endif
 
@@ -303,19 +304,32 @@ int main(int argc, char *argv[])
     CloseHandle(pi.hThread);
 #else
     std::filesystem::path hprPath = targetDir / "HPR";
-    pid_t pid = fork();
-    if (pid == 0)
-    {
-        chdir(targetDir.string().c_str());
-        char *args[] = { (char*)hprPath.c_str(), nullptr };
-        execv(hprPath.c_str(), args);
-        _exit(1);
-    }
-    else if (pid < 0)
+
+    pid_t intermediate = fork();
+    if (intermediate < 0)
     {
         printErrorAndPause("Failed to fork and relaunch HPR. Please start HPR manually.");
         return 1;
     }
+    if (intermediate == 0)
+    {
+        // Child 1, create new session, detach from updater's terminal
+        setsid();
+
+        // Child 2, grandchild doesnt reacquire a controlling terminal
+        pid_t grandchild = fork();
+        if (grandchild == 0)
+        {
+            chdir(targetDir.string().c_str());
+            char *args[] = { (char*)hprPath.c_str(), nullptr };
+            execv(hprPath.c_str(), args);
+            _exit(1);
+        }
+        // Child 1 exits immediately, grandchild gets reparented to init
+        _exit(0);
+    }
+    // Updater reaps Child 1 and continues to shutdown
+    waitpid(intermediate, nullptr, 0);
 #endif
 
     std::cout << "      HPR has been launched successfully!\n\n";

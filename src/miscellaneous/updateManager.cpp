@@ -155,20 +155,46 @@ void UpdateManager::checkForUpdates()
         return;
     }
 
-    // Extract asset or zipball download url
+    #ifdef _WIN32
+    const std::string targetAsset = "UPDATE_PACKAGE_WINDOWS.zip";
+    #else
+        const std::string targetAsset = "UPDATE_PACKAGE_LINUX.zip";
+    #endif
+
     std::string downloadUrl = "";
-    std::string zipballKey = "\"zipball_url\":";
-    auto zipPos = body.find(zipballKey);
-    if (zipPos != std::string::npos)
+    std::string browserKey = "\"browser_download_url\":";
+    std::string nameKey = "\"name\":";
+    size_t searchPos = 0;
+
+    while (true)
     {
-        auto zStart = body.find('"', zipPos + zipballKey.length());
-        if (zStart != std::string::npos)
+        auto namePos = body.find(nameKey, searchPos);
+        if (namePos == std::string::npos) break;
+
+        auto nStart = body.find('"', namePos + nameKey.length());
+        if (nStart == std::string::npos) break;
+        auto nEnd = body.find('"', nStart + 1);
+        if (nEnd == std::string::npos) break;
+
+        std::string assetName = body.substr(nStart + 1, nEnd - nStart - 1);
+        searchPos = nEnd + 1;
+
+        if (assetName == targetAsset)
         {
-            auto zEnd = body.find('"', zStart + 1);
-            if (zEnd != std::string::npos)
+            auto dlPos = body.find(browserKey, searchPos);
+            if (dlPos != std::string::npos)
             {
-                downloadUrl = body.substr(zStart + 1, zEnd - zStart - 1);
+                auto dStart = body.find('"', dlPos + browserKey.length());
+                if (dStart != std::string::npos)
+                {
+                    auto dEnd = body.find('"', dStart + 1);
+                    if (dEnd != std::string::npos)
+                    {
+                        downloadUrl = body.substr(dStart + 1, dEnd - dStart - 1);
+                    }
+                }
             }
+            break;
         }
     }
 
@@ -389,21 +415,72 @@ void UpdateManager::startUpdatePipeline()
         }
 #else
         std::string shellCmd;
+        std::string updaterCmd = "\"" + updaterExe.string() + "\" " + args;
+
+        std::string elevatedCmd = updaterCmd;
         if (access(appDir.c_str(), W_OK) != 0)
         {
             if (system("which pkexec >/dev/null 2>&1") == 0)
-            {
-                shellCmd = "pkexec \"" + updaterExe.string() + "\" " + args + " &";
-            }
+                elevatedCmd = "pkexec " + updaterCmd;
             else
-            {
-                shellCmd = "x-terminal-emulator -e sudo \"" + updaterExe.string() + "\" " + args + " &";
-            }
+                elevatedCmd = "sudo " + updaterCmd;
         }
+
+        // Terminal fallback chain
+        if      (system("which konsole >/dev/null 2>&1") == 0)
+            shellCmd = "konsole -e " + elevatedCmd + " &";
+        else if (system("which gnome-terminal >/dev/null 2>&1") == 0)
+            shellCmd = "gnome-terminal -- " + elevatedCmd + " &";
+        else if (system("which ptyxis >/dev/null 2>&1") == 0)
+            shellCmd = "ptyxis -- " + elevatedCmd + " &";
+        else if (system("which xfce4-terminal >/dev/null 2>&1") == 0)
+            shellCmd = "xfce4-terminal -e " + elevatedCmd + " &";
+        else if (system("which tilix >/dev/null 2>&1") == 0)
+            shellCmd = "tilix -e " + elevatedCmd + " &";
+        else if (system("which terminator >/dev/null 2>&1") == 0)
+            shellCmd = "terminator -e " + elevatedCmd + " &";
+        else if (system("which wezterm >/dev/null 2>&1") == 0)
+            shellCmd = "wezterm -e " + elevatedCmd + " &";
+        else if (system("which alacritty >/dev/null 2>&1") == 0)
+            shellCmd = "alacritty -e " + elevatedCmd + " &";
+        else if (system("which kitty >/dev/null 2>&1") == 0)
+            shellCmd = "kitty " + elevatedCmd + " &";
+        else if (system("which hyper >/dev/null 2>&1") == 0)
+            shellCmd = "hyper " + elevatedCmd + " &";
+        else if (system("which guake >/dev/null 2>&1") == 0)
+            shellCmd = "guake -e " + elevatedCmd + " &";
+        else if (system("which tilda >/dev/null 2>&1") == 0)
+            shellCmd = "tilda -c " + elevatedCmd + " &";
+        else if (system("which foot >/dev/null 2>&1") == 0)
+            shellCmd = "foot " + elevatedCmd + " &";
+        else if (system("which rio >/dev/null 2>&1") == 0)
+            shellCmd = "rio -e " + elevatedCmd + " &";
+        else if (system("which contour >/dev/null 2>&1") == 0)
+            shellCmd = "contour " + elevatedCmd + " &";
+        else if (system("which cool-retro-term >/dev/null 2>&1") == 0)
+            shellCmd = "cool-retro-term -e " + elevatedCmd + " &";
+        else if (system("which mate-terminal >/dev/null 2>&1") == 0)
+            shellCmd = "mate-terminal -e " + elevatedCmd + " &";
+        else if (system("which lxterminal >/dev/null 2>&1") == 0)
+            shellCmd = "lxterminal -e " + elevatedCmd + " &";
+        else if (system("which qterminal >/dev/null 2>&1") == 0)
+            shellCmd = "qterminal -e " + elevatedCmd + " &";
+        else if (system("which terminology >/dev/null 2>&1") == 0)
+            shellCmd = "terminology -e " + elevatedCmd + " &";
+        else if (system("which st >/dev/null 2>&1") == 0)
+            shellCmd = "st -e " + elevatedCmd + " &";
+        else if (system("which urxvt >/dev/null 2>&1") == 0)
+            shellCmd = "urxvt -e " + elevatedCmd + " &";
+        else if (system("which rxvt >/dev/null 2>&1") == 0)
+            shellCmd = "rxvt -e " + elevatedCmd + " &";
+        else if (system("which xterm >/dev/null 2>&1") == 0)
+            shellCmd = "xterm -e " + elevatedCmd + " &";
         else
         {
-            shellCmd = "x-terminal-emulator -e \"" + updaterExe.string() + "\" " + args + " &";
+            failUpdate("No terminal emulator found on this system.");
+            return;
         }
+
         system(shellCmd.c_str());
 #endif
 
