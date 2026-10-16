@@ -141,7 +141,13 @@ HPR::~HPR()
 */
 void HPR::show()
 {
-	
+	EventHub::emit(Event::UI_VISIBLE);
+	// tell to unpause
+	{
+		std::lock_guard<std::mutex> lock(pauseMutex);
+		paused = false;
+	}
+	pauseCv.notify_one();
 
 	auto weak = slint::ComponentWeakHandle<MainWindow>(ui);
 
@@ -446,32 +452,36 @@ void HPR::run()
 	ui->window().on_close_requested(
 		[this]() -> slint::CloseRequestResponse
 		{
-			// #ifndef NDEBUG
-			// 	this->quit();
-			// 	return slint::CloseRequestResponse::HideWindow;
-			// #else
+			#ifndef NDEBUG
+				this->quit();
+				return slint::CloseRequestResponse::HideWindow;
+			#else
 				saveWindowGeometry();
-				ui->hide();
+				// ui->hide();
+				this->hide();
 				return slint::CloseRequestResponse::KeepWindowShown;
-			// #endif
+			#endif
 		});
 
 	bool headless = AppState::configManager.getConfig("headless-mode", false);
 	if (!headless)
 	{
 		std::println("Showing ui");
-		ui->show();
+		// ui->show();
+		show();
 	}
 	else
 	{
-		ui->show();
+		// ui->show();
+		show();
 		auto weak = slint::ComponentWeakHandle<MainWindow>(ui);
-		slint::invoke_from_event_loop(
-			[weak]()
-			{
-				if (auto handle = weak.lock())
-					(*handle)->hide();
-			});
+		// slint::invoke_from_event_loop(
+		// 	[weak]()
+		// 	{
+		// 		if (auto handle = weak.lock())
+		// 			(*handle)->hide();
+		// 	});
+		hide();
 	}
 
 	static slint::Timer minimizePoller;
@@ -530,14 +540,8 @@ void HPR::run()
 		{
 			if (auto w = uiWeak.lock())
 			{
-				EventHub::emit(Event::UI_VISIBLE);
-				// tell to unpause
-				{
-					std::lock_guard<std::mutex> lock(pauseMutex);
-					paused = false;
-				}
 				pauseCv.notify_one();
-				show();
+				this->show();
 			}
 		});
 
@@ -545,7 +549,7 @@ void HPR::run()
 		{
 			if (auto w = uiWeak.lock())
 			{
-				quit();
+				this->quit();
 			}
 		});
 
@@ -553,14 +557,7 @@ void HPR::run()
 		{
 			if (auto w = uiWeak.lock())
 			{
-				EventHub::emit(Event::UI_VISIBLE);
-				// tell to unpause
-				{
-					std::lock_guard<std::mutex> lock(pauseMutex);
-					paused = false;
-				}
-				pauseCv.notify_one();
-				show();
+				this->show();
 			}
 		});
 	}

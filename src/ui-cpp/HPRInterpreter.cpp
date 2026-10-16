@@ -259,6 +259,14 @@ void HPRInterpreter::show()
 {
 	
 
+	EventHub::emit(Event::UI_VISIBLE);
+	// tell to unpause
+	{
+		std::lock_guard<std::mutex> lock(pauseMutex);
+		paused = false;
+	}
+	pauseCv.notify_one();
+
 	auto weak = slint::ComponentWeakHandle<slint::interpreter::ComponentInstance>(instance.value());
 
 	slint::invoke_from_event_loop(
@@ -593,18 +601,18 @@ void HPRInterpreter::run()
 			}
 		});
 
-#ifdef _WIN32
-	inst->window().on_close_requested(
-		[this, weak_inst]() -> slint::CloseRequestResponse
-		{
-			saveWindowGeometry();
-			if (auto locked = weak_inst.lock())
-			{
-				(*locked)->hide();
-			}
-			return slint::CloseRequestResponse::KeepWindowShown;
-		});
-#else
+// #ifdef _WIN32
+// 	inst->window().on_close_requested(
+// 		[this, weak_inst]() -> slint::CloseRequestResponse
+// 		{
+// 			saveWindowGeometry();
+// 			if (auto locked = weak_inst.lock())
+// 			{
+// 				(*locked)->hide();
+// 			}
+// 			return slint::CloseRequestResponse::KeepWindowShown;
+// 		});
+// #else
 	inst->window().on_close_requested(
 		[this]() -> slint::CloseRequestResponse
 		{
@@ -612,23 +620,24 @@ void HPRInterpreter::run()
 			this->hide();
 			return slint::CloseRequestResponse::KeepWindowShown;
 		});
-#endif
+// #endif
 
 	bool headless = AppState::configManager.getConfig("headless-mode", false);
 	if (!headless)
 	{
-		inst->show();
+		this->show();
 	}
 	else
 	{
-		inst->show();
+		this->show();
 		auto weak = slint::ComponentWeakHandle<slint::interpreter::ComponentInstance>(inst);
-		slint::invoke_from_event_loop(
-			[weak]()
-			{
-				if (auto handle = weak.lock())
-					(*handle)->hide();
-			});
+		// slint::invoke_from_event_loop(
+		// 	[weak]()
+		// 	{
+		// 		if (auto handle = weak.lock())
+		// 			(*handle)->hide();
+		// 	});
+		this->hide();
 	}
 
 	static slint::Timer minimizePoller;
@@ -685,13 +694,6 @@ void HPRInterpreter::run()
 		{
 			if (auto w = weak_inst.lock())
 			{
-				EventHub::emit(Event::UI_VISIBLE);
-				// tell to unpause
-				{
-					std::lock_guard<std::mutex> lock(pauseMutex);
-					paused = false;
-				}
-				pauseCv.notify_one();
 				show();
 			}
 		});
@@ -700,13 +702,6 @@ void HPRInterpreter::run()
 		{
 			if (auto w = weak_inst.lock())
 			{
-				EventHub::emit(Event::UI_VISIBLE);
-				// tell to unpause
-				{
-					std::lock_guard<std::mutex> lock(pauseMutex);
-					paused = false;
-				}
-				pauseCv.notify_one();
 				quit();
 			}
 		});

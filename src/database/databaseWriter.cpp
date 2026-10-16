@@ -83,40 +83,34 @@ void DatabaseManager::writeLoop()
 					   "values (?,?);"
 					<< k << v;
 
+			// We only wanna store the productivity score if its live view
+			// as our producitivity calculators show no distiction in result
+			// wether the scores are historical or not
+			// better safe then sorry 🤷‍♂️
+			bool isLive = false;
 			{
 				std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+				isLive = (AppState::state.currentView == AppState::CurrentView::LIVE);
+			}
 
-				// We only wanna store the productivity score if its live view
-				// as our producitivity calculators show no distiction in result
-				// wether the scores are historical or not
-				// better safe then sorry 🤷‍♂️
-				if (AppState::state.currentView == AppState::CurrentView::LIVE)
+			if (isLive)
+			{
+				int todayScore = 0;
+				std::vector<int> hourlyScores;
 				{
-					std::lock_guard<std::mutex> lock(AppState::patternAnalyzerMutex);
-					
-					// Score of today -------------------------------
-					int todayScore = 0;
-					// We will get todays score and we want fresh value so we force a recalculation
-					// so as a result, this vector will only contain one element (today's)
+					std::lock_guard<std::mutex> pLock(AppState::patternAnalyzerMutex);
 					std::vector<int> scores = AppState::patternAnalyzer.calculateProductivityScore(true, true);
 					if (!scores.empty())
 						todayScore = scores[0];
-
-					*db << "delete from productivity_scores_daily;";
-					*db << "insert or replace into productivity_scores_daily (score) values (?);"
-						<< todayScore;
-
-					// Hourly score ---------------------------------
-					std::vector<int> hourlyScores = 
-						AppState::patternAnalyzer.calculateProductivityScore_Hourly(true, true);
-					
-					for (int hour = 0; hour < 24; hour++)
-					{
-						int score = hourlyScores[hour];
-						*db << "insert or replace into productivity_scores_hourly (hour, score) values (?, ?);"
-							<< hour << score;
-					}
+					hourlyScores = AppState::patternAnalyzer.calculateProductivityScore_Hourly(true, true);
 				}
+
+				*db << "delete from productivity_scores_daily;";
+				*db << "insert or replace into productivity_scores_daily (score) values (?);" << todayScore;
+
+				for (int hour = 0; hour < 24; hour++)
+					*db << "insert or replace into productivity_scores_hourly (hour, score) values (?, ?);"
+						<< hour << hourlyScores[hour];
 			}
 
 			std::vector<PendingQuery> queriesToRun;
