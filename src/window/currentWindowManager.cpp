@@ -153,9 +153,9 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 		}
 
 		// title
-		else if (lowerWindowName.contains("chrome") || lowerWindowName.contains("edge") ||
-				 lowerWindowName.contains("firefox") || lowerWindowName.contains("brave") ||
-				 lowerWindowName.contains("zen"))
+		else if (lowerWindowName.contains("chrome") || lowerWindowName.contains("chromium") ||
+				 lowerWindowName.contains("edge") || lowerWindowName.contains("firefox") ||
+				 lowerWindowName.contains("brave") || lowerWindowName.contains("zen"))
 		{
 			tab = getCurrentTitle();
 		}
@@ -234,7 +234,8 @@ void CurrentWindowManager::getCurrentWindow_Loop()
 						   [](unsigned char c) { return std::tolower(c); });
 
 				if (!tab.empty() &&
-				(lowerTabName.contains("chrome") || lowerTabName.contains("edge") || lowerTabName.contains("firefox") ||
+				(lowerTabName.contains("chrome") || lowerTabName.contains("chromium") ||
+					lowerTabName.contains("edge") || lowerTabName.contains("firefox") ||
 					lowerTabName.contains("brave") || lowerTabName.contains("zen")))
 				{
 					AppState::state.currentTab = tab;
