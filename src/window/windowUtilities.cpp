@@ -437,8 +437,10 @@ std::string runSystemCommand(std::string &command)
 	int status;
 	waitpid(pid, &status, 0);
 	if (WIFEXITED(status) && WEXITSTATUS(status) != 0)
+	{
 		std::cerr << "Running the command failed! Exit Code: " << WEXITSTATUS(status) << std::endl;
-	Logger::log("[HPR] Running the command failed! Exit Code: " + std::to_string(WEXITSTATUS(status)));
+		Logger::log("[HPR] Running the command failed! Exit Code: " + std::to_string(WEXITSTATUS(status)));
+	}
 
 	return output;
 #elif defined(_WIN32)
