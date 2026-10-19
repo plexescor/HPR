@@ -723,3 +723,397 @@ std::filesystem::path UpdateManager::getAppDirectory()
     }
 #endif
 }
+
+void UpdateManager::updateHPRStore(std::filesystem::path &path)
+{
+    // check if another update is already doing its thing
+    if (isUpdating.exchange(true))
+    {
+        Logger::log("[UpdateManager] Another update is already running, skipping store update.");
+        return;
+    }
+
+    // copy path so the async thread doesn't read dangling reference
+    std::filesystem::path targetPath = path;
+
+    // save if hpr update button was visible before we take over the topbar
+    bool wasHprUpdateAvailable = false;
+    {
+        std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+        wasHprUpdateAvailable = AppState::state.updateAvailable;
+        AppState::state.isUpdating = true;
+        AppState::state.updateStatusText = "CHECKING STORE UPDATE...";
+    }
+
+    // kick off thread so we dont lock up the main ui thread
+    std::thread([this, targetPath, wasHprUpdateAvailable]() {
+        // bail out helper: logs it, updates topbar to failed, shows popup and resets state
+        auto failStoreUpdate = [this, wasHprUpdateAvailable](const std::string &reason) {
+            Logger::log("[UpdateManager] HPR Store update failed: " + reason);
+            {
+                std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+                AppState::state.updateStatusText = "UPDATE FAILED";
+            }
+
+            if (auto mgr = AppState::extManager)
+            {
+                std::string popupMsg = "HPR-Store update failed!\n\nReason: " + reason;
+                mgr->showUiPopup(popupMsg, "CLOSE", "OK", false, [](int) {});
+            }
+
+            std::this_thread::sleep_for(std::chrono::seconds(3));
+            {
+                std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+                AppState::state.isUpdating = false;
+                AppState::state.updateStatusText = "Update HPR";
+                AppState::state.updateAvailable = wasHprUpdateAvailable;
+            }
+            isUpdating = false;
+        };
+
+        if (!std::filesystem::exists(targetPath))
+        {
+            failStoreUpdate("Path does not exist: " + targetPath.string());
+            return;
+        }
+
+        Logger::log("[UpdateManager] Checking for HPR-Store update...");
+
+        // hit the github api and get the latest release info
+        std::map<std::string, std::string> headers = {
+            {"User-Agent", "HPR-App"},
+            {"Accept",     "application/vnd.github.v3+json"}
+        };
+
+        auto [body, status] = NativeNet::httpGet("api.github.com", "/repos/plexescor/HPR-Store/releases/latest", true, headers);
+        if (status != 200 || body.empty())
+        {
+            failStoreUpdate("Failed to fetch release info from GitHub (HTTP " + std::to_string(status) + ")");
+            return;
+        }
+
+        // grab the tag_name from json
+        std::string tagKey   = "\"tag_name\":";
+        auto tagPos          = body.find(tagKey);
+        if (tagPos == std::string::npos)
+        {
+            failStoreUpdate("tag_name not found in release JSON");
+            return;
+        }
+        auto startQuote = body.find('"', tagPos + tagKey.length());
+        auto endQuote   = (startQuote != std::string::npos) ? body.find('"', startQuote + 1) : std::string::npos;
+        if (startQuote == std::string::npos || endQuote == std::string::npos)
+        {
+            failStoreUpdate("Could not parse tag_name value from release JSON");
+            return;
+        }
+        std::string rawTag = body.substr(startQuote + 1, endQuote - startQuote - 1);
+        std::string normTag = rawTag;
+        if (!normTag.empty() && (normTag[0] == 'v' || normTag[0] == 'V'))
+            normTag = normTag.substr(1);
+
+        Logger::log("[UpdateManager] HPR Store latest release tag: " + normTag);
+
+        // now find the download url for HPR-Store.zip in the assets list
+        const std::string targetAsset = "HPR-Store.zip";
+        std::string downloadUrl;
+        std::string browserKey = "\"browser_download_url\":";
+        std::string nameKey    = "\"name\":";
+        size_t searchPos = 0;
+
+        while (true)
+        {
+            auto namePos = body.find(nameKey, searchPos);
+            if (namePos == std::string::npos) break;
+
+            auto nStart = body.find('"', namePos + nameKey.length());
+            if (nStart == std::string::npos) break;
+            auto nEnd = body.find('"', nStart + 1);
+            if (nEnd == std::string::npos) break;
+
+            std::string assetName = body.substr(nStart + 1, nEnd - nStart - 1);
+            searchPos = nEnd + 1;
+
+            if (assetName == targetAsset)
+            {
+                auto dlPos = body.find(browserKey, searchPos);
+                if (dlPos != std::string::npos)
+                {
+                    auto dStart = body.find('"', dlPos + browserKey.length());
+                    if (dStart != std::string::npos)
+                    {
+                        auto dEnd = body.find('"', dStart + 1);
+                        if (dEnd != std::string::npos)
+                            downloadUrl = body.substr(dStart + 1, dEnd - dStart - 1);
+                    }
+                }
+                break;
+            }
+        }
+
+        if (downloadUrl.empty())
+        {
+            failStoreUpdate("Asset '" + targetAsset + "' not found in GitHub release");
+            return;
+        }
+
+        {
+            std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+            AppState::state.updateStatusText = "DOWNLOADING STORE...";
+        }
+
+        // download the zip to temp
+        std::filesystem::path tempBase = std::filesystem::temp_directory_path() / "hpr-store-update";
+        std::error_code ec;
+        std::filesystem::create_directories(tempBase, ec);
+
+        std::filesystem::path zipFile    = tempBase / "HPR-Store.zip";
+        std::filesystem::path extractDir = tempBase / "extracted";
+
+        Logger::log("[UpdateManager] Downloading HPR-Store archive to: " + zipFile.string());
+        std::string dlErr;
+        if (!downloadArchiveToFile(downloadUrl, zipFile, dlErr))
+        {
+            std::filesystem::remove_all(tempBase, ec);
+            failStoreUpdate("Download failed: " + dlErr);
+            return;
+        }
+
+        {
+            std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+            AppState::state.updateStatusText = "EXTRACTING STORE...";
+        }
+
+        // unzip it
+        Logger::log("[UpdateManager] Extracting HPR-Store archive to: " + extractDir.string());
+        std::string extErr;
+        if (!extractZipArchive(zipFile, extractDir, extErr))
+        {
+            std::filesystem::remove_all(tempBase, ec);
+            failStoreUpdate("Extraction failed: " + extErr);
+            return;
+        }
+
+        // zip might have a top level folder so find the actual root by looking for the dll/so
+#ifdef _WIN32
+        const std::string sentinel = "HPR-Store.dll";
+#else
+        const std::string sentinel = "HPR-Store.so";
+#endif
+
+        std::filesystem::path sourceDir = extractDir;
+        if (!std::filesystem::exists(sourceDir / sentinel))
+        {
+            for (const auto &entry : std::filesystem::recursive_directory_iterator(extractDir, ec))
+            {
+                if (entry.is_regular_file() && entry.path().filename().string() == sentinel)
+                {
+                    sourceDir = entry.path().parent_path();
+                    break;
+                }
+            }
+        }
+
+        if (!std::filesystem::exists(sourceDir / sentinel))
+        {
+            std::filesystem::remove_all(tempBase, ec);
+            failStoreUpdate("Sentinel file '" + sentinel + "' not found in extracted store archive");
+            return;
+        }
+
+        Logger::log("[UpdateManager] HPR Store source dir resolved to: " + sourceDir.string());
+
+        {
+            std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+            AppState::state.updateStatusText = "INSTALLING STORE...";
+        }
+
+        // just yeet all the files over, overwrite whatever is there
+        try
+        {
+            std::filesystem::copy(
+                sourceDir, targetPath,
+                std::filesystem::copy_options::recursive |
+                std::filesystem::copy_options::overwrite_existing,
+                ec);
+
+            if (ec)
+            {
+                std::filesystem::remove_all(tempBase, ec);
+                failStoreUpdate("File copy failed: " + ec.message());
+                return;
+            }
+        }
+        catch (const std::exception &e)
+        {
+            std::filesystem::remove_all(tempBase, ec);
+            failStoreUpdate("Exception during file replacement: " + std::string(e.what()));
+            return;
+        }
+
+        Logger::log("[UpdateManager] HPR Store files successfully updated to version " + normTag + " at: " + targetPath.string());
+
+        {
+            std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+            AppState::state.updateStatusText = "CONFIGURING STORE...";
+        }
+
+        // update installed.json so it knows the new version
+        updateHPRStore_Config(targetPath, normTag);
+
+        // clean up temp stuff
+        std::filesystem::remove_all(tempBase, ec);
+
+        Logger::log("[UpdateManager] HPR Store update completed successfully to version " + normTag);
+        {
+            std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+            AppState::state.updateStatusText = "STORE UPDATED";
+        }
+
+        if (auto mgr = AppState::extManager)
+        {
+            std::string popupMsg = "HPR-Store has been successfully updated to version " + normTag + "!\n\n"
+                                   "Please restart HPR to load the updated store.";
+            mgr->showUiPopup(popupMsg, "CLOSE", "OK", false, 
+                [](int button) 
+                {
+                    std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+                    if (button == 1 && AppState::extManager)
+                    {
+                        AppState::extManager->refresh();
+                    }
+                });
+        }
+
+        std::this_thread::sleep_for(std::chrono::seconds(2));
+        {
+            std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+            AppState::state.isUpdating = false;
+            AppState::state.updateStatusText = "Update HPR";
+            AppState::state.updateAvailable = wasHprUpdateAvailable;
+        }
+        isUpdating = false;
+    }).detach();
+}
+
+void UpdateManager::updateHPRStore_Config(const std::filesystem::path &installPath, const std::string &newVersion)
+{
+    // figure out where %APPDATA%/HPR-Store is, same as storeBasePath() in the store
+    std::filesystem::path storeBase;
+#ifdef _WIN32
+    const char *appdata = std::getenv("APPDATA");
+    if (appdata)
+        storeBase = std::filesystem::path(appdata) / "HPR-Store";
+#else
+    const char *home = std::getenv("HOME");
+    if (home)
+        storeBase = std::filesystem::path(home) / ".config" / "HPR-Store";
+#endif
+
+    if (storeBase.empty())
+    {
+        Logger::log("[UpdateManager] HPR Store Config: Could not resolve store base path.");
+        return;
+    }
+
+    std::filesystem::path installedPath = storeBase / "installed.json";
+
+    // read whatever is in installed.json already, or start fresh if it doesnt exist
+    std::string existingContent = "{}";
+    if (std::filesystem::exists(installedPath))
+    {
+        std::ifstream in(installedPath);
+        if (in.is_open())
+        {
+            existingContent.assign(std::istreambuf_iterator<char>(in), std::istreambuf_iterator<char>());
+            in.close();
+        }
+    }
+    else
+    {
+        // make sure the dir exists
+        std::error_code ec;
+        std::filesystem::create_directories(storeBase, ec);
+    }
+
+    // we dont wanna pull in a json lib so just do it manually
+    // remove old hpr-store entry if there is one, then stick in the new one
+
+    const std::string entryKey  = "\"hpr-store\"";
+    std::string folderName      = installPath.filename().string();
+
+    // build the new entry string
+    std::string newEntry =
+        "  \"hpr-store\": {\n"
+        "    \"folder\": \"" + folderName + "\",\n"
+        "    \"version\": \"" + newVersion + "\",\n"
+        "    \"authorName\": \"\",\n"
+        "    \"extensionName\": \"HPR Store\"\n"
+        "  }";
+
+    // remove the existing hpr-store block if its already there
+    auto keyPos = existingContent.find(entryKey);
+    if (keyPos != std::string::npos)
+    {
+        // find the opening brace of the value object
+        auto braceOpen = existingContent.find('{', keyPos + entryKey.length());
+        if (braceOpen != std::string::npos)
+        {
+            int depth = 0;
+            size_t braceClose = braceOpen;
+            for (size_t i = braceOpen; i < existingContent.size(); ++i)
+            {
+                if (existingContent[i] == '{') ++depth;
+                else if (existingContent[i] == '}') { --depth; if (depth == 0) { braceClose = i; break; } }
+            }
+            // eat trailing comma too if there is one
+            size_t removeEnd = braceClose + 1;
+            if (removeEnd < existingContent.size() && existingContent[removeEnd] == ',')
+                ++removeEnd;
+            // eat leading comma before the key if any
+            size_t removeStart = keyPos;
+            if (removeStart > 0 && existingContent[removeStart - 1] == ',')
+                --removeStart;
+            existingContent.erase(removeStart, removeEnd - removeStart);
+        }
+    }
+
+    // find the last } and shove our entry in before it
+    auto outerClose = existingContent.rfind('}');
+    if (outerClose == std::string::npos)
+    {
+        // json is busted, start over
+        existingContent = "{}";
+        outerClose = existingContent.rfind('}');
+    }
+
+    // need a comma if there are other entries already in there
+    auto outerOpen = existingContent.find('{');
+    bool hasOtherEntries = false;
+    if (outerOpen != std::string::npos && outerOpen < outerClose)
+    {
+        for (size_t i = outerOpen + 1; i < outerClose; ++i)
+        {
+            if (!std::isspace(static_cast<unsigned char>(existingContent[i])))
+            {
+                hasOtherEntries = true;
+                break;
+            }
+        }
+    }
+
+    std::string injection = (hasOtherEntries ? ",\n" : "\n") + newEntry + "\n";
+    existingContent.insert(outerClose, injection);
+
+    // write it back
+    std::ofstream out(installedPath, std::ios::trunc);
+    if (!out.is_open())
+    {
+        Logger::log("[UpdateManager] HPR Store Config: Failed to write installed.json at: " + installedPath.string());
+        return;
+    }
+    out << existingContent;
+    out.close();
+
+    Logger::log("[UpdateManager] HPR Store Config: Updated installed.json (hpr-store version: " + newVersion + ") at: " + installedPath.string());
+}

@@ -1,5 +1,6 @@
 #pragma once
 #include "currentWindowManager.hpp"
+#include "updateManager.hpp"
 #include "databaseManager.hpp"
 #include "linuxUtilities.hpp"
 #include "sol.hpp"
@@ -135,6 +136,7 @@ class ExtensionManager
 	HPR *app = nullptr;
 	HPRInterpreter *interpreterApp = nullptr;
 	LinuxInitialiser *linuxInit = nullptr;
+	UpdateManager *updateManager = nullptr;
 };
 
 std::filesystem::path resolveAndSecurePath(const std::string &userPath, const std::filesystem::path &baseDir,

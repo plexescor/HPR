@@ -21,6 +21,10 @@ class UpdateManager
     static bool downloadArchiveToFile(const std::string &url, const std::filesystem::path &destPath, std::string &err);
     static std::filesystem::path getAppDirectory();
 
+    //Store
+    void updateHPRStore(std::filesystem::path &path);
+    void updateHPRStore_Config(const std::filesystem::path &installPath, const std::string &newVersion);
+
   private:
     void workerLoop();
     void checkForUpdates();

@@ -106,6 +106,7 @@ int main()
 		ext.dbManager = &dbm;
 		ext.currentWindowManager = &cwm;
 		ext.app = nullptr;
+		ext.updateManager = &upd;
 		#ifdef __linux__
 			ext.linuxInit = &linuxInit;
 		#endif
@@ -153,6 +154,7 @@ int main()
 		ext.dbManager = &dbm;
 		ext.currentWindowManager = &cwm;
 		ext.app = &app;
+		ext.updateManager = &upd;
 		#ifdef __linux__
 			ext.linuxInit = &linuxInit;
 		#endif
@@ -176,6 +178,7 @@ int main()
 		#endif
 		ext.currentWindowManager = &cwm;
 		ext.interpreterApp = &app;
+		ext.updateManager = &upd;
 
 		cwm.detectAndSetBackend();
 		cwm.run();

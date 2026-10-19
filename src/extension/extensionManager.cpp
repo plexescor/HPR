@@ -527,7 +527,7 @@ void ExtensionManager::runExtension(std::shared_ptr<LoadedExtension> extPtr)
 				}
 
 				std::this_thread::sleep_for(std::chrono::milliseconds(1000)); 
-				
+
 				std::string text =
 					"HPR-Store: UPDATE NEEDED\n"
 					"This version of HPR doesn't support the HPR-Store's currently installed version at all.\n"
@@ -539,12 +539,19 @@ void ExtensionManager::runExtension(std::shared_ptr<LoadedExtension> extPtr)
 					"No",
 					"Yes",
 					false,
-					[](int button)
+					[this, extPtr](int button)
 					{
 						if (button == 1)
 						{
 							std::cerr << "User chose to update HPR-Store\n";
 							Logger::log("User chose to update HPR-Store");
+							auto upd = updateManager ? updateManager : AppState::updateManager;
+							if (upd)
+							{
+								std::filesystem::path storePath = extPtr.get()->path.parent_path();
+								Logger::log("Updating HPR-Store at path: " + storePath.string());
+								upd->updateHPRStore(storePath);
+							}
 						}
 						else
 						{
