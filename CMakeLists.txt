@@ -113,6 +113,9 @@ elseif(LINUX)
     find_package(CURL REQUIRED)
     target_link_libraries(HPR PRIVATE ${DBUS_LIBRARIES} CURL::libcurl)
     target_include_directories(HPR PRIVATE ${DBUS_INCLUDE_DIRS})
+
+    target_link_options(HPR PRIVATE "-static-libgcc" "-static-libstdc++")
+    target_link_options(HPRUpdater PRIVATE "-static-libgcc" "-static-libstdc++")
 endif()
 
 slint_target_sources(HPR src/ui/app-window.slint)
@@ -229,4 +232,4 @@ if(WIN32)
     target_link_libraries(HPRUpdater PRIVATE shell32)
 endif()
 
-add_dependencies(HPR HPRUpdater)
+add_dependencies(HPR HPRUpdater)
