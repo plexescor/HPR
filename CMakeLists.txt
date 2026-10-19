@@ -115,7 +115,6 @@ elseif(LINUX)
     target_include_directories(HPR PRIVATE ${DBUS_INCLUDE_DIRS})
 
     target_link_options(HPR PRIVATE "-static-libgcc" "-static-libstdc++")
-    target_link_options(HPRUpdater PRIVATE "-static-libgcc" "-static-libstdc++")
 endif()
 
 slint_target_sources(HPR src/ui/app-window.slint)
@@ -231,5 +230,7 @@ if(WIN32)
     set_target_properties(HPRUpdater PROPERTIES WIN32_EXECUTABLE FALSE)
     target_link_libraries(HPRUpdater PRIVATE shell32)
 endif()
-
+if(UNIX)
+    target_link_options(HPRUpdater PRIVATE "-static-libgcc" "-static-libstdc++")
+endif()
 add_dependencies(HPR HPRUpdater)
