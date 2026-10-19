@@ -898,7 +898,8 @@ void UpdateManager::updateHPRStore(std::filesystem::path &path)
 #ifdef _WIN32
         const std::string sentinel = "HPR-Store.dll";
 #else
-        const std::string sentinel = "HPR-Store.so";
+        const std::string sentinel = "libHPR-Store.so";
+        const std::string sentinel2 = "HPR-Store.so";
 #endif
 
         std::filesystem::path sourceDir = extractDir;
@@ -906,7 +907,8 @@ void UpdateManager::updateHPRStore(std::filesystem::path &path)
         {
             for (const auto &entry : std::filesystem::recursive_directory_iterator(extractDir, ec))
             {
-                if (entry.is_regular_file() && entry.path().filename().string() == sentinel)
+                if (entry.is_regular_file() && 
+                    (entry.path().filename().string() == sentinel || entry.path().filename().string() == sentinel2))
                 {
                     sourceDir = entry.path().parent_path();
                     break;
