@@ -412,9 +412,9 @@ void ExtensionManager::loadExtensions()
 	}
 }
 
-void ExtensionManager::runExtension(std::shared_ptr<LoadedExtension> ext_ptr)
+void ExtensionManager::runExtension(std::shared_ptr<LoadedExtension> extPtr)
 {
-	auto &ext = *ext_ptr;
+	auto &ext = *extPtr;
 	try
 	{
 
@@ -495,6 +495,68 @@ void ExtensionManager::runExtension(std::shared_ptr<LoadedExtension> ext_ptr)
 		sol::function onTick = ext.lua["onTick"];
 		sol::function onExit = ext.lua["onExit"];
 
+		// Special case for official HPR-Store
+		// used to fix the dynamic lib versioning hell
+		// If we found HPR store but it doesnt support current version of HPR, we will skip loading it and log a warning to the user
+		if (resolvedName == "HPR-Store" || resolvedAuthor == "Plexescor")
+		{
+			bool foundMatchingVersion = false;
+			for (std::string& version : versionsVec)
+			{
+				// Special case for this versino because in this version slint was upgraded for HPR
+				// so you may need to manually update the store
+				// this bad code itches me
+				if (version == "0.9.13")
+				{
+					foundMatchingVersion = true;
+					break;
+				}
+			}
+			if (!foundMatchingVersion)
+			{
+				std::cerr << "HPR-Store extension version mismatch, skipping load, you may need to manually update HPR-Store\n";
+				Logger::log("HPR-Store extension version mismatch, skipping load, you may need to manually update HPR-Store");
+				ext.running = false;
+				{
+					std::lock_guard<std::recursive_mutex> lock(AppState::stateMutex);
+					AppState::state.loadedExtensions.erase(
+						std::remove(AppState::state.loadedExtensions.begin(),
+									AppState::state.loadedExtensions.end(), ext.identity),
+						AppState::state.loadedExtensions.end());
+					AppState::state.extensionMap.erase(ext.identity);
+				}
+
+				std::this_thread::sleep_for(std::chrono::milliseconds(1000)); 
+				
+				std::string text =
+					"HPR-Store: UPDATE NEEDED\n"
+					"This version of HPR doesn't support the HPR-Store's currently installed version at all.\n"
+					"This is because both were built with different versions of slint.\n"
+					"Would you like for HPR to auto-update it?";
+			
+				this->showUiPopup(
+					text,
+					"No",
+					"Yes",
+					false,
+					[](int button)
+					{
+						if (button == 1)
+						{
+							std::cerr << "User chose to update HPR-Store\n";
+							Logger::log("User chose to update HPR-Store");
+						}
+						else
+						{
+							std::cerr << "User chose not to update HPR-Store\n";
+							Logger::log("User chose not to update HPR-Store");
+						}
+					}
+				);
+					
+				return;
+			}
+		}
 		if (init.valid())
 		{
 			std::lock_guard<std::recursive_mutex> luaLock(ext.luaMutex);
