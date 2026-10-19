@@ -897,6 +897,7 @@ void UpdateManager::updateHPRStore(std::filesystem::path &path)
         // zip might have a top level folder so find the actual root by looking for the dll/so
 #ifdef _WIN32
         const std::string sentinel = "HPR-Store.dll";
+        const std::string sentinel2 = sentinel;
 #else
         const std::string sentinel = "libHPR-Store.so";
         const std::string sentinel2 = "HPR-Store.so";
