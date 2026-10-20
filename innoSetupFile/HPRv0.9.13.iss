@@ -6,6 +6,7 @@
 #define MyAppPublisher "Plexescor"
 #define MyAppURL "github.com/plexescor/HPR"
 #define MyAppExeName "HPR.exe"
+#define MyAppUpdaterExeName "HPRUpdater.exe"
 
 [Setup]
 AppId={{5A5C9793-0BDC-4E75-A376-FB7112138859}}
@@ -36,6 +37,7 @@ Name: "startupicon"; Description: "Start HPR automatically at Windows startup"; 
 [Files]
 ; -- App binaries --
 Source: "C:\HPR\v0.9.13\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\HPR\v0.9.13\{#MyAppUpdaterExeName}"; DestDir: "{app}"; Flags: ignoreversion
 Source: "C:\HPR\v0.9.13\slint_cpp.dll"; DestDir: "{app}"; Flags: ignoreversion
 
 ; -- aliases.csv and config.csv: Pascal handles overwrite logic --
