@@ -226,7 +226,7 @@ is_protected_dir() {
 has_non_hpr_files() {
     local dir="$1"
     [ -d "$dir" ] || return 1
-    find "$dir" -mindepth 1 -maxdepth 1 ! -name "HPR" ! -name "hpr" ! -name "libslint_cpp.so*" 2>/dev/null | grep -q .
+    find "$dir" -mindepth 1 -maxdepth 1 ! -name "HPR" ! -name "hpr" ! -name "HPRUpdater" ! -name "libslint_cpp.so*" 2>/dev/null | grep -q .
 }
 
 write_metadata_file() {
@@ -674,6 +674,10 @@ install_hpr() {
             echo "   Copied $(basename "$so_file") to $INSTALL_DIR"
         fi
     done
+    if [ -f "$SRC_DIR/HPRUpdater" ]; then
+        $SUDO install -m 755 "$SRC_DIR/HPRUpdater" "$INSTALL_DIR/HPRUpdater"
+        echo "   HPRUpdater installed to $INSTALL_DIR"
+    fi
     echo ""
     
     # Save path metadata
@@ -742,6 +746,10 @@ update_hpr() {
             echo "   Copied $(basename "$so_file") to $INSTALL_DIR"
         fi
     done
+    if [ -f "$SRC_DIR/HPRUpdater" ]; then
+        $SUDO install -m 755 "$SRC_DIR/HPRUpdater" "$INSTALL_DIR/HPRUpdater"
+        echo "   HPRUpdater installed to $INSTALL_DIR"
+    fi
     
     # Update configs
     setup_configs
@@ -777,8 +785,9 @@ remove_hpr() {
             SUDO="sudo"
         fi
         echo "   Note: '$INSTALL_DIR' is a protected or shared path — only the HPR binary and its libraries will be removed, not the whole directory."
-        echo "   Removing HPR binary and shared library (libslint_cpp.so)..."
+        echo "   Removing HPR binary, HPRUpdater and shared library (libslint_cpp.so)..."
         $SUDO rm -f "$INSTALL_PATH"
+        $SUDO rm -f "$INSTALL_DIR/HPRUpdater"
         $SUDO rm -f "$INSTALL_DIR"/libslint_cpp.so*
     else
         local SUDO=""
