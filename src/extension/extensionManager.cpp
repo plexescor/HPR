@@ -498,7 +498,7 @@ void ExtensionManager::runExtension(std::shared_ptr<LoadedExtension> extPtr)
 		// Special case for official HPR-Store
 		// used to fix the dynamic lib versioning hell
 		// If we found HPR store but it doesnt support current version of HPR, we will skip loading it and log a warning to the user
-		if (resolvedName == "HPR-Store" && resolvedAuthor == "Plexescor")
+		if (resolvedName == "HPR Store" && resolvedAuthor == "Plexescor")
 		{
 			bool foundMatchingVersion = false;
 			for (std::string& version : versionsVec)
