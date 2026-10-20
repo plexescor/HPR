@@ -498,7 +498,7 @@ void ExtensionManager::runExtension(std::shared_ptr<LoadedExtension> extPtr)
 		// Special case for official HPR-Store
 		// used to fix the dynamic lib versioning hell
 		// If we found HPR store but it doesnt support current version of HPR, we will skip loading it and log a warning to the user
-		if (resolvedName == "HPR-Store" || resolvedAuthor == "Plexescor")
+		if (resolvedName == "HPR-Store" && resolvedAuthor == "Plexescor")
 		{
 			bool foundMatchingVersion = false;
 			for (std::string& version : versionsVec)
@@ -751,39 +751,43 @@ void ExtensionManager::unloadExtension(std::string authorName, std::string exten
 
 void ExtensionManager::callActionFunction(std::string authorName, std::string extensionName)
 {
-	std::shared_ptr<LoadedExtension> targetExt = nullptr;
-	for (const auto &ext : extensions)
-	{
-		if (ext->identity.first == authorName && ext->identity.second == extensionName)
+	std::thread(
+		[this, authorName, extensionName]()
 		{
-			targetExt = ext;
-			break;
-		}
-	}
-	if (!targetExt)
-	{
-		return;
-	}
+			std::shared_ptr<LoadedExtension> targetExt = nullptr;
+			for (const auto &ext : extensions)
+			{
+				if (ext->identity.first == authorName && ext->identity.second == extensionName)
+				{
+					targetExt = ext;
+					break;
+				}
+			}
+			if (!targetExt)
+			{
+				return;
+			}
 
-	std::lock_guard<std::recursive_mutex> lock(targetExt->luaMutex);
-	sol::protected_function actionFunc = targetExt->lua["onAction"];
-	if (!actionFunc.valid())
-	{
-		actionFunc = targetExt->lua["HPR"]["onAction"];
-	}
+			std::lock_guard<std::recursive_mutex> lock(targetExt->luaMutex);
+			sol::protected_function actionFunc = targetExt->lua["onAction"];
+			if (!actionFunc.valid())
+			{
+				actionFunc = targetExt->lua["HPR"]["onAction"];
+			}
 
-	if (actionFunc.valid())
-	{
-		sol::protected_function_result result = actionFunc();
-		if (!result.valid())
-		{
-			sol::error err = result;
-			std::cerr << "onAction() failed in extension (" << authorName << "/" << extensionName << "): " << err.what()
-					  << "\n";
-			Logger::log("[HPR] onAction() failed in extension (" + authorName + "/" + extensionName +
-						"): " + err.what() + "\n");
-		}
-	}
+			if (actionFunc.valid())
+			{
+				sol::protected_function_result result = actionFunc();
+				if (!result.valid())
+				{
+					sol::error err = result;
+					std::cerr << "onAction() failed in extension (" << authorName << "/" << extensionName << "): " << err.what()
+							  << "\n";
+					Logger::log("[HPR] onAction() failed in extension (" + authorName + "/" + extensionName +
+								"): " + err.what() + "\n");
+				}
+			}
+		}).detach();
 }
 
 void ExtensionManager::reloadMyself(LoadedExtension &ext)
@@ -2561,9 +2565,10 @@ std::optional<CppValue> ExtensionManager::dispatchOverride(const std::string &ov
 			continue;
 		}
 
-		sol::table HPR = ext->lua["HPR"];
-		if (!HPR.valid())
+		sol::object hprObj = ext->lua["HPR"];
+		if (!hprObj.valid() || !hprObj.is<sol::table>())
 			continue;
+		sol::table HPR = hprObj.as<sol::table>();
 
 		sol::object overridesObj = HPR["overrides"];
 		if (!overridesObj.valid() || !overridesObj.is<sol::table>())
