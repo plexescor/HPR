@@ -16,6 +16,7 @@
 #endif
 
 #include <sstream>
+#include <system_error>
 
 #include <slint-interpreter.h>
 
@@ -2540,7 +2541,17 @@ void ExtensionManager::updateExtensionPath()
 		}
 	}
 
-	std::filesystem::create_directories(extensionPath);
+	// create_directories already-existing dirs are fine (no-op); but permission or invalid-path
+	// failures would throw and abort startup from the constructor, so report and continue instead
+	std::error_code fsError;
+	std::filesystem::create_directories(extensionPath, fsError);
+	if (fsError)
+	{
+		std::cerr << "[ExtensionManager] Failed to create extensions directory: " << fsError.message() << " ("
+				  << extensionPath.string() << ")" << std::endl;
+		Logger::log("[ExtensionManager] Failed to create extensions directory: " + fsError.message() + " (" +
+					extensionPath.string() + ")");
+	}
 }
 
 std::filesystem::path resolveAndSecurePath(const std::string &userPath, const std::filesystem::path &baseDir,
