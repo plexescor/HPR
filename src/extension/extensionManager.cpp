@@ -2518,6 +2518,28 @@ void ExtensionManager::updateExtensionPath()
 	extensionPath /= std::filesystem::path(".config/HPR/extensions/");
 #endif
 
+	// check if config.csv defines an extensions path
+	// if yes then switch to it, else keep the platform default above
+	std::filesystem::path customPath = std::filesystem::path(
+			AppState::configManager.getConfig<std::string>("extensions-root-folder-path", "")
+		);
+
+	if (!customPath.empty())
+	{
+		if (customPath.is_absolute())
+		{
+			extensionPath = customPath;
+			Logger::log("[ExtensionManager] Using extensions path from config.csv: " + extensionPath.string());
+		}
+		else
+		{
+			std::cerr << "[ExtensionManager] The custom provided extensions path is not absolute: "
+					  << customPath.string() << std::endl;
+			Logger::log(std::string("[ExtensionManager] The custom provided extensions path is not absolute: ") +
+						customPath.string());
+		}
+	}
+
 	std::filesystem::create_directories(extensionPath);
 }
 
