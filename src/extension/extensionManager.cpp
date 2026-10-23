@@ -16,6 +16,7 @@
 #endif
 
 #include <sstream>
+#include <system_error>
 
 #include <slint-interpreter.h>
 
@@ -2518,7 +2519,39 @@ void ExtensionManager::updateExtensionPath()
 	extensionPath /= std::filesystem::path(".config/HPR/extensions/");
 #endif
 
-	std::filesystem::create_directories(extensionPath);
+	// check if config.csv defines an extensions path
+	// if yes then switch to it, else keep the platform default above
+	std::filesystem::path customPath = std::filesystem::path(
+			AppState::configManager.getConfig<std::string>("extensions-root-folder-path", "")
+		);
+
+	if (!customPath.empty())
+	{
+		if (customPath.is_absolute())
+		{
+			extensionPath = customPath;
+			Logger::log("[ExtensionManager] Using extensions path from config.csv: " + extensionPath.string());
+		}
+		else
+		{
+			std::cerr << "[ExtensionManager] The custom provided extensions path is not absolute: "
+					  << customPath.string() << std::endl;
+			Logger::log(std::string("[ExtensionManager] The custom provided extensions path is not absolute: ") +
+						customPath.string());
+		}
+	}
+
+	// create_directories already-existing dirs are fine (no-op); but permission or invalid-path
+	// failures would throw and abort startup from the constructor, so report and continue instead
+	std::error_code fsError;
+	std::filesystem::create_directories(extensionPath, fsError);
+	if (fsError)
+	{
+		std::cerr << "[ExtensionManager] Failed to create extensions directory: " << fsError.message() << " ("
+				  << extensionPath.string() << ")" << std::endl;
+		Logger::log("[ExtensionManager] Failed to create extensions directory: " + fsError.message() + " (" +
+					extensionPath.string() + ")");
+	}
 }
 
 std::filesystem::path resolveAndSecurePath(const std::string &userPath, const std::filesystem::path &baseDir,

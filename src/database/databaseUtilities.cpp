@@ -6,6 +6,7 @@
 
 #include <string>
 #include <filesystem>
+#include <system_error>
 
 std::string DatabaseManager::getDbPathForDate(const std::string &date)
 {
@@ -83,20 +84,38 @@ void DatabaseManager::updateFilePath()
 		}
 		catch (const std::filesystem::filesystem_error& e)
 		{
-			std::cerr << "[Databse Manager] Failed to resolve custom database path: " << e.what() << std::endl;
-			Logger::log(std::string("[Databse Manager] Failed to resolve custom database path: ") + e.what() + "\n");
+			std::cerr << "[Database Manager] Failed to resolve custom database path: " << e.what() << std::endl;
+			Logger::log(std::string("[Database Manager] Failed to resolve custom database path: ") + e.what() + "\n");
 		}
 	}
 	else
 	{
 		std::cerr << "[Databse Manager] The custom provided database path is not absolute: " << customPath.string() << std::endl;
 		Logger::log(std::string("[Databse Manager] The custom provided database path is not absolute: ") + customPath.string() + "\n");
-		std::filesystem::create_directories(filePath);
+		// same guard as the custom branch: a failing default-path creation must not abort startup uncaught
+		std::error_code fsError;
+		std::filesystem::create_directories(filePath, fsError);
+		if (fsError)
+		{
+			std::cerr << "[Database Manager] Failed to create database directory: " << fsError.message() << " ("
+					  << filePath.string() << ")" << std::endl;
+			Logger::log(std::string("[Database Manager] Failed to create database directory: ") + fsError.message() +
+						" (" + filePath.string() + ")\n");
+		}
 	}
 
 	filePath /= convertToDate_MMYY(t);
-	
-	std::filesystem::create_directories(filePath);
+
+	// monthly directory: report and continue so the sqlite open reports the real cause downstream
+	std::error_code fsError;
+	std::filesystem::create_directories(filePath, fsError);
+	if (fsError)
+	{
+		std::cerr << "[Database Manager] Failed to create database directory: " << fsError.message() << " ("
+				  << filePath.string() << ")" << std::endl;
+		Logger::log(std::string("[Database Manager] Failed to create database directory: ") + fsError.message() + " (" +
+					filePath.string() + ")\n");
+	}
 }
 
 void DatabaseManager::updateFileName()
