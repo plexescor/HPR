@@ -84,8 +84,8 @@ void DatabaseManager::updateFilePath()
 		}
 		catch (const std::filesystem::filesystem_error& e)
 		{
-			std::cerr << "[Databse Manager] Failed to resolve custom database path: " << e.what() << std::endl;
-			Logger::log(std::string("[Databse Manager] Failed to resolve custom database path: ") + e.what() + "\n");
+			std::cerr << "[Database Manager] Failed to resolve custom database path: " << e.what() << std::endl;
+			Logger::log(std::string("[Database Manager] Failed to resolve custom database path: ") + e.what() + "\n");
 		}
 	}
 	else
@@ -97,9 +97,9 @@ void DatabaseManager::updateFilePath()
 		std::filesystem::create_directories(filePath, fsError);
 		if (fsError)
 		{
-			std::cerr << "[Databse Manager] Failed to create database directory: " << fsError.message() << " ("
+			std::cerr << "[Database Manager] Failed to create database directory: " << fsError.message() << " ("
 					  << filePath.string() << ")" << std::endl;
-			Logger::log(std::string("[Databse Manager] Failed to create database directory: ") + fsError.message() +
+			Logger::log(std::string("[Database Manager] Failed to create database directory: ") + fsError.message() +
 						" (" + filePath.string() + ")\n");
 		}
 	}
@@ -111,9 +111,9 @@ void DatabaseManager::updateFilePath()
 	std::filesystem::create_directories(filePath, fsError);
 	if (fsError)
 	{
-		std::cerr << "[Databse Manager] Failed to create database directory: " << fsError.message() << " ("
+		std::cerr << "[Database Manager] Failed to create database directory: " << fsError.message() << " ("
 				  << filePath.string() << ")" << std::endl;
-		Logger::log(std::string("[Databse Manager] Failed to create database directory: ") + fsError.message() + " (" +
+		Logger::log(std::string("[Database Manager] Failed to create database directory: ") + fsError.message() + " (" +
 					filePath.string() + ")\n");
 	}
 }
