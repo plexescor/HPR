@@ -3,6 +3,9 @@
 use-interpreter,false
 hardware-acceleration,true
 
+# extensions-root-folder-path -> custom absolute folder for Lua extensions (empty = platform default: %APPDATA%/HPR/HPR_Config/extensions/ on Windows, ~/.config/HPR/extensions/ otherwise)
+extensions-root-folder-path,
+
 # kill-apps -> enable or disable automatic termination of applications when daily limits are exceeded
 kill-apps,true
 
