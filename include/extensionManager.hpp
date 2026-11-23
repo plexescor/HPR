@@ -23,6 +23,7 @@
 #include <queue>
 #include <slint-interpreter.h>
 #include <slint.h>
+#include <unordered_set>
 
 #include "appEvents.hpp"
 #ifdef _WIN32
@@ -31,6 +32,15 @@
 #define HPR_API
 #endif
 extern "C" HPR_API void HPR_invokeOnSlintThread(void (*fn)(void *), void *userdata);
+
+namespace LuaCPPSlint
+{
+	CppValue luaToCpp_Internal(const sol::object &obj, std::unordered_set<const void *> &visited);
+	CppValue luaToCpp(const sol::object &obj);
+	CppValue slintToCpp(const slint::interpreter::Value &val);
+	slint::interpreter::Value cppToSlint(const CppValue &val);
+	sol::object cppToLua(sol::state &lua, const CppValue &val);
+} // LuaCPPSlint
 
 // FORWARD DECLARE TO AVOID CIRCULAR DEPENDENCIES
 class HPR;

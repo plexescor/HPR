@@ -10,6 +10,8 @@ cmake-build-release
 cmake-build-relwithdebinfo
 .cache/
 .idea
+.clangd
+compile_flags.txt
 # Slint extracted folders
 external/Slint-cpp-*/
 external/slint-lsp/

@@ -645,7 +645,7 @@ bool UpdateManager::downloadArchiveToFile(const std::string &url, const std::fil
     std::vector<char> buffer(64 * 1024);
     while (WinHttpQueryDataAvailable(hRequest, &dwSize) && dwSize > 0)
     {
-        DWORD toRead = std::min(dwSize, static_cast<DWORD>(buffer.size()));
+        DWORD toRead = (std::min)(dwSize, static_cast<DWORD>(buffer.size()));
         DWORD dwDownloaded = 0;
         if (WinHttpReadData(hRequest, buffer.data(), toRead, &dwDownloaded) && dwDownloaded > 0)
         {
