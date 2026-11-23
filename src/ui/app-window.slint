@@ -91,6 +91,22 @@ export component MainWindow inherits Window {
     callback dismissContinentPrompt();
     callback updateHprClicked();
 
+    callback gainedFocus();
+
+    FocusScope 
+    {
+        width: parent.width;
+        height: parent.height;
+
+        focus-changed-event => 
+        {
+            if (self.has-focus) 
+            {
+                root.gainedFocus();
+            }
+        }
+    }
+
     in-out property <bool> updateAvailable_S: false;
     in property <bool> allowUpdateChecking_S: true;
     in-out property <bool> isUpdating_S: false;

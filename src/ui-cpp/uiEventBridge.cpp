@@ -6,6 +6,7 @@
 #include "limitsManager.hpp"
 #include "logger.hpp"
 #include "netUtilities.hpp"
+#include "slint-interpreter.h"
 #include "telemetryManager.hpp"
 #include "updateManager.hpp"
 #include <chrono>
@@ -372,6 +373,16 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<MainWindow> &ui, ExtensionMa
 				(*handle)->hide();
 			}
 		});
+
+	ui->on_gainedFocus(
+		[weak_ui]()
+		{
+			if (auto handle = weak_ui.lock())
+			{
+				(*handle)->window().request_redraw();
+			}	
+		}
+	);
 
 	ui->on_miscKeyPressed_S(
 		[this](slint::SharedString key)
@@ -1029,6 +1040,19 @@ UiEventBridge::UiEventBridge(slint::ComponentHandle<slint::interpreter::Componen
 			}
 			return slint::interpreter::Value();
 		});
+	
+	slint::ComponentWeakHandle<slint::interpreter::ComponentInstance> weakUi(ui);
+
+	ui->set_callback(
+		"gainedFocus",
+		[weakUi](auto) -> slint::interpreter::Value
+		{
+			if (auto handle = weakUi.lock())
+			{
+				(*handle)->window().request_redraw();
+			}
+			return slint::interpreter::Value();
+    });
 
 	ui->set_callback(
 		"sendFeedback",
