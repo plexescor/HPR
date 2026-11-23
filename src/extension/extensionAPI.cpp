@@ -5,15 +5,16 @@
 #include <iostream>
 #include <map>
 #include <mutex>
+#include <cstdlib>
 #include <string>
 #include <thread>
 #include <unordered_set>
 #include <vector>
 
 #include "logger.hpp"
-// #ifdef __linux__
-// #include <unistd.h>
-// #endif
+#ifdef __linux__
+#include <unistd.h>
+#endif
 
 #include <sstream>
 #include <system_error>
