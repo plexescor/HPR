@@ -50,11 +50,22 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
 int main()
 #endif
 {
-	#ifdef _WIN32
-    _putenv_s("SLINT_BACKEND", "winit-skia-software");
-    #else
-    setenv("SLINT_BACKEND", "winit-skia-software", 1);
-    #endif
+	std::string renderingBackend =
+    	AppState::configManager.getConfig<std::string>("rendering-backend", "skia-software");
+
+	auto setBackend = [](const char* val) 
+	{
+		#ifdef _WIN32
+			_putenv_s("SLINT_BACKEND", val);
+		#else
+			setenv("SLINT_BACKEND", val, 1);
+		#endif
+	};
+
+	if (renderingBackend == "skia-software") setBackend("winit-skia-software");
+	else if (renderingBackend == "femtovg") setBackend("winit-femtovg");
+	else if (renderingBackend == "femtovg-wgpu") setBackend("winit-femtovg-wgpu");
+    
 	
 	#ifdef __linux__
 	dbus_threads_init_default();

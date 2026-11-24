@@ -188,6 +188,7 @@ export component MainWindow inherits Window {
     in property <string>          currentTheme_S;
     in property <string>          activeTheme_S;
     in property <bool>            hprStoreInstalled_S;
+    in property <string>          renderingBackend_S;
 
     init => {
         StdPalette.color-scheme = isDarkMode ? ColorScheme.dark : ColorScheme.light;
@@ -671,6 +672,7 @@ export component MainWindow inherits Window {
                 trackApps_S: root.trackApps_S;
                 trackBrowser_S: root.trackBrowser_S;
                 trackProjects_S: root.trackProjects_S;
+                renderingBackend_S: root.renderingBackend_S;
             }
             if active-view == "FEEDBACK" : FeedbackView {
                 vertical-stretch: 1;

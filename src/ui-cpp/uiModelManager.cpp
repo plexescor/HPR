@@ -403,6 +403,8 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
 				float projectViewCardHeightVal =
 					AppState::configManager.getConfig<float>("projectview-card-height", 842.0f);
 				float tabViewCardHeightVal = AppState::configManager.getConfig<float>("tabview-card-height", 848.0f);
+				std::string renderingBackendVal = 
+					AppState::configManager.getConfig<std::string>("rendering-backend", "skia-software");
 
 				bool trackAppsVal;
 				bool trackBrowserVal;
@@ -515,6 +517,8 @@ void UiModelManager::update(const std::map<std::string, uint64_t> &rawTimeLog,
 					(*handle)->set_projectViewCardHeight_S(projectViewCardHeightVal);
 				if ((*handle)->get_tabViewCardHeight_S() != tabViewCardHeightVal)
 					(*handle)->set_tabViewCardHeight_S(tabViewCardHeightVal);
+				if ((*handle)->get_renderingBackend_S() != slint::SharedString(renderingBackendVal))
+					(*handle)->set_renderingBackend_S(slint::SharedString(renderingBackendVal));
 
 				// Surgical update to prevent layout panics during
 				// resize/maximize

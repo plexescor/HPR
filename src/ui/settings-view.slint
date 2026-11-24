@@ -118,6 +118,7 @@ export component SettingsView {
     in property <bool> sidebarAlwaysExpanded_S;
     in property <string> sidebarType_S;      // "floating" | "pushing"
     in property <string> sidebarPosition_S;  // "left" | "right" | "top" | "bottom"
+    in property <string> renderingBackend_S;
     in property <bool> trackApps_S: true;
     in property <bool> trackBrowser_S: true;
     in property <bool> trackProjects_S: true;
@@ -760,11 +761,51 @@ export component SettingsView {
                         color: Palette.text-muted;
                     }
 
-                    ToggleSetting {
-                        label: "Hardware Acceleration";
-                        description: "Use GPU-accelerated rendering for the UI. Disable only if you see visual glitches. Requires restart";
-                        checked: root.hardwareAccel_S;
-                        toggled(v) => { root.setConfig("hardware-acceleration", v ? "true" : "false"); }
+                    HorizontalLayout {
+                        alignment: space-between;
+                        spacing: 12px * Palette.scale;
+
+                        VerticalLayout {
+                            alignment: center;
+                            spacing: 4px * Palette.scale;
+                            Text {
+                                text: "Rendering Backend";
+                                font-size: 13px * Palette.scale;
+                                font-weight: 600;
+                                color: Palette.text-primary;
+                            }
+                            Text {
+                                text: "Backend used to render HPR. Make sure to RESTART HPR.";
+                                font-size: 11px * Palette.scale;
+                                color: Palette.text-secondary;
+                            }
+                        }
+
+                        HorizontalLayout {
+                            alignment: end;
+                            spacing: 6px * Palette.scale;
+                            width: 360px * Palette.scale;
+                            y: (parent.height - self.height) / 2;
+
+                            ThemeOptionButton {
+                                label: "SOFTWARE";
+                                active: renderingBackend_S == "skia-software" || renderingBackend_S == "";
+                                width: 85px * Palette.scale;
+                                clicked => { root.setConfig("rendering-backend", "skia-software"); }
+                            }
+                            ThemeOptionButton {
+                                label: "OPENGL";
+                                active: renderingBackend_S == "femtovg";
+                                width: 85px * Palette.scale;
+                                clicked => { root.setConfig("rendering-backend", "femtovg"); }
+                            }
+                            ThemeOptionButton {
+                                label: "WGPU";
+                                active: renderingBackend_S == "femtovg-wgpu";
+                                width: 70px * Palette.scale;
+                                clicked => { root.setConfig("rendering-backend", "femtovg-wgpu"); }
+                            }
+                        }
                     }
                 }
             }

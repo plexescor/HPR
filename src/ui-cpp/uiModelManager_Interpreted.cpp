@@ -454,6 +454,8 @@ void UiModelManager::update_Interpreted(
 				float projectViewCardHeightVal =
 					AppState::configManager.getConfig<float>("projectview-card-height", 842.0f);
 				float tabViewCardHeightVal = AppState::configManager.getConfig<float>("tabview-card-height", 848.0f);
+				std::string renderingBackendVal = 
+					AppState::configManager.getConfig<std::string>("rendering-backend", "skia-software");
 
 				bool trackAppsVal;
 				bool trackBrowserVal;
@@ -532,6 +534,7 @@ void UiModelManager::update_Interpreted(
 				setPropIfChanged("dataViewCardHeight_S", slint::interpreter::Value(dataViewCardHeightVal));
 				setPropIfChanged("projectViewCardHeight_S", slint::interpreter::Value(projectViewCardHeightVal));
 				setPropIfChanged("tabViewCardHeight_S", slint::interpreter::Value(tabViewCardHeightVal));
+				setPropIfChanged("renderingBackend_S", slint::interpreter::Value(slint::SharedString(renderingBackendVal)));
 
 				auto syncModel = [](std::shared_ptr<slint::VectorModel<slint::interpreter::Value>> model,
 									const std::vector<slint::interpreter::Value> &vec)
