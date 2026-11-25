@@ -201,6 +201,12 @@ void UpdateManager::checkForUpdates()
     // Check if new version differs from current version
     if (normTag != AppState::APP_VERSION)
     {
+        if (downloadUrl.empty())
+        {
+            Logger::log("[UpdateManager] New tag " + normTag + 
+                        " found but no matching asset for this platform. Skipping.");
+            return;
+        }
         std::lock_guard<std::recursive_mutex> stateLock(AppState::stateMutex);
         AppState::state.updateAvailable = true;
         AppState::state.latestVersion = normTag;

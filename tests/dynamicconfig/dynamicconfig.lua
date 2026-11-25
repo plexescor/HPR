@@ -17,8 +17,8 @@
 -- =============================================================================
 
 HPR.extensionName = "Dynamic Config"
-HPR.authorName = "Plexescor"
-HPR.versionSupport = { "0.9.8", "0.9.9", "0.9.10", "0.9.11", "0.9.12", "0.9.14-Dev" }
+HPR.authorName = "Plexescor""
+HPR.versionSupport = { "0.9.8", "0.9.9", "0.9.10", "0.9.11", "0.9.12", "0.9.13", "0.9.14" }
 
 function init()
     -- test useHPRTablePrefix (default true)
